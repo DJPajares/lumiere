@@ -18,6 +18,7 @@
     "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\""
   },
   "devDependencies": {
+    "@types/node": "^26.1.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4",

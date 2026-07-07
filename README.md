@@ -63,6 +63,18 @@ README.md
 
 Use separate `.env` files per app/package.
 
+Copy each app's committed example file before running local services:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/invite/.env.example apps/invite/.env.local
+cp apps/dashboard/.env.example apps/dashboard/.env.local
+```
+
+`packages/config` validates environment variables. API configuration is server-only and
+fails fast when required secrets are missing. Invite and dashboard client configuration
+only uses `NEXT_PUBLIC_` variables.
+
 ### API
 
 ```env

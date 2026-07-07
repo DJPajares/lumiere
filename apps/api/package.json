@@ -10,6 +10,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest --passWithNoTests"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@lumiere/config": "workspace:*"
+  },
   "devDependencies": {}
 }
