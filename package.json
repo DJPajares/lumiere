@@ -1,0 +1,23 @@
+{
+  "name": "lumiere",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.6.1",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:invite": "pnpm --filter @lumiere/invite dev",
+    "dev:dashboard": "pnpm --filter @lumiere/dashboard dev",
+    "dev:api": "pnpm --filter @lumiere/api dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "format": "prettier --write --ignore-unknown \"**/*.{json,yml,ts,tsx}\" pnpm-workspace.yaml",
+    "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,ts,tsx}\" pnpm-workspace.yaml"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.4",
+    "turbo": "^2.10.4",
+    "typescript": "^6.0.3"
+  }
+}

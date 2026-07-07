@@ -1,0 +1,718 @@
+# Lumiere PRD
+
+## 1. Product Summary
+
+Lumiere is a full-stack, multi-event invitation and RSVP platform. It lets event managers create and manage multiple events, choose premium invitation themes, configure event-specific sections, manage guest groups, generate unique guest invite links, collect RSVP responses, and monitor guest activity from a dashboard.
+
+The public invitation experience is delivered through a mobile-first Next.js PWA that works as both a generic event invitation website and a personalized invite flow. The dashboard is a separate responsive Next.js app for event managers. The API is a Hono service backed by PostgreSQL, Drizzle ORM, and Supabase Auth.
+
+### Brand Positioning
+
+Lumiere means light and should feel like a premium event platform, not a generic form builder. The public invite experience should feel luminous, intimate, and memorable. The dashboard should feel calm, precise, and trustworthy while still carrying the same refined brand language.
+
+Brand principles:
+
+- luminous, elegant, and warm
+- premium but not over-decorated
+- celebratory without feeling childish
+- flexible enough for weddings, birthdays, holidays, launches, dinners, and private events
+- operationally clear for event managers
+
+
+## 2. Problem Statement
+
+People often need beautiful invitation websites and RSVP tracking for different event types such as weddings, birthdays, Christmas parties, kids' parties, and premium private events. Existing solutions are either too rigid, too template-driven, too event-type-specific, or do not give the host enough control over event sections, themes, guest groups, and unique RSVP links.
+
+Lumiere should provide a flexible event platform where:
+
+- one manager can run multiple separate events
+- each event can have its own theme, content, section structure, mode, and guest groups
+- public visitors can view the invitation without RSVP access
+- invited guests with a unique link can RSVP for their assigned group
+- dashboard users only see events they manage
+- design quality remains modern and premium across both the invitation site and the dashboard
+
+## 3. Project Mode
+
+`full-stack`
+
+Reason: the project requires two meaningful Next.js frontends, a Hono API, authentication, PostgreSQL storage, Drizzle migrations, event/theme data contracts, unique guest links, RSVP workflows, notification/activity tracking, and cross-layer integration between dashboard, API, database, and public invite pages.
+
+## 4. Goals
+
+- Support multiple event types and multiple events per authenticated manager.
+- Provide a public event URL that shows the invitation without RSVP-only content.
+- Provide unique guest/group invite links that unlock RSVP sections.
+- Let managers configure sections per event type and theme.
+- Let managers choose event designs such as Premium, Kids, Noel, Moana-inspired, or other future templates.
+- Support light mode, dark mode, or toggleable variants per event theme.
+- Track guest groups, max pax, RSVP status, guest answers, and activity.
+- Notify managers when guests RSVP or update responses.
+- Provide a dashboard with response cards, guest activity, and event management tools.
+- Keep the design system flexible and TasteSkill-driven instead of tied to one component library by default.
+- Keep the architecture suitable for local PostgreSQL development and Supabase PostgreSQL production.
+- Use Lumiere brand assets consistently across invite app, dashboard, PWA manifests, and public metadata.
+- Add explicit UI/UX quality gates for invitation themes, dashboard management flows, and RSVP interactions.
+
+## 5. Non-Goals
+
+- Native mobile apps in the MVP.
+- Seat-map planning, catering inventory, or vendor management in the MVP.
+- Payment collection in the MVP.
+- Fully custom drag-and-drop page builder in the MVP.
+- Arbitrary untrusted code or component rendering from the database.
+- Email/SMS delivery infrastructure as a hard MVP requirement. In-app notifications and activity logs come first.
+- Guest account creation in the MVP.
+- Multi-tenant billing or organizations in the MVP.
+
+## 6. Users / Personas
+
+### Event Manager
+
+Creates and manages one or more events. Needs clean tools for theme selection, event content, guest grouping, RSVP tracking, and guest activity.
+
+### Invited Guest
+
+Receives a unique invite link for a guest group. Needs a beautiful invitation experience, event details, and a simple RSVP flow that respects the group's max pax.
+
+### Public Visitor
+
+Opens a generic event URL without a guest token. Can view public invitation content but cannot access personalized RSVP content.
+
+### Theme Builder / Developer
+
+Adds new event designs and section renderers. Needs shared theme contracts, clear registry metadata, and predictable rendering boundaries.
+
+## 7. Core Use Cases
+
+1. Manager signs in and creates an event.
+2. Manager selects an event type, theme design, and light/dark mode behavior.
+3. Manager configures event sections such as introduction, date, story, location, entourage, gallery, RSVP, and outro.
+4. Manager creates guest groups with labels, max pax, and unique invite links.
+5. Manager copies or shares a guest group's unique invite link.
+6. Public visitor opens the generic event URL and sees the invitation without RSVP content.
+7. Invited guest opens a unique invite link and sees RSVP-enabled content.
+8. Guest submits RSVP with attendee count and optional responses.
+9. Manager receives an activity/notification entry for the RSVP.
+10. Manager views response summary cards, guest list statuses, and activity timeline.
+11. Manager edits event theme or content and the public invite reflects the update.
+
+## 8. UX / Frontend Requirements
+
+### Apps
+
+#### Main Invitation App
+
+- Next.js PWA.
+- Mobile-first, polished on web and phone-sized screens.
+- Serves generic public event pages.
+- Serves personalized guest invite pages.
+- Handles multiple event themes and section layouts.
+- Shows RSVP only when the URL includes a valid guest invite token.
+- Uses server-rendered or statically optimized pages where practical.
+
+#### Dashboard App
+
+- Next.js responsive dashboard.
+- Works on desktop and mobile, but desktop/tablet are primary for management tasks.
+- Authenticated through Supabase.
+- Shows only events the authenticated manager can access.
+- Manages events, themes, sections, guest groups, RSVP responses, and activity.
+
+### Main Invitation Routes
+
+```text
+/e/[eventSlug]
+```
+
+Generic public event page. Shows public sections only and hides RSVP content.
+
+```text
+/e/[eventSlug]/g/[guestToken]
+```
+
+Personalized guest invite page. Shows public sections plus RSVP-enabled content for that guest group.
+
+Optional future short route:
+
+```text
+/i/[inviteCode]
+```
+
+Resolves to the event and guest group without exposing event slug structure.
+
+### Dashboard Routes
+
+```text
+/
+/login
+/events
+/events/new
+/events/[eventId]
+/events/[eventId]/content
+/events/[eventId]/theme
+/events/[eventId]/guests
+/events/[eventId]/responses
+/events/[eventId]/activity
+/settings
+```
+
+### Event Section Requirements
+
+Section structure should come from database configuration so every event can be configured from the dashboard. The implementation should not store executable components in the database.
+
+Recommended model:
+
+- code owns section renderer components and schemas
+- shared theme registry owns supported designs and section types
+- database stores event content, section order, visibility, per-section settings, and selected theme IDs
+- API validates dashboard updates against supported section schemas
+- invitation app renders configured sections through the registry
+
+Example wedding sections:
+
+- introduction
+- couple profile
+- date and countdown
+- story
+- labels and copy
+- entourage
+- color coding / dress code
+- location
+- gallery / photo URLs
+- RSVP
+- outro
+
+Example birthday sections:
+
+- introduction
+- celebrant profile
+- date and venue
+- party details
+- gift note
+- gallery
+- RSVP
+- outro
+
+### Main Invitation UX States
+
+- Public event page available.
+- Private RSVP section unavailable without guest token.
+- Invalid invite link.
+- Expired or disabled invite link.
+- RSVP open.
+- RSVP closed.
+- RSVP submitted.
+- RSVP updated.
+- Event not published.
+- Event not found.
+
+### Dashboard UX States
+
+- Loading event data.
+- Empty event list with create CTA.
+- Empty guest list with add/import CTA.
+- No RSVP responses yet.
+- RSVP activity timeline.
+- Validation errors for max pax, guest group labels, duplicate slugs, missing required sections, and invalid theme settings.
+- Unauthorized or missing access state.
+
+### Accessibility
+
+- Dashboard forms use labels above inputs, not placeholder-only labels.
+- Invite pages preserve contrast for theme variants.
+- RSVP controls are keyboard accessible on web.
+- Important images have alt text or are marked decorative.
+- Error text is associated with fields.
+- Reduced-motion preference is respected.
+- Color-coded dress code or status labels also include text.
+
+### Responsive Behavior
+
+- Main invitation: mobile-first single-column composition, then richer tablet/desktop layouts.
+- Dashboard: desktop-first management density with responsive mobile fallback.
+- Multi-column sections must declare explicit mobile collapse behavior.
+- Navigation must remain usable on phone widths.
+- RSVP form must remain comfortable for thumb use.
+
+## 9. TasteSkill Design Read
+
+```text
+Reading this as: a premium multi-event invitation and RSVP platform for hosts and guests, with a polished editorial/event-brand language for the public invite and a calm modern admin language for the dashboard, leaning toward Tailwind CSS as styling foundation with project-owned components and theme-specific section renderers.
+```
+
+### Design Dials
+
+```text
+DESIGN_VARIANCE: 7
+MOTION_INTENSITY: 5
+VISUAL_DENSITY: 4 for invitation pages, 7 for dashboard management screens
+```
+
+### Selected Design Foundation
+
+- Design system or styling foundation: `Tailwind CSS with semantic tokens and project-owned components`
+- Reason: the project needs multiple branded event themes and a flexible invitation renderer rather than one fixed official design system.
+- Tailwind note: Tailwind is the styling foundation only. It must be paired with shared tokens, section schemas, component rules, accessibility checks, and theme registry constraints.
+
+## 10. Design Direction
+
+### Public Invitation App
+
+- Premium, modern, editorial, and emotionally warm.
+- Each theme can have its own atmosphere while preserving shared structure and accessibility.
+- Use real imagery where supplied by the event manager.
+- Avoid generic hero plus card layouts.
+- Use section rhythm: hero, detail blocks, story sections, gallery, location, RSVP, outro.
+- RSVP should feel like part of the invitation, not a separate form slapped at the end.
+- Motion should be subtle and purposeful: section reveal, RSVP confirmation, theme transitions, and page load polish.
+
+### Dashboard App
+
+- Calm, clean, efficient, and trustworthy.
+- Prioritize scanability and data clarity over decorative event styling.
+- Use clear cards for attending, not attending, pending, total invited, max pax, and recent activity.
+- Use tables or grouped lists for guests, but avoid dense border stacks where grouped cards or sections are clearer.
+- Editing flows should feel safe, with previews and validation.
+
+### Consistency Locks
+
+- Color lock: each event theme has one primary accent and semantic status colors.
+- Shape lock: theme-specific radius scale, documented per theme.
+- Theme lock: each event chooses light-only, dark-only, or toggleable light/dark variants.
+- Dashboard lock: neutral administrative palette with one product accent.
+
+### Anti-Slop Constraints
+
+- No generic purple AI gradients unless a chosen theme explicitly calls for violet.
+- No default centered hero plus three cards.
+- No fake product UI blocks on public invite pages.
+- No placeholder copy in generated themes.
+- No decorative badges that do not help the host or guest.
+- No arbitrary guest-facing emojis unless a playful theme explicitly calls for them.
+
+### Lumiere Brand Application
+
+- Main invite app should use the Lumiere mark for public metadata, install prompts, favicon, and empty/public states.
+- Dashboard should use the dashboard mark or a simplified Lumiere lockup for authenticated manager surfaces.
+- PWA assets should be app-specific: public invite assets for `apps/invite`, dashboard/admin assets for `apps/dashboard`.
+- Brand visuals must not overpower event themes. Lumiere should frame the experience, while each event theme remains the star.
+
+### Theme Quality Requirements
+
+Every production theme should define:
+
+- design read and intended event type
+- light/dark/system support
+- token palette with accent, surfaces, text, borders, status colors, and focus
+- radius and shadow rules
+- typography scale and display font guidance
+- section layout rhythm
+- image treatment and placeholder strategy
+- RSVP form treatment
+- dashboard preview thumbnail
+- accessibility notes and contrast expectations
+
+### UI/UX Review Requirements
+
+Before MVP completion, run a specific design review for:
+
+- public event page without guest token
+- guest invite page with RSVP content
+- RSVP success, update, closed, invalid-link, and expired-link states
+- dashboard event overview
+- dashboard section builder
+- dashboard guest management
+- dashboard responses and activity
+- theme selector and previews
+- mobile widths for both apps
+- light and dark variants for supported themes
+
+## 11. Recommended Technical Direction
+
+### Monorepo
+
+Use Turborepo with pnpm workspaces.
+
+```text
+apps/
+  invite/       # public invitation PWA
+  dashboard/    # event manager dashboard
+  api/          # Hono API
+packages/
+  api-client/
+  config/
+  db/
+  themes/
+  types/
+  ui-primitives/
+```
+
+### Frontend
+
+- Invite app: Next.js, PWA, TypeScript, Tailwind CSS.
+- Dashboard app: Next.js, TypeScript, Tailwind CSS.
+- Brand/PWA assets: separate Lumiere public invite and Lumiere Dashboard asset sets under each app public folder.
+- Styling: Tailwind CSS as the default foundation, semantic CSS variables, simple `globals.css`.
+- Component strategy: project-owned components and small accessible primitives. Add a library such as Radix only when a task justifies it.
+- Server state: TanStack Query or framework-native fetching where practical.
+- Forms: React Hook Form with schema validation, or equivalent.
+- Tests: Vitest and Testing Library where practical.
+
+### Backend
+
+- API: Hono with TypeScript.
+- Local database: PostgreSQL.
+- Production database: Supabase PostgreSQL.
+- ORM: Drizzle.
+- Auth: Supabase Auth for managers.
+- Guest access: signed/random guest invite tokens, not Supabase user accounts.
+- Validation: schema validation shared where practical.
+- Tests: Vitest with API and service tests.
+
+## 12. High-Level Architecture
+
+```text
+Next.js Invite PWA ───┐
+                      ├── Shared API Client ── Hono API ── Drizzle ── PostgreSQL/Supabase PostgreSQL
+Next.js Dashboard ────┘                         │
+                                                 ├── Supabase Auth
+                                                 ├── Theme Registry Package
+                                                 ├── Notification / Activity Service
+                                                 └── Future Email/SMS Providers
+```
+
+The API owns persistence, authorization, invite token validation, notification records, and theme/content validation. Frontend apps render data and submit actions through typed API contracts.
+
+## 13. Frontend Architecture
+
+### Invite App
+
+- Uses event slug and optional guest token to request public or personalized invitation data.
+- Renders sections from `packages/themes` registry.
+- Hides RSVP section unless a valid guest invite context exists.
+- Supports PWA manifest, icons, metadata, and install-friendly behavior.
+- Uses theme variables for light/dark variants.
+- Keeps `globals.css` minimal.
+
+### Dashboard App
+
+- Authenticated Supabase session.
+- Layout with event switcher, navigation, response summary, and activity preview.
+- Event editor split into content, theme, guests, responses, and activity.
+- Uses preview mode where practical for invitation changes.
+- Uses typed API client and shared schemas.
+
+### Shared Frontend Packages
+
+- `packages/types`: domain and API types.
+- `packages/themes`: design registry, section schemas, theme metadata, renderer contracts.
+- `packages/api-client`: typed client for API calls.
+- `packages/ui-primitives`: project-owned primitives shared by both apps where practical.
+
+## 14. Backend / API Architecture
+
+### API Principles
+
+- REST-style JSON endpoints for MVP.
+- Typed request and response contracts.
+- Server-side validation for all inputs.
+- Supabase auth only for manager endpoints.
+- Guest invite endpoints validate event slug and guest token.
+- Manager endpoints enforce event ownership through an `event_managers` relationship.
+- Public event endpoints never expose private guest lists.
+- Theme/content updates are validated against the theme and section registry.
+- Consistent error shape with request ID.
+
+### Endpoint Groups
+
+```text
+GET    /health
+
+GET    /public/events/:eventSlug
+GET    /public/events/:eventSlug/guest/:guestToken
+POST   /public/events/:eventSlug/guest/:guestToken/rsvp
+
+GET    /events
+POST   /events
+GET    /events/:eventId
+PATCH  /events/:eventId
+DELETE /events/:eventId
+
+GET    /events/:eventId/theme
+PUT    /events/:eventId/theme
+GET    /events/:eventId/sections
+PUT    /events/:eventId/sections
+
+GET    /events/:eventId/guest-groups
+POST   /events/:eventId/guest-groups
+PATCH  /events/:eventId/guest-groups/:groupId
+DELETE /events/:eventId/guest-groups/:groupId
+POST   /events/:eventId/guest-groups/:groupId/regenerate-link
+
+GET    /events/:eventId/responses
+GET    /events/:eventId/activity
+GET    /events/:eventId/summary
+
+GET    /themes
+GET    /themes/:themeId
+```
+
+## 15. Data Model / Storage Design
+
+### users
+
+Supabase-authenticated manager profile mirror.
+
+- id
+- supabase_user_id
+- email
+- display_name
+- created_at
+- updated_at
+
+### events
+
+- id
+- owner_user_id
+- slug
+- title
+- event_type
+- status: draft, published, archived
+- timezone
+- starts_at
+- ends_at
+- venue_name
+- venue_address
+- selected_theme_id
+- theme_mode: light, dark, system, toggleable
+- theme_config_json
+- public_settings_json
+- rsvp_settings_json
+- created_at
+- updated_at
+
+### event_managers
+
+Allows future shared management.
+
+- id
+- event_id
+- user_id
+- role: owner, editor, viewer
+- created_at
+
+### event_sections
+
+Configured sections for an event.
+
+- id
+- event_id
+- section_type
+- section_key
+- sort_order
+- visibility: public, guest_only, hidden
+- enabled
+- content_json
+- settings_json
+- created_at
+- updated_at
+
+### event_assets
+
+Photos, gallery images, cover images, maps, or future uploaded media metadata.
+
+- id
+- event_id
+- asset_type
+- url
+- alt_text
+- metadata_json
+- created_at
+
+### guest_groups
+
+- id
+- event_id
+- label
+- contact_name
+- contact_email
+- max_pax
+- invite_token_hash
+- invite_code
+- status: pending, opened, responded, declined, disabled
+- notes
+- last_opened_at
+- created_at
+- updated_at
+
+### rsvp_responses
+
+- id
+- event_id
+- guest_group_id
+- response_status: attending, not_attending, maybe
+- attendee_count
+- guest_names_json
+- answers_json
+- message
+- submitted_at
+- updated_at
+
+### activity_events
+
+- id
+- event_id
+- actor_type: manager, guest, system
+- actor_id
+- activity_type
+- metadata_json
+- created_at
+
+### notifications
+
+- id
+- event_id
+- user_id
+- notification_type
+- title
+- message
+- read_at
+- metadata_json
+- created_at
+
+### theme_registry_snapshots
+
+Optional table for tracking selected theme metadata at publish time.
+
+- id
+- event_id
+- theme_id
+- version
+- metadata_json
+- created_at
+
+## 16. External Integrations
+
+- Supabase Auth for dashboard manager authentication.
+- Supabase PostgreSQL for online production database.
+- Future Supabase Storage or compatible object storage for image uploads.
+- Future email provider for RSVP notifications and guest invitations.
+- Future SMS or WhatsApp link generation if needed.
+- Optional map provider for venue links.
+
+## 17. Security / Privacy Requirements
+
+- Dashboard endpoints require Supabase-authenticated manager sessions.
+- Every manager request enforces event ownership or manager role.
+- Guest invite tokens must be high-entropy and stored hashed.
+- Public event endpoints must not expose guest list details.
+- RSVP endpoints must enforce group max pax.
+- Rate limit public RSVP endpoints where practical.
+- Validate all JSON content and section settings before persistence.
+- Do not allow arbitrary HTML/script from dashboard content.
+- Secrets remain server-side.
+- Event slugs must be unique and safe for URLs.
+
+## 18. Error Handling Requirements
+
+Common error shape:
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "requestId": "string"
+  }
+}
+```
+
+Frontend behavior:
+
+- Show field-level validation for forms.
+- Show contextual errors for invalid invite links, closed RSVP, disabled guest groups, and not-found events.
+- Preserve guest-entered RSVP data when recoverable submission errors occur.
+- Dashboard should show retry actions for data load failures.
+
+Backend behavior:
+
+- Return 401 for missing/invalid manager auth.
+- Return 403 for authenticated managers without event access.
+- Return 404 when event or guest token cannot be resolved.
+- Return 409 for duplicate slugs or conflicting RSVP updates.
+- Return 422 for validation errors.
+
+## 19. Testing Requirements
+
+### Frontend
+
+- Component tests for invite sections and dashboard forms.
+- Route/screen tests for public invite, personalized invite, event list, guest management, and RSVP form.
+- Accessibility checks for forms and primary actions.
+- Visual QA checklist based on `SKILL.md`.
+
+### Backend
+
+- Unit tests for services and validation.
+- API tests for auth, event ownership, theme validation, guest token access, RSVP submission, and summary endpoints.
+- Drizzle migration verification.
+- Token hashing and max pax tests.
+
+### Full-Stack
+
+- Smoke path: create event, select theme, configure sections, add guest group, open public URL, open guest URL, submit RSVP, view dashboard summary.
+
+## 20. MVP Scope
+
+- Turborepo monorepo with two Next.js apps and one Hono API.
+- Supabase Auth for managers.
+- PostgreSQL/Drizzle schema and migrations.
+- Event CRUD.
+- Theme registry with at least three initial theme IDs.
+- Section configuration stored in database.
+- Public event route without RSVP.
+- Guest invite route with RSVP.
+- Guest group management with unique links.
+- RSVP submission and update.
+- Dashboard summary cards and activity feed.
+- Simple in-app notifications.
+- PWA manifest for invite app.
+- Tailwind-based design foundation with semantic tokens.
+
+## 21. Future Enhancements
+
+- Drag-and-drop section builder.
+- Theme marketplace or custom theme authoring.
+- Email invitation sending.
+- SMS/WhatsApp invitation flows.
+- Supabase Storage image uploads.
+- Event collaborators and roles beyond owner/editor/viewer.
+- Guest import/export via CSV.
+- QR codes for invite links.
+- Seating charts and meal preferences.
+- Event schedule modules.
+- Paid plans and multi-tenant organizations.
+
+## 22. Open Questions
+
+- What is the final product name and domain?
+- Should RSVP responses allow guests to edit after submission?
+- Should public event pages be searchable/indexable or noindex by default?
+- Should the MVP support file uploads or only external photo URLs?
+- Which notification channels are required first: in-app only, email, or both?
+- Should unique guest links use `/e/[eventSlug]/g/[guestToken]` or short `/i/[inviteCode]` as the primary share URL?
+
+## 23. Definition Of Done
+
+- Manager can sign in and manage only their own events.
+- Manager can create and publish an event.
+- Manager can configure theme, mode, and sections.
+- Manager can create guest groups with max pax and unique invite links.
+- Public event URL shows invite without RSVP content.
+- Guest invite URL shows RSVP flow for valid guest groups.
+- Guest can submit RSVP and manager can see the response.
+- Dashboard shows response summary and activity.
+- Core APIs are validated, tested, and documented.
+- UI passes project `SKILL.md` pre-flight checks.
+- All generated task files have clear dependencies and verification criteria.

@@ -1,0 +1,14 @@
+{
+  "name": "@lumiere/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"dashboard app scaffold pending\"",
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for dashboard\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for dashboard\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

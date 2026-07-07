@@ -1,0 +1,14 @@
+{
+  "name": "@lumiere/invite",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"invite app scaffold pending\"",
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for invite\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for invite\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

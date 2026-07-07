@@ -1,0 +1,17 @@
+{
+  "name": "@lumiere/themes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for themes\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for themes\""
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

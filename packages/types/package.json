@@ -1,0 +1,17 @@
+{
+  "name": "@lumiere/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for types\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for types\""
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@lumiere/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for config\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for config\""
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

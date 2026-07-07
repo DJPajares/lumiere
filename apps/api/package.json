@@ -1,0 +1,14 @@
+{
+  "name": "@lumiere/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"api dev server pending\"",
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for api\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for api\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

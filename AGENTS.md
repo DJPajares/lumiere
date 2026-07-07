@@ -1,0 +1,84 @@
+# AGENTS.md
+
+## Purpose
+
+Guide AI agents working in this repository.
+
+## Project Snapshot
+
+Lumiere is a full-stack multi-event invitation and RSVP platform with two Next.js apps, a Hono API, Supabase Auth, PostgreSQL, Drizzle, and a TasteSkill-driven UI approach.
+
+## Source Of Truth
+
+- Product and architecture: `PRD.md`
+- UI/UX guardrails: `SKILL.md`
+- Setup and commands: `README.md`
+- Task state: `.devtool/features/*.md`
+
+## Default Read Path
+
+1. Read this file.
+2. Read the active task in `.devtool/features/`.
+3. Read `SKILL.md` for UI work.
+4. Read `PRD.md` only for needed product or architecture context.
+5. Read `README.md` only for setup, commands, APIs, or workflow.
+
+## Task Workflow
+
+- Work on one task at a time.
+- Start with the lowest-order `todo` task whose dependencies are complete.
+- Do not start tasks blocked by `depends_on`.
+- Update task status and append concise progress notes.
+
+## Task Statuses
+
+Use only `backlog`, `todo`, `in-progress`, `done`, and `blocked`.
+
+## Behavioral Rules
+
+- Keep changes small and scoped to the active task.
+- Avoid duplicating PRD or README content.
+- Prefer shared contracts before wiring UI to API.
+- Follow `SKILL.md` and run the pre-flight review for UI tasks.
+- Ask only when a missing decision materially affects architecture, data model, UX, or security.
+
+## Project Rules
+
+- Use `pnpm`.
+- Prefer latest stable dependencies where practical.
+- Use TypeScript, Vitest, Prettier, and lint-staged where practical.
+- Do not add a component library unless justified by the task.
+- Use Tailwind CSS as styling foundation with semantic tokens.
+- Keep `globals.css` simple.
+- Keep secrets server-side.
+
+## Verification
+
+Run the narrowest useful checks first:
+
+- typecheck
+- lint
+- format check
+- tests
+- app/API smoke checks
+- UI pre-flight review for frontend work
+
+## Task Report
+
+After completing a task, report:
+
+- What changed
+- How it was verified
+- What to test next, if anything
+- Recommended next task
+- Suggested commit message
+
+Commit format:
+
+```text
+type(scope): summary
+```
+
+## When Unsure
+
+Prefer the smallest reversible implementation aligned with `PRD.md`, then document the assumption in the task progress log.

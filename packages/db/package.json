@@ -1,0 +1,17 @@
+{
+  "name": "@lumiere/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "echo \"lint pending for db\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"tests pending for db\""
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
