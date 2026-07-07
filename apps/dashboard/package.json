@@ -3,13 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "echo \"dashboard app scaffold pending\"",
-    "build": "tsc --noEmit",
+    "dev": "next dev --port 3001",
+    "build": "next build",
     "lint": "echo \"lint pending for dashboard\"",
     "typecheck": "tsc --noEmit",
     "test": "echo \"tests pending for dashboard\"",
     "test:watch": "echo \"test watch pending for dashboard\""
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
 }

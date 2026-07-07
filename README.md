@@ -164,6 +164,7 @@ Each app should include its own `favicon.ico`, `apple-touch-icon.png`, `icon-192
 ## Frontend Development
 
 - Use `SKILL.md` for UI/UX direction.
+- Use `apps/invite/README.md` and `apps/dashboard/README.md` for app-specific design reads.
 - Use Tailwind CSS as the styling foundation, not as a complete design system.
 - Do not add HeroUI, shadcn/ui, Radix, Material, or another component library unless a task justifies it.
 - Prefer semantic tokens and project-owned components.

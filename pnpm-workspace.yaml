@@ -1,6 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+onlyBuiltDependencies:
+  - sharp
+allowBuilds:
+  sharp: true
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.10.4"
   - "@turbo/darwin-arm64@2.10.4"
