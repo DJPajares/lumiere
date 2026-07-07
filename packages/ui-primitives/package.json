@@ -7,7 +7,8 @@
     "build": "tsc --noEmit",
     "lint": "echo \"lint pending for ui-primitives\"",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"tests pending for ui-primitives\""
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests"
   },
   "exports": {
     ".": "./src/index.ts"

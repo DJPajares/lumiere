@@ -7,7 +7,8 @@
     "build": "tsc --noEmit",
     "lint": "echo \"lint pending for dashboard\"",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"tests pending for dashboard\""
+    "test": "echo \"tests pending for dashboard\"",
+    "test:watch": "echo \"test watch pending for dashboard\""
   },
   "dependencies": {},
   "devDependencies": {}

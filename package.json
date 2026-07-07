@@ -10,14 +10,18 @@
     "dev:api": "pnpm --filter @lumiere/api dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "lint-staged": "lint-staged",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "format": "prettier --write --ignore-unknown \"**/*.{json,yml,ts,tsx}\" pnpm-workspace.yaml",
-    "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,ts,tsx}\" pnpm-workspace.yaml"
+    "test:watch": "turbo test:watch",
+    "format": "prettier --write --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\"",
+    "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\""
   },
   "devDependencies": {
+    "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }

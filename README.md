@@ -123,6 +123,23 @@ pnpm db:migrate
 pnpm db:studio
 ```
 
+### Quality Commands
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:watch
+pnpm format
+pnpm format:check
+pnpm lint-staged
+```
+
+- `pnpm lint`, `pnpm typecheck`, and `pnpm test` run through Turborepo across the workspace.
+- `pnpm test` uses Vitest for the API and shared packages, with app-specific tests added in later app scaffold tasks.
+- `pnpm format` and `pnpm format:check` use the root Prettier config.
+- `pnpm lint-staged` formats staged files and runs a workspace typecheck for staged TypeScript changes.
+
 ## Brand / PWA Assets
 
 Use separate Lumiere PWA assets for each app:

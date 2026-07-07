@@ -7,7 +7,8 @@
     "build": "tsc --noEmit",
     "lint": "echo \"lint pending for api-client\"",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"tests pending for api-client\""
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests"
   },
   "exports": {
     ".": "./src/index.ts"
