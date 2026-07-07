@@ -152,6 +152,26 @@ pnpm lint-staged
 - `pnpm format` and `pnpm format:check` use the root Prettier config.
 - `pnpm lint-staged` formats staged files and runs a workspace typecheck for staged TypeScript changes.
 
+### Database Commands
+
+Drizzle schema and migrations live in `packages/db`. Commands read `DATABASE_URL`, falling back to `postgresql://postgres:postgres@localhost:5432/lumiere` for local development.
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+pnpm db:studio
+```
+
+Use a separate database for tests and point Drizzle at it when applying migrations. A disposable Compose-backed test database is available from `packages/db`:
+
+```bash
+docker compose -f packages/db/docker-compose.test.yml up -d --wait
+DATABASE_URL=postgresql://postgres:postgres@localhost:54329/lumiere_test pnpm db:migrate
+docker compose -f packages/db/docker-compose.test.yml down
+```
+
+For Supabase, set `DATABASE_URL` to the project Postgres connection string before running `pnpm db:migrate`.
+
 ## Brand / PWA Assets
 
 Use separate Lumiere PWA assets for each app:

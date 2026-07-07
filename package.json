@@ -14,6 +14,9 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:watch": "turbo test:watch",
+    "db:generate": "pnpm --filter @lumiere/db db:generate",
+    "db:migrate": "pnpm --filter @lumiere/db db:migrate",
+    "db:studio": "pnpm --filter @lumiere/db db:studio",
     "format": "prettier --write --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\"",
     "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\""
   },
