@@ -12,6 +12,7 @@ import type {
   Notification,
   RsvpResponse,
 } from "@lumiere/types";
+import { eventResponseSchema } from "@lumiere/types";
 import { createHmac, generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -20,6 +21,7 @@ import { createApp } from "./app";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
+import { toApiEvent } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
 import { loadApiConfig } from "./index";
@@ -642,6 +644,38 @@ describe("API app", () => {
     });
   });
 
+  it("serializes database event timestamps as shared API datetimes", () => {
+    const event = toApiEvent({
+      createdAt: "2026-07-08 00:00:00+00",
+      endsAt: null,
+      eventType: "launch",
+      id: eventId,
+      ownerUserId: localUser.id,
+      publicSettingsJson: {},
+      rsvpSettingsJson: {},
+      selectedThemeId: null,
+      slug: "new-launch",
+      startsAt: "2026-12-01 11:00:00+00",
+      status: "draft",
+      themeConfigJson: {},
+      themeMode: "system",
+      timezone: "Asia/Singapore",
+      title: "New Launch",
+      updatedAt: "2026-07-08 00:00:00+00",
+      venueAddress: null,
+      venueName: null,
+    } as Parameters<typeof toApiEvent>[0]);
+
+    expect(eventResponseSchema.parse({ event })).toEqual({
+      event: {
+        ...event,
+        createdAt: "2026-07-08T00:00:00.000Z",
+        startsAt: "2026-12-01T11:00:00.000Z",
+        updatedAt: "2026-07-08T00:00:00.000Z",
+      },
+    });
+  });
+
   it("returns 409 when creating an event with a duplicate slug", async () => {
     const { authStore } = createTestAuthStore();
     const { eventStore } = createTestEventStore({
@@ -754,6 +788,41 @@ describe("API app", () => {
     expect(response.status).toBe(200);
     expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
     expect(getEventSummary).toHaveBeenCalledWith(eventId);
+  });
+
+  it("rejects non-UUID manager event IDs before querying stores", async () => {
+    const { authStore, findEventAccess } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, getEventSummary } = createTestDashboardDataStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request("/events/demo-event/summary", {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "x-request-id": "invalid-event-id-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "VALIDATION_ERROR",
+        fields: [
+          {
+            message: "Must be a valid UUID",
+            path: ["eventId"],
+          },
+        ],
+        message: "Invalid event ID",
+        requestId: "invalid-event-id-request-id",
+      },
+    });
+    expect(response.status).toBe(422);
+    expect(findEventAccess).not.toHaveBeenCalled();
+    expect(getEventSummary).not.toHaveBeenCalled();
   });
 
   it("returns recent activity ordered by creation time", async () => {

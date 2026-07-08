@@ -107,8 +107,8 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
 });
 
 export const toApiEvent = (event: EventRow): Event => ({
-  createdAt: event.createdAt,
-  endsAt: event.endsAt ?? undefined,
+  createdAt: toIsoDateTime(event.createdAt),
+  endsAt: event.endsAt ? toIsoDateTime(event.endsAt) : undefined,
   eventType: event.eventType,
   id: event.id,
   ownerUserId: event.ownerUserId,
@@ -116,16 +116,26 @@ export const toApiEvent = (event: EventRow): Event => ({
   rsvpSettings: event.rsvpSettingsJson as Event["rsvpSettings"],
   selectedThemeId: event.selectedThemeId ?? undefined,
   slug: event.slug,
-  startsAt: event.startsAt,
+  startsAt: toIsoDateTime(event.startsAt),
   status: event.status,
   themeConfig: event.themeConfigJson as Event["themeConfig"],
   themeMode: event.themeMode,
   timezone: event.timezone,
   title: event.title,
-  updatedAt: event.updatedAt,
+  updatedAt: toIsoDateTime(event.updatedAt),
   venueAddress: event.venueAddress ?? undefined,
   venueName: event.venueName ?? undefined,
 });
+
+const toIsoDateTime = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toISOString();
+};
 
 const toEventUpdateSet = (input: EventUpdate) => ({
   ...(input.slug !== undefined ? { slug: input.slug } : {}),

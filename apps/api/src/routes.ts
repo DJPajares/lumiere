@@ -813,9 +813,16 @@ const parseEventIdParam = (eventId: string | undefined) => {
     eventId,
   });
 
-  if (!result.success) {
+  if (!result.success || !isUuid(result.data.eventId)) {
     throw new ApiHttpError("VALIDATION_ERROR", "Invalid event ID", {
-      fields: zodIssuesToFieldErrors(result.error.issues),
+      fields: result.success
+        ? [
+            {
+              message: "Must be a valid UUID",
+              path: ["eventId"],
+            },
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
     });
   }
 
@@ -834,14 +841,36 @@ const parseEventAndGuestGroupIdParams = ({
     groupId,
   });
 
-  if (!result.success) {
+  if (!result.success || !isUuid(result.data.eventId) || !isUuid(result.data.groupId)) {
     throw new ApiHttpError("VALIDATION_ERROR", "Invalid guest group ID", {
-      fields: zodIssuesToFieldErrors(result.error.issues),
+      fields: result.success
+        ? [
+            ...(isUuid(result.data.eventId)
+              ? []
+              : [
+                  {
+                    message: "Must be a valid UUID",
+                    path: ["eventId"],
+                  },
+                ]),
+            ...(isUuid(result.data.groupId)
+              ? []
+              : [
+                  {
+                    message: "Must be a valid UUID",
+                    path: ["groupId"],
+                  },
+                ]),
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
     });
   }
 
   return result.data;
 };
+
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 const parsePublicEventParams = (eventSlug: string | undefined) => {
   const result = publicEventParamsSchema.safeParse({

@@ -14,12 +14,7 @@ export const eventTabs = [
 
 export type EventTabHref = (typeof eventTabs)[number]["href"];
 
-const primaryNav = [
-  { href: "/events", label: "Events" },
-  { href: "/events/demo-event", label: "Demo event" },
-  { href: "/events/demo-event/activity", label: "Activity" },
-  { href: "/events/demo-event/settings", label: "Settings" },
-] as const;
+const primaryNav = [{ href: "/events", label: "Events" }] as const;
 
 type DashboardShellProps = {
   activePath?: string;
