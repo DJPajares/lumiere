@@ -6,6 +6,19 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Lumiere Invite",
   description: "A luminous invitation and RSVP experience.",
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: 'any' },
+      { url: '/logo.png', type: 'image/png', sizes: '512x512' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Lumiere Invite',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
