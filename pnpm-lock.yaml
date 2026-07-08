@@ -50,6 +50,9 @@ importers:
       '@lumiere/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@lumiere/themes':
+        specifier: workspace:*
+        version: link:../../packages/themes
       '@lumiere/types':
         specifier: workspace:*
         version: link:../../packages/types

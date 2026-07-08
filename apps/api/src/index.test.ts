@@ -1,3 +1,4 @@
+import { getTheme } from "@lumiere/themes";
 import type { Event, EventCreate, EventUpdate, ManagerRole } from "@lumiere/types";
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,8 @@ import { createApp } from "./app";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
 import { loadApiConfig } from "./index";
+import type { EventThemeState, ThemeSectionStore } from "./theme-sections";
+import { toApiTheme } from "./theme-sections";
 
 const validApiEnv = {
   NODE_ENV: "test",
@@ -51,6 +54,30 @@ const baseEvent: Event = {
   createdAt: "2026-07-08T00:00:00.000Z",
   updatedAt: "2026-07-08T00:00:00.000Z",
 };
+
+const baseThemeState: EventThemeState = {
+  eventId,
+  eventType: "launch",
+  selectedThemeId: "lumiere-default",
+  themeConfig: {},
+  themeMode: "system",
+};
+
+const baseSection = {
+  id: "00000000-0000-4000-8000-000000000201",
+  eventId,
+  sectionType: "introduction",
+  sectionKey: "welcome",
+  sortOrder: 0,
+  visibility: "public",
+  enabled: true,
+  content: {
+    title: "Launch Night",
+  },
+  settings: {},
+  createdAt: "2026-07-08T00:00:00.000Z",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+} as const;
 
 describe("API config", () => {
   afterEach(() => {
@@ -558,6 +585,319 @@ describe("API app", () => {
     expect(response.status).toBe(200);
     expect(archiveEvent).toHaveBeenCalledWith(eventId);
   });
+
+  it("returns registry-backed theme metadata", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request("/themes");
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.themes).toContainEqual(toApiTheme(getTheme("premium")!));
+    expect(JSON.stringify(body)).not.toContain("rendererKey");
+  });
+
+  it("returns one theme definition without renderer code", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request("/themes/premium");
+
+    await expect(response.json()).resolves.toEqual({
+      theme: toApiTheme(getTheme("premium")!),
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("returns 404 for unknown themes", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request("/themes/unknown", {
+      headers: {
+        "x-request-id": "unknown-theme-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "Theme not found",
+        requestId: "unknown-theme-request-id",
+      },
+    });
+    expect(response.status).toBe(404);
+  });
+
+  it("gets event theme after enforcing manager access", async () => {
+    const { authStore, findEventAccess } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { getEventTheme, themeSectionStore } = createTestThemeSectionStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/theme`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      selectedThemeId: "lumiere-default",
+      theme: toApiTheme(getTheme("lumiere-default")!),
+      themeConfig: {},
+      themeMode: "system",
+    });
+    expect(response.status).toBe(200);
+    expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
+    expect(getEventTheme).toHaveBeenCalledWith(eventId);
+  });
+
+  it("updates event theme when manager has editor access", async () => {
+    const updatedThemeState: EventThemeState = {
+      ...baseThemeState,
+      eventType: "launch",
+      selectedThemeId: "lumiere-default",
+      themeConfig: {
+        heroStyle: "editorial",
+      },
+      themeMode: "dark",
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { themeSectionStore, updateEventTheme } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventType: "launch",
+      },
+      updatedThemeState,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/theme`, {
+      body: JSON.stringify({
+        selectedThemeId: "lumiere-default",
+        themeConfig: {
+          heroStyle: "editorial",
+        },
+        themeMode: "dark",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "PUT",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      selectedThemeId: "lumiere-default",
+      theme: toApiTheme(getTheme("lumiere-default")!),
+      themeConfig: {
+        heroStyle: "editorial",
+      },
+      themeMode: "dark",
+    });
+    expect(response.status).toBe(200);
+    expect(updateEventTheme).toHaveBeenCalledWith(eventId, {
+      selectedThemeId: "lumiere-default",
+      themeConfig: {
+        heroStyle: "editorial",
+      },
+      themeMode: "dark",
+    });
+  });
+
+  it("rejects theme updates that do not support the event type", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { themeSectionStore, updateEventTheme } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventType: "kids_party",
+      },
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/theme`, {
+      body: JSON.stringify({
+        selectedThemeId: "premium",
+        themeConfig: {},
+        themeMode: "light",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "unsupported-theme-request-id",
+      },
+      method: "PUT",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Theme does not support this event type",
+        requestId: "unsupported-theme-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "Premium does not support kids_party events",
+      path: ["selectedThemeId"],
+    });
+    expect(updateEventTheme).not.toHaveBeenCalled();
+  });
+
+  it("returns ordered configured sections after enforcing manager access", async () => {
+    const laterSection = {
+      ...baseSection,
+      id: "00000000-0000-4000-8000-000000000202",
+      sectionKey: "date",
+      sectionType: "date",
+      sortOrder: 1,
+      content: {
+        startsAt: "2026-12-01T11:00:00.000Z",
+        timezone: "Asia/Singapore",
+      },
+    } as const;
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { listSections, themeSectionStore } = createTestThemeSectionStore({
+      sections: [baseSection, laterSection],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      sections: [baseSection, laterSection],
+    });
+    expect(response.status).toBe(200);
+    expect(listSections).toHaveBeenCalledWith(eventId);
+  });
+
+  it("validates and replaces configured sections", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { replaceSections, themeSectionStore } = createTestThemeSectionStore({
+      sections: [baseSection],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              title: "Launch Night",
+            },
+            sectionKey: "welcome",
+            sectionType: "introduction",
+            settings: {},
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "PUT",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      sections: [baseSection],
+    });
+    expect(response.status).toBe(200);
+    expect(replaceSections).toHaveBeenCalledWith(eventId, [
+      {
+        content: {
+          title: "Launch Night",
+        },
+        enabled: true,
+        sectionKey: "welcome",
+        sectionType: "introduction",
+        settings: {},
+        sortOrder: 0,
+        visibility: "public",
+      },
+    ]);
+  });
+
+  it("rejects sections that violate registry schemas", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { replaceSections, themeSectionStore } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventType: "dinner",
+        selectedThemeId: "premium",
+        themeMode: "light",
+      },
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              title: "RSVP",
+            },
+            sectionKey: "rsvp",
+            sectionType: "rsvp",
+            settings: {},
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "invalid-section-request-id",
+      },
+      method: "PUT",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid event sections",
+        requestId: "invalid-section-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "RSVP sections cannot be public",
+      path: ["sections", 0],
+    });
+    expect(replaceSections).not.toHaveBeenCalled();
+  });
 });
 
 function loadTestConfig() {
@@ -635,6 +975,35 @@ function createTestEventStore({
     getEvent,
     listManagedEvents,
     updateEvent,
+  };
+}
+
+function createTestThemeSectionStore({
+  sections = [baseSection],
+  themeState = baseThemeState,
+  updatedThemeState = themeState,
+}: {
+  sections?: Awaited<ReturnType<ThemeSectionStore["listSections"]>>;
+  themeState?: EventThemeState | null;
+  updatedThemeState?: EventThemeState | null;
+} = {}) {
+  const getEventTheme = vi.fn(async () => themeState);
+  const listSections = vi.fn(async () => sections);
+  const replaceSections = vi.fn(async () => sections);
+  const updateEventTheme = vi.fn(async () => updatedThemeState);
+  const themeSectionStore: ThemeSectionStore = {
+    getEventTheme,
+    listSections,
+    replaceSections,
+    updateEventTheme,
+  };
+
+  return {
+    getEventTheme,
+    listSections,
+    replaceSections,
+    themeSectionStore,
+    updateEventTheme,
   };
 }
 

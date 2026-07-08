@@ -7,23 +7,30 @@ import { ApiHttpError, createApiError } from "./errors";
 import type { EventStore } from "./events";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
+import type { ThemeSectionStore } from "./theme-sections";
 import type { AuthStore } from "./auth";
 
 export type CreateAppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
   eventStore?: EventStore;
+  themeSectionStore?: ThemeSectionStore;
 };
 
 const resolveRequestId = (context: Context<ApiBindings>) => context.get("requestId") || "unknown";
 
-export const createApp = ({ authStore, config, eventStore }: CreateAppOptions) => {
+export const createApp = ({
+  authStore,
+  config,
+  eventStore,
+  themeSectionStore,
+}: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
 
   app.use("*", secureHeaders());
   app.use("*", requestIdMiddleware());
 
-  app.route("/", createRoutes({ authStore, config, eventStore }));
+  app.route("/", createRoutes({ authStore, config, eventStore, themeSectionStore }));
 
   app.notFound((context) =>
     context.json(createApiError("NOT_FOUND", "Route not found", resolveRequestId(context)), 404),

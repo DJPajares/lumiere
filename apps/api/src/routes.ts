@@ -1,9 +1,14 @@
 import type { ApiEnv } from "@lumiere/config";
+import { availableThemes, getTheme, isThemeId, validateThemeSections } from "@lumiere/themes";
 import {
   byEventIdParamsSchema,
   eventCreateRequestSchema,
+  eventSectionsUpdateRequestSchema,
+  eventThemeUpdateRequestSchema,
   eventUpdateRequestSchema,
   managerRoleSchema,
+  type EventType,
+  type ThemeMode,
 } from "@lumiere/types";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 
@@ -11,11 +16,13 @@ import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
 import type { ApiBindings } from "./request-context";
+import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 
 export type AppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
   eventStore?: EventStore;
+  themeSectionStore?: ThemeSectionStore;
 };
 
 type ValidationIssue = {
@@ -37,7 +44,7 @@ type SafeParseSchema<TOutput> = {
       };
 };
 
-export const createRoutes = ({ authStore, config, eventStore }: AppOptions) => {
+export const createRoutes = ({ authStore, config, eventStore, themeSectionStore }: AppOptions) => {
   const routes = new Hono<ApiBindings>();
 
   routes.get("/health", (context) =>
@@ -55,6 +62,24 @@ export const createRoutes = ({ authStore, config, eventStore }: AppOptions) => {
     }
 
     throw new ApiHttpError("BAD_REQUEST", "Test error");
+  });
+
+  routes.get("/themes", (context) =>
+    context.json({
+      themes: availableThemes.map(toApiTheme),
+    }),
+  );
+
+  routes.get("/themes/:themeId", (context) => {
+    const theme = getTheme(context.req.param("themeId"));
+
+    if (!theme) {
+      throw new ApiHttpError("NOT_FOUND", "Theme not found");
+    }
+
+    return context.json({
+      theme: toApiTheme(theme),
+    });
   });
 
   routes.get("/events", requireManagerAuth({ authStore, config }), async (context) => {
@@ -142,6 +167,162 @@ export const createRoutes = ({ authStore, config, eventStore }: AppOptions) => {
   });
 
   routes.get(
+    "/events/:eventId/theme",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const state = await stores.themeSectionStore.getEventTheme(eventId);
+
+      if (!state) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      const theme = state.selectedThemeId ? getTheme(state.selectedThemeId) : undefined;
+
+      return context.json({
+        selectedThemeId: state.selectedThemeId,
+        theme: theme ? toApiTheme(theme) : undefined,
+        themeConfig: state.themeConfig,
+        themeMode: state.themeMode,
+      });
+    },
+  );
+
+  routes.put(
+    "/events/:eventId/theme",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const input = await parseJsonBody(context, eventThemeUpdateRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+
+      const currentThemeState = await stores.themeSectionStore.getEventTheme(eventId);
+
+      if (!currentThemeState) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      const theme = getTheme(input.selectedThemeId);
+
+      if (!theme) {
+        throw new ApiHttpError("NOT_FOUND", "Theme not found");
+      }
+
+      assertThemeCanBeApplied({
+        eventType: currentThemeState.eventType,
+        theme,
+        themeMode: input.themeMode,
+      });
+
+      const state = await stores.themeSectionStore.updateEventTheme(eventId, input);
+
+      if (!state) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      return context.json({
+        selectedThemeId: state.selectedThemeId,
+        theme: toApiTheme(theme),
+        themeConfig: state.themeConfig,
+        themeMode: state.themeMode,
+      });
+    },
+  );
+
+  routes.get(
+    "/events/:eventId/sections",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const sections = await stores.themeSectionStore.listSections(eventId);
+
+      return context.json({
+        sections,
+      });
+    },
+  );
+
+  routes.put(
+    "/events/:eventId/sections",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const input = await parseJsonBody(context, eventSectionsUpdateRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const state = await stores.themeSectionStore.getEventTheme(eventId);
+
+      if (!state) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      if (!state.selectedThemeId || !isThemeId(state.selectedThemeId)) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Select a valid theme before updating sections");
+      }
+
+      const theme = getTheme(state.selectedThemeId);
+
+      if (!theme) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Select a valid theme before updating sections");
+      }
+
+      assertThemeCanBeApplied({
+        eventType: state.eventType,
+        theme,
+        themeMode: state.themeMode,
+      });
+
+      const validationResults = validateThemeSections(state.selectedThemeId, input.sections);
+      const invalidSectionFields = validationResults.flatMap((result, index) =>
+        result.ok
+          ? []
+          : result.issues.map((message) => ({
+              message,
+              path: ["sections", index],
+            })),
+      );
+
+      if (invalidSectionFields.length > 0) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Invalid event sections", {
+          fields: invalidSectionFields,
+        });
+      }
+
+      const sections = await stores.themeSectionStore.replaceSections(
+        eventId,
+        validationResults.flatMap((result) => (result.ok ? [result.section] : [])),
+      );
+
+      return context.json({
+        sections,
+      });
+    },
+  );
+
+  routes.get(
     "/__test/manager/me",
     requireTestMode(config),
     requireManagerAuth({ authStore, config }),
@@ -226,6 +407,31 @@ const requireManagerStores = ({
   };
 };
 
+const requireThemeSectionStore = (themeSectionStore: ThemeSectionStore | undefined) => {
+  if (!themeSectionStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Theme section store is not configured");
+  }
+
+  return themeSectionStore;
+};
+
+const requireManagerConfigurationStores = ({
+  authStore,
+  themeSectionStore,
+}: {
+  authStore: AuthStore | undefined;
+  themeSectionStore: ThemeSectionStore | undefined;
+}) => {
+  if (!authStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Auth store is not configured");
+  }
+
+  return {
+    authStore,
+    themeSectionStore: requireThemeSectionStore(themeSectionStore),
+  };
+};
+
 const parseEventIdParam = (eventId: string | undefined) => {
   const result = byEventIdParamsSchema.safeParse({
     eventId,
@@ -268,3 +474,35 @@ const zodIssuesToFieldErrors = (issues: ValidationIssue[]) =>
     message: issue.message,
     path: issue.path.map((part) => (typeof part === "number" ? part : String(part))),
   }));
+
+const assertThemeCanBeApplied = ({
+  eventType,
+  theme,
+  themeMode,
+}: {
+  eventType: EventType;
+  theme: NonNullable<ReturnType<typeof getTheme>>;
+  themeMode: ThemeMode;
+}) => {
+  if (!theme.supportedEventTypes.includes(eventType)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Theme does not support this event type", {
+      fields: [
+        {
+          message: `${theme.label} does not support ${eventType} events`,
+          path: ["selectedThemeId"],
+        },
+      ],
+    });
+  }
+
+  if (!theme.supportedModes.includes(themeMode)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Theme does not support this mode", {
+      fields: [
+        {
+          message: `${theme.label} does not support ${themeMode} mode`,
+          path: ["themeMode"],
+        },
+      ],
+    });
+  }
+};

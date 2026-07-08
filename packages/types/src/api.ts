@@ -11,6 +11,7 @@ import {
   guestGroupSchema,
   rsvpResponseSchema,
   rsvpSubmissionSchema,
+  themeSchema,
 } from "./domain";
 import { idSchema, nonEmptyStringSchema } from "./primitives";
 
@@ -73,6 +74,24 @@ export type EventSectionsResponse = z.infer<typeof eventSectionsResponseSchema>;
 
 export const eventThemeUpdateRequestSchema = eventThemeUpdateSchema;
 export type EventThemeUpdateRequest = z.input<typeof eventThemeUpdateRequestSchema>;
+
+export const themeResponseSchema = z.object({
+  theme: themeSchema,
+});
+export type ThemeResponse = z.infer<typeof themeResponseSchema>;
+
+export const themesResponseSchema = z.object({
+  themes: z.array(themeSchema),
+});
+export type ThemesResponse = z.infer<typeof themesResponseSchema>;
+
+export const eventThemeResponseSchema = z.object({
+  selectedThemeId: themeSchema.shape.id.optional(),
+  theme: themeSchema.optional(),
+  themeConfig: eventSchema.shape.themeConfig,
+  themeMode: eventSchema.shape.themeMode,
+});
+export type EventThemeResponse = z.infer<typeof eventThemeResponseSchema>;
 
 export const guestGroupMutationRequestSchema = guestGroupMutationSchema;
 export type GuestGroupMutationRequest = z.input<typeof guestGroupMutationRequestSchema>;

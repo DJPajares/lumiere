@@ -5,6 +5,7 @@ import { serve } from "@hono/node-server";
 import { createDrizzleAuthStore } from "./auth";
 import { createApp } from "./app";
 import { createDrizzleEventStore } from "./events";
+import { createDrizzleThemeSectionStore } from "./theme-sections";
 
 export function loadApiConfig() {
   try {
@@ -20,7 +21,8 @@ export function startApiServer() {
   const db = createDatabase(client);
   const authStore = createDrizzleAuthStore(db);
   const eventStore = createDrizzleEventStore(db);
-  const app = createApp({ authStore, config, eventStore });
+  const themeSectionStore = createDrizzleThemeSectionStore(db);
+  const app = createApp({ authStore, config, eventStore, themeSectionStore });
 
   return serve(
     {
