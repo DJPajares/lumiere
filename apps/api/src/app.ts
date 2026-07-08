@@ -6,6 +6,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { ApiHttpError, createApiError } from "./errors";
 import type { EventStore } from "./events";
 import type { GuestGroupStore } from "./guest-groups";
+import type { PublicInviteStore } from "./public-invites";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
 import type { ThemeSectionStore } from "./theme-sections";
@@ -16,6 +17,7 @@ export type CreateAppOptions = {
   config: ApiEnv;
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
+  publicInviteStore?: PublicInviteStore;
   themeSectionStore?: ThemeSectionStore;
 };
 
@@ -26,6 +28,7 @@ export const createApp = ({
   config,
   eventStore,
   guestGroupStore,
+  publicInviteStore,
   themeSectionStore,
 }: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
@@ -35,7 +38,14 @@ export const createApp = ({
 
   app.route(
     "/",
-    createRoutes({ authStore, config, eventStore, guestGroupStore, themeSectionStore }),
+    createRoutes({
+      authStore,
+      config,
+      eventStore,
+      guestGroupStore,
+      publicInviteStore,
+      themeSectionStore,
+    }),
   );
 
   app.notFound((context) =>

@@ -149,7 +149,7 @@ export const toApiTheme = (theme: ThemeDefinition): Theme => ({
   version: "0.0.0",
 });
 
-const toApiEventSection = (section: EventSectionRow): EventSection => ({
+export const toApiEventSection = (section: EventSectionRow): EventSection => ({
   content: section.contentJson as EventSection["content"],
   createdAt: section.createdAt,
   enabled: section.enabled,

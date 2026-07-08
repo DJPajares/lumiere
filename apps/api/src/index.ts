@@ -6,6 +6,7 @@ import { createDrizzleAuthStore } from "./auth";
 import { createApp } from "./app";
 import { createDrizzleEventStore } from "./events";
 import { createDrizzleGuestGroupStore } from "./guest-groups";
+import { createDrizzlePublicInviteStore } from "./public-invites";
 import { createDrizzleThemeSectionStore } from "./theme-sections";
 
 export function loadApiConfig() {
@@ -23,12 +24,14 @@ export function startApiServer() {
   const authStore = createDrizzleAuthStore(db);
   const eventStore = createDrizzleEventStore(db);
   const guestGroupStore = createDrizzleGuestGroupStore(db);
+  const publicInviteStore = createDrizzlePublicInviteStore(db);
   const themeSectionStore = createDrizzleThemeSectionStore(db);
   const app = createApp({
     authStore,
     config,
     eventStore,
     guestGroupStore,
+    publicInviteStore,
     themeSectionStore,
   });
 

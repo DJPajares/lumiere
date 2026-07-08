@@ -138,3 +138,43 @@ export const guestInviteParamsSchema = publicEventParamsSchema.extend({
   guestToken: nonEmptyStringSchema.min(16),
 });
 export type GuestInviteParams = z.infer<typeof guestInviteParamsSchema>;
+
+export const publicEventSummarySchema = z.object({
+  id: eventSchema.shape.id,
+  slug: eventSchema.shape.slug,
+  title: eventSchema.shape.title,
+  eventType: eventSchema.shape.eventType,
+  status: eventSchema.shape.status,
+  timezone: eventSchema.shape.timezone,
+  startsAt: eventSchema.shape.startsAt,
+  endsAt: eventSchema.shape.endsAt,
+  venueName: eventSchema.shape.venueName,
+  venueAddress: eventSchema.shape.venueAddress,
+  publicSettings: eventSchema.shape.publicSettings,
+});
+export type PublicEventSummary = z.infer<typeof publicEventSummarySchema>;
+
+export const publicEventResponseSchema = z.object({
+  event: publicEventSummarySchema,
+  selectedThemeId: themeSchema.shape.id.optional(),
+  theme: themeSchema.optional(),
+  themeConfig: eventSchema.shape.themeConfig,
+  themeMode: eventSchema.shape.themeMode,
+  sections: z.array(eventSectionSchema),
+});
+export type PublicEventResponse = z.infer<typeof publicEventResponseSchema>;
+
+export const publicGuestContextSchema = z.object({
+  guestGroup: z.object({
+    label: guestGroupSchema.shape.label,
+    maxPax: guestGroupSchema.shape.maxPax,
+    status: guestGroupSchema.shape.status,
+  }),
+  responseStatus: rsvpResponseSchema.shape.responseStatus.nullable(),
+});
+export type PublicGuestContext = z.infer<typeof publicGuestContextSchema>;
+
+export const publicGuestInviteResponseSchema = publicEventResponseSchema.extend({
+  guest: publicGuestContextSchema,
+});
+export type PublicGuestInviteResponse = z.infer<typeof publicGuestInviteResponseSchema>;

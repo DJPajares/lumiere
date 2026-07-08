@@ -2,6 +2,7 @@ import { getTheme } from "@lumiere/themes";
 import type {
   Event,
   EventCreate,
+  EventSection,
   EventUpdate,
   GuestGroup,
   GuestGroupMutation,
@@ -17,6 +18,11 @@ import type { EventStore } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
 import { loadApiConfig } from "./index";
+import type {
+  PublicEventRecord,
+  PublicGuestInviteRecord,
+  PublicInviteStore,
+} from "./public-invites";
 import type { EventThemeState, ThemeSectionStore } from "./theme-sections";
 import { toApiTheme } from "./theme-sections";
 
@@ -104,6 +110,55 @@ const baseSection = {
   createdAt: "2026-07-08T00:00:00.000Z",
   updatedAt: "2026-07-08T00:00:00.000Z",
 } as const;
+
+const guestOnlyRsvpSection: EventSection = {
+  id: "00000000-0000-4000-8000-000000000203",
+  eventId,
+  sectionType: "rsvp",
+  sectionKey: "rsvp",
+  sortOrder: 2,
+  visibility: "guest_only",
+  enabled: true,
+  content: {
+    title: "RSVP",
+  },
+  settings: {},
+  createdAt: "2026-07-08T00:00:00.000Z",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+};
+
+const publicEventRecord: PublicEventRecord = {
+  event: {
+    id: eventId,
+    slug: baseEvent.slug,
+    title: baseEvent.title,
+    eventType: baseEvent.eventType,
+    status: "published",
+    timezone: baseEvent.timezone,
+    startsAt: baseEvent.startsAt,
+    endsAt: undefined,
+    venueName: baseEvent.venueName,
+    venueAddress: baseEvent.venueAddress,
+    publicSettings: {},
+  },
+  selectedThemeId: "lumiere-default",
+  sections: [baseSection],
+  themeConfig: {},
+  themeMode: "system",
+};
+
+const publicGuestInviteRecord: PublicGuestInviteRecord = {
+  ...publicEventRecord,
+  guest: {
+    guestGroup: {
+      label: baseGuestGroup.label,
+      maxPax: baseGuestGroup.maxPax,
+      status: "pending",
+    },
+    responseStatus: null,
+  },
+  sections: [baseSection, guestOnlyRsvpSection],
+};
 
 describe("API config", () => {
   afterEach(() => {
@@ -1210,6 +1265,162 @@ describe("API app", () => {
     expect(response.status).toBe(403);
     expect(createGuestGroup).not.toHaveBeenCalled();
   });
+
+  it("returns published public event data without guest or manager-only fields", async () => {
+    const { getPublicEventBySlug, publicInviteStore } = createTestPublicInviteStore();
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const response = await app.request(`/public/events/${baseEvent.slug}`);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      event: publicEventRecord.event,
+      selectedThemeId: "lumiere-default",
+      theme: toApiTheme(getTheme("lumiere-default")!),
+      themeConfig: {},
+      themeMode: "system",
+      sections: [baseSection],
+    });
+    expect(JSON.stringify(body)).not.toContain("ownerUserId");
+    expect(JSON.stringify(body)).not.toContain(baseGuestGroup.label);
+    expect(getPublicEventBySlug).toHaveBeenCalledWith(baseEvent.slug);
+  });
+
+  it("returns 404 for unpublished or archived public events", async () => {
+    const { publicInviteStore } = createTestPublicInviteStore({
+      publicEvent: null,
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const response = await app.request(`/public/events/${baseEvent.slug}`, {
+      headers: {
+        "x-request-id": "unpublished-public-event-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "Public event not found",
+        requestId: "unpublished-public-event-request-id",
+      },
+    });
+    expect(response.status).toBe(404);
+  });
+
+  it("does not return hidden or guest-only sections for generic public events", async () => {
+    const { publicInviteStore } = createTestPublicInviteStore({
+      publicEvent: {
+        ...publicEventRecord,
+        sections: [baseSection],
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const response = await app.request(`/public/events/${baseEvent.slug}`);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.sections).toEqual([baseSection]);
+    expect(body.sections).not.toContainEqual(
+      expect.objectContaining({
+        visibility: "hidden",
+      }),
+    );
+    expect(body.sections).not.toContainEqual(
+      expect.objectContaining({
+        visibility: "guest_only",
+      }),
+    );
+  });
+
+  it("validates guest token and returns personalized RSVP context", async () => {
+    const guestToken = "guest-token-for-public-route";
+    const { getPublicGuestInvite, publicInviteStore } = createTestPublicInviteStore();
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const response = await app.request(`/public/events/${baseEvent.slug}/guest/${guestToken}`);
+
+    await expect(response.json()).resolves.toEqual({
+      event: publicGuestInviteRecord.event,
+      selectedThemeId: "lumiere-default",
+      theme: toApiTheme(getTheme("lumiere-default")!),
+      themeConfig: {},
+      themeMode: "system",
+      sections: [baseSection, guestOnlyRsvpSection],
+      guest: publicGuestInviteRecord.guest,
+    });
+    expect(response.status).toBe(200);
+    expect(getPublicGuestInvite).toHaveBeenCalledWith({
+      eventSlug: baseEvent.slug,
+      inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
+    });
+  });
+
+  it("returns 404 for invalid guest tokens", async () => {
+    const { getPublicGuestInvite, publicInviteStore } = createTestPublicInviteStore({
+      guestInvite: null,
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const guestToken = "invalid-token-for-public-route";
+    const response = await app.request(`/public/events/${baseEvent.slug}/guest/${guestToken}`, {
+      headers: {
+        "x-request-id": "invalid-guest-token-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "Guest invite not found",
+        requestId: "invalid-guest-token-request-id",
+      },
+    });
+    expect(response.status).toBe(404);
+    expect(getPublicGuestInvite).toHaveBeenCalledWith({
+      eventSlug: baseEvent.slug,
+      inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
+    });
+  });
+
+  it("returns 403 for disabled guest invites", async () => {
+    const { publicInviteStore } = createTestPublicInviteStore({
+      guestInvite: "disabled",
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      publicInviteStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/disabled-token-for-public-route`,
+      {
+        headers: {
+          "x-request-id": "disabled-guest-token-request-id",
+        },
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: "Guest invite is disabled",
+        requestId: "disabled-guest-token-request-id",
+      },
+    });
+    expect(response.status).toBe(403);
+  });
 });
 
 function loadTestConfig() {
@@ -1362,6 +1573,27 @@ function createTestGuestGroupStore({
     listGuestGroups,
     regenerateInvite,
     updateGuestGroup,
+  };
+}
+
+function createTestPublicInviteStore({
+  guestInvite = publicGuestInviteRecord,
+  publicEvent = publicEventRecord,
+}: {
+  guestInvite?: PublicGuestInviteRecord | "disabled" | null;
+  publicEvent?: PublicEventRecord | null;
+} = {}) {
+  const getPublicEventBySlug = vi.fn(async () => publicEvent);
+  const getPublicGuestInvite = vi.fn(async () => guestInvite);
+  const publicInviteStore: PublicInviteStore = {
+    getPublicEventBySlug,
+    getPublicGuestInvite,
+  };
+
+  return {
+    getPublicEventBySlug,
+    getPublicGuestInvite,
+    publicInviteStore,
   };
 }
 

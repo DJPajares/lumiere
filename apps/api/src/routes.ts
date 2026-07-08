@@ -8,7 +8,9 @@ import {
   eventThemeUpdateRequestSchema,
   eventUpdateRequestSchema,
   guestGroupMutationRequestSchema,
+  guestInviteParamsSchema,
   managerRoleSchema,
+  publicEventParamsSchema,
   type EventType,
   type ThemeMode,
 } from "@lumiere/types";
@@ -22,7 +24,13 @@ import {
   generateInvite,
   type GuestGroupStore,
   type InviteTokenRecord,
+  hashInviteToken,
 } from "./guest-groups";
+import type {
+  PublicEventRecord,
+  PublicGuestInviteRecord,
+  PublicInviteStore,
+} from "./public-invites";
 import type { ApiBindings } from "./request-context";
 import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 
@@ -31,6 +39,7 @@ export type AppOptions = {
   config: ApiEnv;
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
+  publicInviteStore?: PublicInviteStore;
   themeSectionStore?: ThemeSectionStore;
 };
 
@@ -58,6 +67,7 @@ export const createRoutes = ({
   config,
   eventStore,
   guestGroupStore,
+  publicInviteStore,
   themeSectionStore,
 }: AppOptions) => {
   const routes = new Hono<ApiBindings>();
@@ -95,6 +105,40 @@ export const createRoutes = ({
     return context.json({
       theme: toApiTheme(theme),
     });
+  });
+
+  routes.get("/public/events/:eventSlug", async (context) => {
+    const store = requirePublicInviteStore(publicInviteStore);
+    const { eventSlug } = parsePublicEventParams(context.req.param("eventSlug"));
+    const publicEvent = await store.getPublicEventBySlug(eventSlug);
+
+    if (!publicEvent) {
+      throw new ApiHttpError("NOT_FOUND", "Public event not found");
+    }
+
+    return context.json(toPublicEventResponse(publicEvent));
+  });
+
+  routes.get("/public/events/:eventSlug/guest/:guestToken", async (context) => {
+    const store = requirePublicInviteStore(publicInviteStore);
+    const { eventSlug, guestToken } = parseGuestInviteParams({
+      eventSlug: context.req.param("eventSlug"),
+      guestToken: context.req.param("guestToken"),
+    });
+    const publicGuestInvite = await store.getPublicGuestInvite({
+      eventSlug,
+      inviteTokenHash: hashInviteToken(guestToken, config.INVITE_TOKEN_SECRET),
+    });
+
+    if (!publicGuestInvite) {
+      throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
+    }
+
+    if (publicGuestInvite === "disabled") {
+      throw new ApiHttpError("FORBIDDEN", "Guest invite is disabled");
+    }
+
+    return context.json(toPublicGuestInviteResponse(publicGuestInvite));
   });
 
   routes.get("/events", requireManagerAuth({ authStore, config }), async (context) => {
@@ -612,6 +656,14 @@ const requireGuestGroupStore = (guestGroupStore: GuestGroupStore | undefined) =>
   return guestGroupStore;
 };
 
+const requirePublicInviteStore = (publicInviteStore: PublicInviteStore | undefined) => {
+  if (!publicInviteStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Public invite store is not configured");
+  }
+
+  return publicInviteStore;
+};
+
 const requireManagerGuestGroupStores = ({
   authStore,
   eventStore,
@@ -653,6 +705,41 @@ const parseEventAndGuestGroupIdParams = ({
 
   if (!result.success) {
     throw new ApiHttpError("VALIDATION_ERROR", "Invalid guest group ID", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const parsePublicEventParams = (eventSlug: string | undefined) => {
+  const result = publicEventParamsSchema.safeParse({
+    eventSlug,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid event slug", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const parseGuestInviteParams = ({
+  eventSlug,
+  guestToken,
+}: {
+  eventSlug: string | undefined;
+  guestToken: string | undefined;
+}) => {
+  const result = guestInviteParamsSchema.safeParse({
+    eventSlug,
+    guestToken,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid guest invite", {
       fields: zodIssuesToFieldErrors(result.error.issues),
     });
   }
@@ -727,4 +814,22 @@ const toInviteTokenRecord = ({
 }: InviteTokenRecord): InviteTokenRecord => ({
   inviteCode,
   inviteTokenHash,
+});
+
+const toPublicEventResponse = (publicEvent: PublicEventRecord) => {
+  const theme = publicEvent.selectedThemeId ? getTheme(publicEvent.selectedThemeId) : undefined;
+
+  return {
+    event: publicEvent.event,
+    selectedThemeId: publicEvent.selectedThemeId,
+    theme: theme ? toApiTheme(theme) : undefined,
+    themeConfig: publicEvent.themeConfig,
+    themeMode: publicEvent.themeMode,
+    sections: publicEvent.sections,
+  };
+};
+
+const toPublicGuestInviteResponse = (publicGuestInvite: PublicGuestInviteRecord) => ({
+  ...toPublicEventResponse(publicGuestInvite),
+  guest: publicGuestInvite.guest,
 });
