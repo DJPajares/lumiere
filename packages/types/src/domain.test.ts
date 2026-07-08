@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   apiErrorSchema,
   eventCreateSchema,
+  eventUpdateSchema,
   eventSectionsUpdateSchema,
   guestGroupMutationSchema,
   rsvpSubmissionSchema,
@@ -39,6 +40,18 @@ describe("shared schemas", () => {
         endsAt: "2026-12-24T17:30:00+08:00",
       }),
     ).toThrow();
+  });
+
+  it("validates event update input without defaulting omitted metadata", () => {
+    expect(
+      eventUpdateSchema.parse({
+        title: "Updated dinner",
+      }),
+    ).toEqual({
+      title: "Updated dinner",
+    });
+
+    expect(() => eventUpdateSchema.parse({})).toThrow("At least one event field is required");
   });
 
   it("rejects duplicate section keys", () => {

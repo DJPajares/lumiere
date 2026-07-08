@@ -73,6 +73,57 @@ export const eventCreateSchema = z
 export type EventCreateInput = z.input<typeof eventCreateSchema>;
 export type EventCreate = z.output<typeof eventCreateSchema>;
 
+export const eventUpdateSchema = z
+  .object({
+    slug: slugSchema.optional(),
+    title: nonEmptyStringSchema.max(160).optional(),
+    status: eventStatusSchema.optional(),
+    timezone: timezoneSchema.optional(),
+    startsAt: isoDateTimeSchema.optional(),
+    endsAt: isoDateTimeSchema.optional(),
+    venueName: z
+      .string()
+      .trim()
+      .max(160)
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
+    venueAddress: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
+    selectedThemeId: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
+    themeMode: themeModeSchema.optional(),
+    publicSettings: jsonObjectSchema.optional(),
+    rsvpSettings: jsonObjectSchema.optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (Object.keys(value).length === 0) {
+      context.addIssue({
+        code: "custom",
+        path: [],
+        message: "At least one event field is required",
+      });
+    }
+
+    if (value.endsAt && value.startsAt && Date.parse(value.endsAt) <= Date.parse(value.startsAt)) {
+      context.addIssue({
+        code: "custom",
+        path: ["endsAt"],
+        message: "Event end time must be after start time",
+      });
+    }
+  });
+export type EventUpdateInput = z.input<typeof eventUpdateSchema>;
+export type EventUpdate = z.output<typeof eventUpdateSchema>;
+
 export const eventManagerSchema = z.object({
   id: idSchema,
   eventId: idSchema,

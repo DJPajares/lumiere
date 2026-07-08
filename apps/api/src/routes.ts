@@ -1,17 +1,43 @@
 import type { ApiEnv } from "@lumiere/config";
-import { managerRoleSchema } from "@lumiere/types";
-import { Hono, type MiddlewareHandler } from "hono";
+import {
+  byEventIdParamsSchema,
+  eventCreateRequestSchema,
+  eventUpdateRequestSchema,
+  managerRoleSchema,
+} from "@lumiere/types";
+import { Hono, type Context, type MiddlewareHandler } from "hono";
 
 import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
 import { ApiHttpError } from "./errors";
+import type { EventStore } from "./events";
 import type { ApiBindings } from "./request-context";
 
 export type AppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
+  eventStore?: EventStore;
 };
 
-export const createRoutes = ({ authStore, config }: AppOptions) => {
+type ValidationIssue = {
+  message: string;
+  path: readonly PropertyKey[];
+};
+
+type SafeParseSchema<TOutput> = {
+  safeParse(value: unknown):
+    | {
+        data: TOutput;
+        success: true;
+      }
+    | {
+        error: {
+          issues: ValidationIssue[];
+        };
+        success: false;
+      };
+};
+
+export const createRoutes = ({ authStore, config, eventStore }: AppOptions) => {
   const routes = new Hono<ApiBindings>();
 
   routes.get("/health", (context) =>
@@ -29,6 +55,90 @@ export const createRoutes = ({ authStore, config }: AppOptions) => {
     }
 
     throw new ApiHttpError("BAD_REQUEST", "Test error");
+  });
+
+  routes.get("/events", requireManagerAuth({ authStore, config }), async (context) => {
+    const store = requireEventStore(eventStore);
+    const manager = context.get("manager");
+    const events = await store.listManagedEvents(manager.user.id);
+
+    return context.json({
+      events,
+    });
+  });
+
+  routes.post("/events", requireManagerAuth({ authStore, config }), async (context) => {
+    const store = requireEventStore(eventStore);
+    const manager = context.get("manager");
+    const input = await parseJsonBody(context, eventCreateRequestSchema);
+    const event = await store.createEvent(manager.user.id, input);
+
+    return context.json(
+      {
+        event,
+      },
+      201,
+    );
+  });
+
+  routes.get("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
+    const stores = requireManagerStores({ authStore, eventStore });
+    const eventId = parseEventIdParam(context.req.param("eventId"));
+    await assertEventAccess({
+      authStore: stores.authStore,
+      eventId,
+      manager: context.get("manager"),
+    });
+    const event = await stores.eventStore.getEvent(eventId);
+
+    if (!event) {
+      throw new ApiHttpError("NOT_FOUND", "Event not found");
+    }
+
+    return context.json({
+      event,
+    });
+  });
+
+  routes.patch("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
+    const stores = requireManagerStores({ authStore, eventStore });
+    const eventId = parseEventIdParam(context.req.param("eventId"));
+    const input = await parseJsonBody(context, eventUpdateRequestSchema);
+    await assertEventAccess({
+      authStore: stores.authStore,
+      eventId,
+      manager: context.get("manager"),
+      minimumRole: "editor",
+    });
+    const event = await stores.eventStore.updateEvent(eventId, input);
+
+    if (!event) {
+      throw new ApiHttpError("NOT_FOUND", "Event not found");
+    }
+
+    return context.json({
+      event,
+    });
+  });
+
+  routes.delete("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
+    const stores = requireManagerStores({ authStore, eventStore });
+    const eventId = parseEventIdParam(context.req.param("eventId"));
+    await assertEventAccess({
+      authStore: stores.authStore,
+      eventId,
+      manager: context.get("manager"),
+      minimumRole: "owner",
+    });
+    const event = await stores.eventStore.archiveEvent(eventId);
+
+    if (!event) {
+      throw new ApiHttpError("NOT_FOUND", "Event not found");
+    }
+
+    return context.json({
+      event,
+    });
   });
 
   routes.get(
@@ -90,3 +200,71 @@ const requireTestMode = (config: ApiEnv): MiddlewareHandler<ApiBindings> => {
     await next();
   };
 };
+
+const requireEventStore = (eventStore: EventStore | undefined) => {
+  if (!eventStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Event store is not configured");
+  }
+
+  return eventStore;
+};
+
+const requireManagerStores = ({
+  authStore,
+  eventStore,
+}: {
+  authStore: AuthStore | undefined;
+  eventStore: EventStore | undefined;
+}) => {
+  if (!authStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Auth store is not configured");
+  }
+
+  return {
+    authStore,
+    eventStore: requireEventStore(eventStore),
+  };
+};
+
+const parseEventIdParam = (eventId: string | undefined) => {
+  const result = byEventIdParamsSchema.safeParse({
+    eventId,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid event ID", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data.eventId;
+};
+
+const parseJsonBody = async <TOutput>(
+  context: Context<ApiBindings>,
+  schema: SafeParseSchema<TOutput>,
+): Promise<TOutput> => {
+  let body: unknown;
+
+  try {
+    body = await context.req.json();
+  } catch {
+    throw new ApiHttpError("BAD_REQUEST", "Request body must be valid JSON");
+  }
+
+  const result = schema.safeParse(body);
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid request body", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const zodIssuesToFieldErrors = (issues: ValidationIssue[]) =>
+  issues.map((issue) => ({
+    message: issue.message,
+    path: issue.path.map((part) => (typeof part === "number" ? part : String(part))),
+  }));

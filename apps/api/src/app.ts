@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
 import { ApiHttpError, createApiError } from "./errors";
+import type { EventStore } from "./events";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
 import type { AuthStore } from "./auth";
@@ -11,17 +12,18 @@ import type { AuthStore } from "./auth";
 export type CreateAppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
+  eventStore?: EventStore;
 };
 
 const resolveRequestId = (context: Context<ApiBindings>) => context.get("requestId") || "unknown";
 
-export const createApp = ({ authStore, config }: CreateAppOptions) => {
+export const createApp = ({ authStore, config, eventStore }: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
 
   app.use("*", secureHeaders());
   app.use("*", requestIdMiddleware());
 
-  app.route("/", createRoutes({ authStore, config }));
+  app.route("/", createRoutes({ authStore, config, eventStore }));
 
   app.notFound((context) =>
     context.json(createApiError("NOT_FOUND", "Route not found", resolveRequestId(context)), 404),

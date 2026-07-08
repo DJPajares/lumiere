@@ -6,6 +6,7 @@ import {
   eventSectionSchema,
   eventSectionsUpdateSchema,
   eventThemeUpdateSchema,
+  eventUpdateSchema,
   guestGroupMutationSchema,
   guestGroupSchema,
   rsvpResponseSchema,
@@ -48,6 +49,19 @@ export const eventCreateResponseSchema = z.object({
   event: eventSchema,
 });
 export type EventCreateResponse = z.infer<typeof eventCreateResponseSchema>;
+
+export const eventUpdateRequestSchema = eventUpdateSchema;
+export type EventUpdateRequest = z.input<typeof eventUpdateRequestSchema>;
+
+export const eventResponseSchema = z.object({
+  event: eventSchema,
+});
+export type EventResponse = z.infer<typeof eventResponseSchema>;
+
+export const eventsListResponseSchema = z.object({
+  events: z.array(eventSchema),
+});
+export type EventsListResponse = z.infer<typeof eventsListResponseSchema>;
 
 export const eventSectionsUpdateRequestSchema = eventSectionsUpdateSchema;
 export type EventSectionsUpdateRequest = z.input<typeof eventSectionsUpdateRequestSchema>;

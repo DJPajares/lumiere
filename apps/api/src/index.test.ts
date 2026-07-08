@@ -1,9 +1,11 @@
-import type { ManagerRole } from "@lumiere/types";
+import type { Event, EventCreate, EventUpdate, ManagerRole } from "@lumiere/types";
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } from "./auth";
 import { createApp } from "./app";
+import { ApiHttpError } from "./errors";
+import type { EventStore } from "./events";
 import { loadApiConfig } from "./index";
 
 const validApiEnv = {
@@ -28,6 +30,27 @@ const localUser: LocalUser = {
 };
 
 const eventId = "00000000-0000-4000-8000-000000000101";
+
+const baseEvent: Event = {
+  id: eventId,
+  ownerUserId: localUser.id,
+  slug: "launch-night",
+  title: "Launch Night",
+  eventType: "launch",
+  status: "draft",
+  timezone: "Asia/Singapore",
+  startsAt: "2026-12-01T11:00:00.000Z",
+  endsAt: undefined,
+  venueName: "Lumiere Hall",
+  venueAddress: "1 Event Way",
+  selectedThemeId: undefined,
+  themeMode: "system",
+  themeConfig: {},
+  publicSettings: {},
+  rsvpSettings: {},
+  createdAt: "2026-07-08T00:00:00.000Z",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+};
 
 describe("API config", () => {
   afterEach(() => {
@@ -295,6 +318,246 @@ describe("API app", () => {
     });
     expect(response.status).toBe(404);
   });
+
+  it("lists only events managed by the authenticated user", async () => {
+    const { authStore } = createTestAuthStore();
+    const { eventStore, listManagedEvents } = createTestEventStore({
+      events: [baseEvent],
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events", {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      events: [baseEvent],
+    });
+    expect(response.status).toBe(200);
+    expect(listManagedEvents).toHaveBeenCalledWith(localUser.id);
+  });
+
+  it("creates an event for the authenticated manager", async () => {
+    const { authStore } = createTestAuthStore();
+    const createdEvent = {
+      ...baseEvent,
+      slug: "new-launch",
+      title: "New Launch",
+    };
+    const { createEvent, eventStore } = createTestEventStore({
+      createdEvent,
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events", {
+      body: JSON.stringify({
+        eventType: "launch",
+        slug: "new-launch",
+        startsAt: "2026-12-01T11:00:00.000Z",
+        timezone: "Asia/Singapore",
+        title: "New Launch",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      event: createdEvent,
+    });
+    expect(response.status).toBe(201);
+    expect(createEvent).toHaveBeenCalledWith(localUser.id, {
+      eventType: "launch",
+      publicSettings: {},
+      rsvpSettings: {},
+      slug: "new-launch",
+      startsAt: "2026-12-01T11:00:00.000Z",
+      themeMode: "system",
+      timezone: "Asia/Singapore",
+      title: "New Launch",
+    });
+  });
+
+  it("returns 409 when creating an event with a duplicate slug", async () => {
+    const { authStore } = createTestAuthStore();
+    const { eventStore } = createTestEventStore({
+      createError: new ApiHttpError("CONFLICT", "Event slug is already in use"),
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events", {
+      body: JSON.stringify({
+        eventType: "launch",
+        slug: "launch-night",
+        startsAt: "2026-12-01T11:00:00.000Z",
+        timezone: "Asia/Singapore",
+        title: "Launch Night",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "duplicate-slug-request-id",
+      },
+      method: "POST",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "CONFLICT",
+        message: "Event slug is already in use",
+        requestId: "duplicate-slug-request-id",
+      },
+    });
+    expect(response.status).toBe(409);
+  });
+
+  it("returns validation errors for invalid event create requests", async () => {
+    const { authStore } = createTestAuthStore();
+    const { createEvent, eventStore } = createTestEventStore();
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events", {
+      body: JSON.stringify({
+        eventType: "launch",
+        slug: "Launch Night",
+        startsAt: "2026-12-01T11:00:00.000Z",
+        timezone: "Asia/Singapore",
+        title: "Launch Night",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "invalid-create-request-id",
+      },
+      method: "POST",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid request body",
+        requestId: "invalid-create-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "Use lowercase letters, numbers, and hyphens",
+      path: ["slug"],
+    });
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("gets an event after enforcing manager access", async () => {
+    const { authStore, findEventAccess } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { eventStore, getEvent } = createTestEventStore({
+      events: [baseEvent],
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      event: baseEvent,
+    });
+    expect(response.status).toBe(200);
+    expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
+    expect(getEvent).toHaveBeenCalledWith(eventId);
+  });
+
+  it("updates an event when manager has editor access", async () => {
+    const updatedEvent = {
+      ...baseEvent,
+      title: "Updated Launch",
+      updatedAt: "2026-07-08T01:00:00.000Z",
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { eventStore, updateEvent } = createTestEventStore({
+      updatedEvent,
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        title: "Updated Launch",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      event: updatedEvent,
+    });
+    expect(response.status).toBe(200);
+    expect(updateEvent).toHaveBeenCalledWith(eventId, {
+      title: "Updated Launch",
+    });
+  });
+
+  it("blocks event updates when manager only has viewer access", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { eventStore, updateEvent } = createTestEventStore();
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        title: "Viewer Update",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "viewer-update-request-id",
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: "Manager does not have access to this event",
+        requestId: "viewer-update-request-id",
+      },
+    });
+    expect(response.status).toBe(403);
+    expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("archives an event instead of hard deleting it", async () => {
+    const archivedEvent = {
+      ...baseEvent,
+      status: "archived" as const,
+      updatedAt: "2026-07-08T02:00:00.000Z",
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("owner"),
+    });
+    const { archiveEvent, eventStore } = createTestEventStore({
+      archivedEvent,
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "DELETE",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      event: archivedEvent,
+    });
+    expect(response.status).toBe(200);
+    expect(archiveEvent).toHaveBeenCalledWith(eventId);
+  });
 });
 
 function loadTestConfig() {
@@ -324,6 +587,54 @@ function createTestAuthStore({
     authStore,
     findEventAccess,
     upsertUserProfile,
+  };
+}
+
+function createTestEventStore({
+  archivedEvent = {
+    ...baseEvent,
+    status: "archived",
+  } as Event,
+  createError,
+  createdEvent = baseEvent,
+  events = [baseEvent],
+  updatedEvent = baseEvent,
+}: {
+  archivedEvent?: Event | null;
+  createError?: Error;
+  createdEvent?: Event;
+  events?: Event[];
+  updatedEvent?: Event | null;
+} = {}) {
+  const archiveEvent = vi.fn(async () => archivedEvent);
+  const createEvent = vi.fn(async (_ownerUserId: string, _input: EventCreate) => {
+    if (createError) {
+      throw createError;
+    }
+
+    return createdEvent;
+  });
+  const getEvent = vi.fn(
+    async (requestedEventId: string) =>
+      events.find((event) => event.id === requestedEventId) ?? null,
+  );
+  const listManagedEvents = vi.fn(async () => events);
+  const updateEvent = vi.fn(async (_eventId: string, _input: EventUpdate) => updatedEvent);
+  const eventStore: EventStore = {
+    archiveEvent,
+    createEvent,
+    getEvent,
+    listManagedEvents,
+    updateEvent,
+  };
+
+  return {
+    archiveEvent,
+    createEvent,
+    eventStore,
+    getEvent,
+    listManagedEvents,
+    updateEvent,
   };
 }
 
