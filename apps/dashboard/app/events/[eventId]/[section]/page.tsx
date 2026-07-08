@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DashboardShell, eventTabs } from "../../../components/dashboard-shell";
 import { ManagementPlaceholder } from "../../../components/placeholder-panels";
 import { ProtectedDashboard } from "../../../components/protected-dashboard";
+import { GuestManagementWorkspace } from "./guest-management-workspace";
 import { SectionBuilderWorkspace } from "./section-builder-workspace";
 import { ThemeSelectorWorkspace } from "./theme-selector-workspace";
 
@@ -30,6 +31,8 @@ export default async function EventSectionPage({ params }: EventSectionPageProps
       >
         {section === "content" ? (
           <SectionBuilderWorkspace eventId={eventId} />
+        ) : section === "guests" ? (
+          <GuestManagementWorkspace eventId={eventId} />
         ) : section === "theme" ? (
           <ThemeSelectorWorkspace eventId={eventId} />
         ) : (

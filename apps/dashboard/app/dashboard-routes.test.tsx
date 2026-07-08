@@ -79,8 +79,8 @@ describe("dashboard routes", () => {
     const html = renderWithAuth(element);
 
     expect(html).toContain("Guests setup");
-    expect(html).toContain("Guests workspace placeholder");
-    expect(html).toContain("Reserved state treatment");
+    expect(html).toContain("Loading guest groups");
+    expect(html).toContain("/events/demo-event/guests");
   });
 
   it("adds the Supabase access token to authenticated API requests", async () => {
