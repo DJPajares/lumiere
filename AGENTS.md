@@ -48,7 +48,7 @@ Use only `backlog`, `todo`, `in-progress`, `done`, and `blocked`.
 - Prefer latest stable dependencies where practical.
 - Use TypeScript, Vitest, Prettier, and lint-staged where practical.
 - Do not add a component library unless justified by the task.
-- Use Tailwind CSS as styling foundation with semantic tokens.
+- Use Tailwind CSS as styling foundation with semantic tokens (be aware of lint suggestCanonicalClasses).
 - Keep `globals.css` simple.
 - Keep secrets server-side.
 
@@ -68,8 +68,7 @@ Run the narrowest useful checks first:
 After completing a task, report:
 
 - What changed
-- How it was verified
-- What to test next, if anything
+- How to check the changes (if possible)
 - Recommended next task
 - Suggested commit message
 
