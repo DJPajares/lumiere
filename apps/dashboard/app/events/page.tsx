@@ -1,12 +1,12 @@
 import { DashboardShell } from "../components/dashboard-shell";
-import { EventListPlaceholder } from "../components/placeholder-panels";
 import { ProtectedDashboard } from "../components/protected-dashboard";
+import { EventsWorkspace } from "./events-workspace";
 
 export default function EventsPage() {
   return (
     <ProtectedDashboard>
       <DashboardShell activePath="/events" title="Events">
-        <EventListPlaceholder />
+        <EventsWorkspace />
       </DashboardShell>
     </ProtectedDashboard>
   );

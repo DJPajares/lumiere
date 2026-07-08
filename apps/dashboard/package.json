@@ -11,13 +11,18 @@
     "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
+    "@lumiere/api-client": "workspace:*",
     "@lumiere/themes": "workspace:*",
+    "@lumiere/types": "workspace:*",
     "@supabase/supabase-js": "^2.110.1",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.3"
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^6.0.3",
+    "jsdom": "^29.1.1"
   }
 }

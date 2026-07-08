@@ -1,5 +1,7 @@
 "use client";
 
+import { createApiClient } from "@lumiere/api-client";
+
 import { readDashboardPublicEnv } from "./dashboard-env";
 
 export type DashboardApiFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -31,7 +33,14 @@ export function createDashboardApiClient(
     throw new Error("Dashboard API requests require a fetch implementation.");
   }
 
+  const typedClient = createApiClient({
+    authToken: () => getDashboardAccessToken(supabase),
+    baseUrl,
+    fetch: fetchImplementation,
+  });
+
   return {
+    ...typedClient,
     authorizedFetch: async (path: string, init: RequestInit = {}) => {
       const headers = new Headers(init.headers);
       const token = await getDashboardAccessToken(supabase);
