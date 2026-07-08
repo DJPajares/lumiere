@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "echo \"api dev server pending\"",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
     "lint": "echo \"lint pending for api\"",
     "typecheck": "tsc --noEmit",
@@ -11,7 +11,12 @@
     "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@lumiere/config": "workspace:*"
+    "@hono/node-server": "^2.0.8",
+    "@lumiere/config": "workspace:*",
+    "@lumiere/types": "workspace:*",
+    "hono": "^4.12.28"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "tsx": "^4.23.0"
+  }
 }

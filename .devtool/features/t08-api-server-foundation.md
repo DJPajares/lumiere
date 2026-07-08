@@ -1,16 +1,16 @@
 ---
-id: 't08-api-server-foundation'
-status: 'backlog'
-priority: 'high'
+id: "t08-api-server-foundation"
+status: "in-progress"
+priority: "high"
 assignee: null
-epic: 'api'
+epic: "api"
 dueDate: null
-created: '2026-07-07T00:00:00+08:00'
-modified: '2026-07-07T00:00:00+08:00'
+created: "2026-07-07T00:00:00+08:00"
+modified: "2026-07-08T08:16:44+08:00"
 completedAt: null
-labels: ['api', 'hono', 'foundation']
-depends_on: ['t02-tooling-quality-baseline', 't03-environment-config']
-order: 'a08'
+labels: ["api", "hono", "foundation"]
+depends_on: ["t02-tooling-quality-baseline", "t03-environment-config"]
+order: "a08"
 ---
 
 # t08-api-server-foundation - Hono API foundation
@@ -45,3 +45,4 @@ Keep route groups modular so later tasks can register event, public, RSVP, and t
 ## Progress Log
 
 - 2026-07-07T00:00:00+08:00: Task created.
+- 2026-07-08T08:16:44+08:00: Started Hono API foundation with health, request IDs, shared error responses, and tests.

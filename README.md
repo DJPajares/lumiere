@@ -116,6 +116,15 @@ pnpm db:migrate
 pnpm dev
 ```
 
+Run the API service by creating `apps/api/.env`, then starting the API package:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+pnpm dev:api
+```
+
+By default the API listens on `http://localhost:4000`. Check `GET /health` for a status payload and request ID.
+
 ## Common Development Commands
 
 ```bash
