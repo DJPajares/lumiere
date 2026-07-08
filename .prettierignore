@@ -7,3 +7,5 @@ coverage/
 .turbo/
 .vercel/
 pnpm-lock.yaml
+*next.config.ts
+*.md
