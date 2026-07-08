@@ -7,6 +7,7 @@ import type {
   GuestGroup,
   GuestGroupMutation,
   ManagerRole,
+  RsvpResponse,
 } from "@lumiere/types";
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +24,7 @@ import type {
   PublicGuestInviteRecord,
   PublicInviteStore,
 } from "./public-invites";
+import type { RsvpStore, RsvpSubmissionResult } from "./rsvps";
 import type { EventThemeState, ThemeSectionStore } from "./theme-sections";
 import { toApiTheme } from "./theme-sections";
 
@@ -158,6 +160,19 @@ const publicGuestInviteRecord: PublicGuestInviteRecord = {
     responseStatus: null,
   },
   sections: [baseSection, guestOnlyRsvpSection],
+};
+
+const baseRsvpResponse: RsvpResponse = {
+  id: "00000000-0000-4000-8000-000000000401",
+  eventId,
+  guestGroupId,
+  responseStatus: "attending",
+  attendeeCount: 2,
+  guestNames: ["Mina Tan", "Alex Tan"],
+  answers: [],
+  message: "Excited to attend.",
+  submittedAt: "2026-07-08T04:00:00.000Z",
+  updatedAt: "2026-07-08T04:00:00.000Z",
 };
 
 describe("API config", () => {
@@ -1421,6 +1436,275 @@ describe("API app", () => {
     });
     expect(response.status).toBe(403);
   });
+
+  it("submits attending RSVPs for valid guest tokens", async () => {
+    const guestToken = "rsvp-attending-token-for-public-route";
+    const { rsvpStore, submitGuestRsvp } = createTestRsvpStore();
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/${guestToken}/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "attending",
+          attendeeCount: 2,
+          guestNames: ["Mina Tan", "Alex Tan"],
+          answers: [],
+          message: "Excited to attend.",
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      response: baseRsvpResponse,
+    });
+    expect(response.status).toBe(200);
+    expect(submitGuestRsvp).toHaveBeenCalledWith({
+      eventSlug: baseEvent.slug,
+      inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: ["Mina Tan", "Alex Tan"],
+        answers: [],
+        message: "Excited to attend.",
+      },
+    });
+  });
+
+  it("submits not attending RSVPs", async () => {
+    const notAttendingResponse: RsvpResponse = {
+      ...baseRsvpResponse,
+      responseStatus: "not_attending",
+      attendeeCount: 0,
+      guestNames: [],
+      message: "Sorry to miss it.",
+    };
+    const { rsvpStore } = createTestRsvpStore({
+      result: {
+        response: notAttendingResponse,
+        updatedExisting: false,
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/not-attending-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "not_attending",
+          attendeeCount: 0,
+          message: "Sorry to miss it.",
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      response: notAttendingResponse,
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("updates existing RSVPs while RSVP is open", async () => {
+    const updatedResponse: RsvpResponse = {
+      ...baseRsvpResponse,
+      attendeeCount: 3,
+      guestNames: ["Mina Tan", "Alex Tan", "Jamie Tan"],
+      updatedAt: "2026-07-08T05:00:00.000Z",
+    };
+    const { rsvpStore } = createTestRsvpStore({
+      result: {
+        response: updatedResponse,
+        updatedExisting: true,
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/update-rsvp-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "attending",
+          attendeeCount: 3,
+          guestNames: ["Mina Tan", "Alex Tan", "Jamie Tan"],
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      response: updatedResponse,
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("returns 404 for invalid RSVP guest tokens", async () => {
+    const { rsvpStore } = createTestRsvpStore({
+      result: null,
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/invalid-rsvp-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "attending",
+          attendeeCount: 1,
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "invalid-rsvp-token-request-id",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "Guest invite not found",
+        requestId: "invalid-rsvp-token-request-id",
+      },
+    });
+    expect(response.status).toBe(404);
+  });
+
+  it("rejects RSVP attendee counts above max pax", async () => {
+    const { rsvpStore } = createTestRsvpStore({
+      result: {
+        reason: "max_pax_exceeded",
+        maxPax: baseGuestGroup.maxPax,
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/max-pax-rsvp-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "attending",
+          attendeeCount: 5,
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "max-pax-rsvp-request-id",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Attendee count cannot exceed guest group max pax",
+        requestId: "max-pax-rsvp-request-id",
+        fields: [
+          {
+            message: "Attendee count cannot exceed 4",
+            path: ["attendeeCount"],
+          },
+        ],
+      },
+    });
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects closed RSVP submissions", async () => {
+    const { rsvpStore } = createTestRsvpStore({
+      result: {
+        reason: "closed",
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/closed-rsvp-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "attending",
+          attendeeCount: 1,
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "closed-rsvp-request-id",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: "RSVP is closed",
+        requestId: "closed-rsvp-request-id",
+      },
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects maybe RSVPs unless enabled", async () => {
+    const { rsvpStore } = createTestRsvpStore({
+      result: {
+        reason: "maybe_disabled",
+      },
+    });
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const response = await app.request(
+      `/public/events/${baseEvent.slug}/guest/maybe-rsvp-token-for-public-route/rsvp`,
+      {
+        body: JSON.stringify({
+          responseStatus: "maybe",
+          attendeeCount: 1,
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "maybe-disabled-rsvp-request-id",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Maybe RSVPs are not enabled",
+        requestId: "maybe-disabled-rsvp-request-id",
+        fields: [
+          {
+            message: "Maybe RSVPs are not enabled for this event",
+            path: ["responseStatus"],
+          },
+        ],
+      },
+    });
+    expect(response.status).toBe(422);
+  });
 });
 
 function loadTestConfig() {
@@ -1594,6 +1878,25 @@ function createTestPublicInviteStore({
     getPublicEventBySlug,
     getPublicGuestInvite,
     publicInviteStore,
+  };
+}
+
+function createTestRsvpStore({
+  result = {
+    response: baseRsvpResponse,
+    updatedExisting: false,
+  },
+}: {
+  result?: RsvpSubmissionResult;
+} = {}) {
+  const submitGuestRsvp = vi.fn(async () => result);
+  const rsvpStore: RsvpStore = {
+    submitGuestRsvp,
+  };
+
+  return {
+    rsvpStore,
+    submitGuestRsvp,
   };
 }
 

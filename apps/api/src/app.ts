@@ -9,6 +9,7 @@ import type { GuestGroupStore } from "./guest-groups";
 import type { PublicInviteStore } from "./public-invites";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
+import type { RsvpStore } from "./rsvps";
 import type { ThemeSectionStore } from "./theme-sections";
 import type { AuthStore } from "./auth";
 
@@ -18,6 +19,7 @@ export type CreateAppOptions = {
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
+  rsvpStore?: RsvpStore;
   themeSectionStore?: ThemeSectionStore;
 };
 
@@ -29,6 +31,7 @@ export const createApp = ({
   eventStore,
   guestGroupStore,
   publicInviteStore,
+  rsvpStore,
   themeSectionStore,
 }: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
@@ -44,6 +47,7 @@ export const createApp = ({
       eventStore,
       guestGroupStore,
       publicInviteStore,
+      rsvpStore,
       themeSectionStore,
     }),
   );

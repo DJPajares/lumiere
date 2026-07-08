@@ -11,6 +11,7 @@ import {
   guestInviteParamsSchema,
   managerRoleSchema,
   publicEventParamsSchema,
+  rsvpSubmissionRequestSchema,
   type EventType,
   type ThemeMode,
 } from "@lumiere/types";
@@ -32,6 +33,7 @@ import type {
   PublicInviteStore,
 } from "./public-invites";
 import type { ApiBindings } from "./request-context";
+import type { RsvpStore, RsvpSubmissionRejected } from "./rsvps";
 import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 
 export type AppOptions = {
@@ -40,6 +42,7 @@ export type AppOptions = {
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
+  rsvpStore?: RsvpStore;
   themeSectionStore?: ThemeSectionStore;
 };
 
@@ -68,6 +71,7 @@ export const createRoutes = ({
   eventStore,
   guestGroupStore,
   publicInviteStore,
+  rsvpStore,
   themeSectionStore,
 }: AppOptions) => {
   const routes = new Hono<ApiBindings>();
@@ -139,6 +143,36 @@ export const createRoutes = ({
     }
 
     return context.json(toPublicGuestInviteResponse(publicGuestInvite));
+  });
+
+  routes.post("/public/events/:eventSlug/guest/:guestToken/rsvp", async (context) => {
+    const store = requireRsvpStore(rsvpStore);
+    const { eventSlug, guestToken } = parseGuestInviteParams({
+      eventSlug: context.req.param("eventSlug"),
+      guestToken: context.req.param("guestToken"),
+    });
+    const submission = await parseJsonBody(context, rsvpSubmissionRequestSchema);
+    const result = await store.submitGuestRsvp({
+      eventSlug,
+      inviteTokenHash: hashInviteToken(guestToken, config.INVITE_TOKEN_SECRET),
+      submission,
+    });
+
+    if (!result) {
+      throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
+    }
+
+    if (result === "disabled") {
+      throw new ApiHttpError("FORBIDDEN", "Guest invite is disabled");
+    }
+
+    if ("response" in result) {
+      return context.json({
+        response: result.response,
+      });
+    }
+
+    throwRsvpRejection(result);
   });
 
   routes.get("/events", requireManagerAuth({ authStore, config }), async (context) => {
@@ -664,6 +698,14 @@ const requirePublicInviteStore = (publicInviteStore: PublicInviteStore | undefin
   return publicInviteStore;
 };
 
+const requireRsvpStore = (rsvpStore: RsvpStore | undefined) => {
+  if (!rsvpStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "RSVP store is not configured");
+  }
+
+  return rsvpStore;
+};
+
 const requireManagerGuestGroupStores = ({
   authStore,
   eventStore,
@@ -775,6 +817,36 @@ const zodIssuesToFieldErrors = (issues: ValidationIssue[]) =>
     message: issue.message,
     path: issue.path.map((part) => (typeof part === "number" ? part : String(part))),
   }));
+
+const throwRsvpRejection = (rejection: RsvpSubmissionRejected): never => {
+  if (rejection.reason === "closed") {
+    throw new ApiHttpError("FORBIDDEN", "RSVP is closed");
+  }
+
+  if (rejection.reason === "max_pax_exceeded") {
+    throw new ApiHttpError("VALIDATION_ERROR", "Attendee count cannot exceed guest group max pax", {
+      fields: [
+        {
+          message: `Attendee count cannot exceed ${rejection.maxPax}`,
+          path: ["attendeeCount"],
+        },
+      ],
+    });
+  }
+
+  if (rejection.reason === "maybe_disabled") {
+    throw new ApiHttpError("VALIDATION_ERROR", "Maybe RSVPs are not enabled", {
+      fields: [
+        {
+          message: "Maybe RSVPs are not enabled for this event",
+          path: ["responseStatus"],
+        },
+      ],
+    });
+  }
+
+  throw new ApiHttpError("CONFLICT", "RSVP updates are not allowed");
+};
 
 const assertThemeCanBeApplied = ({
   eventType,

@@ -1,0 +1,190 @@
+import type { Database } from "@lumiere/db";
+import { activityEvents, events, guestGroups, rsvpResponses } from "@lumiere/db";
+import type { Event, RsvpResponse, RsvpSubmission } from "@lumiere/types";
+import { and, eq, sql } from "drizzle-orm";
+
+type RsvpResponseRow = typeof rsvpResponses.$inferSelect;
+
+export type RsvpSubmissionRecord = {
+  response: RsvpResponse;
+  updatedExisting: boolean;
+};
+
+export type RsvpSubmissionRejected =
+  | { reason: "closed" }
+  | { maxPax: number; reason: "max_pax_exceeded" }
+  | { reason: "maybe_disabled" }
+  | { reason: "updates_disabled" };
+
+export type RsvpSubmissionResult =
+  RsvpSubmissionRecord | RsvpSubmissionRejected | "disabled" | null;
+
+export type RsvpStore = {
+  submitGuestRsvp(input: {
+    eventSlug: string;
+    inviteTokenHash: string;
+    submission: RsvpSubmission;
+  }): Promise<RsvpSubmissionResult>;
+};
+
+export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
+  async submitGuestRsvp({ eventSlug, inviteTokenHash, submission }) {
+    const [event] = await db
+      .select({
+        id: events.id,
+        rsvpSettingsJson: events.rsvpSettingsJson,
+        slug: events.slug,
+        status: events.status,
+      })
+      .from(events)
+      .where(and(eq(events.slug, eventSlug), eq(events.status, "published")))
+      .limit(1);
+
+    if (!event) {
+      return null;
+    }
+
+    const settings = readRsvpSettings(event.rsvpSettingsJson as Event["rsvpSettings"]);
+
+    if (!settings.enabled || settings.closed || isPast(settings.closesAt)) {
+      return { reason: "closed" };
+    }
+
+    if (submission.responseStatus === "maybe" && !settings.allowMaybe) {
+      return { reason: "maybe_disabled" };
+    }
+
+    const [guestGroup] = await db
+      .select({
+        eventId: guestGroups.eventId,
+        id: guestGroups.id,
+        inviteTokenHash: guestGroups.inviteTokenHash,
+        label: guestGroups.label,
+        maxPax: guestGroups.maxPax,
+        status: guestGroups.status,
+      })
+      .from(guestGroups)
+      .where(
+        and(eq(guestGroups.eventId, event.id), eq(guestGroups.inviteTokenHash, inviteTokenHash)),
+      )
+      .limit(1);
+
+    if (!guestGroup) {
+      return null;
+    }
+
+    if (guestGroup.status === "disabled") {
+      return "disabled";
+    }
+
+    if (submission.attendeeCount > guestGroup.maxPax) {
+      return {
+        maxPax: guestGroup.maxPax,
+        reason: "max_pax_exceeded",
+      };
+    }
+
+    const existingResponse = await getExistingResponse(db, guestGroup.id);
+
+    if (existingResponse && !settings.allowUpdates) {
+      return { reason: "updates_disabled" };
+    }
+
+    return db.transaction(async (tx) => {
+      const [response] = existingResponse
+        ? await tx
+            .update(rsvpResponses)
+            .set({
+              answersJson: submission.answers,
+              attendeeCount: submission.attendeeCount,
+              guestNamesJson: submission.guestNames,
+              message: submission.message,
+              responseStatus: submission.responseStatus,
+              updatedAt: sql`now()`,
+            })
+            .where(eq(rsvpResponses.id, existingResponse.id))
+            .returning()
+        : await tx
+            .insert(rsvpResponses)
+            .values({
+              answersJson: submission.answers,
+              attendeeCount: submission.attendeeCount,
+              eventId: event.id,
+              guestGroupId: guestGroup.id,
+              guestNamesJson: submission.guestNames,
+              message: submission.message,
+              responseStatus: submission.responseStatus,
+            })
+            .returning();
+
+      if (!response) {
+        throw new Error("Unable to save RSVP response");
+      }
+
+      const updatedExisting = Boolean(existingResponse);
+
+      await tx
+        .update(guestGroups)
+        .set({
+          status: submission.responseStatus === "not_attending" ? "declined" : "responded",
+          updatedAt: sql`now()`,
+        })
+        .where(and(eq(guestGroups.eventId, event.id), eq(guestGroups.id, guestGroup.id)));
+
+      await tx.insert(activityEvents).values({
+        actorId: guestGroup.id,
+        actorType: "guest",
+        activityType: updatedExisting ? "rsvp_updated" : "rsvp_submitted",
+        eventId: event.id,
+        metadataJson: {
+          attendeeCount: submission.attendeeCount,
+          guestGroupId: guestGroup.id,
+          guestGroupLabel: guestGroup.label,
+          responseId: response.id,
+          responseStatus: submission.responseStatus,
+        },
+      });
+
+      return {
+        response: toApiRsvpResponse(response),
+        updatedExisting,
+      };
+    });
+  },
+});
+
+const getExistingResponse = async (db: Database, guestGroupId: string) => {
+  const [response] = await db
+    .select()
+    .from(rsvpResponses)
+    .where(eq(rsvpResponses.guestGroupId, guestGroupId))
+    .limit(1);
+
+  return response ?? null;
+};
+
+const readRsvpSettings = (settings: Event["rsvpSettings"]) => ({
+  allowMaybe: settings.allowMaybe === true,
+  allowUpdates: settings.allowUpdates !== false,
+  closed: settings.closed === true,
+  closesAt: typeof settings.closesAt === "string" ? settings.closesAt : undefined,
+  enabled: settings.enabled !== false,
+});
+
+const isPast = (isoDateTime: string | undefined) =>
+  isoDateTime
+    ? Number.isFinite(Date.parse(isoDateTime)) && Date.parse(isoDateTime) <= Date.now()
+    : false;
+
+const toApiRsvpResponse = (response: RsvpResponseRow): RsvpResponse => ({
+  answers: response.answersJson,
+  attendeeCount: response.attendeeCount,
+  eventId: response.eventId,
+  guestGroupId: response.guestGroupId,
+  guestNames: response.guestNamesJson,
+  id: response.id,
+  message: response.message ?? undefined,
+  responseStatus: response.responseStatus,
+  submittedAt: response.submittedAt,
+  updatedAt: response.updatedAt,
+});
