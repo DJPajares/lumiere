@@ -56,7 +56,8 @@ README.md
 
 - Node.js LTS
 - pnpm
-- PostgreSQL for local development
+- PostgreSQL for local development, either installed locally or run with Docker Compose
+- Docker, if you want the Compose-backed local database
 - Supabase project for auth and production database
 
 ## Environment Variables
@@ -80,7 +81,7 @@ only uses `NEXT_PUBLIC_` variables.
 ```env
 NODE_ENV=development
 PORT=4000
-DATABASE_URL=postgresql://user:password@localhost:5432/lumiere
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lumiere
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_JWT_SECRET=
@@ -107,23 +108,80 @@ NEXT_PUBLIC_APP_NAME=Lumiere Dashboard
 
 ## Local Setup
 
+### First-Time Setup With Docker Postgres
+
+Use this path on machines that do not have a local Postgres service.
+
 ```bash
 pnpm install
 cp apps/api/.env.example apps/api/.env
 cp apps/invite/.env.example apps/invite/.env.local
 cp apps/dashboard/.env.example apps/dashboard/.env.local
+pnpm db:up
 pnpm db:migrate
-pnpm dev
 ```
 
-Run the API service by creating `apps/api/.env`, then starting the API package:
+The Docker database uses this local connection string:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lumiere
+```
+
+`pnpm db:up` starts a persistent `lumiere` database. The data stays in the
+Docker volume until you remove the volume manually.
+
+After migrations finish, start the API:
 
 ```bash
-cp apps/api/.env.example apps/api/.env
 pnpm dev:api
 ```
 
 By default the API listens on `http://localhost:4000`. Check `GET /health` for a status payload and request ID.
+
+### First-Time Setup With Local Postgres
+
+Use this path on machines that already run Postgres locally.
+
+```bash
+pnpm install
+cp apps/api/.env.example apps/api/.env
+cp apps/invite/.env.example apps/invite/.env.local
+cp apps/dashboard/.env.example apps/dashboard/.env.local
+createdb lumiere
+pnpm db:migrate
+pnpm dev:api
+```
+
+If your local Postgres user, password, host, or port differs from the default,
+update `DATABASE_URL` in `apps/api/.env` and pass the same URL when running
+Drizzle commands:
+
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/lumiere pnpm db:migrate
+```
+
+### Succeeding Local Runs
+
+For Docker Postgres:
+
+```bash
+pnpm db:up
+pnpm db:migrate
+pnpm dev:api
+```
+
+For an already-running local Postgres service:
+
+```bash
+pnpm db:migrate
+pnpm dev:api
+```
+
+Run all apps together when the API database is ready:
+
+```bash
+pnpm dev
+```
 
 ## Common Development Commands
 
@@ -141,6 +199,9 @@ pnpm test
 pnpm test:watch
 pnpm db:generate
 pnpm db:migrate
+pnpm db:up
+pnpm db:down
+pnpm db:logs
 pnpm db:studio
 ```
 
@@ -168,8 +229,14 @@ Drizzle schema and migrations live in `packages/db`. Commands read `DATABASE_URL
 ```bash
 pnpm db:generate
 pnpm db:migrate
+pnpm db:up
+pnpm db:down
+pnpm db:logs
 pnpm db:studio
 ```
+
+The development Compose database is defined in the root `docker-compose.yml`
+and binds Postgres to `localhost:5432`.
 
 Use a separate database for tests and point Drizzle at it when applying migrations. A disposable Compose-backed test database is available from `packages/db`:
 

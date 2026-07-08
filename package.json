@@ -16,6 +16,9 @@
     "test:watch": "turbo test:watch",
     "db:generate": "pnpm --filter @lumiere/db db:generate",
     "db:migrate": "pnpm --filter @lumiere/db db:migrate",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
     "db:studio": "pnpm --filter @lumiere/db db:studio",
     "format": "prettier --write --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\"",
     "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\""
