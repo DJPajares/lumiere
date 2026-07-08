@@ -242,6 +242,7 @@ POST   /events/:eventId/guest-groups/:groupId/regenerate-link
 GET    /events/:eventId/responses
 GET    /events/:eventId/activity
 GET    /events/:eventId/summary
+GET    /events/:eventId/notifications
 
 GET    /themes
 GET    /themes/:themeId

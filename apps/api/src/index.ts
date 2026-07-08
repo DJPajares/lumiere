@@ -4,6 +4,7 @@ import { serve } from "@hono/node-server";
 
 import { createDrizzleAuthStore } from "./auth";
 import { createApp } from "./app";
+import { createDrizzleDashboardDataStore } from "./dashboard-data";
 import { createDrizzleEventStore } from "./events";
 import { createDrizzleGuestGroupStore } from "./guest-groups";
 import { createDrizzlePublicInviteStore } from "./public-invites";
@@ -23,6 +24,7 @@ export function startApiServer() {
   const client = createPostgresClient(config.DATABASE_URL);
   const db = createDatabase(client);
   const authStore = createDrizzleAuthStore(db);
+  const dashboardDataStore = createDrizzleDashboardDataStore(db);
   const eventStore = createDrizzleEventStore(db);
   const guestGroupStore = createDrizzleGuestGroupStore(db);
   const publicInviteStore = createDrizzlePublicInviteStore(db);
@@ -31,6 +33,7 @@ export function startApiServer() {
   const app = createApp({
     authStore,
     config,
+    dashboardDataStore,
     eventStore,
     guestGroupStore,
     publicInviteStore,

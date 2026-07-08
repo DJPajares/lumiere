@@ -18,6 +18,7 @@ import {
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 
 import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
+import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
 import {
@@ -39,6 +40,7 @@ import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 export type AppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
+  dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
@@ -68,6 +70,7 @@ type SafeParseSchema<TOutput> = {
 export const createRoutes = ({
   authStore,
   config,
+  dashboardDataStore,
   eventStore,
   guestGroupStore,
   publicInviteStore,
@@ -217,6 +220,67 @@ export const createRoutes = ({
       event,
     });
   });
+
+  routes.get(
+    "/events/:eventId/summary",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const summary = await stores.dashboardDataStore.getEventSummary(eventId);
+
+      return context.json({
+        summary,
+      });
+    },
+  );
+
+  routes.get(
+    "/events/:eventId/activity",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const activity = await stores.dashboardDataStore.listActivity(eventId);
+
+      return context.json({
+        activity,
+      });
+    },
+  );
+
+  routes.get(
+    "/events/:eventId/notifications",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+      });
+      const notifications = await stores.dashboardDataStore.listNotifications(
+        eventId,
+        manager.user.id,
+      );
+
+      return context.json({
+        notifications,
+      });
+    },
+  );
 
   routes.patch("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
     const stores = requireManagerStores({ authStore, eventStore });
@@ -663,6 +727,31 @@ const requireThemeSectionStore = (themeSectionStore: ThemeSectionStore | undefin
   }
 
   return themeSectionStore;
+};
+
+const requireDashboardDataStore = (dashboardDataStore: DashboardDataStore | undefined) => {
+  if (!dashboardDataStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Dashboard data store is not configured");
+  }
+
+  return dashboardDataStore;
+};
+
+const requireManagerDashboardStores = ({
+  authStore,
+  dashboardDataStore,
+}: {
+  authStore: AuthStore | undefined;
+  dashboardDataStore: DashboardDataStore | undefined;
+}) => {
+  if (!authStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Auth store is not configured");
+  }
+
+  return {
+    authStore,
+    dashboardDataStore: requireDashboardDataStore(dashboardDataStore),
+  };
 };
 
 const requireManagerConfigurationStores = ({

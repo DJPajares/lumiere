@@ -1,4 +1,4 @@
-import { activityEvents, guestGroups, rsvpResponses } from "@lumiere/db";
+import { activityEvents, guestGroups, notifications, rsvpResponses } from "@lumiere/db";
 import { describe, expect, it } from "vitest";
 
 import { createDrizzleRsvpStore } from "./rsvps";
@@ -6,14 +6,18 @@ import { createDrizzleRsvpStore } from "./rsvps";
 const eventId = "00000000-0000-4000-8000-000000000101";
 const guestGroupId = "00000000-0000-4000-8000-000000000301";
 const responseId = "00000000-0000-4000-8000-000000000401";
+const ownerUserId = "00000000-0000-4000-8000-000000000001";
+const managerUserId = "00000000-0000-4000-8000-000000000002";
 
 const eventRow = {
   id: eventId,
+  ownerUserId,
   rsvpSettingsJson: {
     allowMaybe: true,
   },
   slug: "launch-night",
   status: "published",
+  title: "Launch Night",
 };
 
 const guestGroupRow = {
@@ -40,7 +44,10 @@ const responseRow = {
 
 describe("RSVP store", () => {
   it("creates a response, updates the guest group, and records submitted activity", async () => {
-    const db = new FakeRsvpDb([[eventRow], [guestGroupRow], []], responseRow);
+    const db = new FakeRsvpDb(
+      [[eventRow], [guestGroupRow], [], [{ userId: ownerUserId }, { userId: managerUserId }]],
+      responseRow,
+    );
     const store = createDrizzleRsvpStore(db.asDatabase());
 
     const result = await store.submitGuestRsvp({
@@ -105,6 +112,39 @@ describe("RSVP store", () => {
         },
       },
     });
+    expect(db.insertValues).toContainEqual({
+      table: notifications,
+      values: [
+        {
+          eventId,
+          message: "Tan Family submitted an RSVP for Launch Night.",
+          metadataJson: {
+            attendeeCount: 2,
+            guestGroupId,
+            guestGroupLabel: "Tan Family",
+            responseId,
+            responseStatus: "attending",
+          },
+          notificationType: "rsvp_submitted",
+          title: "RSVP submitted",
+          userId: ownerUserId,
+        },
+        {
+          eventId,
+          message: "Tan Family submitted an RSVP for Launch Night.",
+          metadataJson: {
+            attendeeCount: 2,
+            guestGroupId,
+            guestGroupLabel: "Tan Family",
+            responseId,
+            responseStatus: "attending",
+          },
+          notificationType: "rsvp_submitted",
+          title: "RSVP submitted",
+          userId: managerUserId,
+        },
+      ],
+    });
   });
 
   it("updates an existing response and records updated activity", async () => {
@@ -114,7 +154,10 @@ describe("RSVP store", () => {
       guestNamesJson: ["Mina Tan", "Alex Tan", "Jamie Tan"],
       updatedAt: "2026-07-08T05:00:00.000Z",
     };
-    const db = new FakeRsvpDb([[eventRow], [guestGroupRow], [responseRow]], updatedResponse);
+    const db = new FakeRsvpDb(
+      [[eventRow], [guestGroupRow], [responseRow], [{ userId: ownerUserId }]],
+      updatedResponse,
+    );
     const store = createDrizzleRsvpStore(db.asDatabase());
 
     const result = await store.submitGuestRsvp({
@@ -155,6 +198,17 @@ describe("RSVP store", () => {
         actorId: guestGroupId,
       }),
     });
+    expect(db.insertValues).toContainEqual({
+      table: notifications,
+      values: [
+        expect.objectContaining({
+          message: "Tan Family updated an RSVP for Launch Night.",
+          notificationType: "rsvp_updated",
+          title: "RSVP updated",
+          userId: ownerUserId,
+        }),
+      ],
+    });
   });
 });
 
@@ -174,9 +228,12 @@ class FakeRsvpDb {
   select() {
     return {
       from: () => ({
-        where: () => ({
-          limit: async () => this.selectResults.shift() ?? [],
-        }),
+        where: () => {
+          const result = this.selectResults.shift() ?? [];
+          return Object.assign(Promise.resolve(result), {
+            limit: async () => result,
+          });
+        },
       }),
     };
   }

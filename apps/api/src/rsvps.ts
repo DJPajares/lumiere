@@ -1,9 +1,17 @@
 import type { Database } from "@lumiere/db";
-import { activityEvents, events, guestGroups, rsvpResponses } from "@lumiere/db";
+import {
+  activityEvents,
+  eventManagers,
+  events,
+  guestGroups,
+  notifications,
+  rsvpResponses,
+} from "@lumiere/db";
 import type { Event, RsvpResponse, RsvpSubmission } from "@lumiere/types";
 import { and, eq, sql } from "drizzle-orm";
 
 type RsvpResponseRow = typeof rsvpResponses.$inferSelect;
+type RsvpNotificationType = "rsvp_submitted" | "rsvp_updated";
 
 export type RsvpSubmissionRecord = {
   response: RsvpResponse;
@@ -32,9 +40,11 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
     const [event] = await db
       .select({
         id: events.id,
+        ownerUserId: events.ownerUserId,
         rsvpSettingsJson: events.rsvpSettingsJson,
         slug: events.slug,
         status: events.status,
+        title: events.title,
       })
       .from(events)
       .where(and(eq(events.slug, eventSlug), eq(events.status, "published")))
@@ -122,6 +132,9 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       }
 
       const updatedExisting = Boolean(existingResponse);
+      const activityType: RsvpNotificationType = updatedExisting
+        ? "rsvp_updated"
+        : "rsvp_submitted";
 
       await tx
         .update(guestGroups)
@@ -134,7 +147,7 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       await tx.insert(activityEvents).values({
         actorId: guestGroup.id,
         actorType: "guest",
-        activityType: updatedExisting ? "rsvp_updated" : "rsvp_submitted",
+        activityType,
         eventId: event.id,
         metadataJson: {
           attendeeCount: submission.attendeeCount,
@@ -144,6 +157,35 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
           responseStatus: submission.responseStatus,
         },
       });
+
+      const managerRecipients = await tx
+        .select({
+          userId: eventManagers.userId,
+        })
+        .from(eventManagers)
+        .where(eq(eventManagers.eventId, event.id));
+      const recipientUserIds = Array.from(
+        new Set([event.ownerUserId, ...managerRecipients.map((recipient) => recipient.userId)]),
+      );
+
+      if (recipientUserIds.length > 0) {
+        await tx.insert(notifications).values(
+          recipientUserIds.map((userId) => ({
+            eventId: event.id,
+            message: `${guestGroup.label} ${updatedExisting ? "updated" : "submitted"} an RSVP for ${event.title}.`,
+            metadataJson: {
+              attendeeCount: submission.attendeeCount,
+              guestGroupId: guestGroup.id,
+              guestGroupLabel: guestGroup.label,
+              responseId: response.id,
+              responseStatus: submission.responseStatus,
+            },
+            notificationType: activityType,
+            title: updatedExisting ? "RSVP updated" : "RSVP submitted",
+            userId,
+          })),
+        );
+      }
 
       return {
         response: toApiRsvpResponse(response),

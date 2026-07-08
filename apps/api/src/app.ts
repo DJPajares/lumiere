@@ -3,6 +3,8 @@ import { Hono, type Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
+import type { AuthStore } from "./auth";
+import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError, createApiError } from "./errors";
 import type { EventStore } from "./events";
 import type { GuestGroupStore } from "./guest-groups";
@@ -11,11 +13,11 @@ import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
 import type { RsvpStore } from "./rsvps";
 import type { ThemeSectionStore } from "./theme-sections";
-import type { AuthStore } from "./auth";
 
 export type CreateAppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
+  dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
@@ -28,6 +30,7 @@ const resolveRequestId = (context: Context<ApiBindings>) => context.get("request
 export const createApp = ({
   authStore,
   config,
+  dashboardDataStore,
   eventStore,
   guestGroupStore,
   publicInviteStore,
@@ -44,6 +47,7 @@ export const createApp = ({
     createRoutes({
       authStore,
       config,
+      dashboardDataStore,
       eventStore,
       guestGroupStore,
       publicInviteStore,

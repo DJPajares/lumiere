@@ -1,12 +1,15 @@
 import { getTheme } from "@lumiere/themes";
 import type {
+  ActivityEvent,
   Event,
+  EventSummary,
   EventCreate,
   EventSection,
   EventUpdate,
   GuestGroup,
   GuestGroupMutation,
   ManagerRole,
+  Notification,
   RsvpResponse,
 } from "@lumiere/types";
 import { createHmac } from "node:crypto";
@@ -14,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } from "./auth";
 import { createApp } from "./app";
+import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
@@ -173,6 +177,61 @@ const baseRsvpResponse: RsvpResponse = {
   message: "Excited to attend.",
   submittedAt: "2026-07-08T04:00:00.000Z",
   updatedAt: "2026-07-08T04:00:00.000Z",
+};
+
+const eventSummary: EventSummary = {
+  attending: {
+    groups: 1,
+    pax: 2,
+  },
+  notAttending: {
+    groups: 1,
+    pax: 0,
+  },
+  maybe: {
+    groups: 1,
+    pax: 1,
+  },
+  pending: {
+    groups: 1,
+    pax: 4,
+  },
+  totalGroups: 4,
+  totalInvitedPax: 11,
+  totalRespondedPax: 3,
+};
+
+const activityEvent: ActivityEvent = {
+  id: "00000000-0000-4000-8000-000000000501",
+  eventId,
+  actorType: "guest",
+  actorId: guestGroupId,
+  activityType: "rsvp_submitted",
+  metadata: {
+    guestGroupLabel: baseGuestGroup.label,
+  },
+  createdAt: "2026-07-08T06:00:00.000Z",
+};
+
+const olderActivityEvent: ActivityEvent = {
+  ...activityEvent,
+  id: "00000000-0000-4000-8000-000000000502",
+  activityType: "guest_invite_opened",
+  createdAt: "2026-07-08T05:00:00.000Z",
+};
+
+const notification: Notification = {
+  id: "00000000-0000-4000-8000-000000000601",
+  eventId,
+  userId: localUser.id,
+  notificationType: "rsvp_submitted",
+  title: "RSVP submitted",
+  message: "Tan Family submitted an RSVP for Launch Night.",
+  readAt: undefined,
+  metadata: {
+    guestGroupId,
+  },
+  createdAt: "2026-07-08T06:01:00.000Z",
 };
 
 describe("API config", () => {
@@ -591,6 +650,104 @@ describe("API app", () => {
     expect(response.status).toBe(200);
     expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
     expect(getEvent).toHaveBeenCalledWith(eventId);
+  });
+
+  it("returns event summary counts for managers", async () => {
+    const { authStore, findEventAccess } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, getEventSummary } = createTestDashboardDataStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/summary`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      summary: eventSummary,
+    });
+    expect(response.status).toBe(200);
+    expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
+    expect(getEventSummary).toHaveBeenCalledWith(eventId);
+  });
+
+  it("returns recent activity ordered by creation time", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, listActivity } = createTestDashboardDataStore({
+      activity: [activityEvent, olderActivityEvent],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/activity`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      activity: [activityEvent, olderActivityEvent],
+    });
+    expect(response.status).toBe(200);
+    expect(listActivity).toHaveBeenCalledWith(eventId);
+  });
+
+  it("returns in-app notifications for the current manager", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, listNotifications } = createTestDashboardDataStore({
+      notifications: [notification],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/notifications`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      notifications: [notification],
+    });
+    expect(response.status).toBe(200);
+    expect(listNotifications).toHaveBeenCalledWith(eventId, localUser.id);
+  });
+
+  it("requires manager auth before returning event summary", async () => {
+    const { dashboardDataStore, getEventSummary } = createTestDashboardDataStore();
+    const app = createApp({
+      authStore: createTestAuthStore().authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/summary`, {
+      headers: {
+        "x-request-id": "summary-auth-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Missing bearer token",
+        requestId: "summary-auth-request-id",
+      },
+    });
+    expect(response.status).toBe(401);
+    expect(getEventSummary).not.toHaveBeenCalled();
   });
 
   it("updates an event when manager has editor access", async () => {
@@ -1734,6 +1891,32 @@ function createTestAuthStore({
     authStore,
     findEventAccess,
     upsertUserProfile,
+  };
+}
+
+function createTestDashboardDataStore({
+  activity = [activityEvent, olderActivityEvent],
+  notifications = [notification],
+  summary = eventSummary,
+}: {
+  activity?: ActivityEvent[];
+  notifications?: Notification[];
+  summary?: EventSummary;
+} = {}) {
+  const getEventSummary = vi.fn(async () => summary);
+  const listActivity = vi.fn(async () => activity);
+  const listNotifications = vi.fn(async () => notifications);
+  const dashboardDataStore: DashboardDataStore = {
+    getEventSummary,
+    listActivity,
+    listNotifications,
+  };
+
+  return {
+    dashboardDataStore,
+    getEventSummary,
+    listActivity,
+    listNotifications,
   };
 }
 

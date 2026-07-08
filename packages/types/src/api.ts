@@ -7,8 +7,10 @@ import {
   eventSectionsUpdateSchema,
   eventThemeUpdateSchema,
   eventUpdateSchema,
+  activityEventSchema,
   guestGroupMutationSchema,
   guestGroupSchema,
+  notificationSchema,
   rsvpResponseSchema,
   rsvpSubmissionSchema,
   themeSchema,
@@ -118,6 +120,44 @@ export const rsvpSubmissionResponseSchema = z.object({
   response: rsvpResponseSchema,
 });
 export type RsvpSubmissionResponse = z.infer<typeof rsvpSubmissionResponseSchema>;
+
+export const eventSummarySchema = z.object({
+  attending: z.object({
+    groups: z.number().int().min(0),
+    pax: z.number().int().min(0),
+  }),
+  notAttending: z.object({
+    groups: z.number().int().min(0),
+    pax: z.number().int().min(0),
+  }),
+  maybe: z.object({
+    groups: z.number().int().min(0),
+    pax: z.number().int().min(0),
+  }),
+  pending: z.object({
+    groups: z.number().int().min(0),
+    pax: z.number().int().min(0),
+  }),
+  totalGroups: z.number().int().min(0),
+  totalInvitedPax: z.number().int().min(0),
+  totalRespondedPax: z.number().int().min(0),
+});
+export type EventSummary = z.infer<typeof eventSummarySchema>;
+
+export const eventSummaryResponseSchema = z.object({
+  summary: eventSummarySchema,
+});
+export type EventSummaryResponse = z.infer<typeof eventSummaryResponseSchema>;
+
+export const activityEventsResponseSchema = z.object({
+  activity: z.array(activityEventSchema),
+});
+export type ActivityEventsResponse = z.infer<typeof activityEventsResponseSchema>;
+
+export const notificationsResponseSchema = z.object({
+  notifications: z.array(notificationSchema),
+});
+export type NotificationsResponse = z.infer<typeof notificationsResponseSchema>;
 
 export const byEventIdParamsSchema = z.object({
   eventId: idSchema,
