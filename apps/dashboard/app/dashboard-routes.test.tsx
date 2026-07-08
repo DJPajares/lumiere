@@ -64,8 +64,8 @@ describe("dashboard routes", () => {
     });
     const html = renderWithAuth(element);
 
-    expect(html).toContain("Demo event workspace");
-    expect(html).toContain("Setup path");
+    expect(html).toContain("Event workspace");
+    expect(html).toContain("Loading event overview");
     expect(html).toContain("/events/demo-event/content");
   });
 

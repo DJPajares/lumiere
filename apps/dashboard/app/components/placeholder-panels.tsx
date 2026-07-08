@@ -106,7 +106,7 @@ export function ManagementPlaceholder({ eventId, section }: { eventId: string; s
   );
 }
 
-function EventTabs({ active, eventId }: { active?: string; eventId: string }) {
+export function EventTabs({ active, eventId }: { active?: string; eventId: string }) {
   return (
     <nav
       className="flex gap-2 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2 text-sm"

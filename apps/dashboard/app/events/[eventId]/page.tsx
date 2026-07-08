@@ -1,6 +1,6 @@
 import { DashboardShell } from "../../components/dashboard-shell";
-import { EventDetailPlaceholder } from "../../components/placeholder-panels";
 import { ProtectedDashboard } from "../../components/protected-dashboard";
+import { EventOverviewWorkspace } from "./event-overview-workspace";
 
 type EventPageProps = {
   params: Promise<{
@@ -16,9 +16,9 @@ export default async function EventPage({ params }: EventPageProps) {
       <DashboardShell
         activePath={`/events/${eventId}`}
         eyebrow="Event overview"
-        title="Demo event workspace"
+        title="Event workspace"
       >
-        <EventDetailPlaceholder eventId={eventId} />
+        <EventOverviewWorkspace eventId={eventId} />
       </DashboardShell>
     </ProtectedDashboard>
   );
