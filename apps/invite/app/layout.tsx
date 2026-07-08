@@ -6,18 +6,19 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Lumiere Invite",
   description: "A luminous invitation and RSVP experience.",
-  manifest: '/manifest.webmanifest',
+  applicationName: "Lumiere Invite",
+  manifest: "/manifest.webmanifest",
   icons: {
-    icon: [
-      { url: '/favicon.ico', type: 'image/x-icon', sizes: 'any' },
-      { url: '/logo.png', type: 'image/png', sizes: '512x512' },
-    ],
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: [{ url: "/icons/lumiere-mark.svg", type: "image/svg+xml", sizes: "any" }],
+    shortcut: "/icons/lumiere-mark.svg",
+    apple: "/icons/lumiere-mark.svg",
   },
   appleWebApp: {
     capable: true,
-    title: 'Lumiere Invite',
+    title: "Lumiere Invite",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 

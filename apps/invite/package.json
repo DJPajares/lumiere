@@ -7,13 +7,16 @@
     "build": "next build",
     "lint": "echo \"lint pending for invite\"",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"tests pending for invite\"",
-    "test:watch": "echo \"test watch pending for invite\""
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@lumiere/themes": "workspace:*",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.3"
   }
 }
