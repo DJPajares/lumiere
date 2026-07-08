@@ -1,11 +1,13 @@
 import type { ApiEnv } from "@lumiere/config";
 import { availableThemes, getTheme, isThemeId, validateThemeSections } from "@lumiere/themes";
 import {
+  byEventAndGuestGroupIdParamsSchema,
   byEventIdParamsSchema,
   eventCreateRequestSchema,
   eventSectionsUpdateRequestSchema,
   eventThemeUpdateRequestSchema,
   eventUpdateRequestSchema,
+  guestGroupMutationRequestSchema,
   managerRoleSchema,
   type EventType,
   type ThemeMode,
@@ -15,6 +17,12 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
+import {
+  buildGuestInviteLink,
+  generateInvite,
+  type GuestGroupStore,
+  type InviteTokenRecord,
+} from "./guest-groups";
 import type { ApiBindings } from "./request-context";
 import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 
@@ -22,6 +30,7 @@ export type AppOptions = {
   authStore?: AuthStore;
   config: ApiEnv;
   eventStore?: EventStore;
+  guestGroupStore?: GuestGroupStore;
   themeSectionStore?: ThemeSectionStore;
 };
 
@@ -44,7 +53,13 @@ type SafeParseSchema<TOutput> = {
       };
 };
 
-export const createRoutes = ({ authStore, config, eventStore, themeSectionStore }: AppOptions) => {
+export const createRoutes = ({
+  authStore,
+  config,
+  eventStore,
+  guestGroupStore,
+  themeSectionStore,
+}: AppOptions) => {
   const routes = new Hono<ApiBindings>();
 
   routes.get("/health", (context) =>
@@ -323,6 +338,163 @@ export const createRoutes = ({ authStore, config, eventStore, themeSectionStore 
   );
 
   routes.get(
+    "/events/:eventId/guest-groups",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const guestGroups = await stores.guestGroupStore.listGuestGroups(eventId);
+
+      return context.json({
+        guestGroups,
+      });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/guest-groups",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const input = await parseJsonBody(context, guestGroupMutationRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const event = await stores.eventStore.getEvent(eventId);
+
+      if (!event) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      const invite = generateInvite(config.INVITE_TOKEN_SECRET);
+      const guestGroup = await stores.guestGroupStore.createGuestGroup(
+        eventId,
+        input,
+        toInviteTokenRecord(invite),
+      );
+
+      return context.json(
+        {
+          guestGroup,
+          inviteLink: buildGuestInviteLink({
+            baseUrl: config.PUBLIC_APP_BASE_URL,
+            eventSlug: event.slug,
+            token: invite.token,
+          }),
+        },
+        201,
+      );
+    },
+  );
+
+  routes.patch(
+    "/events/:eventId/guest-groups/:groupId",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const { eventId, groupId } = parseEventAndGuestGroupIdParams({
+        eventId: context.req.param("eventId"),
+        groupId: context.req.param("groupId"),
+      });
+      const input = await parseJsonBody(context, guestGroupMutationRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const guestGroup = await stores.guestGroupStore.updateGuestGroup(eventId, groupId, input);
+
+      if (!guestGroup) {
+        throw new ApiHttpError("NOT_FOUND", "Guest group not found");
+      }
+
+      return context.json({
+        guestGroup,
+      });
+    },
+  );
+
+  routes.delete(
+    "/events/:eventId/guest-groups/:groupId",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const { eventId, groupId } = parseEventAndGuestGroupIdParams({
+        eventId: context.req.param("eventId"),
+        groupId: context.req.param("groupId"),
+      });
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const guestGroup = await stores.guestGroupStore.disableGuestGroup(eventId, groupId);
+
+      if (!guestGroup) {
+        throw new ApiHttpError("NOT_FOUND", "Guest group not found");
+      }
+
+      return context.json({
+        guestGroup,
+      });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/guest-groups/:groupId/regenerate-link",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const { eventId, groupId } = parseEventAndGuestGroupIdParams({
+        eventId: context.req.param("eventId"),
+        groupId: context.req.param("groupId"),
+      });
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const event = await stores.eventStore.getEvent(eventId);
+
+      if (!event) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      const invite = generateInvite(config.INVITE_TOKEN_SECRET);
+      const guestGroup = await stores.guestGroupStore.regenerateInvite(
+        eventId,
+        groupId,
+        toInviteTokenRecord(invite),
+      );
+
+      if (!guestGroup) {
+        throw new ApiHttpError("NOT_FOUND", "Guest group not found");
+      }
+
+      return context.json({
+        guestGroup,
+        inviteLink: buildGuestInviteLink({
+          baseUrl: config.PUBLIC_APP_BASE_URL,
+          eventSlug: event.slug,
+          token: invite.token,
+        }),
+      });
+    },
+  );
+
+  routes.get(
     "/__test/manager/me",
     requireTestMode(config),
     requireManagerAuth({ authStore, config }),
@@ -432,6 +604,27 @@ const requireManagerConfigurationStores = ({
   };
 };
 
+const requireGuestGroupStore = (guestGroupStore: GuestGroupStore | undefined) => {
+  if (!guestGroupStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Guest group store is not configured");
+  }
+
+  return guestGroupStore;
+};
+
+const requireManagerGuestGroupStores = ({
+  authStore,
+  eventStore,
+  guestGroupStore,
+}: {
+  authStore: AuthStore | undefined;
+  eventStore: EventStore | undefined;
+  guestGroupStore: GuestGroupStore | undefined;
+}) => ({
+  ...requireManagerStores({ authStore, eventStore }),
+  guestGroupStore: requireGuestGroupStore(guestGroupStore),
+});
+
 const parseEventIdParam = (eventId: string | undefined) => {
   const result = byEventIdParamsSchema.safeParse({
     eventId,
@@ -444,6 +637,27 @@ const parseEventIdParam = (eventId: string | undefined) => {
   }
 
   return result.data.eventId;
+};
+
+const parseEventAndGuestGroupIdParams = ({
+  eventId,
+  groupId,
+}: {
+  eventId: string | undefined;
+  groupId: string | undefined;
+}) => {
+  const result = byEventAndGuestGroupIdParamsSchema.safeParse({
+    eventId,
+    groupId,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid guest group ID", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
 };
 
 const parseJsonBody = async <TOutput>(
@@ -506,3 +720,11 @@ const assertThemeCanBeApplied = ({
     });
   }
 };
+
+const toInviteTokenRecord = ({
+  inviteCode,
+  inviteTokenHash,
+}: InviteTokenRecord): InviteTokenRecord => ({
+  inviteCode,
+  inviteTokenHash,
+});

@@ -1,5 +1,12 @@
 import { getTheme } from "@lumiere/themes";
-import type { Event, EventCreate, EventUpdate, ManagerRole } from "@lumiere/types";
+import type {
+  Event,
+  EventCreate,
+  EventUpdate,
+  GuestGroup,
+  GuestGroupMutation,
+  ManagerRole,
+} from "@lumiere/types";
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +14,8 @@ import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } 
 import { createApp } from "./app";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
+import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
+import { hashInviteToken } from "./guest-groups";
 import { loadApiConfig } from "./index";
 import type { EventThemeState, ThemeSectionStore } from "./theme-sections";
 import { toApiTheme } from "./theme-sections";
@@ -51,6 +60,23 @@ const baseEvent: Event = {
   themeConfig: {},
   publicSettings: {},
   rsvpSettings: {},
+  createdAt: "2026-07-08T00:00:00.000Z",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+};
+
+const guestGroupId = "00000000-0000-4000-8000-000000000301";
+
+const baseGuestGroup: GuestGroup = {
+  id: guestGroupId,
+  eventId,
+  label: "Tan Family",
+  contactName: "Mina Tan",
+  contactEmail: "mina@example.com",
+  maxPax: 4,
+  inviteCode: "invitecode01",
+  status: "pending",
+  notes: "Window table",
+  lastOpenedAt: "2026-07-08T03:00:00.000Z",
   createdAt: "2026-07-08T00:00:00.000Z",
   updatedAt: "2026-07-08T00:00:00.000Z",
 };
@@ -898,6 +924,292 @@ describe("API app", () => {
     });
     expect(replaceSections).not.toHaveBeenCalled();
   });
+
+  it("lists guest groups after enforcing manager access", async () => {
+    const { authStore, findEventAccess } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { guestGroupStore, listGuestGroups } = createTestGuestGroupStore({
+      guestGroups: [baseGuestGroup],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      guestGroups: [baseGuestGroup],
+    });
+    expect(response.status).toBe(200);
+    expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
+    expect(listGuestGroups).toHaveBeenCalledWith(eventId);
+  });
+
+  it("creates guest groups with high-entropy invite links and hashed stored tokens", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { createGuestGroup, guestGroupStore } = createTestGuestGroupStore({
+      createdGuestGroup: baseGuestGroup,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups`, {
+      body: JSON.stringify({
+        contactEmail: "mina@example.com",
+        contactName: "Mina Tan",
+        label: "Tan Family",
+        maxPax: 4,
+        notes: "Window table",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    });
+    const body = await response.json();
+    const guestToken = extractGuestToken(body.inviteLink);
+    const inviteRecord = createGuestGroup.mock.calls[0]?.[2];
+
+    expect(response.status).toBe(201);
+    expect(body).toEqual({
+      guestGroup: baseGuestGroup,
+      inviteLink: `http://localhost:3000/e/${baseEvent.slug}/g/${guestToken}`,
+    });
+    expect(guestToken.length).toBeGreaterThanOrEqual(32);
+    expect(createGuestGroup).toHaveBeenCalledWith(
+      eventId,
+      {
+        contactEmail: "mina@example.com",
+        contactName: "Mina Tan",
+        label: "Tan Family",
+        maxPax: 4,
+        notes: "Window table",
+      },
+      expect.objectContaining({
+        inviteCode: expect.any(String),
+        inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
+      }),
+    );
+    expect(JSON.stringify(inviteRecord)).not.toContain(guestToken);
+  });
+
+  it("rejects guest group max pax below one", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { createGuestGroup, guestGroupStore } = createTestGuestGroupStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups`, {
+      body: JSON.stringify({
+        label: "Invalid group",
+        maxPax: 0,
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "invalid-max-pax-request-id",
+      },
+      method: "POST",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid request body",
+        requestId: "invalid-max-pax-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "Too small: expected number to be >=1",
+      path: ["maxPax"],
+    });
+    expect(createGuestGroup).not.toHaveBeenCalled();
+  });
+
+  it("updates guest group fields after enforcing editor access", async () => {
+    const updatedGuestGroup = {
+      ...baseGuestGroup,
+      label: "Tan and Lee Family",
+      maxPax: 5,
+      status: "opened" as const,
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { guestGroupStore, updateGuestGroup } = createTestGuestGroupStore({
+      updatedGuestGroup,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups/${guestGroupId}`, {
+      body: JSON.stringify({
+        contactEmail: "mina@example.com",
+        contactName: "Mina Tan",
+        label: "Tan and Lee Family",
+        maxPax: 5,
+        notes: "Window table",
+        status: "opened",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      guestGroup: updatedGuestGroup,
+    });
+    expect(response.status).toBe(200);
+    expect(updateGuestGroup).toHaveBeenCalledWith(eventId, guestGroupId, {
+      contactEmail: "mina@example.com",
+      contactName: "Mina Tan",
+      label: "Tan and Lee Family",
+      maxPax: 5,
+      notes: "Window table",
+      status: "opened",
+    });
+  });
+
+  it("disables guest groups instead of exposing hard deletes", async () => {
+    const disabledGuestGroup = {
+      ...baseGuestGroup,
+      status: "disabled" as const,
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { disableGuestGroup, guestGroupStore } = createTestGuestGroupStore({
+      disabledGuestGroup,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups/${guestGroupId}`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "DELETE",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      guestGroup: disabledGuestGroup,
+    });
+    expect(response.status).toBe(200);
+    expect(disableGuestGroup).toHaveBeenCalledWith(eventId, guestGroupId);
+  });
+
+  it("regenerates invite links with new hashed tokens", async () => {
+    const regeneratedGuestGroup = {
+      ...baseGuestGroup,
+      inviteCode: "newinvite01",
+      status: "pending" as const,
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { guestGroupStore, regenerateInvite } = createTestGuestGroupStore({
+      regeneratedGuestGroup,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(
+      `/events/${eventId}/guest-groups/${guestGroupId}/regenerate-link`,
+      {
+        headers: {
+          authorization: `Bearer ${createSupabaseToken()}`,
+        },
+        method: "POST",
+      },
+    );
+    const body = await response.json();
+    const guestToken = extractGuestToken(body.inviteLink);
+    const inviteRecord = regenerateInvite.mock.calls[0]?.[2];
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      guestGroup: regeneratedGuestGroup,
+      inviteLink: `http://localhost:3000/e/${baseEvent.slug}/g/${guestToken}`,
+    });
+    expect(regenerateInvite).toHaveBeenCalledWith(
+      eventId,
+      guestGroupId,
+      expect.objectContaining({
+        inviteCode: expect.any(String),
+        inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
+      }),
+    );
+    expect(JSON.stringify(inviteRecord)).not.toContain(guestToken);
+  });
+
+  it("blocks guest group changes without event access", async () => {
+    const { authStore } = createTestAuthStore({
+      access: {
+        access: null,
+        eventFound: true,
+      },
+    });
+    const { createGuestGroup, guestGroupStore } = createTestGuestGroupStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(`/events/${eventId}/guest-groups`, {
+      body: JSON.stringify({
+        label: "Blocked group",
+        maxPax: 2,
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "blocked-guest-group-request-id",
+      },
+      method: "POST",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: "Manager does not have access to this event",
+        requestId: "blocked-guest-group-request-id",
+      },
+    });
+    expect(response.status).toBe(403);
+    expect(createGuestGroup).not.toHaveBeenCalled();
+  });
 });
 
 function loadTestConfig() {
@@ -1007,6 +1319,52 @@ function createTestThemeSectionStore({
   };
 }
 
+function createTestGuestGroupStore({
+  createdGuestGroup = baseGuestGroup,
+  disabledGuestGroup = {
+    ...baseGuestGroup,
+    status: "disabled",
+  } as GuestGroup,
+  guestGroups = [baseGuestGroup],
+  regeneratedGuestGroup = baseGuestGroup,
+  updatedGuestGroup = baseGuestGroup,
+}: {
+  createdGuestGroup?: GuestGroup;
+  disabledGuestGroup?: GuestGroup | null;
+  guestGroups?: GuestGroup[];
+  regeneratedGuestGroup?: GuestGroup | null;
+  updatedGuestGroup?: GuestGroup | null;
+} = {}) {
+  const createGuestGroup = vi.fn(
+    async (_eventId: string, _input: GuestGroupMutation, _invite: InviteTokenRecord) =>
+      createdGuestGroup,
+  );
+  const disableGuestGroup = vi.fn(async () => disabledGuestGroup);
+  const listGuestGroups = vi.fn(async () => guestGroups);
+  const regenerateInvite = vi.fn(
+    async (_eventId: string, _groupId: string, _invite: InviteTokenRecord) => regeneratedGuestGroup,
+  );
+  const updateGuestGroup = vi.fn(
+    async (_eventId: string, _groupId: string, _input: GuestGroupMutation) => updatedGuestGroup,
+  );
+  const guestGroupStore: GuestGroupStore = {
+    createGuestGroup,
+    disableGuestGroup,
+    listGuestGroups,
+    regenerateInvite,
+    updateGuestGroup,
+  };
+
+  return {
+    createGuestGroup,
+    disableGuestGroup,
+    guestGroupStore,
+    listGuestGroups,
+    regenerateInvite,
+    updateGuestGroup,
+  };
+}
+
 function roleAccess(role: ManagerRole): EventAccessLookup {
   return {
     access: {
@@ -1045,4 +1403,14 @@ function createSupabaseToken(
 
 function base64UrlEncode(value: Record<string, unknown>) {
   return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
+function extractGuestToken(inviteLink: string) {
+  const token = new URL(inviteLink).pathname.split("/").filter(Boolean).pop();
+
+  if (!token) {
+    throw new Error(`Unable to extract guest token from ${inviteLink}`);
+  }
+
+  return token;
 }

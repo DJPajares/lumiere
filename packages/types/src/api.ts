@@ -101,6 +101,16 @@ export const guestGroupResponseSchema = z.object({
 });
 export type GuestGroupResponse = z.infer<typeof guestGroupResponseSchema>;
 
+export const guestGroupsResponseSchema = z.object({
+  guestGroups: z.array(guestGroupSchema),
+});
+export type GuestGroupsResponse = z.infer<typeof guestGroupsResponseSchema>;
+
+export const guestGroupInviteResponseSchema = guestGroupResponseSchema.extend({
+  inviteLink: nonEmptyStringSchema.url(),
+});
+export type GuestGroupInviteResponse = z.infer<typeof guestGroupInviteResponseSchema>;
+
 export const rsvpSubmissionRequestSchema = rsvpSubmissionSchema;
 export type RsvpSubmissionRequest = z.input<typeof rsvpSubmissionRequestSchema>;
 
@@ -113,6 +123,11 @@ export const byEventIdParamsSchema = z.object({
   eventId: idSchema,
 });
 export type ByEventIdParams = z.infer<typeof byEventIdParamsSchema>;
+
+export const byEventAndGuestGroupIdParamsSchema = byEventIdParamsSchema.extend({
+  groupId: idSchema,
+});
+export type ByEventAndGuestGroupIdParams = z.infer<typeof byEventAndGuestGroupIdParamsSchema>;
 
 export const publicEventParamsSchema = z.object({
   eventSlug: nonEmptyStringSchema,
