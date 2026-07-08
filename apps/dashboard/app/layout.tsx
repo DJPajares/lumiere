@@ -10,9 +10,15 @@ export const metadata: Metadata = {
   applicationName: "Lumiere Dashboard",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icons/lumiere-dashboard-mark.svg", type: "image/svg+xml", sizes: "any" }],
-    shortcut: "/icons/lumiere-dashboard-mark.svg",
-    apple: "/icons/lumiere-dashboard-mark.svg",
+    // icon: [{ url: "/icons/lumiere-dashboard-mark.svg", type: "image/svg+xml", sizes: "any" }],
+    // shortcut: "/icons/lumiere-dashboard-mark.svg",
+    // apple: "/icons/lumiere-dashboard-mark.svg",
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "any" },
+      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
   appleWebApp: {
     capable: true,
