@@ -97,7 +97,11 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
 
-  packages/api-client: {}
+  packages/api-client:
+    dependencies:
+      '@lumiere/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/config:
     dependencies:
