@@ -106,6 +106,65 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_APP_NAME=Lumiere Dashboard
 ```
 
+### Where Env Values Come From
+
+Local development can use local Postgres or Docker Postgres for app data, while
+the dashboard still uses Supabase Auth for manager sign-in. Production uses the
+deployed API/apps and a production Postgres connection string, usually Supabase
+Postgres.
+
+#### API: `apps/api/.env`
+
+| Key | Local value | Production value | Notes |
+| --- | --- | --- | --- |
+| `NODE_ENV` | `development` | `production` | Controls runtime mode and health payload. |
+| `PORT` | `4000` | hosting platform port, if required | Local API defaults to `http://localhost:4000`. |
+| `DATABASE_URL` | Docker/local Postgres URL | production Postgres URL | Local Docker default is `postgresql://postgres:postgres@localhost:5432/lumiere`. For production Supabase Postgres, copy the project database connection string. |
+| `SUPABASE_URL` | Supabase project URL | Supabase project URL | `Project Settings` -> `API` -> project URL. Use the same project as the dashboard. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role secret | Supabase service role secret | `Project Settings` -> `API keys` -> reveal/copy `service_role`. Do not use `anon public` here. Keep server-side only. |
+| `SUPABASE_JWT_SECRET` | Supabase JWT secret | Supabase JWT secret | `Project Settings` -> `JWT Keys` -> `Legacy JWT Secret` -> `Legacy JWT secret (still used)`. Used for legacy `HS256` tokens. |
+| `INVITE_TOKEN_SECRET` | any long random secret | production secret manager value | Used to hash guest invite tokens. Generate a strong value and keep it private. |
+| `PUBLIC_APP_BASE_URL` | `http://localhost:3000` | public invite app URL | Used to build guest invite links and allow CORS. |
+| `DASHBOARD_APP_BASE_URL` | `http://localhost:3001` | dashboard app URL | Used for CORS and dashboard-facing links. |
+
+Database examples:
+
+```env
+# Docker or default local Postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lumiere
+
+# Custom local Postgres
+DATABASE_URL=postgresql://user:password@localhost:5432/lumiere
+
+# Production/Supabase Postgres
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+```
+
+Supabase projects that use JWT Signing Keys may issue dashboard access tokens
+with `alg: "ES256"`. The API supports those by fetching the project's JWKS from
+`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`. Legacy `alg: "HS256"` tokens
+are verified with `SUPABASE_JWT_SECRET`.
+
+#### Invite App: `apps/invite/.env.local`
+
+| Key | Local value | Production value | Notes |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:4000` | deployed API URL | Browser-safe API base URL for public invite requests. |
+| `NEXT_PUBLIC_APP_NAME` | `Lumiere` | public app display name | Browser-safe display name. |
+
+#### Dashboard App: `apps/dashboard/.env.local`
+
+| Key | Local value | Production value | Notes |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:4000` | deployed API URL | Browser-safe API base URL for dashboard requests. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase project URL | Same project as `SUPABASE_URL`. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public key | Supabase public key | `Project Settings` -> `API keys` -> browser-safe public key. The legacy `anon public` key works; prefer the newer publishable key when available. |
+| `NEXT_PUBLIC_APP_NAME` | `Lumiere Dashboard` | dashboard display name | Browser-safe display name. |
+
+Only `NEXT_PUBLIC_` variables are exposed to browsers. Do not put service role
+keys, database URLs, JWT secrets, or invite token secrets in invite/dashboard
+client env files.
+
 ## Local Setup
 
 ### First-Time Setup With Docker Postgres

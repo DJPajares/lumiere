@@ -12,7 +12,7 @@ import type {
   Notification,
   RsvpResponse,
 } from "@lumiere/types";
-import { createHmac } from "node:crypto";
+import { createHmac, generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } from "./auth";
@@ -264,6 +264,7 @@ describe("API config", () => {
 describe("API app", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it("returns health status with propagated request ID", async () => {
@@ -389,6 +390,51 @@ describe("API app", () => {
       },
     });
     expect(response.status).toBe(200);
+    expect(upsertUserProfile).toHaveBeenCalledWith({
+      displayName: "Ada Manager",
+      email: "manager@example.com",
+      supabaseUserId: "supabase-user-id",
+    });
+  });
+
+  it("resolves current manager from ES256 Supabase signing key tokens", async () => {
+    const { token, jwk } = createSupabaseEs256Token({
+      email: "MANAGER@example.com",
+      sub: "supabase-user-id",
+      user_metadata: {
+        name: "Ada Manager",
+      },
+    });
+    const fetchJwks = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ keys: [jwk] }), {
+          headers: {
+            "content-type": "application/json",
+          },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchJwks);
+    const { authStore, upsertUserProfile } = createTestAuthStore();
+    const app = createApp({ authStore, config: loadTestConfig() });
+    const response = await app.request("/__test/manager/me", {
+      headers: {
+        authorization: `Bearer ${token}`,
+        "x-request-id": "es256-auth-success-request-id",
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      manager: {
+        displayName: "Ada Manager",
+        email: "manager@example.com",
+        supabaseUserId: "supabase-user-id",
+        userId: localUser.id,
+      },
+    });
+    expect(response.status).toBe(200);
+    expect(fetchJwks).toHaveBeenCalledWith(
+      "https://example.supabase.co/auth/v1/.well-known/jwks.json",
+    );
     expect(upsertUserProfile).toHaveBeenCalledWith({
       displayName: "Ada Manager",
       email: "manager@example.com",
@@ -2151,6 +2197,47 @@ function createSupabaseToken(
   const signature = createHmac("sha256", secret).update(signedContent).digest("base64url");
 
   return `${signedContent}.${signature}`;
+}
+
+function createSupabaseEs256Token(
+  payload: Record<string, unknown> = {
+    email: "manager@example.com",
+    sub: "supabase-user-id",
+    user_metadata: {
+      name: "Ada Manager",
+    },
+  },
+) {
+  const kid = "test-signing-key-id";
+  const { privateKey, publicKey } = generateKeyPairSync("ec", {
+    namedCurve: "P-256",
+  });
+  const jwk = {
+    ...publicKey.export({ format: "jwk" }),
+    alg: "ES256",
+    kid,
+    use: "sig",
+  };
+  const encodedHeader = base64UrlEncode({
+    alg: "ES256",
+    kid,
+    typ: "JWT",
+  });
+  const encodedPayload = base64UrlEncode({
+    aud: "authenticated",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...payload,
+  });
+  const signedContent = `${encodedHeader}.${encodedPayload}`;
+  const signature = sign("sha256", Buffer.from(signedContent), {
+    dsaEncoding: "ieee-p1363",
+    key: privateKey,
+  }).toString("base64url");
+
+  return {
+    jwk,
+    token: `${signedContent}.${signature}`,
+  };
 }
 
 function base64UrlEncode(value: Record<string, unknown>) {

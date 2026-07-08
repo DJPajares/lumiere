@@ -4,7 +4,7 @@ import { eventManagers, events, users } from "@lumiere/db";
 import type { ManagerRole } from "@lumiere/types";
 import { and, eq, sql } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, webcrypto } from "node:crypto";
 
 import { ApiHttpError } from "./errors";
 import type { ApiBindings } from "./request-context";
@@ -19,6 +19,21 @@ export type SupabaseJwtPayload = {
   sub?: string;
   user_metadata?: Record<string, unknown>;
   [key: string]: unknown;
+};
+
+type SupabaseJwtHeader = {
+  alg?: string;
+  kid?: string;
+  typ?: string;
+};
+
+type SupabaseJwksKey = JsonWebKey & {
+  alg?: string;
+  kid?: string;
+};
+
+type SupabaseJwksResponse = {
+  keys?: SupabaseJwksKey[];
 };
 
 export type AuthenticatedManager = {
@@ -60,6 +75,9 @@ export const managerRoleRank = {
   editor: 2,
   owner: 3,
 } as const satisfies Record<ManagerRole, number>;
+
+const jwksCache = new Map<string, { expiresAt: number; keys: SupabaseJwksKey[] }>();
+const jwksCacheTtlMs = 10 * 60 * 1000;
 
 export const createDrizzleAuthStore = (db: Database): AuthStore => ({
   async findEventAccess(eventId, userId) {
@@ -141,7 +159,7 @@ export const resolveCurrentManager = async ({
   now?: number;
 }): Promise<AuthenticatedManager> => {
   const token = parseBearerToken(authorizationHeader);
-  const claims = verifySupabaseJwt(token, config.SUPABASE_JWT_SECRET, now);
+  const claims = await verifySupabaseJwt(token, config, now);
   const supabaseUserId = readRequiredStringClaim(claims.sub, "Supabase token is missing subject");
   const email = resolveEmail(claims);
   const displayName = resolveDisplayName(claims);
@@ -221,9 +239,17 @@ export const parseBearerToken = (authorizationHeader: string | undefined) => {
 
 export const verifySupabaseJwt = (
   token: string,
-  jwtSecret: string,
+  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL">,
   now = Date.now(),
-): SupabaseJwtPayload => {
+): Promise<SupabaseJwtPayload> => {
+  return verifySupabaseJwtWithConfig(token, config, now);
+};
+
+const verifySupabaseJwtWithConfig = async (
+  token: string,
+  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL">,
+  now: number,
+): Promise<SupabaseJwtPayload> => {
   const tokenParts = token.split(".");
 
   if (tokenParts.length !== 3) {
@@ -236,18 +262,23 @@ export const verifySupabaseJwt = (
     throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
   }
 
-  const header = decodeBase64UrlJson<{ alg?: string }>(encodedHeader);
-
-  if (header.alg !== "HS256") {
-    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
-  }
-
+  const header = decodeBase64UrlJson<SupabaseJwtHeader>(encodedHeader);
   const signedContent = `${encodedHeader}.${encodedPayload}`;
-  const expectedSignature = createHmac("sha256", jwtSecret)
-    .update(signedContent)
-    .digest("base64url");
 
-  if (!safeEqualBase64Url(encodedSignature, expectedSignature)) {
+  if (header.alg === "HS256") {
+    verifyLegacyJwtSignature({
+      encodedSignature,
+      jwtSecret: config.SUPABASE_JWT_SECRET,
+      signedContent,
+    });
+  } else if (header.alg === "ES256") {
+    await verifyJwksJwtSignature({
+      encodedSignature,
+      header,
+      signedContent,
+      supabaseUrl: config.SUPABASE_URL,
+    });
+  } else {
     throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
   }
 
@@ -265,6 +296,71 @@ export const verifySupabaseJwt = (
   return claims;
 };
 
+const verifyLegacyJwtSignature = ({
+  encodedSignature,
+  jwtSecret,
+  signedContent,
+}: {
+  encodedSignature: string;
+  jwtSecret: string;
+  signedContent: string;
+}) => {
+  const expectedSignature = createHmac("sha256", jwtSecret)
+    .update(signedContent)
+    .digest("base64url");
+
+  if (!safeEqualBase64Url(encodedSignature, expectedSignature)) {
+    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+};
+
+const verifyJwksJwtSignature = async ({
+  encodedSignature,
+  header,
+  signedContent,
+  supabaseUrl,
+}: {
+  encodedSignature: string;
+  header: SupabaseJwtHeader;
+  signedContent: string;
+  supabaseUrl: string;
+}) => {
+  if (!header.kid) {
+    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+
+  const jwks = await getSupabaseJwks(supabaseUrl);
+  const jwk = jwks.find((key) => key.kid === header.kid);
+
+  if (!jwk) {
+    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+
+  const key = await webcrypto.subtle.importKey(
+    "jwk",
+    jwk,
+    {
+      name: "ECDSA",
+      namedCurve: "P-256",
+    },
+    false,
+    ["verify"],
+  );
+  const verified = await webcrypto.subtle.verify(
+    {
+      name: "ECDSA",
+      hash: "SHA-256",
+    },
+    key,
+    Buffer.from(encodedSignature, "base64url"),
+    Buffer.from(signedContent),
+  );
+
+  if (!verified) {
+    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+};
+
 const decodeBase64UrlJson = <TValue>(value: string): TValue => {
   try {
     return JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as TValue;
@@ -280,6 +376,32 @@ const safeEqualBase64Url = (actual: string, expected: string) => {
   return (
     actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer)
   );
+};
+
+const getSupabaseJwks = async (supabaseUrl: string) => {
+  const cacheKey = supabaseUrl.replace(/\/+$/, "");
+  const cached = jwksCache.get(cacheKey);
+  const now = Date.now();
+
+  if (cached && cached.expiresAt > now) {
+    return cached.keys;
+  }
+
+  const response = await fetch(`${cacheKey}/auth/v1/.well-known/jwks.json`);
+
+  if (!response.ok) {
+    throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+
+  const body = (await response.json()) as SupabaseJwksResponse;
+  const keys = Array.isArray(body.keys) ? body.keys : [];
+
+  jwksCache.set(cacheKey, {
+    expiresAt: now + jwksCacheTtlMs,
+    keys,
+  });
+
+  return keys;
 };
 
 const readRequiredStringClaim = (value: unknown, message: string) => {
