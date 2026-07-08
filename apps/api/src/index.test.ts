@@ -294,6 +294,40 @@ describe("API app", () => {
     expect(body.requestId).toBe(response.headers.get("x-request-id"));
   });
 
+  it("allows dashboard preflight requests", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request(`/events/${eventId}/summary`, {
+      headers: {
+        "access-control-request-headers": "authorization",
+        "access-control-request-method": "GET",
+        origin: validApiEnv.DASHBOARD_APP_BASE_URL,
+      },
+      method: "OPTIONS",
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      validApiEnv.DASHBOARD_APP_BASE_URL,
+    );
+    expect(response.headers.get("access-control-allow-methods")).toContain("GET");
+    expect(response.headers.get("access-control-allow-headers")).toContain("Authorization");
+  });
+
+  it("exposes request IDs to allowed browser origins", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request("/health", {
+      headers: {
+        origin: validApiEnv.PUBLIC_APP_BASE_URL,
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      validApiEnv.PUBLIC_APP_BASE_URL,
+    );
+    expect(response.headers.get("access-control-expose-headers")).toContain("X-Request-Id");
+  });
+
   it("returns the shared API error shape for known errors", async () => {
     const app = createApp({ config: loadTestConfig() });
     const response = await app.request("/__test/error", {

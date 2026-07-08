@@ -1,5 +1,6 @@
 import type { ApiEnv } from "@lumiere/config";
 import { Hono, type Context } from "hono";
+import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
@@ -39,6 +40,15 @@ export const createApp = ({
 }: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
 
+  app.use(
+    "*",
+    cors({
+      allowHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      exposeHeaders: ["X-Request-Id"],
+      origin: [config.PUBLIC_APP_BASE_URL, config.DASHBOARD_APP_BASE_URL],
+    }),
+  );
   app.use("*", secureHeaders());
   app.use("*", requestIdMiddleware());
 
