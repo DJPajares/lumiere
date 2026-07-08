@@ -1,11 +1,13 @@
-import { DashboardShell, AuthRequiredPlaceholder } from "./components/dashboard-shell";
+import { DashboardShell } from "./components/dashboard-shell";
 import { EventListPlaceholder } from "./components/placeholder-panels";
+import { ProtectedDashboard } from "./components/protected-dashboard";
 
 export default function DashboardHome() {
   return (
-    <DashboardShell activePath="/events" title="Calm controls for event setup.">
-      <AuthRequiredPlaceholder />
-      <EventListPlaceholder />
-    </DashboardShell>
+    <ProtectedDashboard>
+      <DashboardShell activePath="/events" title="Calm controls for event setup.">
+        <EventListPlaceholder />
+      </DashboardShell>
+    </ProtectedDashboard>
   );
 }

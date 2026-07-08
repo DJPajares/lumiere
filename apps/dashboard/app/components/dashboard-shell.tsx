@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { DashboardSessionControls } from "./session-controls";
+
 export const eventTabs = [
   { href: "content", label: "Content" },
   { href: "theme", label: "Theme" },
@@ -43,9 +45,7 @@ export function DashboardShell({
             >
               Lumiere Dashboard
             </Link>
-            <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--accent-strong)]">
-              Auth shell
-            </span>
+            <DashboardSessionControls />
           </div>
 
           <details className="mt-4 lg:hidden">
@@ -104,15 +104,14 @@ export function AuthRequiredPlaceholder() {
     <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
       <p className="text-sm font-semibold text-[var(--accent-strong)]">Unauthenticated state</p>
       <p className="max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-        Dashboard routes will require a Supabase manager session. Until the auth flow is wired, this
-        scaffold shows where signed-out users are redirected and where protected management content
-        appears after login.
+        Dashboard routes require a Supabase manager session. Signed-out managers are redirected to
+        login before protected management content opens.
       </p>
       <Link
         className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         href="/login"
       >
-        View login placeholder
+        Go to sign in
       </Link>
     </section>
   );
