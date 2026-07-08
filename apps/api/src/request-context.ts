@@ -1,7 +1,10 @@
 import type { MiddlewareHandler } from "hono";
 
+import type { AuthenticatedManager } from "./auth";
+
 export type ApiBindings = {
   Variables: {
+    manager: AuthenticatedManager;
     requestId: string;
   };
 };

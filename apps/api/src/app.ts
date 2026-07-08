@@ -6,20 +6,22 @@ import { secureHeaders } from "hono/secure-headers";
 import { ApiHttpError, createApiError } from "./errors";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
 import { createRoutes } from "./routes";
+import type { AuthStore } from "./auth";
 
 export type CreateAppOptions = {
+  authStore?: AuthStore;
   config: ApiEnv;
 };
 
 const resolveRequestId = (context: Context<ApiBindings>) => context.get("requestId") || "unknown";
 
-export const createApp = ({ config }: CreateAppOptions) => {
+export const createApp = ({ authStore, config }: CreateAppOptions) => {
   const app = new Hono<ApiBindings>();
 
   app.use("*", secureHeaders());
   app.use("*", requestIdMiddleware());
 
-  app.route("/", createRoutes({ config }));
+  app.route("/", createRoutes({ authStore, config }));
 
   app.notFound((context) =>
     context.json(createApiError("NOT_FOUND", "Route not found", resolveRequestId(context)), 404),

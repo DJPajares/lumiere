@@ -47,9 +47,15 @@ importers:
       '@lumiere/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@lumiere/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@lumiere/types':
         specifier: workspace:*
         version: link:../../packages/types
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(postgres@3.4.9)
       hono:
         specifier: ^4.12.28
         version: 4.12.28

@@ -1,6 +1,8 @@
 import { envIssuesToMessage, loadApiEnv } from "@lumiere/config";
+import { createDatabase, createPostgresClient } from "@lumiere/db";
 import { serve } from "@hono/node-server";
 
+import { createDrizzleAuthStore } from "./auth";
 import { createApp } from "./app";
 
 export function loadApiConfig() {
@@ -13,7 +15,10 @@ export function loadApiConfig() {
 
 export function startApiServer() {
   const config = loadApiConfig();
-  const app = createApp({ config });
+  const client = createPostgresClient(config.DATABASE_URL);
+  const db = createDatabase(client);
+  const authStore = createDrizzleAuthStore(db);
+  const app = createApp({ authStore, config });
 
   return serve(
     {
