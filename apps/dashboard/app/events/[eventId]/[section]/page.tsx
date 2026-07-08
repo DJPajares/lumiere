@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DashboardShell, eventTabs } from "../../../components/dashboard-shell";
 import { ManagementPlaceholder } from "../../../components/placeholder-panels";
 import { ProtectedDashboard } from "../../../components/protected-dashboard";
+import { SectionBuilderWorkspace } from "./section-builder-workspace";
 import { ThemeSelectorWorkspace } from "./theme-selector-workspace";
 
 type EventSectionPageProps = {
@@ -27,7 +28,9 @@ export default async function EventSectionPage({ params }: EventSectionPageProps
         eyebrow="Event management"
         title={`${tab.label} setup`}
       >
-        {section === "theme" ? (
+        {section === "content" ? (
+          <SectionBuilderWorkspace eventId={eventId} />
+        ) : section === "theme" ? (
           <ThemeSelectorWorkspace eventId={eventId} />
         ) : (
           <ManagementPlaceholder eventId={eventId} section={tab.label} />
