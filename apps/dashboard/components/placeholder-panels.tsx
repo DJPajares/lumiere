@@ -110,39 +110,73 @@ export function EventTabs({ active, eventId }: { active?: string; eventId: strin
   const activeLabel = active
     ? (eventTabs.find((tab) => tab.href === active)?.label ?? active)
     : "Overview";
+  const navItems = [
+    {
+      active: !active,
+      href: `/events/${eventId}`,
+      label: "Overview",
+    },
+    ...eventTabs.map((tab) => ({
+      active: active === tab.href,
+      href: `/events/${eventId}/${tab.href}`,
+      label: tab.label,
+    })),
+  ];
 
   return (
-    <section className="grid gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2">
-      <div className="flex flex-col gap-1 px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-          Event sections
-        </p>
-        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-          Current: <span className="font-semibold text-[var(--accent-strong)]">{activeLabel}</span>
-        </p>
-      </div>
-      <nav
-        className="flex gap-2 overflow-x-auto pb-1 text-sm [-webkit-overflow-scrolling:touch]"
-        aria-label={`Event management sections for ${eventId}`}
-      >
-        <Link
-          aria-current={!active ? "page" : undefined}
-          className="shrink-0 whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-          href={`/events/${eventId}`}
+    <section
+      aria-label={`Event workspace navigation for ${eventId}`}
+      className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2"
+    >
+      <details className="lg:hidden">
+        <summary className="cursor-pointer rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
+          <span className="block text-xs uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+            Event sections
+          </span>
+          <span className="mt-1 block text-[var(--accent-strong)]">{activeLabel}</span>
+        </summary>
+        <nav
+          aria-label={`Event management sections for ${eventId}`}
+          className="mt-2 grid gap-1 text-sm"
         >
-          Overview
-        </Link>
-        {eventTabs.map((tab) => (
-          <Link
-            aria-current={active === tab.href ? "page" : undefined}
-            className="shrink-0 whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-            href={`/events/${eventId}/${tab.href}`}
-            key={tab.href}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
+          {navItems.map((item) => (
+            <Link
+              aria-current={item.active ? "page" : undefined}
+              className="rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+              href={item.href}
+              key={item.href}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </details>
+
+      <div className="hidden gap-4 lg:flex lg:items-center lg:justify-between">
+        <div className="px-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+            Event workspace
+          </p>
+          <p className="mt-1 max-w-64 truncate font-mono text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+            {eventId}
+          </p>
+        </div>
+        <nav
+          aria-label={`Event management sections for ${eventId}`}
+          className="flex flex-wrap justify-end gap-1 text-sm"
+        >
+          {navItems.map((item) => (
+            <Link
+              aria-current={item.active ? "page" : undefined}
+              className="rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+              href={item.href}
+              key={item.href}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </section>
   );
 }

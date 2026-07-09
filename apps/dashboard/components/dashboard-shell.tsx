@@ -31,10 +31,11 @@ export function DashboardShell({
   title,
 }: DashboardShellProps) {
   const workspaceContext = getWorkspaceContext(activePath);
+  const isEventList = !workspaceContext.eventId;
 
   return (
     <main className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)]">
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[17rem_1fr] lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[14rem_1fr] lg:px-8">
         <aside className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 lg:sticky lg:top-4 lg:min-h-[calc(100dvh-2rem)]">
           <div className="flex items-center justify-between gap-3">
             <Link
@@ -46,43 +47,41 @@ export function DashboardShell({
             <DashboardSessionControls />
           </div>
 
-          <WorkspaceContextPanel context={workspaceContext} />
-
           <details className="mt-4 lg:hidden">
             <summary className="cursor-pointer rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
-              Navigation · {workspaceContext.sectionLabel}
+              Dashboard menu
             </summary>
-            <DashboardNav activePath={activePath} className="mt-3" />
+            <DashboardNav activePath={activePath} className="mt-3 grid" />
           </details>
 
-          <DashboardNav activePath={activePath} className="mt-6 hidden lg:grid" />
+          <div className="mt-6 hidden lg:grid lg:gap-2">
+            <p className="px-3 text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+              Manager
+            </p>
+            <DashboardNav activePath={activePath} className="grid" />
+          </div>
         </aside>
 
         <section className="grid content-start gap-5">
           <header className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-                  {eyebrow}
-                </p>
+                <DashboardBreadcrumb context={workspaceContext} />
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-                <div
-                  className="mt-4 flex flex-wrap gap-2 text-sm"
-                  aria-label="Current dashboard context"
-                >
-                  <ContextPill label="Scope" value={workspaceContext.scopeLabel} />
-                  <ContextPill label="Editing" value={workspaceContext.sectionLabel} />
-                  {workspaceContext.eventId ? (
-                    <ContextPill label="Event ID" value={workspaceContext.eventId} />
-                  ) : null}
-                </div>
+                <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                  {workspaceContext.eventId
+                    ? `${workspaceContext.sectionLabel} for event ${workspaceContext.eventId}`
+                    : eyebrow}
+                </p>
               </div>
-              <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)] active:scale-[0.99]"
-                href="/events"
-              >
-                Event list
-              </Link>
+              {isEventList ? null : (
+                <Link
+                  className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                  href="/events"
+                >
+                  All events
+                </Link>
+              )}
             </div>
           </header>
           {children}
@@ -93,13 +92,13 @@ export function DashboardShell({
 }
 
 function DashboardNav({ activePath, className = "" }: { activePath: string; className?: string }) {
-  const activeEventId = getActiveEventId(activePath);
-
   return (
     <nav className={`gap-1 text-sm ${className}`} aria-label="Dashboard navigation">
       {primaryNav.map((item) => (
         <Link
-          aria-current={activePath === item.href ? "page" : undefined}
+          aria-current={
+            activePath === item.href || activePath.startsWith(`${item.href}/`) ? "page" : undefined
+          }
           className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
           href={item.href}
           key={item.href}
@@ -107,37 +106,6 @@ function DashboardNav({ activePath, className = "" }: { activePath: string; clas
           {item.label}
         </Link>
       ))}
-      {activeEventId ? (
-        <div className="mt-5 grid gap-1 border-t border-[var(--border)] pt-4">
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
-            Event workspace
-          </p>
-          <p className="mx-3 mb-2 rounded-[var(--radius-sm)] bg-[var(--surface-muted)] px-3 py-2 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            Editing event <span className="font-mono font-semibold">{activeEventId}</span>
-          </p>
-          <Link
-            aria-current={activePath === `/events/${activeEventId}` ? "page" : undefined}
-            className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-            href={`/events/${activeEventId}`}
-          >
-            Overview
-          </Link>
-          {eventTabs.map((item) => {
-            const href = `/events/${activeEventId}/${item.href}`;
-
-            return (
-              <Link
-                aria-current={activePath === href ? "page" : undefined}
-                className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-                href={href}
-                key={item.href}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      ) : null}
     </nav>
   );
 }
@@ -156,33 +124,45 @@ function getWorkspaceContext(activePath: string) {
 
   return {
     eventId,
-    scopeLabel: eventId ? "Event workspace" : "Manager events",
+    sectionKey,
     sectionLabel,
   };
 }
 
-function WorkspaceContextPanel({ context }: { context: ReturnType<typeof getWorkspaceContext> }) {
+function DashboardBreadcrumb({ context }: { context: ReturnType<typeof getWorkspaceContext> }) {
   return (
-    <div className="mt-4 grid gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_48%,var(--surface))] p-3 text-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-        Current context
-      </p>
-      <p className="font-semibold">{context.sectionLabel}</p>
-      <p className="break-all text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-        {context.eventId ? `Event ${context.eventId}` : "All manager events"}
-      </p>
-    </div>
-  );
-}
-
-function ContextPill({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs">
-      <span className="font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_56%,transparent)]">
-        {label}
-      </span>
-      <span className="truncate font-medium">{value}</span>
-    </span>
+    <nav
+      aria-label="Breadcrumb"
+      className="flex flex-wrap items-center gap-2 text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
+    >
+      <Link
+        aria-current={context.eventId ? undefined : "page"}
+        className="rounded-[var(--radius-sm)] text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        href="/events"
+      >
+        Events
+      </Link>
+      {context.eventId ? (
+        <>
+          <span aria-hidden="true">/</span>
+          <Link
+            aria-current={context.sectionKey ? undefined : "page"}
+            className="rounded-[var(--radius-sm)] font-mono text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            href={`/events/${context.eventId}`}
+          >
+            {context.eventId}
+          </Link>
+        </>
+      ) : null}
+      {context.eventId && context.sectionKey ? (
+        <>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-[var(--foreground)]">
+            {context.sectionLabel}
+          </span>
+        </>
+      ) : null}
+    </nav>
   );
 }
 
