@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { DashboardShell, eventTabs } from "../../../../components/dashboard-shell";
 import { GuestManagementWorkspace } from "../../../../components/events/[eventId]/[section]/guest-management-workspace";
+import { EventSettingsWorkspace } from "../../../../components/events/[eventId]/[section]/event-settings-workspace";
 import { ResponsesActivityWorkspace } from "../../../../components/events/[eventId]/[section]/responses-activity-workspace";
 import { SectionBuilderWorkspace } from "../../../../components/events/[eventId]/[section]/section-builder-workspace";
 import { ThemeSelectorWorkspace } from "../../../../components/events/[eventId]/[section]/theme-selector-workspace";
@@ -38,6 +39,8 @@ export default async function EventSectionPage({ params }: EventSectionPageProps
           <GuestManagementWorkspace eventId={eventId} />
         ) : section === "theme" ? (
           <ThemeSelectorWorkspace eventId={eventId} />
+        ) : section === "settings" ? (
+          <EventSettingsWorkspace eventId={eventId} />
         ) : (
           <ManagementPlaceholder eventId={eventId} section={tab.label} />
         )}

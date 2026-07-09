@@ -45,9 +45,13 @@ describe("shared schemas", () => {
   it("validates event update input without defaulting omitted metadata", () => {
     expect(
       eventUpdateSchema.parse({
+        eventType: "dinner",
+        status: "published",
         title: "Updated dinner",
       }),
     ).toEqual({
+      eventType: "dinner",
+      status: "published",
       title: "Updated dinner",
     });
 

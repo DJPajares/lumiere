@@ -144,6 +144,22 @@ describe("dashboard routes", () => {
     expect(html).not.toContain("Current:");
   });
 
+  it("renders the event settings editor route", async () => {
+    const element = await EventSectionPage({
+      params: Promise.resolve({
+        eventId: "demo-event",
+        section: "settings",
+      }),
+    });
+    const html = renderWithAuth(element);
+
+    expect(html).toContain("Settings setup");
+    expect(html).toContain("Settings for event demo-event");
+    expect(html).toContain("Loading event settings");
+    expect(html).toContain("/events/demo-event/settings");
+    expect(html).not.toContain("Settings workspace placeholder");
+  });
+
   it("adds the Supabase access token to authenticated API requests", async () => {
     let requestInit: RequestInit | undefined;
     const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {

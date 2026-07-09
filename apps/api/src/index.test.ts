@@ -929,6 +929,8 @@ describe("API app", () => {
   it("updates an event when manager has editor access", async () => {
     const updatedEvent = {
       ...baseEvent,
+      eventType: "dinner" as const,
+      status: "published" as const,
       title: "Updated Launch",
       updatedAt: "2026-07-08T01:00:00.000Z",
     };
@@ -941,6 +943,8 @@ describe("API app", () => {
     const app = createApp({ authStore, config: loadTestConfig(), eventStore });
     const response = await app.request(`/events/${eventId}`, {
       body: JSON.stringify({
+        eventType: "dinner",
+        status: "published",
         title: "Updated Launch",
       }),
       headers: {
@@ -955,6 +959,8 @@ describe("API app", () => {
     });
     expect(response.status).toBe(200);
     expect(updateEvent).toHaveBeenCalledWith(eventId, {
+      eventType: "dinner",
+      status: "published",
       title: "Updated Launch",
     });
   });

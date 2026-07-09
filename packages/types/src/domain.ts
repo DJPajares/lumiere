@@ -77,6 +77,7 @@ export const eventUpdateSchema = z
   .object({
     slug: slugSchema.optional(),
     title: nonEmptyStringSchema.max(160).optional(),
+    eventType: eventTypeSchema.optional(),
     status: eventStatusSchema.optional(),
     timezone: timezoneSchema.optional(),
     startsAt: isoDateTimeSchema.optional(),

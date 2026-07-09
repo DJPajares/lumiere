@@ -131,6 +131,7 @@ export const toApiEvent = (event: EventRow): Event => ({
 const toEventUpdateSet = (input: EventUpdate) => ({
   ...(input.slug !== undefined ? { slug: input.slug } : {}),
   ...(input.title !== undefined ? { title: input.title } : {}),
+  ...(input.eventType !== undefined ? { eventType: input.eventType } : {}),
   ...(input.status !== undefined ? { status: input.status } : {}),
   ...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
   ...(input.startsAt !== undefined ? { startsAt: input.startsAt } : {}),

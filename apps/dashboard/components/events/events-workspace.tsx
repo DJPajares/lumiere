@@ -1,61 +1,50 @@
 "use client";
 
-import { ApiClientError } from "@lumiere/api-client";
-import {
-  eventCreateRequestSchema,
-  type Event,
-  type EventCreateRequest,
-  type EventType,
-} from "@lumiere/types";
+import type { Event } from "@lumiere/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-import { useDashboardAuth, type DashboardApiClient } from "../../auth/dashboard-auth-provider";
+import { useDashboardAuth } from "../../auth/dashboard-auth-provider";
+import {
+  EventBasicsForm,
+  createBlankEventFormValues,
+  createEventFormValuesFromEvent,
+  emptyEventFormState,
+  formatDateTime,
+  formatEventType,
+  formatStatus,
+  parseEventCreateValues,
+  parseEventUpdateValues,
+  statusClassName,
+  toEventFormError,
+  toFriendlyApiMessage,
+  toSlug,
+  type EventBasicsFormValues,
+  type EventFormField,
+  type EventFormState,
+} from "./event-basics-form";
 
-type FieldErrors = Partial<Record<EventFormField, string>>;
-
-type EventFormField =
-  | "endsAt"
-  | "eventType"
-  | "slug"
-  | "startsAt"
-  | "timezone"
-  | "title"
-  | "venueAddress"
-  | "venueName";
-
-type EventFormState = {
-  fieldErrors: FieldErrors;
-  formError: string | null;
-};
-
-const eventTypes: Array<{ label: string; value: EventType }> = [
-  { label: "Wedding", value: "wedding" },
-  { label: "Birthday", value: "birthday" },
-  { label: "Kids party", value: "kids_party" },
-  { label: "Holiday", value: "holiday" },
-  { label: "Dinner", value: "dinner" },
-  { label: "Launch", value: "launch" },
-  { label: "Private event", value: "private_event" },
-  { label: "Other", value: "other" },
-];
-
-const emptyFormState: EventFormState = {
-  fieldErrors: {},
-  formError: null,
-};
+export { createEventFromFormData, parseEventCreateForm } from "./event-basics-form";
 
 export function EventsWorkspace() {
   const router = useRouter();
   const { apiClient } = useDashboardAuth();
   const [events, setEvents] = useState<Event[]>([]);
+  const [createValues, setCreateValues] = useState<EventBasicsFormValues>(() =>
+    createBlankEventFormValues(),
+  );
+  const [createSlugTouched, setCreateSlugTouched] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editBaseline, setEditBaseline] = useState<EventBasicsFormValues | null>(null);
+  const [editValues, setEditValues] = useState<EventBasicsFormValues | null>(null);
+  const [editFormState, setEditFormState] = useState<EventFormState>(emptyEventFormState);
+  const [editStatusMessage, setEditStatusMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [formState, setFormState] = useState<EventFormState>(emptyFormState);
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [slugValue, setSlugValue] = useState("");
+  const [formState, setFormState] = useState<EventFormState>(emptyEventFormState);
 
   useEffect(() => {
     let isMounted = true;
@@ -94,12 +83,37 @@ export function EventsWorkspace() {
   }, [apiClient]);
 
   const metrics = useMemo(() => getEventMetrics(events), [events]);
+  const editingEvent = useMemo(
+    () => events.find((event) => event.id === editingEventId) ?? null,
+    [editingEventId, events],
+  );
+  const editDirty = Boolean(
+    editValues && editBaseline && !areEventFormValuesEqual(editValues, editBaseline),
+  );
+
+  const handleCreateFieldChange = (field: EventFormField, value: string) => {
+    if (field === "slug") {
+      setCreateSlugTouched(true);
+    }
+
+    setCreateValues((current) => {
+      const next = updateEventFormValues(current, field, value);
+
+      if (field === "title" && !createSlugTouched) {
+        return {
+          ...next,
+          slug: toSlug(value),
+        };
+      }
+
+      return next;
+    });
+  };
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-    const parsed = parseEventCreateForm(formData);
+    const parsed = parseEventCreateValues(createValues);
 
     if (!parsed.ok) {
       setFormState({
@@ -118,7 +132,7 @@ export function EventsWorkspace() {
     }
 
     setIsCreating(true);
-    setFormState(emptyFormState);
+    setFormState(emptyEventFormState);
 
     try {
       const { event } = await apiClient.createEvent(parsed.input);
@@ -127,6 +141,81 @@ export function EventsWorkspace() {
       setFormState(toEventFormError(error));
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const startEditingEvent = (event: Event) => {
+    const values = createEventFormValuesFromEvent(event);
+
+    setEditingEventId(event.id);
+    setEditBaseline(values);
+    setEditValues(values);
+    setEditFormState(emptyEventFormState);
+    setEditStatusMessage(null);
+  };
+
+  const cancelEditingEvent = () => {
+    setEditValues(editBaseline);
+    setEditFormState(emptyEventFormState);
+    setEditStatusMessage(null);
+  };
+
+  const handleEditFieldChange = (field: EventFormField, value: string) => {
+    setEditValues((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return updateEventFormValues(current, field, value);
+    });
+    setEditStatusMessage(null);
+  };
+
+  const handleSaveEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingEventId || !editValues) {
+      return;
+    }
+
+    const parsed = parseEventUpdateValues(editValues);
+
+    if (!parsed.ok) {
+      setEditFormState({
+        fieldErrors: parsed.fieldErrors,
+        formError: parsed.formError,
+      });
+      setEditStatusMessage(null);
+      return;
+    }
+
+    if (!apiClient) {
+      setEditFormState({
+        fieldErrors: {},
+        formError: "Dashboard API is not configured.",
+      });
+      setEditStatusMessage(null);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditFormState(emptyEventFormState);
+    setEditStatusMessage(null);
+
+    try {
+      const response = await apiClient.updateEvent(editingEventId, parsed.input);
+      const nextValues = createEventFormValuesFromEvent(response.event);
+
+      setEvents((current) =>
+        current.map((event) => (event.id === response.event.id ? response.event : event)),
+      );
+      setEditBaseline(nextValues);
+      setEditValues(nextValues);
+      setEditStatusMessage("Event basics saved.");
+    } catch (error) {
+      setEditFormState(toEventFormError(error));
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -166,14 +255,49 @@ export function EventsWorkspace() {
             </a>
           </div>
 
-          <EventList events={events} isLoading={isLoading} loadError={loadError} />
+          <EventList
+            editingEventId={editingEventId}
+            events={events}
+            isLoading={isLoading}
+            loadError={loadError}
+            onEdit={startEditingEvent}
+          />
+
+          {editingEvent && editValues ? (
+            <section
+              aria-label={`Edit ${editingEvent.title}`}
+              className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_5%,var(--surface))] p-4"
+              id="edit-event"
+            >
+              <div>
+                <p className="text-sm font-semibold text-[var(--accent-strong)]">Edit event</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-tight">{editingEvent.title}</h2>
+                <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                  Update the public basics, timing, venue, and publish status without leaving the
+                  event list.
+                </p>
+              </div>
+
+              <EventBasicsForm
+                dirty={editDirty}
+                formId="edit-event-basics"
+                formState={editFormState}
+                isSaving={isSavingEdit}
+                mode="edit"
+                onCancel={cancelEditingEvent}
+                onFieldChange={handleEditFieldChange}
+                onSubmit={handleSaveEdit}
+                statusMessage={editStatusMessage}
+                submitLabel="Save event"
+                values={editValues}
+              />
+            </section>
+          ) : null}
         </div>
 
-        <form
+        <section
           className="grid content-start gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
           id="new-event"
-          noValidate
-          onSubmit={handleCreate}
         >
           <div>
             <p className="text-sm font-semibold text-[var(--accent-strong)]">Create event</p>
@@ -183,132 +307,34 @@ export function EventsWorkspace() {
             </p>
           </div>
 
-          {formState.formError ? (
-            <p
-              className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]"
-              role="alert"
-            >
-              {formState.formError}
-            </p>
-          ) : null}
-
-          <Field label="Event title" error={formState.fieldErrors.title} htmlFor="event-title">
-            <input
-              className={inputClassName}
-              id="event-title"
-              name="title"
-              onChange={(event) => {
-                if (!slugTouched) {
-                  setSlugValue(toSlug(event.target.value));
-                }
-              }}
-              type="text"
-            />
-          </Field>
-
-          <Field label="Event type" error={formState.fieldErrors.eventType} htmlFor="event-type">
-            <select
-              className={inputClassName}
-              defaultValue="wedding"
-              id="event-type"
-              name="eventType"
-            >
-              {eventTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="URL slug" error={formState.fieldErrors.slug} htmlFor="event-slug">
-            <input
-              className={inputClassName}
-              id="event-slug"
-              name="slug"
-              onChange={(event) => {
-                setSlugTouched(true);
-                setSlugValue(toSlug(event.target.value));
-              }}
-              type="text"
-              value={slugValue}
-            />
-          </Field>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Starts" error={formState.fieldErrors.startsAt} htmlFor="event-starts-at">
-              <input
-                className={inputClassName}
-                id="event-starts-at"
-                name="startsAt"
-                type="datetime-local"
-              />
-            </Field>
-            <Field
-              label="Ends optional"
-              error={formState.fieldErrors.endsAt}
-              htmlFor="event-ends-at"
-            >
-              <input
-                className={inputClassName}
-                id="event-ends-at"
-                name="endsAt"
-                type="datetime-local"
-              />
-            </Field>
-          </div>
-
-          <Field label="Timezone" error={formState.fieldErrors.timezone} htmlFor="event-timezone">
-            <input
-              className={inputClassName}
-              defaultValue={getBrowserTimezone()}
-              id="event-timezone"
-              name="timezone"
-              type="text"
-            />
-          </Field>
-
-          <Field
-            label="Venue name"
-            error={formState.fieldErrors.venueName}
-            htmlFor="event-venue-name"
-          >
-            <input className={inputClassName} id="event-venue-name" name="venueName" type="text" />
-          </Field>
-
-          <Field
-            label="Venue address"
-            error={formState.fieldErrors.venueAddress}
-            htmlFor="event-venue-address"
-          >
-            <textarea
-              className={`${inputClassName} min-h-24 resize-y`}
-              id="event-venue-address"
-              name="venueAddress"
-            />
-          </Field>
-
-          <button
-            className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isCreating}
-            type="submit"
-          >
-            {isCreating ? "Creating event..." : "Create event"}
-          </button>
-        </form>
+          <EventBasicsForm
+            formId="new-event-basics"
+            formState={formState}
+            isSaving={isCreating}
+            mode="create"
+            onFieldChange={handleCreateFieldChange}
+            onSubmit={handleCreate}
+            submitLabel="Create event"
+            values={createValues}
+          />
+        </section>
       </section>
     </div>
   );
 }
 
 function EventList({
+  editingEventId,
   events,
   isLoading,
   loadError,
+  onEdit,
 }: {
+  editingEventId: string | null;
   events: Event[];
   isLoading: boolean;
   loadError: string | null;
+  onEdit: (event: Event) => void;
 }) {
   if (isLoading) {
     return (
@@ -392,6 +418,15 @@ function EventList({
             >
               Open workspace
             </Link>
+            <button
+              aria-expanded={editingEventId === event.id}
+              aria-controls="edit-event"
+              className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-strong)] transition hover:bg-[color-mix(in_srgb,var(--accent)_9%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              onClick={() => onEdit(event)}
+              type="button"
+            >
+              Edit
+            </button>
             {eventQuickLinks.map((item) => (
               <Link
                 className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -406,90 +441,6 @@ function EventList({
       ))}
     </div>
   );
-}
-
-function Field({
-  children,
-  error,
-  htmlFor,
-  label,
-}: {
-  children: ReactNode;
-  error?: string;
-  htmlFor: string;
-  label: string;
-}) {
-  return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-      {error ? (
-        <p className="text-sm text-[var(--error)]" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-export function parseEventCreateForm(formData: FormData):
-  | {
-      input: EventCreateRequest;
-      ok: true;
-    }
-  | {
-      fieldErrors: FieldErrors;
-      formError: string | null;
-      ok: false;
-    } {
-  const input = {
-    endsAt: toOptionalIsoDateTime(readFormString(formData, "endsAt")),
-    eventType: readFormString(formData, "eventType"),
-    publicSettings: {},
-    rsvpSettings: {},
-    slug: readFormString(formData, "slug"),
-    startsAt: toIsoDateTime(readFormString(formData, "startsAt")),
-    themeMode: "system",
-    timezone: readFormString(formData, "timezone") || getBrowserTimezone(),
-    title: readFormString(formData, "title"),
-    venueAddress: toOptionalString(readFormString(formData, "venueAddress")),
-    venueName: toOptionalString(readFormString(formData, "venueName")),
-  };
-
-  const parsed = eventCreateRequestSchema.safeParse(input);
-
-  if (parsed.success) {
-    return {
-      input: parsed.data,
-      ok: true,
-    };
-  }
-
-  return {
-    fieldErrors: issuesToFieldErrors(parsed.error.issues),
-    formError: "Check the highlighted fields before creating the event.",
-    ok: false,
-  };
-}
-
-export async function createEventFromFormData(
-  apiClient: Pick<DashboardApiClient, "createEvent">,
-  formData: FormData,
-) {
-  const parsed = parseEventCreateForm(formData);
-
-  if (!parsed.ok) {
-    return parsed;
-  }
-
-  const response = await apiClient.createEvent(parsed.input);
-
-  return {
-    event: response.event,
-    ok: true as const,
-  };
 }
 
 function getEventMetrics(events: Event[]) {
@@ -515,158 +466,20 @@ function getEventMetrics(events: Event[]) {
   ];
 }
 
-function toEventFormError(error: unknown): EventFormState {
-  if (error instanceof ApiClientError) {
-    return {
-      fieldErrors: issuesToFieldErrors(error.apiError.error.fields ?? []),
-      formError: error.apiError.error.message,
-    };
-  }
-
+function updateEventFormValues(
+  values: EventBasicsFormValues,
+  field: EventFormField,
+  value: string,
+): EventBasicsFormValues {
   return {
-    fieldErrors: {},
-    formError: toFriendlyApiMessage(error),
-  };
+    ...values,
+    [field]: value,
+  } as EventBasicsFormValues;
 }
 
-function issuesToFieldErrors(issues: Array<{ message: string; path: readonly unknown[] }>) {
-  const fieldErrors: FieldErrors = {};
-
-  for (const issue of issues) {
-    const field = issue.path[0];
-
-    if (typeof field === "string" && isEventFormField(field) && !fieldErrors[field]) {
-      fieldErrors[field] = toFriendlyFieldMessage(field, issue.message);
-    }
-  }
-
-  return fieldErrors;
+function areEventFormValuesEqual(first: EventBasicsFormValues, second: EventBasicsFormValues) {
+  return JSON.stringify(first) === JSON.stringify(second);
 }
-
-function toFriendlyFieldMessage(field: EventFormField, message: string) {
-  if (field === "title") {
-    return "Event title is required.";
-  }
-
-  if (field === "startsAt") {
-    return "Choose the event start date and time.";
-  }
-
-  if (field === "slug") {
-    return "Use lowercase letters, numbers, and hyphens.";
-  }
-
-  if (field === "timezone") {
-    return "Enter the event timezone.";
-  }
-
-  return message;
-}
-
-function isEventFormField(value: string): value is EventFormField {
-  return [
-    "endsAt",
-    "eventType",
-    "slug",
-    "startsAt",
-    "timezone",
-    "title",
-    "venueAddress",
-    "venueName",
-  ].includes(value);
-}
-
-function toFriendlyApiMessage(error: unknown) {
-  if (error instanceof ApiClientError) {
-    return error.apiError.error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unable to complete the dashboard request.";
-}
-
-function readFormString(formData: FormData, key: string) {
-  const value = formData.get(key);
-
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toIsoDateTime(value: string) {
-  if (!value) {
-    return value;
-  }
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
-}
-
-function toOptionalIsoDateTime(value: string) {
-  return value ? toIsoDateTime(value) : undefined;
-}
-
-function toOptionalString(value: string) {
-  return value || undefined;
-}
-
-function toSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
-function getBrowserTimezone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
-}
-
-function formatDateTime(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatEventType(value: EventType) {
-  return eventTypes.find((type) => type.value === value)?.label ?? "Event";
-}
-
-function formatStatus(value: Event["status"]) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function statusClassName(value: Event["status"]) {
-  const base =
-    "inline-flex w-fit rounded-[var(--radius-sm)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
-
-  if (value === "published") {
-    return `${base} bg-[color-mix(in_srgb,var(--success)_14%,var(--surface))] text-[var(--success)]`;
-  }
-
-  if (value === "archived") {
-    return `${base} bg-[var(--surface-muted)] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]`;
-  }
-
-  return `${base} bg-[color-mix(in_srgb,var(--warning)_14%,var(--surface))] text-[var(--warning)]`;
-}
-
-const inputClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--foreground)_42%,transparent)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]";
 
 const eventQuickLinks = [
   { href: "theme", label: "Theme" },

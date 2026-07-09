@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -61,6 +61,7 @@ describe("EventsWorkspace", () => {
     expect(screen.getByRole("link", { name: "Open workspace" }).getAttribute("href")).toBe(
       "/events/evt_123",
     );
+    expect(screen.getByRole("button", { name: "Edit" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Theme" }).getAttribute("href")).toBe(
       "/events/evt_123/theme",
     );
@@ -107,6 +108,70 @@ describe("EventsWorkspace", () => {
     expect(createdInput?.startsAt).toMatch(/2030-06-01T/);
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/events/evt_123"));
+  });
+
+  it("opens event editing from the list and validates required fields", async () => {
+    const user = userEvent.setup();
+    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async () => ({
+      event: springDinnerEvent,
+    }));
+
+    renderWithAuth({
+      listEvents: vi.fn(async () => ({ events: [springDinnerEvent] })),
+      updateEvent,
+    });
+
+    await screen.findByText("Spring Dinner");
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    const editPanel = within(screen.getByLabelText("Edit Spring Dinner"));
+    await user.clear(editPanel.getByLabelText("Event title"));
+    await user.click(editPanel.getByRole("button", { name: "Save event" }));
+
+    expect(await editPanel.findByText("Event title is required.")).toBeTruthy();
+    expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("saves list edits and updates the visible event card without reloading", async () => {
+    const user = userEvent.setup();
+    const updatedEvent: Event = {
+      ...springDinnerEvent,
+      eventType: "private_event",
+      status: "published",
+      title: "Summer Dinner",
+      updatedAt: "2030-01-01T01:00:00.000Z",
+    };
+    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async () => ({
+      event: updatedEvent,
+    }));
+
+    renderWithAuth({
+      listEvents: vi.fn(async () => ({ events: [springDinnerEvent] })),
+      updateEvent,
+    });
+
+    await screen.findByText("Spring Dinner");
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    const editPanel = within(screen.getByLabelText("Edit Spring Dinner"));
+    await user.clear(editPanel.getByLabelText("Event title"));
+    await user.type(editPanel.getByLabelText("Event title"), "Summer Dinner");
+    await user.selectOptions(editPanel.getByLabelText("Event type"), "private_event");
+    await user.selectOptions(editPanel.getByLabelText("Publish status"), "published");
+    await user.click(editPanel.getByRole("button", { name: "Save event" }));
+
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
+    expect(updateEvent).toHaveBeenCalledWith(
+      "evt_123",
+      expect.objectContaining({
+        eventType: "private_event",
+        status: "published",
+        title: "Summer Dinner",
+      }),
+    );
+    expect(await screen.findByText("Event basics saved.")).toBeTruthy();
+    expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Published").length).toBeGreaterThan(0);
   });
 });
 
