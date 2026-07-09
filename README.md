@@ -309,6 +309,46 @@ pnpm lint-staged
 - `pnpm format` and `pnpm format:check` use the root Prettier config.
 - `pnpm lint-staged` formats staged files and runs a workspace typecheck for staged TypeScript changes.
 
+### Local Verification
+
+Run this before opening or merging release-bound work:
+
+```bash
+pnpm install
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+For database migration confidence, also run the disposable PostgreSQL migration check:
+
+```bash
+docker compose -f packages/db/docker-compose.test.yml up -d --wait
+DATABASE_URL=postgresql://postgres:postgres@localhost:54329/lumiere_test pnpm db:migrate
+docker compose -f packages/db/docker-compose.test.yml down
+```
+
+The regular Vitest suites mock Supabase manager auth and use injected API stores for the full
+MVP smoke path, so local and CI verification do not need production Supabase credentials.
+
+### Continuous Integration
+
+GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`.
+The workflow uses pnpm with a lockfile-backed store cache, installs with
+`pnpm install --frozen-lockfile`, then runs:
+
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+CI sets placeholder server and browser environment variables for validation and tests only.
+Do not store production Supabase service role keys, JWT secrets, database URLs, or invite
+token secrets in CI unless a later deployment job explicitly requires them.
+
 ### Integration Smoke Tests
 
 The fast MVP smoke path lives in the API Vitest suite and exercises the HTTP routes with injected
@@ -461,6 +501,34 @@ Expected deployable units:
 - PostgreSQL/Supabase database migrations
 
 Keep secrets in environment-managed configuration and never commit `.env` files.
+
+### Deployment Notes
+
+- Deploy `apps/api`, `apps/invite`, and `apps/dashboard` as separate services/apps.
+- Run `pnpm db:migrate` against the target `DATABASE_URL` before exposing a release that needs new schema.
+- Configure API server env from the API table above, using production secret storage for `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, and `INVITE_TOKEN_SECRET`.
+- Configure only browser-safe `NEXT_PUBLIC_` variables for the invite and dashboard apps.
+- Set `PUBLIC_APP_BASE_URL` and `DASHBOARD_APP_BASE_URL` to the deployed app origins so generated invite links and CORS match production.
+- After deployment, smoke check `GET /health`, a public invite URL, a guest invite URL, dashboard sign-in, RSVP submission, and dashboard summary/activity refresh.
+
+### MVP Readiness Checklist
+
+Mapped to the PRD Definition of Done:
+
+- [x] Manager can sign in and manage only their own events.
+- [x] Manager can create and publish an event.
+- [x] Manager can configure theme, mode, and sections.
+- [x] Manager can create guest groups with max pax and unique invite links.
+- [x] Public event URL shows invite without RSVP content.
+- [x] Guest invite URL shows RSVP flow for valid guest groups.
+- [x] Guest can submit RSVP and manager can see the response.
+- [x] Dashboard shows response summary and activity.
+- [x] Core APIs are validated, tested, and documented.
+- [ ] UI passes project `SKILL.md` pre-flight checks across final invite/dashboard surfaces.
+- [x] Generated task files have clear dependencies and verification criteria.
+
+The remaining unchecked item should be closed by the later visual QA/accessibility pass after the
+brand, theme composition, dashboard UX, RSVP polish, and ambient media tasks land.
 
 ## Task Workflow
 
