@@ -3,6 +3,7 @@ import {
   getTheme,
   isThemeId,
   type ThemeDefinition,
+  type ThemeMotionKind,
   type ThemeSectionComposition,
   type ThemeSectionDensity,
 } from "@lumiere/themes";
@@ -82,6 +83,7 @@ function InvitationFrame({
       : "The host has published this event. Public sections will appear here as they are enabled.";
   const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
   const rsvpDesign = theme.composition.rsvpDesign;
+  const visualSystem = theme.composition.visualSystem;
 
   return (
     <InviteShell
@@ -91,6 +93,9 @@ function InvitationFrame({
     >
       <article
         className="min-h-[100dvh]"
+        data-composition-map={visualSystem.compositionMap}
+        data-motion-profile={visualSystem.motionProfile}
+        data-parallax-profile={visualSystem.parallaxProfile}
         data-rsvp-design={rsvpDesign}
         data-theme-design-read={theme.designRead}
       >
@@ -223,6 +228,7 @@ function PublicHero({
       )}
       data-motion-kind="hero-reveal"
       data-motion-scope="invite-section"
+      data-parallax-kind={resolveHeroParallaxKind(theme)}
       data-section-composition="full-bleed"
       data-section-density="spacious"
       data-section-key={section?.section.sectionKey ?? "introduction"}
@@ -262,10 +268,11 @@ function PublicHero({
         </div>
 
         {coverImage ? (
-          <figure className={getHeroMediaClassName(theme)}>
+          <figure className={getHeroMediaClassName(theme)} data-parallax-layer="hero-media">
             <img
               alt={coverImage.alt}
               className={getHeroImageClassName(theme)}
+              data-parallax-layer="hero-image"
               decoding="async"
               fetchPriority="high"
               src={coverImage.url}
@@ -277,7 +284,7 @@ function PublicHero({
             ) : null}
           </figure>
         ) : (
-          <aside className={getHeroFallbackClassName(theme)}>
+          <aside className={getHeroFallbackClassName(theme)} data-parallax-layer="hero-media">
             <p className="text-sm font-semibold text-[var(--accent-strong)]">Public details</p>
             <h2 className="lumiere-display text-2xl font-semibold">{invite.event.title}</h2>
             <div className="grid gap-3">
@@ -411,15 +418,19 @@ function PublicSection({
   const composition = resolveSectionComposition(item, theme);
   const density = resolveSectionDensity(item, theme);
   const layout = resolveSectionLayout(item, theme);
+  const motionKind = resolveMotionKind(item, composition, theme);
+  const parallaxKind = resolveSectionParallaxKind(item, composition, theme);
   const titleId = `${anchorId}-title`;
 
   return (
     <section
       aria-labelledby={titleId}
       className={getSectionFrameClassName(composition, density)}
-      data-motion-kind={resolveMotionKind(item, composition, theme)}
+      data-motion-kind={motionKind}
       data-motion-order={index}
+      data-motion-profile={theme.composition.visualSystem.motionProfile}
       data-motion-scope="invite-section"
+      data-parallax-kind={parallaxKind}
       data-section-composition={composition}
       data-section-density={density}
       data-section-key={item.section.sectionKey}
@@ -1139,10 +1150,11 @@ function SectionImage({
       : "aspect-[3/2]";
 
   return (
-    <figure className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]">
+    <figure className="lumiere-section-image overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]">
       <img
         alt={asset.alt}
         className={`${aspectClassName} w-full object-cover`}
+        data-parallax-layer="section-image"
         decoding="async"
         loading="lazy"
         src={asset.url}
@@ -1321,12 +1333,12 @@ function resolveMotionKind(
   item: RenderableSection,
   composition: SectionComposition,
   theme: ThemeDefinition,
-) {
+): ThemeMotionKind {
   if (!hasOriginalSetting(item, "variant")) {
     const themeMotion = getThemeSectionDefault(theme, item.section.sectionType)?.motion;
 
     if (themeMotion) {
-      return themeMotion;
+      return refineMotionKind(themeMotion, item, composition, theme);
     }
   }
 
@@ -1343,6 +1355,59 @@ function resolveMotionKind(
   }
 
   return composition === "framed" ? "card-reveal" : "section-reveal";
+}
+
+function refineMotionKind(
+  motionKind: ThemeMotionKind,
+  item: RenderableSection,
+  composition: SectionComposition,
+  theme: ThemeDefinition,
+): ThemeMotionKind {
+  const visualSystem = theme.composition.visualSystem;
+
+  if (composition === "gallery-feature" && visualSystem.motionProfile !== "calm") {
+    return "gallery-drift";
+  }
+
+  if (
+    motionKind === "media-reveal" &&
+    visualSystem.parallaxProfile === "hero-and-media" &&
+    (composition === "layered-media" || item.section.sectionType === "outro")
+  ) {
+    return "media-parallax";
+  }
+
+  return motionKind;
+}
+
+function resolveHeroParallaxKind(theme: ThemeDefinition) {
+  return theme.composition.visualSystem.parallaxProfile === "none" ? undefined : "hero-depth";
+}
+
+function resolveSectionParallaxKind(
+  item: RenderableSection,
+  composition: SectionComposition,
+  theme: ThemeDefinition,
+) {
+  const parallaxProfile = theme.composition.visualSystem.parallaxProfile;
+
+  if (parallaxProfile === "none" || parallaxProfile === "hero-only") {
+    return undefined;
+  }
+
+  if (parallaxProfile === "story-depth" && item.section.sectionType === "story") {
+    return "story-depth";
+  }
+
+  if (composition === "gallery-feature") {
+    return "gallery-depth";
+  }
+
+  if (composition === "layered-media" || composition === "editorial-split") {
+    return "media-depth";
+  }
+
+  return undefined;
 }
 
 function joinClassNames(...classNames: Array<string | undefined>) {

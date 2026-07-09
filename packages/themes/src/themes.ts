@@ -1,4 +1,12 @@
 import type { EventType, SectionType, ThemeMode } from "@lumiere/types";
+import type {
+  InviteCompositionMapId,
+  ThemeMotionKind,
+  ThemeMotionProfile,
+  ThemeParallaxProfile,
+  ThemeSectionComposition,
+  ThemeSectionDensity,
+} from "./composition";
 
 export type ThemeTokenSet = {
   background: string;
@@ -14,20 +22,22 @@ export type ThemeTokenSet = {
   focus: string;
 };
 
-export type ThemeSectionComposition =
-  "editorial-split" | "framed" | "full-bleed" | "gallery-feature" | "layered-media" | "timeline";
-
-export type ThemeSectionDensity = "balanced" | "compact" | "spacious";
-
 export type ThemeSectionDefault = {
   composition: ThemeSectionComposition;
   density: ThemeSectionDensity;
   layout?: string;
-  motion: "card-reveal" | "media-reveal" | "section-reveal" | "timeline-reveal";
+  motion: ThemeMotionKind;
 };
 
 export type ThemeComposition = {
   backgroundTreatment: string;
+  visualSystem: {
+    cardStackPolicy: string;
+    compositionMap: InviteCompositionMapId;
+    imageStrategy: string;
+    motionProfile: ThemeMotionProfile;
+    parallaxProfile: ThemeParallaxProfile;
+  };
   hero: {
     composition: "centered-media" | "editorial-split" | "layered-portrait" | "seasonal-tableau";
     fullViewport: boolean;
@@ -168,6 +178,15 @@ export const themeRegistry = {
         mood: "Quiet room tone only; no theme-owned audio by default.",
       },
       backgroundTreatment: "Warm parchment surface with restrained section framing.",
+      visualSystem: {
+        cardStackPolicy:
+          "Framed sections may be the dominant rhythm for this neutral/basic theme, but image-led sections should still use intentional spacing and stable media slots.",
+        compositionMap: "neutral-basic",
+        imageStrategy:
+          "Use real event imagery when available; otherwise reserve calm fact panels instead of fake decorative screenshots.",
+        motionProfile: "calm",
+        parallaxProfile: "none",
+      },
       hero: {
         composition: "editorial-split",
         fullViewport: false,
@@ -326,6 +345,15 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Layered ivory field with candlelit radial light, editorial whitespace, and media-led section breaks.",
+      visualSystem: {
+        cardStackPolicy:
+          "Use framed panels only for compact utility details; the page rhythm must mix full-bleed, editorial, timeline, gallery, and layered-media moments.",
+        compositionMap: "wedding-editorial",
+        imageStrategy:
+          "Prioritize real editorial portrait, venue, and gallery imagery with large inspectable slots and graceful fact-panel fallbacks.",
+        motionProfile: "immersive",
+        parallaxProfile: "hero-and-media",
+      },
       hero: {
         composition: "layered-portrait",
         fullViewport: true,
@@ -491,6 +519,15 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Sunny layered paper fields, rounded image frames, and energetic but readable spacing.",
+      visualSystem: {
+        cardStackPolicy:
+          "Parent-facing details can stay framed, while hero and gallery should feel image-led and celebratory rather than like repeated cards.",
+        compositionMap: "birthday-feature",
+        imageStrategy:
+          "Use a clear celebrant or party image first, with bright fallback fact panels for schedule and guardian notes.",
+        motionProfile: "playful",
+        parallaxProfile: "hero-only",
+      },
       hero: {
         composition: "centered-media",
         fullViewport: true,
@@ -656,6 +693,15 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Evergreen and candlelight layers with cozy framed details, never emoji-heavy clutter.",
+      visualSystem: {
+        cardStackPolicy:
+          "Use cozy framed details selectively; seasonal hero, gallery, and story moments should carry depth and atmosphere.",
+        compositionMap: "wedding-editorial",
+        imageStrategy:
+          "Prefer real table, venue, or gathering imagery with warm captions; missing media becomes a candlelit fact rail, not festive clutter.",
+        motionProfile: "seasonal",
+        parallaxProfile: "story-depth",
+      },
       hero: {
         composition: "seasonal-tableau",
         fullViewport: true,

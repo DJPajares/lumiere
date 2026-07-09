@@ -13,6 +13,10 @@ describe("public invite section renderers", () => {
           createSection({
             content: {
               body: "A luminous evening for close friends.",
+              coverImage: {
+                alt: "Garden portrait at golden hour",
+                url: "https://images.example.com/garden-portrait.jpg",
+              },
               eyebrow: "Wedding invitation",
               subtitle: "Dinner, dancing, and garden lights.",
               title: "Amara and Theo",
@@ -94,17 +98,25 @@ describe("public invite section renderers", () => {
 
     expect(html).toContain('data-ambient-audio="optional"');
     expect(html).toContain('data-ambient-audio-controls="external-controls"');
+    expect(html).toContain('data-composition-map="wedding-editorial"');
+    expect(html).toContain('data-motion-profile="immersive"');
+    expect(html).toContain('data-parallax-profile="hero-and-media"');
     expect(html).toContain('data-theme-hero-composition="layered-portrait"');
+    expect(html).toContain('data-parallax-kind="hero-depth"');
+    expect(html).toContain('data-parallax-layer="hero-image"');
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain('data-section-composition="timeline"');
     expect(html).toContain('data-section-composition="editorial-split"');
     expect(html).toContain('data-section-composition="gallery-feature"');
+    expect(html).toContain('data-parallax-kind="gallery-depth"');
     expect(html).toContain('data-section-key="hosts"');
     expect(html).toContain('data-section-layout="split"');
     expect(html).toContain('data-motion-kind="timeline-reveal"');
+    expect(html).toContain('data-motion-kind="gallery-drift"');
     expect(html).toContain('data-motion-kind="media-reveal"');
     expect(html).toContain('data-section-renderer="section.gallery"');
     expect(html).toContain("Map preview");
+    expect(html).toContain("Garden portrait at golden hour");
     expect(html).toContain("Garden aisle at dusk");
   });
 

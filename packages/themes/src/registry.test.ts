@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   availableThemeIds,
   getThemesForEventType,
+  inviteCompositionFamilies,
+  inviteMotionRules,
+  inviteVisualCompositionSystem,
   sectionDefinitions,
+  sampleInviteCompositionMaps,
   themeRegistry,
   validateThemeSection,
   validateThemeSections,
@@ -108,10 +112,82 @@ describe("theme registry", () => {
         (theme) =>
           theme.composition.rsvpDesign &&
           theme.composition.hero.composition &&
+          theme.composition.visualSystem.compositionMap &&
+          theme.composition.visualSystem.motionProfile &&
+          theme.composition.visualSystem.parallaxProfile &&
           theme.composition.sectionDefaults.rsvp &&
           theme.previewData.sections.length > 0,
       ),
     ).toBe(true);
+  });
+
+  it("documents the invite composition families across required public sections", () => {
+    expect(inviteVisualCompositionSystem.coveredSections).toEqual(
+      expect.arrayContaining([
+        "introduction",
+        "details",
+        "story",
+        "profile",
+        "gallery",
+        "location",
+        "rsvp",
+        "outro",
+      ]),
+    );
+    expect(inviteCompositionFamilies.length).toBeGreaterThanOrEqual(4);
+    expect(
+      inviteCompositionFamilies.every(
+        (family) =>
+          family.viewport.mobile &&
+          family.viewport.tablet &&
+          family.viewport.desktop &&
+          family.imageStrategy &&
+          family.emptyState &&
+          family.reducedMotion,
+      ),
+    ).toBe(true);
+    expect(
+      inviteCompositionFamilies.find((family) => family.id === "framed")?.avoidCardStackRule,
+    ).toContain("avoid using it for every section");
+  });
+
+  it("specifies motion, parallax, sticky, gallery, and reduced-motion rules", () => {
+    const motionRules = new Map(inviteMotionRules.map((rule) => [rule.id, rule]));
+
+    expect([...motionRules.keys()]).toEqual(
+      expect.arrayContaining([
+        "hero-reveal",
+        "section-reveal",
+        "media-parallax",
+        "sticky-pin",
+        "gallery-drift",
+      ]),
+    );
+    expect(motionRules.get("media-parallax")).toMatchObject({
+      implementation: "css",
+      reducedMotion: expect.stringContaining("Disable parallax"),
+      rule: expect.stringContaining("requestAnimationFrame"),
+    });
+    expect(motionRules.get("media-parallax")?.rule).toContain("instead of React state updates");
+    expect(motionRules.get("sticky-pin")?.implementation).toBe("intersection-observer");
+    expect(motionRules.get("gallery-drift")?.reducedMotion).toContain("Disable drift");
+  });
+
+  it("provides wedding and birthday composition maps that avoid all-framed rhythm", () => {
+    expect(sampleInviteCompositionMaps.wedding.id).toBe("wedding-editorial");
+    expect(sampleInviteCompositionMaps.birthday.id).toBe("birthday-feature");
+    expect(sampleInviteCompositionMaps.wedding.rhythm.map((item) => item.section)).toEqual(
+      expect.arrayContaining(["introduction", "profile", "story", "gallery", "rsvp", "outro"]),
+    );
+    expect(sampleInviteCompositionMaps.birthday.rhythm.map((item) => item.section)).toEqual(
+      expect.arrayContaining(["introduction", "details", "gallery", "rsvp"]),
+    );
+    expect(
+      sampleInviteCompositionMaps.wedding.rhythm.every((item) => item.composition === "framed"),
+    ).toBe(false);
+    expect(
+      sampleInviteCompositionMaps.birthday.rhythm.every((item) => item.composition === "framed"),
+    ).toBe(false);
   });
 
   it("sets Premium apart as a full-viewport editorial invitation theme", () => {
@@ -123,6 +199,11 @@ describe("theme registry", () => {
     expect(premium.composition.hero.fullViewport).toBe(true);
     expect(premium.composition.hero.composition).toBe("layered-portrait");
     expect(premium.composition.rsvpDesign).toBe("premium");
+    expect(premium.composition.visualSystem).toMatchObject({
+      compositionMap: "wedding-editorial",
+      motionProfile: "immersive",
+      parallaxProfile: "hero-and-media",
+    });
     expect(premium.composition.ambientMedia).toMatchObject({
       audioSlot: "optional",
       controlStrategy: "external-controls",

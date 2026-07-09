@@ -64,6 +64,10 @@ body {
   letter-spacing: var(--eyebrow-tracking);
 }
 
+.lumiere-section {
+  position: relative;
+}
+
 .lumiere-hero-media {
   position: relative;
   isolation: isolate;
@@ -107,6 +111,16 @@ body {
   box-shadow: 0 28px 80px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
+.lumiere-section-image {
+  position: relative;
+  isolation: isolate;
+}
+
+.lumiere-section-image img,
+.lumiere-hero-media img {
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .lumiere-section[data-motion-scope="invite-section"] {
     animation-duration: 720ms;
@@ -126,6 +140,11 @@ body {
     animation-name: lumiere-media-reveal;
   }
 
+  .lumiere-section[data-motion-kind="media-parallax"],
+  .lumiere-section[data-motion-kind="gallery-drift"] {
+    animation-name: lumiere-media-reveal;
+  }
+
   .lumiere-section[data-motion-kind="section-reveal"] {
     animation-name: lumiere-fade-up;
   }
@@ -140,12 +159,49 @@ body {
       animation-range: entry 0% cover 30%;
     }
 
-    [data-theme-id="premium"] .lumiere-hero-media img {
+    [data-parallax-kind="hero-depth"] [data-parallax-layer="hero-image"] {
       animation: lumiere-premium-parallax linear both;
       animation-timeline: view();
       animation-range: cover 0% cover 88%;
-      transform-origin: center;
     }
+
+    .lumiere-section[data-parallax-kind="media-depth"] .lumiere-section-image img {
+      animation: lumiere-media-depth linear both;
+      animation-timeline: view();
+      animation-range: entry -8% cover 92%;
+    }
+
+    .lumiere-section[data-parallax-kind="gallery-depth"]
+      .lumiere-section-image:nth-of-type(odd)
+      img {
+      animation: lumiere-gallery-drift-a linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 88%;
+    }
+
+    .lumiere-section[data-parallax-kind="gallery-depth"]
+      .lumiere-section-image:nth-of-type(even)
+      img {
+      animation: lumiere-gallery-drift-b linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 88%;
+    }
+
+    .lumiere-section[data-parallax-kind="story-depth"] .lumiere-section__body {
+      animation: lumiere-story-depth linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 78%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumiere-section,
+  .lumiere-section__body,
+  .lumiere-section-image img,
+  .lumiere-hero-media img {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -204,5 +260,45 @@ body {
 
   to {
     transform: scale(1.08) translateY(0.8rem);
+  }
+}
+
+@keyframes lumiere-media-depth {
+  from {
+    transform: scale(1.035) translateY(-0.55rem);
+  }
+
+  to {
+    transform: scale(1.075) translateY(0.55rem);
+  }
+}
+
+@keyframes lumiere-gallery-drift-a {
+  from {
+    transform: scale(1.025) translateY(-0.45rem);
+  }
+
+  to {
+    transform: scale(1.055) translateY(0.35rem);
+  }
+}
+
+@keyframes lumiere-gallery-drift-b {
+  from {
+    transform: scale(1.04) translateY(0.35rem);
+  }
+
+  to {
+    transform: scale(1.065) translateY(-0.45rem);
+  }
+}
+
+@keyframes lumiere-story-depth {
+  from {
+    transform: translateY(0.55rem);
+  }
+
+  to {
+    transform: translateY(-0.35rem);
   }
 }
