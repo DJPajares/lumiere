@@ -1,9 +1,17 @@
 import { getSectionDefinition } from "@lumiere/themes";
-import type { EventSection, JsonValue, PublicEventResponse } from "@lumiere/types";
+import type {
+  EventSection,
+  JsonValue,
+  PublicEventResponse,
+  PublicGuestInviteResponse,
+} from "@lumiere/types";
 
 import { InviteShell } from "./invite-shell";
 
 type JsonObject = Record<string, JsonValue>;
+type InvitationContext = "guest" | "public";
+type InviteResponse = PublicEventResponse | PublicGuestInviteResponse;
+type GuestContext = PublicGuestInviteResponse["guest"];
 
 type RenderableSection = {
   content: JsonObject;
@@ -12,34 +20,66 @@ type RenderableSection = {
 };
 
 export function PublicInvitation({ invite }: { invite: PublicEventResponse }) {
-  const sections = getRenderableSections(invite.sections);
+  const sections = getRenderableSections(invite.sections, "public");
+
+  return <InvitationFrame context="public" invite={invite} sections={sections} />;
+}
+
+export function GuestInvitation({ invite }: { invite: PublicGuestInviteResponse }) {
+  const sections = getRenderableSections(invite.sections, "guest");
+
+  return (
+    <InvitationFrame context="guest" guest={invite.guest} invite={invite} sections={sections} />
+  );
+}
+
+function InvitationFrame({
+  context,
+  guest,
+  invite,
+  sections,
+}: {
+  context: InvitationContext;
+  guest?: GuestContext;
+  invite: InviteResponse;
+  sections: RenderableSection[];
+}) {
   const introduction = sections.find((item) => item.section.sectionType === "introduction");
   const bodySections = introduction
     ? sections.filter((item) => item.section.id !== introduction.section.id)
     : sections;
+  const emptyTitle =
+    context === "guest"
+      ? "Guest details are being prepared"
+      : "Invitation details are being prepared";
+  const emptyBody =
+    context === "guest"
+      ? "This guest invite is valid. More private details will appear here as the host enables them."
+      : "The host has published this event. Public sections will appear here as they are enabled.";
 
   return (
     <InviteShell
-      context="public"
+      context={context}
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
       <article className="min-h-[100dvh]">
         <PublicHero invite={invite} section={introduction} />
 
+        {guest ? <GuestContextPanel guest={guest} /> : null}
+
         {bodySections.length > 0 ? (
           <div className="mx-auto grid w-full max-w-5xl gap-5 px-5 py-8 sm:px-8 lg:px-12">
             {bodySections.map((item) => (
-              <PublicSection key={item.section.id} item={item} />
+              <PublicSection guest={guest} key={item.section.id} item={item} />
             ))}
           </div>
         ) : (
           <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-12">
             <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-6">
-              <h2 className="text-xl font-semibold">Invitation details are being prepared</h2>
+              <h2 className="text-xl font-semibold">{emptyTitle}</h2>
               <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                The host has published this event. Public sections will appear here as they are
-                enabled.
+                {emptyBody}
               </p>
             </section>
           </div>
@@ -60,14 +100,48 @@ export function PublicInvitationUnavailable({
   eventSlug: string;
   message?: string;
 }) {
+  return <InvitationUnavailable context="public" eventSlug={eventSlug} message={message} />;
+}
+
+export function GuestInvitationUnavailable({
+  eventSlug,
+  message = "This guest invite link is invalid, expired, disabled, or no longer available.",
+}: {
+  eventSlug: string;
+  message?: string;
+}) {
   return (
-    <InviteShell context="public">
+    <InvitationUnavailable
+      context="guest"
+      eventSlug={eventSlug}
+      label="Guest invite unavailable"
+      message={message}
+      title="We could not open this guest invite."
+    />
+  );
+}
+
+function InvitationUnavailable({
+  context,
+  eventSlug,
+  label = "Invitation unavailable",
+  message,
+  title = "We could not open this invite.",
+}: {
+  context: InvitationContext;
+  eventSlug: string;
+  label?: string;
+  message: string;
+  title?: string;
+}) {
+  return (
+    <InviteShell context={context}>
       <section className="grid min-h-[100dvh] place-items-center px-5 py-10 sm:px-8">
         <div className="grid max-w-xl gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_14%,transparent)]">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-            Invitation unavailable
+            {label}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight">We could not open this invite.</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {message}
           </p>
@@ -84,7 +158,7 @@ function PublicHero({
   invite,
   section,
 }: {
-  invite: PublicEventResponse;
+  invite: InviteResponse;
   section: RenderableSection | undefined;
 }) {
   const content = section?.content ?? {};
@@ -160,7 +234,30 @@ function PublicHero({
   );
 }
 
-function PublicSection({ item }: { item: RenderableSection }) {
+function GuestContextPanel({ guest }: { guest: GuestContext }) {
+  return (
+    <section className="mx-auto w-full max-w-5xl px-5 pb-4 sm:px-8 lg:px-12">
+      <div className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+            Guest invitation
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight">{guest.guestGroup.label}</h2>
+          <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            This private link is prepared for your guest group. Please do not forward it outside
+            your party.
+          </p>
+        </div>
+        <dl className="grid gap-3 sm:grid-cols-2">
+          <GuestFact label="Group size" value={`Max ${guest.guestGroup.maxPax} pax`} />
+          <GuestFact label="RSVP" value={formatResponseStatus(guest.responseStatus)} />
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+function PublicSection({ guest, item }: { guest?: GuestContext; item: RenderableSection }) {
   const definition = getSectionDefinition(item.section.sectionType);
   const anchorId = readString(item.settings.anchorId) ?? item.section.sectionKey;
 
@@ -173,12 +270,12 @@ function PublicSection({ item }: { item: RenderableSection }) {
       <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
         {definition.label}
       </p>
-      <SectionBody item={item} />
+      <SectionBody guest={guest} item={item} />
     </section>
   );
 }
 
-function SectionBody({ item }: { item: RenderableSection }) {
+function SectionBody({ guest, item }: { guest?: GuestContext; item: RenderableSection }) {
   const { content, section } = item;
 
   switch (section.sectionType) {
@@ -198,6 +295,8 @@ function SectionBody({ item }: { item: RenderableSection }) {
       return <OutroSection content={content} />;
     case "profile":
       return <ProfileSection content={content} />;
+    case "rsvp":
+      return <RsvpSection content={content} guest={guest} />;
     case "story":
       return <StorySection content={content} />;
     case "custom":
@@ -410,6 +509,76 @@ function GallerySection({ content }: { content: JsonObject }) {
   );
 }
 
+function RsvpSection({ content, guest }: { content: JsonObject; guest?: GuestContext }) {
+  const title = readString(content.title) ?? "RSVP";
+  const description =
+    readString(content.description) ??
+    "Review your guest details now. The RSVP form will open here when responses are enabled.";
+  const questions = readRecordArray(content.questions);
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+      <div className="grid gap-4">
+        <div className="grid gap-3">
+          <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
+          <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
+            {description}
+          </p>
+        </div>
+
+        {questions.length > 0 ? (
+          <div className="grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4">
+            <p className="text-sm font-semibold text-[var(--accent-strong)]">
+              RSVP questions prepared by the host
+            </p>
+            <ul className="grid gap-2 text-sm leading-6">
+              {questions.map((question, index) => (
+                <li
+                  className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+                  key={readString(question.key) ?? index}
+                >
+                  <span className="font-medium">{readString(question.label) ?? "Question"}</span>
+                  <span className="ml-2 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+                    {question.required === true ? "Required" : "Optional"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+
+      <aside className="grid gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+            Your invitation
+          </p>
+          <h3 className="mt-2 text-xl font-semibold">{guest?.guestGroup.label ?? "Guest group"}</h3>
+        </div>
+        <dl className="grid gap-3">
+          <GuestFact label="Group size" value={`Max ${guest?.guestGroup.maxPax ?? 1} pax`} />
+          <GuestFact label="Current response" value={formatResponseStatus(guest?.responseStatus)} />
+          <GuestFact
+            label="Invite status"
+            value={formatGuestGroupStatus(guest?.guestGroup.status)}
+          />
+        </dl>
+        <button
+          className="min-h-11 rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] px-5 text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
+          disabled
+          type="button"
+        >
+          RSVP form arrives next
+        </button>
+        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+          RSVP is not open in this preview yet. You can still review the private event details
+          attached to this link.
+        </p>
+      </aside>
+    </div>
+  );
+}
+
 function OutroSection({ content }: { content: JsonObject }) {
   const title = readString(content.title) ?? "See you there";
   const message = readString(content.message);
@@ -467,6 +636,17 @@ function HeroFact({ label, value }: { label: string; value: string }) {
   );
 }
 
+function GuestFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[var(--radius-md)] bg-[var(--surface)] p-4">
+      <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+        {label}
+      </dt>
+      <dd className="mt-2 text-sm leading-6">{value}</dd>
+    </div>
+  );
+}
+
 function DetailLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4">
@@ -501,17 +681,27 @@ function SectionImage({
   );
 }
 
-function getRenderableSections(sections: EventSection[]): RenderableSection[] {
+function getRenderableSections(
+  sections: EventSection[],
+  context: InvitationContext,
+): RenderableSection[] {
   return sections
     .filter((section) => {
       const definition = getSectionDefinition(section.sectionType);
 
-      return (
-        section.enabled &&
-        section.visibility === "public" &&
-        section.sectionType !== "rsvp" &&
-        !definition.requiresGuestContext
-      );
+      if (!section.enabled || section.visibility === "hidden") {
+        return false;
+      }
+
+      if (context === "public") {
+        return (
+          section.visibility === "public" &&
+          section.sectionType !== "rsvp" &&
+          !definition.requiresGuestContext
+        );
+      }
+
+      return section.visibility === "public" || section.visibility === "guest_only";
     })
     .sort((left, right) => left.sortOrder - right.sortOrder)
     .flatMap((section) => {
@@ -583,4 +773,34 @@ function formatEventType(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatGuestGroupStatus(status: GuestContext["guestGroup"]["status"] | undefined) {
+  switch (status) {
+    case "declined":
+      return "Declined";
+    case "disabled":
+      return "Disabled";
+    case "opened":
+      return "Opened";
+    case "pending":
+      return "Pending";
+    case "responded":
+      return "Responded";
+    default:
+      return "Active";
+  }
+}
+
+function formatResponseStatus(status: GuestContext["responseStatus"] | undefined) {
+  switch (status) {
+    case "attending":
+      return "Attending";
+    case "maybe":
+      return "Maybe";
+    case "not_attending":
+      return "Not attending";
+    default:
+      return "No response yet";
+  }
 }

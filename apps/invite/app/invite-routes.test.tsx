@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { EventSection, PublicEventResponse } from "@lumiere/types";
+import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
 import GuestEventPage from "./e/[eventSlug]/g/[guestToken]/page";
 import PublicEventPage from "./e/[eventSlug]/page";
@@ -55,7 +55,9 @@ describe("invite app routes", () => {
     expect(html).toContain("draft-event");
   });
 
-  it("renders the personalized guest event route with RSVP placeholder context", async () => {
+  it("renders a valid guest event route with public, guest-only, and RSVP context", async () => {
+    mockPublicEventResponse(publicGuestInviteResponse);
+
     const element = await GuestEventPage({
       params: Promise.resolve({
         eventSlug: "launch-night",
@@ -64,14 +66,54 @@ describe("invite app routes", () => {
     });
     const html = renderToStaticMarkup(element);
 
+    expect(html).toContain("Spring Dinner");
     expect(html).toContain("Guest invitation");
     expect(html).toContain("Tan Family");
-    expect(html).toContain("review");
+    expect(html).toContain("Max 4 pax");
+    expect(html).toContain("Dinner begins at 6:30 PM");
+    expect(html).toContain("Guest-only shuttle");
+    expect(html).toContain("Private RSVP");
+    expect(html).toContain("Meal choice");
     expect(html).toContain("RSVP form arrives next");
+    expect(html).toContain('data-invite-context="guest"');
+    expect(html).toContain('data-theme-id="premium"');
+    expect(html).toContain('data-theme-mode="dark"');
+  });
+
+  it("renders an unavailable state for invalid guest tokens", async () => {
+    mockApiError(404, "Guest invite not found");
+
+    const element = await GuestEventPage({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "invalid-guest-token",
+      }),
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Guest invite unavailable");
+    expect(html).toContain("invalid, expired, or no longer available");
+    expect(html).toContain("launch-night");
+  });
+
+  it("renders a disabled state for disabled guest groups", async () => {
+    mockApiError(403, "Guest invite is disabled");
+
+    const element = await GuestEventPage({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "disabled-guest-token",
+      }),
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Guest invite unavailable");
+    expect(html).toContain("disabled");
+    expect(html).toContain("fresh link");
   });
 });
 
-function mockPublicEventResponse(response: PublicEventResponse) {
+function mockPublicEventResponse(response: PublicEventResponse | PublicGuestInviteResponse) {
   const fetch = vi.fn(async () => Response.json(response));
 
   vi.stubGlobal("fetch", fetch);
@@ -84,7 +126,7 @@ function mockApiError(status: number, message: string) {
     Response.json(
       {
         error: {
-          code: status === 404 ? "NOT_FOUND" : "INTERNAL_ERROR",
+          code: status === 404 ? "NOT_FOUND" : status === 403 ? "FORBIDDEN" : "INTERNAL_ERROR",
           message,
           requestId: "invite-test-request",
         },
@@ -163,6 +205,14 @@ const publicEventResponse: PublicEventResponse = {
     }),
     createSection({
       content: {
+        questions: [
+          {
+            key: "meal-choice",
+            label: "Meal choice",
+            required: true,
+            type: "single_choice",
+          },
+        ],
         title: "Private RSVP",
       },
       sectionKey: "rsvp",
@@ -174,6 +224,18 @@ const publicEventResponse: PublicEventResponse = {
   selectedThemeId: "premium",
   themeConfig: {},
   themeMode: "dark",
+};
+
+const publicGuestInviteResponse: PublicGuestInviteResponse = {
+  ...publicEventResponse,
+  guest: {
+    guestGroup: {
+      label: "Tan Family",
+      maxPax: 4,
+      status: "opened",
+    },
+    responseStatus: null,
+  },
 };
 
 function createSection(
