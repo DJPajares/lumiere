@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { Event, EventSection, JsonValue, Theme } from "@lumiere/types";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -37,24 +37,17 @@ describe("SectionBuilderWorkspace", () => {
     renderWithAuth(createApiClientStub());
 
     await screen.findByText("Configure content for Spring Dinner");
-    await user.click(screen.getByLabelText("Enable Story"));
-    fireEvent.change(screen.getByLabelText("Story content JSON"), {
-      target: {
-        value: JSON.stringify(
-          {
-            title: "Story",
-          },
-          null,
-          2,
-        ),
-      },
-    });
+    const storyEditor = within(screen.getByRole("article", { name: "Story" }));
+
+    await user.click(storyEditor.getByLabelText("Enable Story"));
+    await user.clear(storyEditor.getByLabelText(/^Paragraph/));
     await user.click(screen.getByRole("button", { name: "Save sections" }));
 
     expect(
       await screen.findByText("Check the highlighted section fields before saving."),
     ).toBeTruthy();
-    expect(screen.getAllByText(/paragraphs:/).length).toBeGreaterThan(0);
+    expect(storyEditor.getByLabelText(/^Paragraph/).getAttribute("aria-invalid")).toBe("true");
+    expect(storyEditor.getAllByText(/paragraphs\.0:/).length).toBeGreaterThan(0);
   });
 
   it("locks enabled required sections once the event is published", async () => {
@@ -111,7 +104,7 @@ describe("SectionBuilderWorkspace", () => {
     expect(updateEventSections).not.toHaveBeenCalled();
   });
 
-  it("saves enabled sections with visibility and accessible reordering", async () => {
+  it("saves typed field edits, repeatable content, visibility, and accessible reordering", async () => {
     const user = userEvent.setup();
     const updateEventSections = vi.fn<DashboardApiClient["updateEventSections"]>(
       async (eventId, input) => ({
@@ -135,9 +128,23 @@ describe("SectionBuilderWorkspace", () => {
     );
 
     await screen.findByText("Configure content for Spring Dinner");
-    await user.click(screen.getByLabelText("Enable Introduction"));
+    const introductionEditor = within(screen.getByRole("article", { name: "Introduction" }));
+    const detailsEditor = within(screen.getByRole("article", { name: "Details" }));
+
+    await user.click(introductionEditor.getByLabelText("Enable Introduction"));
+    await user.clear(introductionEditor.getByLabelText(/^Title/));
+    await user.type(introductionEditor.getByLabelText(/^Title/), "Garden Supper");
     await user.click(screen.getByLabelText("Enable Date and Time"));
-    await user.selectOptions(screen.getByLabelText("Introduction visibility"), "guest_only");
+    await user.click(detailsEditor.getByLabelText("Enable Details"));
+    await user.click(detailsEditor.getByRole("button", { name: "Add schedule item" }));
+    await user.clear(detailsEditor.getAllByLabelText(/^Label/)[1]!);
+    await user.type(detailsEditor.getAllByLabelText(/^Label/)[1]!, "Dessert");
+    await user.clear(detailsEditor.getAllByLabelText(/^Value/)[1]!);
+    await user.type(detailsEditor.getAllByLabelText(/^Value/)[1]!, "Cake and coffee at 9 PM.");
+    await user.selectOptions(
+      introductionEditor.getByLabelText("Introduction visibility"),
+      "guest_only",
+    );
     await user.click(screen.getByRole("button", { name: "Date and Time move up" }));
     await user.click(screen.getByRole("button", { name: "Save sections" }));
 
@@ -148,10 +155,28 @@ describe("SectionBuilderWorkspace", () => {
     expect(payload?.sections.map((section) => section.sectionType)).toEqual([
       "date",
       "introduction",
+      "details",
     ]);
     expect(payload?.sections[1]?.visibility).toBe("guest_only");
+    expect(payload?.sections[1]?.content).toMatchObject({
+      title: "Garden Supper",
+    });
+    expect(payload?.sections[2]?.content).toMatchObject({
+      items: [
+        {
+          label: "Schedule",
+          value: "Add the key timing or guest notes here.",
+        },
+        {
+          label: "Dessert",
+          value: "Cake and coffee at 9 PM.",
+        },
+      ],
+      title: "Details",
+    });
     expect(payload?.sections[0]?.sortOrder).toBe(0);
     expect(payload?.sections[1]?.sortOrder).toBe(1);
+    expect(payload?.sections[2]?.sortOrder).toBe(2);
     expect(await screen.findByText("Sections saved.")).toBeTruthy();
   });
 });
@@ -250,10 +275,10 @@ const premiumTheme: Theme = {
   eventTypes: ["wedding", "dinner", "private_event"],
   id: "premium",
   metadata: {
-    recommendedSections: ["introduction", "date", "story", "location", "rsvp"],
+    recommendedSections: ["introduction", "date", "details", "story", "location", "rsvp"],
     requiredSections: ["introduction", "date", "location", "rsvp"],
-    sectionRhythm: ["introduction", "date", "story", "location", "rsvp"],
-    supportedSections: ["introduction", "date", "story", "location", "rsvp"],
+    sectionRhythm: ["introduction", "date", "details", "story", "location", "rsvp"],
+    supportedSections: ["introduction", "date", "details", "story", "location", "rsvp"],
   },
   name: "Premium",
   supportedModes: ["light", "dark", "toggleable"],

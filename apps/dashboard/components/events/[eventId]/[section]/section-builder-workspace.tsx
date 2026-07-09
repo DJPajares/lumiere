@@ -32,6 +32,7 @@ import {
   useState,
   type CSSProperties,
   type Dispatch,
+  type ReactNode,
   type SetStateAction,
 } from "react";
 
@@ -821,9 +822,11 @@ function SectionEditor({
   const hasContentError = Boolean(errors.content);
   const hasSettingsError = Boolean(errors.settings);
   const hasVisibilityError = Boolean(errors.visibility);
+  const titleId = `${section.sectionKey}-editor-title`;
 
   return (
     <article
+      aria-labelledby={titleId}
       className={`grid gap-4 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-5 ${
         isSelected
           ? "border-[var(--accent)] shadow-[0_16px_48px_color-mix(in_srgb,var(--accent)_12%,transparent)]"
@@ -833,7 +836,9 @@ function SectionEditor({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-xl font-semibold tracking-tight">{definition.label}</h3>
+            <h3 className="text-xl font-semibold tracking-tight" id={titleId}>
+              {definition.label}
+            </h3>
             {definition.requiresGuestContext ? <Badge label="Guest context" /> : null}
             <Badge label={formatRequirement(requirement)} />
             <Badge
@@ -939,70 +944,1330 @@ function SectionEditor({
         </div>
 
         <div className="grid gap-4">
-          <div className="grid gap-2">
-            <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-content`}>
-              Content JSON
-            </label>
-            <textarea
-              aria-describedby={hasContentError ? `${section.sectionKey}-content-error` : undefined}
-              aria-label={`${definition.label} content JSON`}
-              aria-invalid={hasContentError}
-              className={`${inputClassName} min-h-44 resize-y font-mono`}
-              disabled={!section.enabled}
-              id={`${section.sectionKey}-content`}
-              onChange={(event) =>
-                updateSection(section.sectionKey, {
-                  contentText: event.target.value,
-                })
-              }
-              spellCheck={false}
-              value={section.contentText}
-            />
-            {errors.content ? (
-              <p
-                className="text-sm text-[var(--error)]"
-                id={`${section.sectionKey}-content-error`}
-                role="alert"
-              >
-                Content JSON for {definition.label}: {errors.content}
-              </p>
-            ) : null}
-          </div>
+          <SectionFieldForm
+            disabled={!section.enabled}
+            errors={errors}
+            section={section}
+            updateSection={updateSection}
+          />
 
-          <div className="grid gap-2">
-            <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-settings`}>
-              Settings JSON
-            </label>
-            <textarea
-              aria-describedby={
-                hasSettingsError ? `${section.sectionKey}-settings-error` : undefined
-              }
-              aria-label={`${definition.label} settings JSON`}
-              aria-invalid={hasSettingsError}
-              className={`${inputClassName} min-h-24 resize-y font-mono`}
-              disabled={!section.enabled}
-              id={`${section.sectionKey}-settings`}
-              onChange={(event) =>
-                updateSection(section.sectionKey, {
-                  settingsText: event.target.value,
-                })
-              }
-              spellCheck={false}
-              value={section.settingsText}
-            />
-            {errors.settings ? (
-              <p
-                className="text-sm text-[var(--error)]"
-                id={`${section.sectionKey}-settings-error`}
-                role="alert"
-              >
-                Settings JSON for {definition.label}: {errors.settings}
-              </p>
-            ) : null}
-          </div>
+          <DeveloperJsonEditor
+            disabled={!section.enabled}
+            errors={errors}
+            section={section}
+            updateSection={updateSection}
+          />
         </div>
       </div>
     </article>
+  );
+}
+
+type FieldScope = "content" | "settings";
+type JsonPath = Array<number | string>;
+
+type SectionFieldController = {
+  content: JsonObject;
+  disabled: boolean;
+  errors: SectionErrors;
+  fieldError: (scope: FieldScope, path: JsonPath) => string | undefined;
+  section: SectionDraft;
+  settings: JsonObject;
+  updateContentObject: (updater: (draft: JsonObject) => void) => void;
+  updateContentValue: (path: JsonPath, value: JsonValue | undefined) => void;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateSettingsObject: (updater: (draft: JsonObject) => void) => void;
+  updateSettingsValue: (path: JsonPath, value: JsonValue | undefined) => void;
+};
+
+function SectionFieldForm({
+  disabled,
+  errors,
+  section,
+  updateSection,
+}: {
+  disabled: boolean;
+  errors: SectionErrors;
+  section: SectionDraft;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+}) {
+  const content = readDraftObject(section.contentText);
+  const settings = readDraftObject(section.settingsText);
+  const controller: SectionFieldController = {
+    content,
+    disabled,
+    errors,
+    fieldError: (scope, path) => getFieldError(errors[scope], path),
+    section,
+    settings,
+    updateContentObject: (updater) =>
+      updateSection(section.sectionKey, {
+        contentText: updateJsonObjectText(section.contentText, updater),
+      }),
+    updateContentValue: (path, value) =>
+      updateSection(section.sectionKey, {
+        contentText: updateJsonObjectText(section.contentText, (draft) =>
+          setJsonPathValue(draft, path, value),
+        ),
+      }),
+    updateSection,
+    updateSettingsObject: (updater) =>
+      updateSection(section.sectionKey, {
+        settingsText: updateJsonObjectText(section.settingsText, updater),
+      }),
+    updateSettingsValue: (path, value) =>
+      updateSection(section.sectionKey, {
+        settingsText: updateJsonObjectText(section.settingsText, (draft) =>
+          setJsonPathValue(draft, path, value),
+        ),
+      }),
+  };
+
+  return (
+    <fieldset className="grid gap-4" disabled={disabled}>
+      <legend className="sr-only">Edit {getSectionDefinition(section.sectionType).label}</legend>
+      <div className="grid gap-1">
+        <p className="text-sm font-semibold">Content fields</p>
+        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+          These controls write the same validated section data used by the invite renderers.
+        </p>
+      </div>
+      <SectionContentFields controller={controller} />
+      <SectionSettingsFields controller={controller} />
+    </fieldset>
+  );
+}
+
+function SectionContentFields({ controller }: { controller: SectionFieldController }) {
+  switch (controller.section.sectionType) {
+    case "introduction":
+      return <IntroductionFields controller={controller} />;
+    case "date":
+      return <DateFields controller={controller} />;
+    case "details":
+      return <DetailsFields controller={controller} />;
+    case "dress_code":
+      return <DressCodeFields controller={controller} />;
+    case "entourage":
+      return <EntourageFields controller={controller} />;
+    case "gallery":
+      return <GalleryFields controller={controller} />;
+    case "location":
+      return <LocationFields controller={controller} />;
+    case "outro":
+      return <OutroFields controller={controller} />;
+    case "profile":
+      return <ProfileFields controller={controller} />;
+    case "rsvp":
+      return <RsvpFields controller={controller} />;
+    case "story":
+      return <StoryFields controller={controller} />;
+    case "custom":
+      return <CustomFields controller={controller} />;
+    default:
+      return <CustomFields controller={controller} />;
+  }
+}
+
+function IntroductionFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Eyebrow" path={["eyebrow"]} scope="content" />
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <TextField controller={controller} label="Subtitle" path={["subtitle"]} scope="content" />
+      <TextField controller={controller} label="Body" multiline path={["body"]} scope="content" />
+      <AssetField controller={controller} label="Cover image" path={["coverImage"]} />
+    </div>
+  );
+}
+
+function DateFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} scope="content" />
+      <DateTimeField controller={controller} label="Starts at" path={["startsAt"]} required />
+      <DateTimeField controller={controller} label="Ends at" path={["endsAt"]} />
+      <TextField
+        controller={controller}
+        label="Timezone"
+        path={["timezone"]}
+        required
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Display text"
+        path={["displayText"]}
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Countdown label"
+        path={["countdownLabel"]}
+        scope="content"
+      />
+    </div>
+  );
+}
+
+function DetailsFields({ controller }: { controller: SectionFieldController }) {
+  const items = readRecordArray(controller.content.items);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <RepeaterField
+        addLabel="Add schedule item"
+        controller={controller}
+        description="Use this for schedule, gifts, parking, or guest notes."
+        emptyLabel="No details yet."
+        items={items}
+        label="Detail items"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["items"],
+            [...items, { label: "New detail", value: "Add detail copy." }],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["items"], moveArrayItem(items, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["items"],
+            items.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(item, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Label"
+              path={["items", index, "label"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Value"
+              multiline
+              path={["items", index, "value"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Hint"
+              path={["items", index, "hint"]}
+              scope="content"
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function DressCodeFields({ controller }: { controller: SectionFieldController }) {
+  const palette = readRecordArray(controller.content.palette);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <TextField
+        controller={controller}
+        label="Description"
+        multiline
+        path={["description"]}
+        scope="content"
+      />
+      <RepeaterField
+        addLabel="Add color"
+        controller={controller}
+        emptyLabel="No palette colors yet."
+        items={palette}
+        label="Color palette"
+        onAdd={() =>
+          controller.updateContentValue(["palette"], [...palette, { label: "Color", color: "" }])
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["palette"], moveArrayItem(palette, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["palette"],
+            palette.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+            <TextField
+              controller={controller}
+              label="Label"
+              path={["palette", index, "label"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Color"
+              path={["palette", index, "color"]}
+              scope="content"
+              type="color"
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function EntourageFields({ controller }: { controller: SectionFieldController }) {
+  const groups = readRecordArray(controller.content.groups);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <RepeaterField
+        addLabel="Add group"
+        controller={controller}
+        emptyLabel="No groups yet."
+        items={groups}
+        label="Entourage groups"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["groups"],
+            [...groups, { label: "Wedding party", names: ["Name"] }],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["groups"], moveArrayItem(groups, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["groups"],
+            groups.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(item, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Group label"
+              path={["groups", index, "label"]}
+              required
+              scope="content"
+            />
+            <CommaListField
+              controller={controller}
+              label="Names"
+              path={["groups", index, "names"]}
+              required
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function GalleryFields({ controller }: { controller: SectionFieldController }) {
+  const images = readRecordArray(controller.content.images);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} scope="content" />
+      <RepeaterField
+        addLabel="Add image"
+        controller={controller}
+        description="Use real event, venue, celebrant, or product imagery."
+        emptyLabel="No images yet."
+        items={images}
+        label="Gallery images"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["images"],
+            [...images, { alt: "Describe the image", url: "" }],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["images"], moveArrayItem(images, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["images"],
+            images.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Image URL"
+              path={["images", index, "url"]}
+              required
+              scope="content"
+              type="url"
+            />
+            <TextField
+              controller={controller}
+              label="Alt text"
+              path={["images", index, "alt"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Caption"
+              path={["images", index, "caption"]}
+              scope="content"
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function LocationFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <div className="grid gap-4">
+      <TextField
+        controller={controller}
+        label="Venue name"
+        path={["venueName"]}
+        required
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Address"
+        multiline
+        path={["address"]}
+        required
+        scope="content"
+      />
+      <TextField controller={controller} label="Map URL" path={["mapUrl"]} scope="content" />
+      <TextField controller={controller} label="Notes" multiline path={["notes"]} scope="content" />
+    </div>
+  );
+}
+
+function OutroFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <TextField
+        controller={controller}
+        label="Message"
+        multiline
+        path={["message"]}
+        scope="content"
+      />
+      <AssetField controller={controller} label="Closing image" path={["image"]} />
+    </div>
+  );
+}
+
+function ProfileFields({ controller }: { controller: SectionFieldController }) {
+  const people = readRecordArray(controller.content.people);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <RepeaterField
+        addLabel="Add person"
+        controller={controller}
+        emptyLabel="No people yet."
+        items={people}
+        label="People"
+        onAdd={() =>
+          controller.updateContentValue(["people"], [...people, { name: "Name", role: "Host" }])
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["people"], moveArrayItem(people, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["people"],
+            people.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Name"
+              path={["people", index, "name"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Role"
+              path={["people", index, "role"]}
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Bio"
+              multiline
+              path={["people", index, "bio"]}
+              scope="content"
+            />
+            <NestedAssetField
+              controller={controller}
+              label="Portrait image"
+              path={["people", index, "image"]}
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function RsvpFields({ controller }: { controller: SectionFieldController }) {
+  const questions = readRecordArray(controller.content.questions);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <TextField
+        controller={controller}
+        label="Description"
+        multiline
+        path={["description"]}
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Submit label"
+        path={["submitLabel"]}
+        scope="content"
+      />
+      <RepeaterField
+        addLabel="Add RSVP question"
+        controller={controller}
+        emptyLabel="No custom RSVP questions."
+        items={questions}
+        label="RSVP questions"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["questions"],
+            [
+              ...questions,
+              {
+                key: `question-${questions.length + 1}`,
+                label: "Question",
+                type: "text",
+              },
+            ],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["questions"], moveArrayItem(questions, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["questions"],
+            questions.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Question key"
+              path={["questions", index, "key"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Question label"
+              path={["questions", index, "label"]}
+              required
+              scope="content"
+            />
+            <SelectField
+              controller={controller}
+              label="Answer type"
+              options={[
+                { label: "Text", value: "text" },
+                { label: "Long text", value: "textarea" },
+                { label: "Single choice", value: "single_choice" },
+                { label: "Multiple choice", value: "multi_choice" },
+              ]}
+              path={["questions", index, "type"]}
+              scope="content"
+            />
+            <CheckboxField
+              controller={controller}
+              label="Required"
+              path={["questions", index, "required"]}
+              scope="content"
+            />
+            <CommaListField
+              controller={controller}
+              label="Options"
+              path={["questions", index, "options"]}
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function StoryFields({ controller }: { controller: SectionFieldController }) {
+  const paragraphs = readStringArray(controller.content.paragraphs);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <RepeaterField
+        addLabel="Add story paragraph"
+        controller={controller}
+        emptyLabel="No story paragraphs yet."
+        items={paragraphs.map((paragraph) => ({ paragraph }))}
+        label="Story paragraphs"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["paragraphs"],
+            [...paragraphs, "Add a short story paragraph."],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["paragraphs"], moveArrayItem(paragraphs, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["paragraphs"],
+            paragraphs.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <TextField
+            controller={controller}
+            label="Paragraph"
+            multiline
+            path={["paragraphs", index]}
+            required
+            scope="content"
+          />
+        )}
+      />
+      <AssetField controller={controller} label="Story image" path={["image"]} />
+    </div>
+  );
+}
+
+function CustomFields({ controller }: { controller: SectionFieldController }) {
+  const blocks = readRecordArray(controller.content.blocks);
+
+  return (
+    <div className="grid gap-4">
+      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
+      <RepeaterField
+        addLabel="Add block"
+        controller={controller}
+        emptyLabel="No blocks yet."
+        items={blocks}
+        label="Content blocks"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["blocks"],
+            [...blocks, { body: "Add a custom note for guests." }],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["blocks"], moveArrayItem(blocks, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["blocks"],
+            blocks.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Heading"
+              path={["blocks", index, "heading"]}
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Body"
+              multiline
+              path={["blocks", index, "body"]}
+              required
+              scope="content"
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function SectionSettingsFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+      <p className="text-sm font-semibold">Display settings</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SelectField
+          controller={controller}
+          label="Density"
+          options={[
+            { label: "Compact", value: "compact" },
+            { label: "Balanced", value: "balanced" },
+            { label: "Spacious", value: "spacious" },
+          ]}
+          path={["density"]}
+          scope="settings"
+        />
+        <TextField controller={controller} label="Variant" path={["variant"]} scope="settings" />
+        {controller.section.sectionType === "story" ? (
+          <SelectField
+            controller={controller}
+            label="Layout"
+            options={[
+              { label: "Editorial", value: "editorial" },
+              { label: "Timeline", value: "timeline" },
+              { label: "Stacked", value: "stacked" },
+            ]}
+            path={["layout"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "profile" ? (
+          <SelectField
+            controller={controller}
+            label="Layout"
+            options={[
+              { label: "Cards", value: "cards" },
+              { label: "Split", value: "split" },
+              { label: "Stacked", value: "stacked" },
+            ]}
+            path={["layout"]}
+            scope="settings"
+          />
+        ) : null}
+        {["details", "entourage"].includes(controller.section.sectionType) ? (
+          <NumberField
+            controller={controller}
+            label="Columns"
+            max={3}
+            min={1}
+            path={["columns"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "date" ? (
+          <CheckboxField
+            controller={controller}
+            label="Show countdown"
+            path={["showCountdown"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "dress_code" ? (
+          <CheckboxField
+            controller={controller}
+            label="Show swatches"
+            path={["showSwatches"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "location" ? (
+          <CheckboxField
+            controller={controller}
+            label="Show map preview"
+            path={["showMapPreview"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "rsvp" ? (
+          <CheckboxField
+            controller={controller}
+            label="Require guest token"
+            path={["requireGuestToken"]}
+            scope="settings"
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function TextField({
+  controller,
+  label,
+  multiline = false,
+  path,
+  required = false,
+  scope,
+  type = "text",
+}: {
+  controller: SectionFieldController;
+  label: string;
+  multiline?: boolean;
+  path: JsonPath;
+  required?: boolean;
+  scope: FieldScope;
+  type?: "color" | "text" | "url";
+}) {
+  const id = fieldId(controller.section, scope, path);
+  const value = getJsonString(scope === "content" ? controller.content : controller.settings, path);
+  const error = controller.fieldError(scope, path);
+  const update = (nextValue: string) =>
+    scope === "content"
+      ? controller.updateContentValue(path, nextValue)
+      : controller.updateSettingsValue(path, nextValue);
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+        {required ? <span className="text-[var(--error)]"> *</span> : null}
+      </label>
+      {multiline ? (
+        <textarea
+          aria-describedby={error ? `${id}-error` : undefined}
+          aria-invalid={Boolean(error)}
+          className={`${inputClassName} min-h-24 resize-y`}
+          disabled={controller.disabled}
+          id={id}
+          onChange={(event) => update(event.target.value)}
+          value={value}
+        />
+      ) : (
+        <input
+          aria-describedby={error ? `${id}-error` : undefined}
+          aria-invalid={Boolean(error)}
+          className={inputClassName}
+          disabled={controller.disabled}
+          id={id}
+          onChange={(event) => update(event.target.value)}
+          type={type}
+          value={type === "color" && !value ? "#000000" : value}
+        />
+      )}
+      {error ? (
+        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DateTimeField({
+  controller,
+  label,
+  path,
+  required = false,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  path: JsonPath;
+  required?: boolean;
+}) {
+  const id = fieldId(controller.section, "content", path);
+  const value = isoToDateTimeLocal(getJsonString(controller.content, path));
+  const error = controller.fieldError("content", path);
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+        {required ? <span className="text-[var(--error)]"> *</span> : null}
+      </label>
+      <input
+        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={Boolean(error)}
+        className={inputClassName}
+        disabled={controller.disabled}
+        id={id}
+        onChange={(event) =>
+          controller.updateContentValue(path, dateTimeLocalToIso(event.target.value))
+        }
+        type="datetime-local"
+        value={value}
+      />
+      {error ? (
+        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function NumberField({
+  controller,
+  label,
+  max,
+  min,
+  path,
+  scope,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  max: number;
+  min: number;
+  path: JsonPath;
+  scope: FieldScope;
+}) {
+  const id = fieldId(controller.section, scope, path);
+  const value = getJsonNumber(scope === "content" ? controller.content : controller.settings, path);
+  const update = (nextValue: string) =>
+    scope === "content"
+      ? controller.updateContentValue(path, Number(nextValue))
+      : controller.updateSettingsValue(path, Number(nextValue));
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        className={inputClassName}
+        disabled={controller.disabled}
+        id={id}
+        max={max}
+        min={min}
+        onChange={(event) => update(event.target.value)}
+        type="number"
+        value={value}
+      />
+    </div>
+  );
+}
+
+function SelectField({
+  controller,
+  label,
+  options,
+  path,
+  scope,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  options: Array<{ label: string; value: string }>;
+  path: JsonPath;
+  scope: FieldScope;
+}) {
+  const id = fieldId(controller.section, scope, path);
+  const value = getJsonString(scope === "content" ? controller.content : controller.settings, path);
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        className={inputClassName}
+        disabled={controller.disabled}
+        id={id}
+        onChange={(event) =>
+          scope === "content"
+            ? controller.updateContentValue(path, event.target.value)
+            : controller.updateSettingsValue(path, event.target.value)
+        }
+        value={value || options[0]?.value}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function CheckboxField({
+  controller,
+  label,
+  path,
+  scope,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  path: JsonPath;
+  scope: FieldScope;
+}) {
+  const id = fieldId(controller.section, scope, path);
+  const value = getJsonBoolean(
+    scope === "content" ? controller.content : controller.settings,
+    path,
+  );
+
+  return (
+    <label
+      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+      htmlFor={id}
+    >
+      <input
+        checked={value}
+        className="size-4 accent-[var(--accent)]"
+        disabled={controller.disabled}
+        id={id}
+        onChange={(event) =>
+          scope === "content"
+            ? controller.updateContentValue(path, event.target.checked)
+            : controller.updateSettingsValue(path, event.target.checked)
+        }
+        type="checkbox"
+      />
+      <span className="font-semibold">{label}</span>
+    </label>
+  );
+}
+
+function CommaListField({
+  controller,
+  label,
+  path,
+  required = false,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  path: JsonPath;
+  required?: boolean;
+}) {
+  const id = fieldId(controller.section, "content", path);
+  const values = readStringArray(getJsonValue(controller.content, path));
+  const error = controller.fieldError("content", path);
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+        {required ? <span className="text-[var(--error)]"> *</span> : null}
+      </label>
+      <input
+        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={Boolean(error)}
+        className={inputClassName}
+        disabled={controller.disabled}
+        id={id}
+        onChange={(event) =>
+          controller.updateContentValue(
+            path,
+            event.target.value
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean),
+          )
+        }
+        value={values.join(", ")}
+      />
+      {error ? (
+        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function AssetField({
+  controller,
+  label,
+  path,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  path: JsonPath;
+}) {
+  return <NestedAssetField controller={controller} label={label} path={path} />;
+}
+
+function NestedAssetField({
+  controller,
+  label,
+  path,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  path: JsonPath;
+}) {
+  const asset = isJsonObject(getJsonValue(controller.content, path))
+    ? (getJsonValue(controller.content, path) as JsonObject)
+    : {};
+  const setAssetValue = (field: "alt" | "caption" | "url", value: string) => {
+    controller.updateContentObject((draft) => {
+      const current = isJsonObject(getJsonValue(draft, path))
+        ? ({ ...(getJsonValue(draft, path) as JsonObject) } as JsonObject)
+        : {};
+      current[field] = value;
+
+      if (!readString(current.url) && !readString(current.alt) && !readString(current.caption)) {
+        setJsonPathValue(draft, path, undefined);
+        return;
+      }
+
+      setJsonPathValue(draft, path, current);
+    });
+  };
+
+  return (
+    <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+      <p className="text-sm font-semibold">{label}</p>
+      <div className="grid gap-3">
+        <AssetTextField
+          controller={controller}
+          label="Image URL"
+          onChange={(value) => setAssetValue("url", value)}
+          path={[...path, "url"]}
+          type="url"
+          value={getJsonString(asset, ["url"])}
+        />
+        <AssetTextField
+          controller={controller}
+          label="Alt text"
+          onChange={(value) => setAssetValue("alt", value)}
+          path={[...path, "alt"]}
+          value={getJsonString(asset, ["alt"])}
+        />
+        <AssetTextField
+          controller={controller}
+          label="Caption"
+          onChange={(value) => setAssetValue("caption", value)}
+          path={[...path, "caption"]}
+          value={getJsonString(asset, ["caption"])}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AssetTextField({
+  controller,
+  label,
+  onChange,
+  path,
+  type = "text",
+  value,
+}: {
+  controller: SectionFieldController;
+  label: string;
+  onChange: (value: string) => void;
+  path: JsonPath;
+  type?: "text" | "url";
+  value: string;
+}) {
+  const id = fieldId(controller.section, "content", path);
+  const error = controller.fieldError("content", path);
+
+  return (
+    <div className="grid gap-2">
+      <label className="text-sm font-semibold" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={Boolean(error)}
+        className={inputClassName}
+        disabled={controller.disabled}
+        id={id}
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        value={value}
+      />
+      {error ? (
+        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function RepeaterField<TItem>({
+  addLabel,
+  controller,
+  description,
+  emptyLabel,
+  items,
+  label,
+  onAdd,
+  onMove,
+  onRemove,
+  renderItem,
+}: {
+  addLabel: string;
+  controller: SectionFieldController;
+  description?: string;
+  emptyLabel: string;
+  items: TItem[];
+  label: string;
+  onAdd: () => void;
+  onMove: (from: number, to: number) => void;
+  onRemove: (index: number) => void;
+  renderItem: (item: TItem, index: number) => ReactNode;
+}) {
+  return (
+    <section className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h4 className="text-sm font-semibold">{label}</h4>
+          {description ? (
+            <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        <button
+          className={secondaryButtonClassName}
+          disabled={controller.disabled}
+          onClick={onAdd}
+          type="button"
+        >
+          {addLabel}
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
+          {emptyLabel}
+        </p>
+      ) : (
+        <div className="grid gap-3">
+          {items.map((item, index) => (
+            <article
+              className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3"
+              key={index}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                  {label} {index + 1}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className={secondaryButtonClassName}
+                    disabled={controller.disabled || index === 0}
+                    onClick={() => onMove(index, index - 1)}
+                    type="button"
+                  >
+                    Move up
+                  </button>
+                  <button
+                    className={secondaryButtonClassName}
+                    disabled={controller.disabled || index === items.length - 1}
+                    onClick={() => onMove(index, index + 1)}
+                    type="button"
+                  >
+                    Move down
+                  </button>
+                  <button
+                    className={secondaryButtonClassName}
+                    disabled={controller.disabled}
+                    onClick={() => onRemove(index)}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+              {renderItem(item, index)}
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DeveloperJsonEditor({
+  disabled,
+  errors,
+  section,
+  updateSection,
+}: {
+  disabled: boolean;
+  errors: SectionErrors;
+  section: SectionDraft;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+}) {
+  const hasContentError = Boolean(errors.content);
+  const hasSettingsError = Boolean(errors.settings);
+
+  return (
+    <details className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-3">
+      <summary className="cursor-pointer text-sm font-semibold">
+        Developer JSON
+        <span className="ml-2 font-normal text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+          exact renderer payload
+        </span>
+      </summary>
+      <div className="mt-3 grid gap-4">
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-content`}>
+            Content JSON
+          </label>
+          <textarea
+            aria-describedby={hasContentError ? `${section.sectionKey}-content-error` : undefined}
+            aria-label={`${getSectionDefinition(section.sectionType).label} content JSON`}
+            aria-invalid={hasContentError}
+            className={`${inputClassName} min-h-44 resize-y font-mono`}
+            disabled={disabled}
+            id={`${section.sectionKey}-content`}
+            onChange={(event) =>
+              updateSection(section.sectionKey, {
+                contentText: event.target.value,
+              })
+            }
+            spellCheck={false}
+            value={section.contentText}
+          />
+          {errors.content ? (
+            <p
+              className="text-sm text-[var(--error)]"
+              id={`${section.sectionKey}-content-error`}
+              role="alert"
+            >
+              Content JSON: {errors.content}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-settings`}>
+            Settings JSON
+          </label>
+          <textarea
+            aria-describedby={hasSettingsError ? `${section.sectionKey}-settings-error` : undefined}
+            aria-label={`${getSectionDefinition(section.sectionType).label} settings JSON`}
+            aria-invalid={hasSettingsError}
+            className={`${inputClassName} min-h-24 resize-y font-mono`}
+            disabled={disabled}
+            id={`${section.sectionKey}-settings`}
+            onChange={(event) =>
+              updateSection(section.sectionKey, {
+                settingsText: event.target.value,
+              })
+            }
+            spellCheck={false}
+            value={section.settingsText}
+          />
+          {errors.settings ? (
+            <p
+              className="text-sm text-[var(--error)]"
+              id={`${section.sectionKey}-settings-error`}
+              role="alert"
+            >
+              Settings JSON: {errors.settings}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -1968,11 +3233,200 @@ function parseJsonObject(value: string):
   }
 }
 
+function readDraftObject(value: string): JsonObject {
+  const parsed = parseJsonObject(value);
+
+  return parsed.ok ? parsed.value : {};
+}
+
+function updateJsonObjectText(value: string, updater: (draft: JsonObject) => void) {
+  const draft = cloneJsonObject(readDraftObject(value));
+
+  updater(draft);
+
+  return formatJsonText(draft);
+}
+
+function cloneJsonObject(value: JsonObject): JsonObject {
+  return JSON.parse(JSON.stringify(value)) as JsonObject;
+}
+
+function getJsonValue(value: JsonObject, path: JsonPath): JsonValue | undefined {
+  let current: JsonValue | undefined = value;
+
+  for (const key of path) {
+    if (typeof key === "number") {
+      if (!Array.isArray(current)) {
+        return undefined;
+      }
+
+      current = current[key];
+      continue;
+    }
+
+    if (!isJsonObject(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return current;
+}
+
+function setJsonPathValue(target: JsonObject, path: JsonPath, value: JsonValue | undefined) {
+  if (path.length === 0) {
+    return;
+  }
+
+  let current: JsonObject | JsonValue[] = target;
+
+  for (let index = 0; index < path.length; index += 1) {
+    const key = path[index];
+    const isLast = index === path.length - 1;
+
+    if (isLast) {
+      if (value === undefined) {
+        if (Array.isArray(current) && typeof key === "number") {
+          current.splice(key, 1);
+        } else if (!Array.isArray(current) && typeof key === "string") {
+          delete current[key];
+        }
+
+        return;
+      }
+
+      if (Array.isArray(current) && typeof key === "number") {
+        current[key] = value;
+      } else if (!Array.isArray(current) && typeof key === "string") {
+        current[key] = value;
+      }
+
+      return;
+    }
+
+    const nextKey = path[index + 1];
+    const nextContainer: JsonObject | JsonValue[] = typeof nextKey === "number" ? [] : {};
+
+    if (Array.isArray(current)) {
+      if (typeof key !== "number") {
+        return;
+      }
+
+      const existing: JsonValue | undefined = current[key];
+
+      if (isJsonObject(existing) || Array.isArray(existing)) {
+        current = existing;
+      } else {
+        current[key] = nextContainer as JsonValue;
+        current = nextContainer;
+      }
+
+      continue;
+    }
+
+    if (typeof key !== "string") {
+      return;
+    }
+
+    const existing: JsonValue | undefined = current[key];
+
+    if (isJsonObject(existing) || Array.isArray(existing)) {
+      current = existing;
+    } else {
+      current[key] = nextContainer as JsonValue;
+      current = nextContainer;
+    }
+  }
+}
+
+function getJsonString(value: JsonObject, path: JsonPath) {
+  const current = getJsonValue(value, path);
+
+  return typeof current === "string" ? current : "";
+}
+
+function getJsonNumber(value: JsonObject, path: JsonPath) {
+  const current = getJsonValue(value, path);
+
+  return typeof current === "number" ? current : "";
+}
+
+function getJsonBoolean(value: JsonObject, path: JsonPath) {
+  const current = getJsonValue(value, path);
+
+  return typeof current === "boolean" ? current : false;
+}
+
+function fieldId(section: SectionDraft, scope: FieldScope, path: JsonPath) {
+  return `${section.sectionKey}-${scope}-${path.map(String).join("-")}`;
+}
+
+function getFieldError(message: string | undefined, path: JsonPath) {
+  if (!message) {
+    return undefined;
+  }
+
+  const pathLabel = path.map(String).join(".");
+  const parentPathLabel = path.slice(0, -1).map(String).join(".");
+
+  if (pathLabel && message.includes(`${pathLabel}:`)) {
+    return message;
+  }
+
+  if (parentPathLabel && message.includes(`${parentPathLabel}:`)) {
+    return message;
+  }
+
+  return undefined;
+}
+
+function moveArrayItem<TItem>(items: TItem[], from: number, to: number) {
+  if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [item] = nextItems.splice(from, 1);
+
+  if (item === undefined) {
+    return items;
+  }
+
+  nextItems.splice(to, 0, item);
+
+  return nextItems;
+}
+
+function isoToDateTimeLocal(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().slice(0, 16);
+}
+
+function dateTimeLocalToIso(value: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
 function readString(value: JsonValue | undefined) {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
-function readBoolean(value: JsonValue | undefined, fallback: boolean) {
+function readBoolean(value: JsonValue | undefined, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
 }
 
