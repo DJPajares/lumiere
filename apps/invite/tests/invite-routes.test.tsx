@@ -74,7 +74,8 @@ describe("invite app routes", () => {
     expect(html).toContain("Guest-only shuttle");
     expect(html).toContain("Private RSVP");
     expect(html).toContain("Meal choice");
-    expect(html).toContain("RSVP form arrives next");
+    expect(html).toContain("Will you attend?");
+    expect(html).toContain("Send RSVP");
     expect(html).toContain('data-invite-context="guest"');
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');

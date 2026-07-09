@@ -7,6 +7,7 @@ import type {
 } from "@lumiere/types";
 
 import { InviteShell } from "./invite-shell";
+import { RsvpForm, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
 type JsonObject = Record<string, JsonValue>;
 type InvitationContext = "guest" | "public";
@@ -28,22 +29,36 @@ export function PublicInvitation({ invite }: { invite: PublicEventResponse }) {
   return <InvitationFrame context="public" invite={invite} sections={sections} />;
 }
 
-export function GuestInvitation({ invite }: { invite: PublicGuestInviteResponse }) {
+export function GuestInvitation({
+  guestToken,
+  invite,
+}: {
+  guestToken: string;
+  invite: PublicGuestInviteResponse;
+}) {
   const sections = getRenderableSections(invite.sections, "guest");
 
   return (
-    <InvitationFrame context="guest" guest={invite.guest} invite={invite} sections={sections} />
+    <InvitationFrame
+      context="guest"
+      guest={invite.guest}
+      guestToken={guestToken}
+      invite={invite}
+      sections={sections}
+    />
   );
 }
 
 function InvitationFrame({
   context,
   guest,
+  guestToken,
   invite,
   sections,
 }: {
   context: InvitationContext;
   guest?: GuestContext;
+  guestToken?: string;
   invite: InviteResponse;
   sections: RenderableSection[];
 }) {
@@ -74,7 +89,14 @@ function InvitationFrame({
         {bodySections.length > 0 ? (
           <div className="grid w-full gap-0 py-2 sm:py-4">
             {bodySections.map((item, index) => (
-              <PublicSection guest={guest} index={index} key={item.section.id} item={item} />
+              <PublicSection
+                eventSlug={invite.event.slug}
+                guest={guest}
+                guestToken={guestToken}
+                index={index}
+                key={item.section.id}
+                item={item}
+              />
             ))}
           </div>
         ) : (
@@ -277,11 +299,15 @@ function GuestContextPanel({ guest }: { guest: GuestContext }) {
 }
 
 function PublicSection({
+  eventSlug,
   guest,
+  guestToken,
   index,
   item,
 }: {
+  eventSlug: string;
   guest?: GuestContext;
+  guestToken?: string;
   index: number;
   item: RenderableSection;
 }) {
@@ -313,7 +339,14 @@ function PublicSection({
           {definition.label}
         </p>
         <div className="lumiere-section__body">
-          <SectionBody composition={composition} guest={guest} item={item} titleId={titleId} />
+          <SectionBody
+            composition={composition}
+            eventSlug={eventSlug}
+            guest={guest}
+            guestToken={guestToken}
+            item={item}
+            titleId={titleId}
+          />
         </div>
       </div>
     </section>
@@ -322,12 +355,16 @@ function PublicSection({
 
 function SectionBody({
   composition,
+  eventSlug,
   guest,
+  guestToken,
   item,
   titleId,
 }: {
   composition: SectionComposition;
+  eventSlug: string;
   guest?: GuestContext;
+  guestToken?: string;
   item: RenderableSection;
   titleId: string;
 }) {
@@ -351,7 +388,16 @@ function SectionBody({
     case "profile":
       return <ProfileSection content={content} settings={settings} titleId={titleId} />;
     case "rsvp":
-      return <RsvpSection content={content} guest={guest} settings={settings} titleId={titleId} />;
+      return (
+        <RsvpSection
+          content={content}
+          eventSlug={eventSlug}
+          guest={guest}
+          guestToken={guestToken}
+          settings={settings}
+          titleId={titleId}
+        />
+      );
     case "story":
       return <StorySection composition={composition} content={content} titleId={titleId} />;
     case "custom":
@@ -724,12 +770,16 @@ function GallerySection({
 
 function RsvpSection({
   content,
+  eventSlug,
   guest,
+  guestToken,
   settings,
   titleId,
 }: {
   content: JsonObject;
+  eventSlug: string;
   guest?: GuestContext;
+  guestToken?: string;
   settings: JsonObject;
   titleId: string;
 }) {
@@ -737,8 +787,10 @@ function RsvpSection({
   const description =
     readString(content.description) ??
     "Review your guest details now. The RSVP form will open here when responses are enabled.";
-  const questions = readRecordArray(content.questions);
+  const questions = readRsvpQuestions(content.questions);
   const requireGuestToken = readBoolean(settings.requireGuestToken, true);
+  const submitLabel = readString(content.submitLabel) ?? "Send RSVP";
+  const submitContext = guest && guestToken ? { guest, guestToken } : null;
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
@@ -750,7 +802,7 @@ function RsvpSection({
           <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
             {description}
           </p>
-          {!guest && requireGuestToken ? (
+          {!submitContext && requireGuestToken ? (
             <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
               RSVP details unlock from a valid guest invite link.
             </p>
@@ -779,33 +831,41 @@ function RsvpSection({
         ) : null}
       </div>
 
-      <aside className="grid gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
-            Your invitation
+      {submitContext ? (
+        <RsvpForm
+          eventSlug={eventSlug}
+          guestGroup={submitContext.guest.guestGroup}
+          guestToken={submitContext.guestToken}
+          initialResponseStatus={submitContext.guest.responseStatus}
+          questions={questions}
+          submitLabel={submitLabel}
+        />
+      ) : (
+        <aside className="grid gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+              Your invitation
+            </p>
+            <h3 className="mt-2 text-xl font-semibold">
+              {guest?.guestGroup.label ?? "Guest group"}
+            </h3>
+          </div>
+          <dl className="grid gap-3">
+            <GuestFact label="Group size" value={`Max ${guest?.guestGroup.maxPax ?? 1} pax`} />
+            <GuestFact
+              label="Current response"
+              value={formatResponseStatus(guest?.responseStatus)}
+            />
+            <GuestFact
+              label="Invite status"
+              value={formatGuestGroupStatus(guest?.guestGroup.status)}
+            />
+          </dl>
+          <p className="rounded-[var(--radius-md)] bg-[var(--surface)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            Open this event from a valid guest invite link to submit an RSVP.
           </p>
-          <h3 className="mt-2 text-xl font-semibold">{guest?.guestGroup.label ?? "Guest group"}</h3>
-        </div>
-        <dl className="grid gap-3">
-          <GuestFact label="Group size" value={`Max ${guest?.guestGroup.maxPax ?? 1} pax`} />
-          <GuestFact label="Current response" value={formatResponseStatus(guest?.responseStatus)} />
-          <GuestFact
-            label="Invite status"
-            value={formatGuestGroupStatus(guest?.guestGroup.status)}
-          />
-        </dl>
-        <button
-          className="min-h-11 rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] px-5 text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
-          disabled
-          type="button"
-        >
-          RSVP form arrives next
-        </button>
-        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-          RSVP is not open in this preview yet. You can still review the private event details
-          attached to this link.
-        </p>
-      </aside>
+        </aside>
+      )}
     </div>
   );
 }
@@ -1196,6 +1256,40 @@ function readStringArray(value: JsonValue | undefined) {
 
 function readRecordArray(value: JsonValue | undefined) {
   return Array.isArray(value) ? value.filter(isJsonObject) : [];
+}
+
+function readRsvpQuestions(value: JsonValue | undefined): RsvpQuestion[] {
+  return readRecordArray(value).flatMap((question) => {
+    const key = readString(question.key);
+    const label = readString(question.label);
+    const type = readRsvpQuestionType(question.type);
+
+    if (!key || !label || !type) {
+      return [];
+    }
+
+    return [
+      {
+        key,
+        label,
+        options: readStringArray(question.options),
+        required: readBoolean(question.required, false),
+        type,
+      },
+    ];
+  });
+}
+
+function readRsvpQuestionType(value: JsonValue | undefined): RsvpQuestionType | undefined {
+  switch (value) {
+    case "multi_choice":
+    case "single_choice":
+    case "text":
+    case "textarea":
+      return value;
+    default:
+      return undefined;
+  }
 }
 
 function readAsset(value: JsonValue | undefined) {

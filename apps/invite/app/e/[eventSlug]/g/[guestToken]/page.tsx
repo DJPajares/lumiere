@@ -38,7 +38,7 @@ export default async function GuestEventPage({ params }: GuestEventPageProps) {
   const result = await loadGuestInvite(eventSlug, guestToken);
 
   if (result.status === "ready") {
-    return <GuestInvitation invite={result.invite} />;
+    return <GuestInvitation guestToken={guestToken} invite={result.invite} />;
   }
 
   return <GuestInvitationUnavailable eventSlug={eventSlug} message={result.message} />;

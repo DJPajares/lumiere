@@ -193,13 +193,19 @@ describe("public invite section renderers", () => {
         responseStatus: null,
       },
     };
-    const html = renderToStaticMarkup(createElement(GuestInvitation, { invite }));
+    const html = renderToStaticMarkup(
+      createElement(GuestInvitation, {
+        guestToken: "sample-guest-token-for-preview",
+        invite,
+      }),
+    );
 
     expect(html).toContain('data-section-renderer="section.rsvp"');
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
     expect(html).toContain("Meal choice");
+    expect(html).toContain("Will you attend?");
   });
 });
 
