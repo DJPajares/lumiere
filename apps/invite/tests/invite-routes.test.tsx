@@ -3,8 +3,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
-import GuestEventPage from "../app/e/[eventSlug]/g/[guestToken]/page";
-import PublicEventPage from "../app/e/[eventSlug]/page";
+import GuestEventPage, {
+  generateMetadata as generateGuestInviteMetadata,
+} from "../app/e/[eventSlug]/g/[guestToken]/page";
+import PublicEventPage, {
+  generateMetadata as generatePublicEventMetadata,
+} from "../app/e/[eventSlug]/page";
+import { metadata as inviteAppMetadata } from "../app/layout";
 import InviteHome from "../app/page";
 
 describe("invite app routes", () => {
@@ -18,6 +23,21 @@ describe("invite app routes", () => {
     expect(html).toContain("Lumiere invite app");
     expect(html).toContain("/e/launch-night");
     expect(html).toContain("/e/launch-night/g/sample-guest-token-for-preview");
+  });
+
+  it("declares invite PWA metadata and icons", () => {
+    expect(inviteAppMetadata.applicationName).toBe("Lumiere Invite");
+    expect(inviteAppMetadata.manifest).toBe("/manifest.webmanifest");
+    expect(inviteAppMetadata.appleWebApp).toMatchObject({
+      capable: true,
+      title: "Lumiere Invite",
+    });
+    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/lumiere-mark.svg");
+    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/icon-192.png");
+    expect(inviteAppMetadata.robots).toMatchObject({
+      follow: false,
+      index: false,
+    });
   });
 
   it("renders the generic public event route without guest RSVP context", async () => {
@@ -38,6 +58,30 @@ describe("invite app routes", () => {
     expect(html).toContain('data-theme-mode="dark"');
     expect(html).not.toContain("Private RSVP");
     expect(html).not.toContain("Guest-only shuttle");
+  });
+
+  it("generates safe share metadata for generic public event routes", async () => {
+    mockPublicEventResponse(publicEventResponse);
+
+    const metadata = await generatePublicEventMetadata({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+      }),
+    });
+
+    expect(metadata.title).toBe("Spring Dinner");
+    expect(metadata.description).toContain("Invitation for Spring Dinner at Glass Hall");
+    expect(metadata.description).toContain("June 1, 2030");
+    expect(metadata.openGraph).toMatchObject({
+      description: metadata.description,
+      siteName: "Lumiere Invite",
+      title: "Spring Dinner",
+      type: "website",
+    });
+    expect(metadata.robots).toMatchObject({
+      follow: false,
+      index: false,
+    });
   });
 
   it("renders an unavailable state for missing or unpublished public events", async () => {
@@ -80,6 +124,28 @@ describe("invite app routes", () => {
     expect(html).toContain('data-invite-context="guest"');
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');
+  });
+
+  it("generates noindex guest metadata without leaking guest context", async () => {
+    mockPublicEventResponse(publicGuestInviteResponse);
+
+    const metadata = await generateGuestInviteMetadata({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "sample-guest-token-for-preview",
+      }),
+    });
+
+    expect(metadata.title).toBe("Spring Dinner RSVP");
+    expect(metadata.description).toBe(
+      "Invitation details for Spring Dinner. RSVP access stays private to each guest link.",
+    );
+    expect(JSON.stringify(metadata)).not.toContain("Tan Family");
+    expect(JSON.stringify(metadata)).not.toContain("sample-guest-token-for-preview");
+    expect(metadata.robots).toMatchObject({
+      follow: false,
+      index: false,
+    });
   });
 
   it("renders an unavailable state for invalid guest tokens", async () => {

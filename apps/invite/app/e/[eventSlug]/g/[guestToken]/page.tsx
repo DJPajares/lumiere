@@ -21,15 +21,26 @@ export async function generateMetadata({ params }: GuestEventPageProps): Promise
   const result = await loadGuestInvite(eventSlug, guestToken);
 
   if (result.status === "ready") {
+    const title = `${result.invite.event.title} RSVP`;
+    const description = `Invitation details for ${result.invite.event.title}. RSVP access stays private to each guest link.`;
+
     return {
-      title: `${result.invite.event.title} RSVP | Lumiere Invite`,
-      description: `Personalized invitation for ${result.invite.event.title}.`,
+      title,
+      description,
+      openGraph: {
+        description,
+        siteName: "Lumiere Invite",
+        title,
+        type: "website",
+      },
+      robots: getGuestInviteRobots(),
     };
   }
 
   return {
-    title: `${eventSlug} RSVP | Lumiere Invite`,
-    description: "Personalized invitation preview with guest RSVP context.",
+    title: `${eventSlug} RSVP`,
+    description: "Private RSVP invitation link.",
+    robots: getGuestInviteRobots(),
   };
 }
 
@@ -79,4 +90,11 @@ async function loadGuestInvite(eventSlug: string, guestToken: string) {
       status: "error" as const,
     };
   }
+}
+
+function getGuestInviteRobots(): Metadata["robots"] {
+  return {
+    follow: false,
+    index: false,
+  };
 }

@@ -8,6 +8,7 @@ import {
   toFriendlyAuthError,
 } from "../auth/dashboard-auth-provider";
 import { createDashboardApiClient } from "../lib/dashboard-api";
+import { metadata as dashboardAppMetadata } from "../app/layout";
 import EventSectionPage from "../app/events/[eventId]/[section]/page";
 import EventPage from "../app/events/[eventId]/page";
 import EventsPage from "../app/events/page";
@@ -22,6 +23,23 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("dashboard routes", () => {
+  it("declares dashboard PWA metadata and icons", () => {
+    expect(dashboardAppMetadata.applicationName).toBe("Lumiere Dashboard");
+    expect(dashboardAppMetadata.manifest).toBe("/manifest.webmanifest");
+    expect(dashboardAppMetadata.appleWebApp).toMatchObject({
+      capable: true,
+      title: "Lumiere Dashboard",
+    });
+    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain(
+      "/icons/lumiere-dashboard-mark.svg",
+    );
+    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain("/icons/icon-192.png");
+    expect(dashboardAppMetadata.robots).toMatchObject({
+      follow: false,
+      index: false,
+    });
+  });
+
   it("renders the root dashboard shell for authenticated managers", () => {
     const html = renderWithAuth(createElement(DashboardHome));
 

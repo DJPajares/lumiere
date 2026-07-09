@@ -1,4 +1,5 @@
 import { ApiClientError } from "@lumiere/api-client";
+import type { PublicEventSummary } from "@lumiere/types";
 import type { Metadata } from "next";
 
 import { PublicInvitation, PublicInvitationUnavailable } from "../../../components/public-invite";
@@ -17,15 +18,26 @@ export async function generateMetadata({ params }: PublicEventPageProps): Promis
   const result = await loadPublicEvent(eventSlug);
 
   if (result.status === "ready") {
+    const title = result.invite.event.title;
+    const description = buildPublicInviteDescription(result.invite.event);
+
     return {
-      title: `${result.invite.event.title} | Lumiere Invite`,
-      description: `Public invitation for ${result.invite.event.title}.`,
+      title,
+      description,
+      openGraph: {
+        description,
+        siteName: "Lumiere Invite",
+        title,
+        type: "website",
+      },
+      robots: getPublicInviteRobots(),
     };
   }
 
   return {
-    title: `${eventSlug} | Lumiere Invite`,
+    title: eventSlug,
     description: "Public invitation without guest-only RSVP details.",
+    robots: getPublicInviteRobots(),
   };
 }
 
@@ -60,5 +72,30 @@ async function loadPublicEvent(eventSlug: string) {
       message: "This invitation is temporarily unavailable. Please try again later.",
       status: "error" as const,
     };
+  }
+}
+
+function buildPublicInviteDescription(event: PublicEventSummary) {
+  const venue = event.venueName ? ` at ${event.venueName}` : "";
+  const date = formatMetadataDate(event.startsAt, event.timezone);
+
+  return `Invitation for ${event.title}${venue}${date ? ` on ${date}` : ""}.`;
+}
+
+function getPublicInviteRobots(): Metadata["robots"] {
+  return {
+    follow: false,
+    index: false,
+  };
+}
+
+function formatMetadataDate(value: string, timezone: string) {
+  try {
+    return new Intl.DateTimeFormat("en", {
+      dateStyle: "long",
+      timeZone: timezone,
+    }).format(new Date(value));
+  } catch {
+    return undefined;
   }
 }

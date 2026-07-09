@@ -4,27 +4,40 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Lumiere Invite",
+  title: {
+    default: "Lumiere Invite",
+    template: "%s | Lumiere Invite",
+  },
   description: "A luminous invitation and RSVP experience.",
   applicationName: "Lumiere Invite",
   manifest: "/manifest.webmanifest",
   icons: {
-    // icon: [{ url: "/icons/lumiere-mark.svg", type: "image/svg+xml", sizes: "any" }],
-    // shortcut: "/icons/lumiere-mark.svg",
-    // apple: "/icons/lumiere-mark.svg",
     icon: [
+      { url: "/icons/lumiere-mark.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/favicon.ico", type: "image/x-icon", sizes: "any" },
-      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/logo.png", type: "image/png", sizes: "1024x1024" }],
   },
   appleWebApp: {
     capable: true,
+    statusBarStyle: "default",
     title: "Lumiere Invite",
   },
   formatDetection: {
     telephone: false,
+  },
+  openGraph: {
+    description: "A luminous invitation and RSVP experience.",
+    siteName: "Lumiere Invite",
+    title: "Lumiere Invite",
+    type: "website",
+  },
+  robots: {
+    follow: false,
+    index: false,
   },
 };
 
