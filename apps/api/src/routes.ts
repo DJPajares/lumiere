@@ -5,6 +5,7 @@ import {
   byEventIdParamsSchema,
   eventCreateRequestSchema,
   eventSectionsUpdateRequestSchema,
+  eventSlugSuggestionRequestSchema,
   eventThemeUpdateRequestSchema,
   eventUpdateRequestSchema,
   guestGroupMutationRequestSchema,
@@ -34,6 +35,7 @@ import type {
   PublicGuestInviteRecord,
   PublicInviteStore,
 } from "./public-invites";
+import { suggestPublicSlug } from "./public-slugs";
 import type { ApiBindings } from "./request-context";
 import type { RsvpStore, RsvpSubmissionRejected } from "./rsvps";
 import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
@@ -201,10 +203,42 @@ export const createRoutes = ({
     });
   });
 
+  routes.get(
+    "/events/slug-suggestion",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerStores({ authStore, eventStore });
+      const input = parseEventSlugSuggestionQuery({
+        eventId: context.req.query("eventId"),
+        title: context.req.query("title"),
+      });
+
+      if (input.eventId) {
+        const eventId = parseEventIdParam(input.eventId);
+
+        await assertEventAccess({
+          authStore: stores.authStore,
+          eventId,
+          manager: context.get("manager"),
+        });
+      }
+
+      const slug = await createEventSlugSuggestion(stores.eventStore, {
+        exceptEventId: input.eventId,
+        title: input.title,
+      });
+
+      return context.json({
+        slug,
+      });
+    },
+  );
+
   routes.post("/events", requireManagerAuth({ authStore, config }), async (context) => {
     const store = requireEventStore(eventStore);
     const manager = context.get("manager");
     const input = await parseJsonBody(context, eventCreateRequestSchema);
+    await assertEventSlugAvailable(store, input.slug);
     const event = await store.createEvent(manager.user.id, input);
 
     return context.json(
@@ -305,6 +339,9 @@ export const createRoutes = ({
       manager: context.get("manager"),
       minimumRole: "editor",
     });
+    if (input.slug) {
+      await assertEventSlugAvailable(stores.eventStore, input.slug, { exceptEventId: eventId });
+    }
     const event = await stores.eventStore.updateEvent(eventId, input);
 
     if (!event) {
@@ -942,6 +979,27 @@ const parseEventAndGuestGroupIdParams = ({
   return result.data;
 };
 
+const parseEventSlugSuggestionQuery = ({
+  eventId,
+  title,
+}: {
+  eventId: string | undefined;
+  title: string | undefined;
+}) => {
+  const result = eventSlugSuggestionRequestSchema.safeParse({
+    eventId,
+    title,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid slug suggestion query", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
 const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -1008,6 +1066,55 @@ const zodIssuesToFieldErrors = (issues: ValidationIssue[]) =>
     message: issue.message,
     path: issue.path.map((part) => (typeof part === "number" ? part : String(part))),
   }));
+
+const assertEventSlugAvailable = async (
+  eventStore: EventStore,
+  slug: string,
+  options?: { exceptEventId?: string },
+) => {
+  if (await eventStore.isEventSlugAvailable(slug, options)) {
+    return;
+  }
+
+  throw new ApiHttpError("CONFLICT", "Event slug is already in use", {
+    fields: [
+      {
+        message: "Choose another public event slug",
+        path: ["slug"],
+      },
+    ],
+  });
+};
+
+const createEventSlugSuggestion = async (
+  eventStore: EventStore,
+  {
+    exceptEventId,
+    title,
+  }: {
+    exceptEventId?: string;
+    title: string;
+  },
+) => {
+  try {
+    return await suggestPublicSlug({
+      isAvailable: (candidate) =>
+        eventStore.isEventSlugAvailable(candidate, {
+          exceptEventId,
+        }),
+      title,
+    });
+  } catch {
+    throw new ApiHttpError("CONFLICT", "Unable to suggest an available event slug", {
+      fields: [
+        {
+          message: "Try a more specific event title or enter a custom slug",
+          path: ["title"],
+        },
+      ],
+    });
+  }
+};
 
 const throwRsvpRejection = (rejection: RsvpSubmissionRejected): never => {
   if (rejection.reason === "closed") {

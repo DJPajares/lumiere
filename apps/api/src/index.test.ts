@@ -675,9 +675,9 @@ describe("API app", () => {
       id: eventId,
       ownerUserId: localUser.id,
       publicSettingsJson: {},
+      publicSlug: "new-launch",
       rsvpSettingsJson: {},
       selectedThemeId: null,
-      slug: "new-launch",
       startsAt: "2026-12-01 11:00:00+00",
       status: "draft",
       themeConfigJson: {},
@@ -701,9 +701,8 @@ describe("API app", () => {
 
   it("returns 409 when creating an event with a duplicate slug", async () => {
     const { authStore } = createTestAuthStore();
-    const { eventStore } = createTestEventStore({
-      createError: new ApiHttpError("CONFLICT", "Event slug is already in use"),
-    });
+    const { createEvent, eventStore, isEventSlugAvailable } = createTestEventStore();
+    isEventSlugAvailable.mockResolvedValue(false);
     const app = createApp({ authStore, config: loadTestConfig(), eventStore });
     const response = await app.request("/events", {
       body: JSON.stringify({
@@ -724,11 +723,18 @@ describe("API app", () => {
     await expect(response.json()).resolves.toEqual({
       error: {
         code: "CONFLICT",
+        fields: [
+          {
+            message: "Choose another public event slug",
+            path: ["slug"],
+          },
+        ],
         message: "Event slug is already in use",
         requestId: "duplicate-slug-request-id",
       },
     });
     expect(response.status).toBe(409);
+    expect(createEvent).not.toHaveBeenCalled();
   });
 
   it("returns validation errors for invalid event create requests", async () => {
@@ -765,6 +771,61 @@ describe("API app", () => {
       path: ["slug"],
     });
     expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects reserved public event slugs", async () => {
+    const { authStore } = createTestAuthStore();
+    const { createEvent, eventStore } = createTestEventStore();
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events", {
+      body: JSON.stringify({
+        eventType: "launch",
+        slug: "events",
+        startsAt: "2026-12-01T11:00:00.000Z",
+        timezone: "Asia/Singapore",
+        title: "Launch Night",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "reserved-slug-request-id",
+      },
+      method: "POST",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid request body",
+        requestId: "reserved-slug-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "This event slug is reserved",
+      path: ["slug"],
+    });
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("suggests an available public slug from the event title", async () => {
+    const { authStore } = createTestAuthStore();
+    const { eventStore, isEventSlugAvailable } = createTestEventStore();
+    isEventSlugAvailable.mockImplementation(async (candidate) => candidate !== "launch-night");
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request("/events/slug-suggestion?title=Launch%20Night", {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.slug).toMatch(/^launch-night-[a-f0-9]{6}$/);
+    expect(isEventSlugAvailable).toHaveBeenCalledWith("launch-night", {
+      exceptEventId: undefined,
+    });
   });
 
   it("gets an event after enforcing manager access", async () => {
@@ -963,6 +1024,78 @@ describe("API app", () => {
       status: "published",
       title: "Updated Launch",
     });
+  });
+
+  it("updates an event slug when the public slug is available", async () => {
+    const updatedEvent = {
+      ...baseEvent,
+      slug: "updated-launch",
+      updatedAt: "2026-07-08T01:00:00.000Z",
+    };
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { eventStore, isEventSlugAvailable, updateEvent } = createTestEventStore({
+      updatedEvent,
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        slug: "updated-launch",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      event: updatedEvent,
+    });
+    expect(response.status).toBe(200);
+    expect(isEventSlugAvailable).toHaveBeenCalledWith("updated-launch", {
+      exceptEventId: eventId,
+    });
+    expect(updateEvent).toHaveBeenCalledWith(eventId, {
+      slug: "updated-launch",
+    });
+  });
+
+  it("returns 409 when editing to a duplicate public slug", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { eventStore, isEventSlugAvailable, updateEvent } = createTestEventStore();
+    isEventSlugAvailable.mockResolvedValue(false);
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        slug: "taken-launch",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "duplicate-slug-edit-request-id",
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "CONFLICT",
+        fields: [
+          {
+            message: "Choose another public event slug",
+            path: ["slug"],
+          },
+        ],
+        message: "Event slug is already in use",
+        requestId: "duplicate-slug-edit-request-id",
+      },
+    });
+    expect(response.status).toBe(409);
+    expect(updateEvent).not.toHaveBeenCalled();
   });
 
   it("blocks event updates when manager only has viewer access", async () => {
@@ -2555,12 +2688,24 @@ function createTestEventStore({
     async (requestedEventId: string) =>
       events.find((event) => event.id === requestedEventId) ?? null,
   );
+  const getEventBySlug = vi.fn(
+    async (requestedSlug: string) => events.find((event) => event.slug === requestedSlug) ?? null,
+  );
+  const isEventSlugAvailable = vi.fn(
+    async (requestedSlug: string, options: { exceptEventId?: string } = {}) => {
+      const event = events.find((event) => event.slug === requestedSlug);
+
+      return !event || event.id === options.exceptEventId;
+    },
+  );
   const listManagedEvents = vi.fn(async () => events);
   const updateEvent = vi.fn(async (_eventId: string, _input: EventUpdate) => updatedEvent);
   const eventStore: EventStore = {
     archiveEvent,
     createEvent,
     getEvent,
+    getEventBySlug,
+    isEventSlugAvailable,
     listManagedEvents,
     updateEvent,
   };
@@ -2570,6 +2715,8 @@ function createTestEventStore({
     createEvent,
     eventStore,
     getEvent,
+    getEventBySlug,
+    isEventSlugAvailable,
     listManagedEvents,
     updateEvent,
   };
@@ -2770,6 +2917,16 @@ function createIntegrationSmokeStores() {
     getEvent: vi.fn(async (requestedEventId) =>
       event && requestedEventId === event.id ? event : null,
     ),
+    getEventBySlug: vi.fn(async (requestedSlug) =>
+      event && event.slug === requestedSlug ? event : null,
+    ),
+    isEventSlugAvailable: vi.fn(async (requestedSlug, options = {}) => {
+      if (!event || event.slug !== requestedSlug) {
+        return true;
+      }
+
+      return event.id === options.exceptEventId;
+    }),
     listManagedEvents: vi.fn(async (userId) =>
       event && event.ownerUserId === userId ? [event] : [],
     ),

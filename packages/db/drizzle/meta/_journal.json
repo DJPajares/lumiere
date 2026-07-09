@@ -8,6 +8,13 @@
       "when": 1783442412972,
       "tag": "0000_flimsy_nemesis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783602476517,
+      "tag": "0001_outstanding_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

@@ -44,12 +44,11 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
         id: events.id,
         ownerUserId: events.ownerUserId,
         rsvpSettingsJson: events.rsvpSettingsJson,
-        slug: events.slug,
         status: events.status,
         title: events.title,
       })
       .from(events)
-      .where(and(eq(events.slug, eventSlug), eq(events.status, "published")))
+      .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
       .limit(1);
 
     if (!event) {

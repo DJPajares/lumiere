@@ -68,7 +68,7 @@ export const sectionTypeEnum = pgEnum("section_type", pgEnumValues(sectionTypeSc
 export const schemaIndexNames = {
   usersSupabaseUserId: "users_supabase_user_id_unique",
   usersEmail: "users_email_idx",
-  eventsSlug: "events_slug_unique",
+  eventsPublicSlug: "events_public_slug_unique",
   eventsOwnerUserId: "events_owner_user_id_idx",
   eventsStatusStartsAt: "events_status_starts_at_idx",
   eventManagersEventUser: "event_managers_event_user_unique",
@@ -114,7 +114,7 @@ export const events = pgTable(
     ownerUserId: uuid("owner_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    slug: varchar("slug", { length: 120 }).notNull(),
+    publicSlug: varchar("public_slug", { length: 80 }).notNull(),
     title: varchar("title", { length: 160 }).notNull(),
     eventType: eventTypeEnum("event_type").notNull(),
     status: eventStatusEnum("status").notNull().default("draft"),
@@ -141,7 +141,7 @@ export const events = pgTable(
     updatedAt: updatedAtColumn(),
   },
   (table) => [
-    uniqueIndex(schemaIndexNames.eventsSlug).on(table.slug),
+    uniqueIndex(schemaIndexNames.eventsPublicSlug).on(table.publicSlug),
     index(schemaIndexNames.eventsOwnerUserId).on(table.ownerUserId),
     index(schemaIndexNames.eventsStatusStartsAt).on(table.status, table.startsAt),
   ],

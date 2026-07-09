@@ -88,6 +88,26 @@ describe("API client", () => {
     );
   });
 
+  it("requests manager slug suggestions with the event title query", async () => {
+    const fetch = createFetchMock({
+      slug: "launch-night-a1b2c3",
+    });
+    const client = createApiClient({
+      authToken: "manager-token",
+      baseUrl: "https://api.example.test",
+      fetch,
+    });
+
+    await expect(client.suggestEventSlug({ title: "Launch Night" })).resolves.toEqual({
+      slug: "launch-night-a1b2c3",
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.example.test/events/slug-suggestion?title=Launch+Night",
+      expect.anything(),
+    );
+  });
+
   it("normalizes API errors to the shared error shape", async () => {
     const apiError: ApiError = {
       error: {

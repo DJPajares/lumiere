@@ -3,6 +3,7 @@ import {
   apiErrorSchema,
   eventResponseSchema,
   eventSectionsResponseSchema,
+  eventSlugSuggestionResponseSchema,
   eventSummaryResponseSchema,
   eventThemeResponseSchema,
   eventsListResponseSchema,
@@ -21,6 +22,8 @@ import {
   type EventResponse,
   type EventSectionsResponse,
   type EventSectionsUpdateRequest,
+  type EventSlugSuggestionRequest,
+  type EventSlugSuggestionResponse,
   type EventSummaryResponse,
   type EventThemeResponse,
   type EventThemeUpdateRequest,
@@ -228,6 +231,10 @@ export const createApiClient = ({
           method: "POST",
         },
       ),
+    suggestEventSlug: (input: EventSlugSuggestionRequest): Promise<EventSlugSuggestionResponse> =>
+      request("/events/slug-suggestion", eventSlugSuggestionResponseSchema, {
+        query: input,
+      }),
     updateEvent: (eventId: string, input: EventUpdateRequest): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
         body: input,

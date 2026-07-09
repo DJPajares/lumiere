@@ -40,6 +40,16 @@ describe("shared schemas", () => {
         endsAt: "2026-12-24T17:30:00+08:00",
       }),
     ).toThrow();
+
+    expect(() =>
+      eventCreateSchema.parse({
+        slug: "events",
+        title: "Holiday Dinner",
+        eventType: "dinner",
+        timezone: "Asia/Singapore",
+        startsAt,
+      }),
+    ).toThrow("This event slug is reserved");
   });
 
   it("validates event update input without defaulting omitted metadata", () => {

@@ -91,7 +91,7 @@ describe("database schema", () => {
 
   it("documents critical query indexes used by API lookups", () => {
     expect(schemaIndexNames).toMatchObject({
-      eventsSlug: "events_slug_unique",
+      eventsPublicSlug: "events_public_slug_unique",
       eventsOwnerUserId: "events_owner_user_id_idx",
       guestGroupsInviteTokenHash: "guest_groups_invite_token_hash_unique",
       rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",

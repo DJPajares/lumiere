@@ -12,6 +12,8 @@ export type EventStore = {
   archiveEvent(eventId: string): Promise<Event | null>;
   createEvent(ownerUserId: string, input: EventCreate): Promise<Event>;
   getEvent(eventId: string): Promise<Event | null>;
+  getEventBySlug(slug: string): Promise<Event | null>;
+  isEventSlugAvailable(slug: string, options?: { exceptEventId?: string }): Promise<boolean>;
   listManagedEvents(userId: string): Promise<Event[]>;
   updateEvent(eventId: string, input: EventUpdate): Promise<Event | null>;
 };
@@ -44,7 +46,7 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
             publicSettingsJson: input.publicSettings,
             rsvpSettingsJson: input.rsvpSettings,
             selectedThemeId: input.selectedThemeId,
-            slug: input.slug,
+            publicSlug: input.slug,
             startsAt: input.startsAt,
             themeMode: input.themeMode,
             timezone: input.timezone,
@@ -73,6 +75,18 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
     const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
 
     return event ? toApiEvent(event) : null;
+  },
+
+  async getEventBySlug(slug) {
+    const [event] = await db.select().from(events).where(eq(events.publicSlug, slug)).limit(1);
+
+    return event ? toApiEvent(event) : null;
+  },
+
+  async isEventSlugAvailable(slug, options = {}) {
+    const [event] = await db.select().from(events).where(eq(events.publicSlug, slug)).limit(1);
+
+    return !event || event.id === options.exceptEventId;
   },
 
   async listManagedEvents(userId) {
@@ -116,7 +130,7 @@ export const toApiEvent = (event: EventRow): Event => ({
   publicSettings: event.publicSettingsJson as Event["publicSettings"],
   rsvpSettings: event.rsvpSettingsJson as Event["rsvpSettings"],
   selectedThemeId: event.selectedThemeId ?? undefined,
-  slug: event.slug,
+  slug: event.publicSlug,
   startsAt: toIsoDateTime(event.startsAt),
   status: event.status,
   themeConfig: event.themeConfigJson as Event["themeConfig"],
@@ -129,7 +143,7 @@ export const toApiEvent = (event: EventRow): Event => ({
 });
 
 const toEventUpdateSet = (input: EventUpdate) => ({
-  ...(input.slug !== undefined ? { slug: input.slug } : {}),
+  ...(input.slug !== undefined ? { publicSlug: input.slug } : {}),
   ...(input.title !== undefined ? { title: input.title } : {}),
   ...(input.eventType !== undefined ? { eventType: input.eventType } : {}),
   ...(input.status !== undefined ? { status: input.status } : {}),

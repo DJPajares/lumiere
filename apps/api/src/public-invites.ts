@@ -12,8 +12,8 @@ type PublicEventRow = Pick<
   | "eventType"
   | "id"
   | "publicSettingsJson"
+  | "publicSlug"
   | "selectedThemeId"
-  | "slug"
   | "startsAt"
   | "status"
   | "themeConfigJson"
@@ -120,7 +120,7 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
       id: events.id,
       publicSettingsJson: events.publicSettingsJson,
       selectedThemeId: events.selectedThemeId,
-      slug: events.slug,
+      publicSlug: events.publicSlug,
       startsAt: events.startsAt,
       status: events.status,
       themeConfigJson: events.themeConfigJson,
@@ -131,7 +131,7 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
       venueName: events.venueName,
     })
     .from(events)
-    .where(and(eq(events.slug, eventSlug), eq(events.status, "published")))
+    .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
     .limit(1);
 
   return event ? toPublicEventRecord(event) : null;
@@ -174,7 +174,7 @@ export const toPublicEventRecord = (
     eventType: event.eventType,
     id: event.id,
     publicSettings: event.publicSettingsJson as Event["publicSettings"],
-    slug: event.slug,
+    slug: event.publicSlug,
     startsAt: toIsoDateTime(event.startsAt),
     status: event.status,
     timezone: event.timezone,

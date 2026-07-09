@@ -15,7 +15,7 @@ import {
   rsvpSubmissionSchema,
   themeSchema,
 } from "./domain";
-import { idSchema, nonEmptyStringSchema } from "./primitives";
+import { idSchema, nonEmptyStringSchema, publicSlugSchema } from "./primitives";
 
 export const apiErrorCodeSchema = z.enum([
   "BAD_REQUEST",
@@ -60,6 +60,17 @@ export const eventResponseSchema = z.object({
   event: eventSchema,
 });
 export type EventResponse = z.infer<typeof eventResponseSchema>;
+
+export const eventSlugSuggestionRequestSchema = z.object({
+  eventId: idSchema.optional(),
+  title: nonEmptyStringSchema.max(160),
+});
+export type EventSlugSuggestionRequest = z.infer<typeof eventSlugSuggestionRequestSchema>;
+
+export const eventSlugSuggestionResponseSchema = z.object({
+  slug: publicSlugSchema,
+});
+export type EventSlugSuggestionResponse = z.infer<typeof eventSlugSuggestionResponseSchema>;
 
 export const eventsListResponseSchema = z.object({
   events: z.array(eventSchema),
@@ -170,7 +181,7 @@ export const byEventAndGuestGroupIdParamsSchema = byEventIdParamsSchema.extend({
 export type ByEventAndGuestGroupIdParams = z.infer<typeof byEventAndGuestGroupIdParamsSchema>;
 
 export const publicEventParamsSchema = z.object({
-  eventSlug: nonEmptyStringSchema,
+  eventSlug: publicSlugSchema,
 });
 export type PublicEventParams = z.infer<typeof publicEventParamsSchema>;
 

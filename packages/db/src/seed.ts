@@ -89,7 +89,9 @@ async function main() {
         throw new Error("Unable to seed demo manager");
       }
 
-      await tx.delete(events).where(or(eq(events.id, seedEventId), eq(events.slug, seedEventSlug)));
+      await tx
+        .delete(events)
+        .where(or(eq(events.id, seedEventId), eq(events.publicSlug, seedEventSlug)));
 
       const [event] = await tx
         .insert(events)
@@ -107,7 +109,7 @@ async function main() {
             enabled: true,
           },
           selectedThemeId: "premium",
-          slug: seedEventSlug,
+          publicSlug: seedEventSlug,
           startsAt: eventStartsAt,
           status: "published",
           themeConfigJson: {

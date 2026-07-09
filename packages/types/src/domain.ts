@@ -20,6 +20,7 @@ import {
   metadataSchema,
   nonEmptyStringSchema,
   optionalTextSchema,
+  publicSlugSchema,
   slugSchema,
   timezoneSchema,
 } from "./primitives";
@@ -27,7 +28,7 @@ import {
 export const eventSchema = z.object({
   id: idSchema,
   ownerUserId: idSchema,
-  slug: slugSchema,
+  slug: publicSlugSchema,
   title: nonEmptyStringSchema.max(160),
   eventType: eventTypeSchema,
   status: eventStatusSchema,
@@ -48,7 +49,7 @@ export type Event = z.infer<typeof eventSchema>;
 
 export const eventCreateSchema = z
   .object({
-    slug: slugSchema,
+    slug: publicSlugSchema,
     title: nonEmptyStringSchema.max(160),
     eventType: eventTypeSchema,
     timezone: timezoneSchema,
@@ -75,7 +76,7 @@ export type EventCreate = z.output<typeof eventCreateSchema>;
 
 export const eventUpdateSchema = z
   .object({
-    slug: slugSchema.optional(),
+    slug: publicSlugSchema.optional(),
     title: nonEmptyStringSchema.max(160).optional(),
     eventType: eventTypeSchema.optional(),
     status: eventStatusSchema.optional(),
