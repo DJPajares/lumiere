@@ -2,6 +2,8 @@
 
 This reference turns the TasteSkill direction into reusable invite rules. The quality benchmark is the earlier Reverie invite experience: full-bleed atmosphere, layered imagery, scroll depth, tasteful parallax, and modern editorial pacing. Lumiere should not clone that app, but premium themes should feel similarly immersive.
 
+For per-theme design reads, token guidance, ambient media rules, RSVP states, and dashboard preview requirements, see `THEME_SPECS.md`.
+
 ## Core Rule
 
 Only the neutral/basic rhythm may rely on framed cards as the dominant layout. Premium, seasonal, and playful themes must mix full-bleed, editorial, timeline, feature-gallery, and layered-media sections so the page does not read like the same card stack in different colors.

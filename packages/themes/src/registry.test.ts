@@ -6,9 +6,12 @@ import {
   inviteCompositionFamilies,
   inviteMotionRules,
   inviteVisualCompositionSystem,
+  reverieReferenceLinks,
   sectionDefinitions,
   sampleInviteCompositionMaps,
   themeRegistry,
+  themeTemplateSpecIds,
+  themeTemplateSpecs,
   validateThemeSection,
   validateThemeSections,
 } from ".";
@@ -212,6 +215,93 @@ describe("theme registry", () => {
     expect(premiumCompositions.size).toBeGreaterThan(3);
     expect(premium.composition.sectionDefaults.gallery?.composition).toBe("gallery-feature");
     expect(premium.composition.sectionDefaults.story?.composition).toBe("timeline");
+  });
+
+  it("defines formal theme template specs for every shipped theme", () => {
+    expect(themeTemplateSpecIds).toEqual(availableThemeIds);
+    expect(
+      availableThemeIds.every((themeId) => {
+        const spec = themeTemplateSpecs[themeId];
+        const theme = themeRegistry[themeId];
+
+        return (
+          spec.id === theme.id &&
+          spec.designRead === theme.designRead &&
+          spec.eventTypeFit.join(",") === theme.supportedEventTypes.join(",") &&
+          spec.modeSupport.supported.join(",") === theme.supportedModes.join(",") &&
+          spec.modeSupport.defaultMode === theme.defaultMode &&
+          spec.moodBoardNotes.length >= 3 &&
+          spec.antiSlopConstraints.length >= 3 &&
+          Boolean(spec.tokenGuidance.light) &&
+          Boolean(spec.tokenGuidance.accent) &&
+          Boolean(spec.tokenGuidance.status) &&
+          Boolean(spec.radiusGuidance) &&
+          Boolean(spec.typographyGuidance) &&
+          Boolean(spec.imageTreatment) &&
+          spec.motion.compositionMap === theme.composition.visualSystem.compositionMap &&
+          spec.motion.motionProfile === theme.composition.visualSystem.motionProfile &&
+          spec.motion.parallaxProfile === theme.composition.visualSystem.parallaxProfile &&
+          Boolean(spec.ambientMedia.policy) &&
+          Boolean(spec.rsvp.styling) &&
+          Boolean(spec.rsvp.successState) &&
+          Boolean(spec.rsvp.closedState) &&
+          Boolean(spec.rsvp.errorState) &&
+          spec.dashboardPreview.requirements.length >= 2 &&
+          Boolean(spec.dashboardPreview.samplePreviewData.eventTitle) &&
+          Boolean(spec.namingGuidance)
+        );
+      }),
+    ).toBe(true);
+  });
+
+  it("states section treatment guidance for all core invite moments", () => {
+    const requiredSections = [
+      "hero",
+      "details",
+      "story",
+      "profile",
+      "gallery",
+      "location",
+      "rsvp",
+      "outro",
+    ];
+
+    expect(
+      Object.values(themeTemplateSpecs).every((spec) => {
+        const sections = spec.sectionTreatments.map((treatment) => treatment.section as string);
+
+        return requiredSections.every((section) => sections.includes(section));
+      }),
+    ).toBe(true);
+    expect(
+      themeTemplateSpecs.premium.sectionTreatments.map((treatment) => treatment.treatment),
+    ).toEqual(expect.arrayContaining(["cinematic", "full-bleed", "split-layout", "editorial"]));
+    expect(
+      themeTemplateSpecs.premium.sectionTreatments
+        .map((treatment) => treatment.treatment as string)
+        .includes("card-based"),
+    ).toBe(false);
+    expect(
+      themeTemplateSpecs["lumiere-default"].sectionTreatments
+        .map((treatment) => treatment.treatment as string)
+        .includes("card-based"),
+    ).toBe(true);
+  });
+
+  it("captures Reverie as Premium benchmark without direct imitation", () => {
+    expect(reverieReferenceLinks).toEqual([
+      "https://github.com/DJPajares/reverie",
+      "https://reverie.wndrhive.com/",
+    ]);
+    expect(themeTemplateSpecs.premium.referenceNotes?.join(" ")).toContain("Reverie");
+    expect(themeTemplateSpecs.premium.antiSlopConstraints.join(" ")).toContain(
+      "Avoid copying Reverie visuals directly",
+    );
+    expect(themeTemplateSpecs.premium.motion).toMatchObject({
+      compositionMap: "wedding-editorial",
+      level: "immersive",
+      parallaxProfile: "hero-and-media",
+    });
   });
 
   it("validates sample event sections against a supported theme", () => {
