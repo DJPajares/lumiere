@@ -2,7 +2,14 @@
 
 import { ApiClientError } from "@lumiere/api-client";
 import {
+  evaluateThemeCompatibility,
+  getTheme,
+  isThemeId,
+  type ThemeCompatibilityResult,
+} from "@lumiere/themes";
+import {
   eventThemeUpdateRequestSchema,
+  type EventType,
   type EventThemeUpdateRequest,
   type Theme,
   type ThemeMode,
@@ -31,6 +38,7 @@ type ThemeWorkspaceState =
   | {
       currentThemeId?: string;
       error: null;
+      eventType: EventType;
       fieldErrors: FieldErrors;
       formMessage: string | null;
       isSaving: boolean;
@@ -67,7 +75,8 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
     });
 
     try {
-      const [themesResponse, eventThemeResponse] = await Promise.all([
+      const [eventResponse, themesResponse, eventThemeResponse] = await Promise.all([
+        apiClient.getEvent(eventId),
         apiClient.listThemes(),
         apiClient.getEventTheme(eventId),
       ]);
@@ -85,6 +94,7 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
       setState({
         currentThemeId: eventThemeResponse.selectedThemeId,
         error: null,
+        eventType: eventResponse.event.eventType,
         fieldErrors: {},
         formMessage: null,
         isSaving: false,
@@ -163,6 +173,13 @@ function ThemeSelectorContent({
     [state.themes, state.values.selectedThemeId],
   );
   const supportedModes = selectedTheme?.supportedModes ?? [];
+  const selectedCompatibility = useMemo(
+    () =>
+      selectedTheme
+        ? getThemeCompatibility(selectedTheme, state.eventType, state.values.themeMode)
+        : undefined,
+    [selectedTheme, state.eventType, state.values.themeMode],
+  );
 
   const updateValues = (values: Partial<ThemeState>) => {
     updateState((current) =>
@@ -181,11 +198,18 @@ function ThemeSelectorContent({
   };
 
   const selectTheme = (theme: Theme) => {
+    const themeMode = theme.supportedModes.includes(state.values.themeMode)
+      ? state.values.themeMode
+      : theme.defaultMode;
+    const compatibility = getThemeCompatibility(theme, state.eventType, themeMode);
+
+    if (compatibility && !compatibility.canApply) {
+      return;
+    }
+
     updateValues({
       selectedThemeId: theme.id,
-      themeMode: theme.supportedModes.includes(state.values.themeMode)
-        ? state.values.themeMode
-        : theme.defaultMode,
+      themeMode,
     });
   };
 
@@ -203,7 +227,7 @@ function ThemeSelectorContent({
       return;
     }
 
-    const parsed = parseThemeForm(state.values, selectedTheme);
+    const parsed = parseThemeForm(state.values, selectedTheme, state.eventType);
 
     if (!parsed.ok) {
       updateState((current) =>
@@ -316,6 +340,8 @@ function ThemeSelectorContent({
           ) : (
             state.themes.map((theme) => (
               <ThemeOption
+                compatibility={getThemeCompatibility(theme, state.eventType, theme.defaultMode)}
+                eventType={state.eventType}
                 isCurrent={state.currentThemeId === theme.id}
                 isSelected={state.values.selectedThemeId === theme.id}
                 key={theme.id}
@@ -334,7 +360,7 @@ function ThemeSelectorContent({
             </p>
           </div>
 
-          <ThemePreview theme={selectedTheme} />
+          <ThemePreview compatibility={selectedCompatibility} theme={selectedTheme} />
 
           <div className="grid gap-2">
             <label className="text-sm font-semibold" htmlFor="theme-mode">
@@ -394,22 +420,38 @@ function ThemeSelectorContent({
 }
 
 function ThemeOption({
+  compatibility,
+  eventType,
   isCurrent,
   isSelected,
   onSelect,
   theme,
 }: {
+  compatibility?: ThemeCompatibilityResult;
+  eventType: EventType;
   isCurrent: boolean;
   isSelected: boolean;
   onSelect: () => void;
   theme: Theme;
 }) {
   const preview = readThemePreview(theme);
+  const isBlocked = compatibility ? !compatibility.canApply : false;
+  const statusTone = isBlocked
+    ? "error"
+    : compatibility?.status === "warning"
+      ? "warning"
+      : "success";
+  const statusLabel = isBlocked
+    ? `Not for ${formatEventType(eventType)}`
+    : compatibility?.status === "warning"
+      ? "Fallbacks"
+      : "Compatible";
 
   return (
     <button
       aria-pressed={isSelected}
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 text-left transition hover:bg-[color-mix(in_srgb,var(--surface-muted)_42%,var(--surface))] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-pressed:border-[var(--accent)] aria-pressed:bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))]"
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 text-left transition hover:bg-[color-mix(in_srgb,var(--surface-muted)_42%,var(--surface))] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-pressed:border-[var(--accent)] aria-pressed:bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] disabled:cursor-not-allowed disabled:opacity-65"
+      disabled={isBlocked}
       onClick={onSelect}
       type="button"
     >
@@ -428,10 +470,24 @@ function ThemeOption({
       </div>
       <div className="flex flex-wrap gap-2">
         {isCurrent ? <Badge label="Current" tone="success" /> : null}
+        <Badge label={statusLabel} tone={statusTone} />
         {theme.supportedModes.map((mode) => (
           <Badge key={mode} label={formatMode(mode)} tone="neutral" />
         ))}
       </div>
+      {compatibility ? (
+        <p
+          className={`rounded-[var(--radius-md)] px-3 py-2 text-sm leading-6 ${
+            isBlocked
+              ? "bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
+              : compatibility.status === "warning"
+                ? "bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] text-[color-mix(in_srgb,var(--foreground)_78%,transparent)]"
+                : "bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] text-[var(--success)]"
+          }`}
+        >
+          {isBlocked ? compatibility.issues[0]?.message : compatibility.summary}
+        </p>
+      ) : null}
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <MetadataItem label="Event fit" value={theme.eventTypes.map(formatEventType).join(", ")} />
         <MetadataItem label="Design read" value={readMetadataString(theme, "designRead")} />
@@ -440,7 +496,13 @@ function ThemeOption({
   );
 }
 
-function ThemePreview({ theme }: { theme?: Theme }) {
+function ThemePreview({
+  compatibility,
+  theme,
+}: {
+  compatibility?: ThemeCompatibilityResult;
+  theme?: Theme;
+}) {
   if (!theme) {
     return (
       <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-4 text-sm">
@@ -488,6 +550,25 @@ function ThemePreview({ theme }: { theme?: Theme }) {
         ))}
       </div>
       <p className="text-sm leading-6">{readMetadataString(theme, "imageTreatment")}</p>
+      {compatibility ? (
+        <div
+          className="grid gap-2 rounded-[var(--radius-md)] border p-3 text-sm"
+          style={{ borderColor: tokens.border }}
+        >
+          <p className="font-semibold">Compatibility</p>
+          <p className="leading-6">{compatibility.summary}</p>
+          <dl className="grid gap-2 sm:grid-cols-2">
+            <MetadataItem
+              label="Renderer slots"
+              value={`${compatibility.rendererSlots.length} checked`}
+            />
+            <MetadataItem
+              label="Fallback slots"
+              value={`${compatibility.warnings.filter((issue) => issue.code === "fallback_renderer_slot").length}`}
+            />
+          </dl>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -514,6 +595,7 @@ function ThemeLoading() {
 export function parseThemeForm(
   values: ThemeState,
   selectedTheme?: Theme,
+  eventType?: EventType,
 ):
   | {
       input: EventThemeUpdateRequest;
@@ -551,6 +633,18 @@ export function parseThemeForm(
       fieldErrors: {
         themeMode: `${selectedTheme.name} does not support ${formatMode(values.themeMode)} mode.`,
       },
+      formMessage: "Check the highlighted theme fields before saving.",
+      ok: false,
+    };
+  }
+
+  const compatibility = eventType
+    ? getThemeCompatibility(selectedTheme, eventType, values.themeMode)
+    : undefined;
+
+  if (compatibility && !compatibility.canApply) {
+    return {
+      fieldErrors: issuesToFieldErrors(compatibility.issues),
       formMessage: "Check the highlighted theme fields before saving.",
       ok: false,
     };
@@ -647,13 +741,23 @@ function MetadataItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Badge({ label, tone }: { label: string; tone: "neutral" | "success" }) {
+function Badge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "error" | "neutral" | "success" | "warning";
+}) {
   return (
     <span
       className={`inline-flex rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
-        tone === "success"
-          ? "bg-[color-mix(in_srgb,var(--success)_14%,var(--surface))] text-[var(--success)]"
-          : "bg-[var(--surface-muted)] text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
+        tone === "error"
+          ? "bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
+          : tone === "success"
+            ? "bg-[color-mix(in_srgb,var(--success)_14%,var(--surface))] text-[var(--success)]"
+            : tone === "warning"
+              ? "bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface))] text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]"
+              : "bg-[var(--surface-muted)] text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
       }`}
     >
       {label}
@@ -731,6 +835,18 @@ function formatEventType(value: string) {
 
 function formatMode(value: ThemeMode) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getThemeCompatibility(theme: Theme, eventType: EventType, mode: ThemeMode) {
+  const themeDefinition = isThemeId(theme.id) ? getTheme(theme.id) : undefined;
+
+  return themeDefinition
+    ? evaluateThemeCompatibility({
+        eventType,
+        mode,
+        theme: themeDefinition,
+      })
+    : undefined;
 }
 
 function toFriendlyApiMessage(error: unknown) {

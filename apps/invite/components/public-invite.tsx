@@ -2,6 +2,7 @@ import {
   getSectionDefinition,
   getTheme,
   isThemeId,
+  resolveThemeRendererSlot,
   type ThemeDefinition,
   type ThemeMotionKind,
   type ThemeSectionComposition,
@@ -423,6 +424,7 @@ function PublicSection({
   const layout = resolveSectionLayout(item, theme);
   const motionKind = resolveMotionKind(item, composition, theme);
   const parallaxKind = resolveSectionParallaxKind(item, composition, theme);
+  const rendererSlot = resolveThemeRendererSlot(theme, item.section.sectionType);
   const titleId = `${anchorId}-title`;
 
   return (
@@ -438,7 +440,9 @@ function PublicSection({
       data-section-density={density}
       data-section-key={item.section.sectionKey}
       data-section-layout={layout}
+      data-section-manager-configurable={String(rendererSlot.supportsManagerConfiguration)}
       data-section-renderer={definition.rendererKey}
+      data-section-renderer-coverage={rendererSlot.coverage}
       data-section-type={item.section.sectionType}
       data-section-variant={readString(item.settings.variant) ?? "default"}
       id={anchorId}

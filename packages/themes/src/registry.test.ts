@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   availableThemeIds,
+  buildThemeCompatibilityMatrix,
   canDisableBlueprintSection,
   eventTypeBlueprints,
+  evaluateThemeCompatibility,
   getBlueprintSectionRequirement,
   getBlueprintSectionsForEventType,
   getThemesForEventType,
@@ -242,6 +244,65 @@ describe("theme registry", () => {
           theme.previewData.sections.length > 0,
       ),
     ).toBe(true);
+  });
+
+  it("declares compatibility metadata for every theme", () => {
+    expect(
+      Object.values(themeRegistry).every(
+        (theme) =>
+          theme.compatibility.backdropStrategy &&
+          theme.compatibility.fontPairing.body &&
+          theme.compatibility.fontPairing.display &&
+          theme.compatibility.motionLevel === theme.composition.visualSystem.motionProfile &&
+          theme.compatibility.ornamentStrategy &&
+          Object.keys(theme.compatibility.rendererSlots).length > 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("builds a compatibility matrix for MVP event blueprints and theme modes", () => {
+    const matrix = buildThemeCompatibilityMatrix({
+      eventTypes: ["wedding", "birthday", "other"],
+      modes: ["light", "dark"],
+    });
+
+    expect(matrix.length).toBe(availableThemeIds.length * 3 * 2);
+    expect(matrix.every((entry) => entry.rendererSlots.length > 0)).toBe(true);
+    expect(matrix.every((entry) => entry.canRenderRequiredSections)).toBe(true);
+    expect(matrix.flatMap((entry) => entry.missingRequiredSections)).toEqual([]);
+    expect(
+      matrix.every((entry) =>
+        entry.rendererSlots.every((slot) => slot.rendererKey.startsWith("section.")),
+      ),
+    ).toBe(true);
+
+    const kidsWedding = evaluateThemeCompatibility({
+      eventType: "wedding",
+      mode: "light",
+      theme: themeRegistry.kids,
+    });
+    const premiumWedding = evaluateThemeCompatibility({
+      eventType: "wedding",
+      mode: "light",
+      theme: themeRegistry.premium,
+    });
+
+    expect(kidsWedding.canApply).toBe(false);
+    expect(kidsWedding.issues).toContainEqual(
+      expect.objectContaining({
+        code: "unsupported_event_type",
+        message: "Kids does not support wedding events",
+      }),
+    );
+    expect(premiumWedding.canApply).toBe(true);
+    expect(premiumWedding.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "fallback_renderer_slot",
+          sectionType: "introduction",
+        }),
+      ]),
+    );
   });
 
   it("documents the invite composition families across required public sections", () => {

@@ -66,6 +66,22 @@ export type ThemePreviewData = {
   }>;
 };
 
+export type ThemeRendererSlotDeclaration = {
+  coverage: "fallback" | "specialized";
+  notes: string;
+};
+
+export type ThemeCompatibilityProfile = {
+  backdropStrategy: string;
+  fontPairing: {
+    body: string;
+    display: string;
+  };
+  motionLevel: ThemeMotionProfile;
+  ornamentStrategy: string;
+  rendererSlots: Partial<Record<SectionType, ThemeRendererSlotDeclaration>>;
+};
+
 export type ThemeDefinition = {
   id: ThemeId;
   label: string;
@@ -100,6 +116,7 @@ export type ThemeDefinition = {
   };
   imageTreatment: string;
   rsvpTreatment: string;
+  compatibility: ThemeCompatibilityProfile;
   dashboardPreview: {
     swatch: string;
     summary: string;
@@ -119,6 +136,34 @@ const publicCoreSections: SectionType[] = [
   "rsvp",
   "outro",
 ];
+
+const createRendererSlots = ({
+  fallback = [],
+  specialized = [],
+}: {
+  fallback?: SectionType[];
+  specialized?: SectionType[];
+}) => ({
+  ...Object.fromEntries(
+    specialized.map((sectionType) => [
+      sectionType,
+      {
+        coverage: "specialized" as const,
+        notes: "Theme declares a section-level composition, motion, or layout treatment.",
+      },
+    ]),
+  ),
+  ...Object.fromEntries(
+    fallback.map((sectionType) => [
+      sectionType,
+      {
+        coverage: "fallback" as const,
+        notes:
+          "Uses the shared public invite renderer with theme tokens and generic section layout.",
+      },
+    ]),
+  ),
+});
 
 export const themeRegistry = {
   "lumiere-default": {
@@ -232,6 +277,19 @@ export const themeRegistry = {
     },
     imageTreatment: "Soft rectangular image slots with reserved aspect ratios.",
     rsvpTreatment: "Integrated guest-only panel using the event accent and clear max-pax copy.",
+    compatibility: {
+      backdropStrategy: "Warm parchment surfaces with restrained full-width bands.",
+      fontPairing: {
+        body: "system sans",
+        display: "system sans",
+      },
+      motionLevel: "calm",
+      ornamentStrategy: "No decorative ornaments beyond warm surface shifts and image/fact panels.",
+      rendererSlots: createRendererSlots({
+        fallback: ["introduction", "details", "outro", "story", "custom"],
+        specialized: ["date", "gallery", "location", "rsvp"],
+      }),
+    },
     dashboardPreview: {
       swatch: "#b97732",
       summary: "Balanced neutral base for most private events.",
@@ -432,6 +490,32 @@ export const themeRegistry = {
     },
     imageTreatment: "Large editorial imagery with strong crops and generous whitespace.",
     rsvpTreatment: "Formal guest card with ceremony copy, attendee count, and field-level errors.",
+    compatibility: {
+      backdropStrategy:
+        "Layered ivory and candlelit radial fields with full-viewport hero and media chapters.",
+      fontPairing: {
+        body: "legible sans",
+        display: "editorial serif",
+      },
+      motionLevel: "immersive",
+      ornamentStrategy:
+        "Editorial frames, portrait depth, and light fields; no logo-as-ornament treatment.",
+      rendererSlots: createRendererSlots({
+        fallback: ["introduction", "custom"],
+        specialized: [
+          "date",
+          "details",
+          "dress_code",
+          "entourage",
+          "gallery",
+          "location",
+          "outro",
+          "profile",
+          "rsvp",
+          "story",
+        ],
+      }),
+    },
     dashboardPreview: {
       swatch: "#a36a2f",
       summary: "Refined editorial theme for formal celebrations.",
@@ -585,6 +669,20 @@ export const themeRegistry = {
     },
     imageTreatment: "Bright image slots with rounded corners and simple caption support.",
     rsvpTreatment: "Parent-friendly RSVP with clear attendee count and simple optional questions.",
+    compatibility: {
+      backdropStrategy: "Sunny paper fields with rounded media and practical parent-facing panels.",
+      fontPairing: {
+        body: "friendly sans",
+        display: "rounded sans",
+      },
+      motionLevel: "playful",
+      ornamentStrategy:
+        "Rounded panels and bright image framing only; avoids emoji-heavy decorative clutter.",
+      rendererSlots: createRendererSlots({
+        fallback: ["introduction", "outro", "custom"],
+        specialized: ["date", "details", "gallery", "location", "profile", "rsvp"],
+      }),
+    },
     dashboardPreview: {
       swatch: "#ef7b45",
       summary: "Warm playful birthday theme without emoji-heavy UI.",
@@ -761,6 +859,20 @@ export const themeRegistry = {
     },
     imageTreatment: "Warm gallery frames with seasonal captions and preserved aspect ratios.",
     rsvpTreatment: "Cozy RSVP panel with clear attendance state and host message support.",
+    compatibility: {
+      backdropStrategy: "Evergreen and candlelit surfaces with cozy full-width seasonal chapters.",
+      fontPairing: {
+        body: "humanist sans",
+        display: "warm serif",
+      },
+      motionLevel: "seasonal",
+      ornamentStrategy:
+        "Seasonal light, evergreen framing, and warm tablescape cues without festive clutter.",
+      rendererSlots: createRendererSlots({
+        fallback: ["introduction", "outro", "custom"],
+        specialized: ["date", "details", "dress_code", "gallery", "location", "rsvp", "story"],
+      }),
+    },
     dashboardPreview: {
       swatch: "#2f6d52",
       summary: "Seasonal holiday theme with light and candlelit dark variants.",

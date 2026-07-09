@@ -173,13 +173,29 @@ describe("public invite section renderers", () => {
             },
             sortOrder: 2,
           }),
+          createSection({
+            content: {
+              blocks: [
+                {
+                  body: "Please arrive a little early for welcome drinks.",
+                },
+              ],
+              title: "A note from the hosts",
+            },
+            sectionKey: "host-note",
+            sectionType: "custom",
+            sortOrder: 3,
+          }),
         ]),
       }),
     );
 
+    expect(html).toContain('data-section-renderer-coverage="specialized"');
+    expect(html).toContain('data-section-renderer-coverage="fallback"');
     expect(html).toContain('data-section-density="compact"');
     expect(html).toContain('data-section-variant="framed"');
     expect(html).toContain("lg:grid-cols-3");
+    expect(html).toContain("A note from the hosts");
     expect(html).toContain("Champagne");
     expect(html).toContain("Sage");
     expect(html).not.toContain("background-color:#e7d6b8");

@@ -1,6 +1,7 @@
 import type { ApiEnv } from "@lumiere/config";
 import {
   availableThemes,
+  evaluateThemeCompatibility,
   getTheme,
   isThemeId,
   validateEventTypeSections,
@@ -1169,26 +1170,29 @@ const assertThemeCanBeApplied = ({
   theme: NonNullable<ReturnType<typeof getTheme>>;
   themeMode: ThemeMode;
 }) => {
-  if (!theme.supportedEventTypes.includes(eventType)) {
-    throw new ApiHttpError("VALIDATION_ERROR", "Theme does not support this event type", {
-      fields: [
-        {
-          message: `${theme.label} does not support ${eventType} events`,
-          path: ["selectedThemeId"],
-        },
-      ],
-    });
-  }
+  const compatibility = evaluateThemeCompatibility({
+    eventType,
+    mode: themeMode,
+    theme,
+  });
 
-  if (!theme.supportedModes.includes(themeMode)) {
-    throw new ApiHttpError("VALIDATION_ERROR", "Theme does not support this mode", {
-      fields: [
-        {
-          message: `${theme.label} does not support ${themeMode} mode`,
-          path: ["themeMode"],
-        },
-      ],
-    });
+  if (compatibility.issues.length > 0) {
+    const hasUnsupportedMode = compatibility.issues.some(
+      (issue) => issue.code === "unsupported_mode",
+    );
+
+    throw new ApiHttpError(
+      "VALIDATION_ERROR",
+      hasUnsupportedMode
+        ? "Theme does not support this mode"
+        : "Theme does not support this event type",
+      {
+        fields: compatibility.issues.map((issue) => ({
+          message: issue.message,
+          path: issue.path,
+        })),
+      },
+    );
   }
 };
 

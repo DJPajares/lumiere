@@ -139,6 +139,7 @@ export const toApiTheme = (theme: ThemeDefinition): Theme => ({
   id: theme.id,
   metadata: {
     accessibilityNotes: theme.accessibilityNotes,
+    compatibility: theme.compatibility,
     composition: theme.composition,
     dashboardPreview: theme.dashboardPreview,
     description: theme.description,

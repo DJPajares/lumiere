@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { Theme } from "@lumiere/types";
+import type { Event, Theme } from "@lumiere/types";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -46,6 +46,12 @@ describe("ThemeSelectorWorkspace", () => {
 
   it("selects a theme and saves supported mode plus JSON settings", async () => {
     const user = userEvent.setup();
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: {
+        ...dashboardEvent,
+        eventType: "birthday",
+      },
+    }));
     const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
       selectedThemeId: "premium",
       theme: premiumTheme,
@@ -65,6 +71,7 @@ describe("ThemeSelectorWorkspace", () => {
     }));
 
     renderWithAuth({
+      getEvent,
       getEventTheme,
       listThemes,
       updateEventTheme,
@@ -120,11 +127,43 @@ describe("ThemeSelectorWorkspace", () => {
     expect(await screen.findByText("Theme settings must be valid JSON.")).toBeTruthy();
     expect(updateEventTheme).not.toHaveBeenCalled();
   });
+
+  it("prevents selecting themes that do not support the event type", async () => {
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: dashboardEvent,
+    }));
+    const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
+      selectedThemeId: "premium",
+      theme: premiumTheme,
+      themeConfig: {},
+      themeMode: "toggleable",
+    }));
+    const listThemes = vi.fn<DashboardApiClient["listThemes"]>(async () => ({
+      themes: [premiumTheme, kidsTheme],
+    }));
+
+    renderWithAuth({
+      getEvent,
+      getEventTheme,
+      listThemes,
+    });
+
+    await screen.findByRole("button", { name: /Premium/ });
+
+    expect(screen.getByText("Kids does not support wedding events")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Kids/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });
 
 function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
+  const getEvent =
+    apiClient.getEvent ??
+    vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: dashboardEvent,
+    }));
+
   return render(
-    <DashboardAuthProvider value={createAuthValue(apiClient)}>
+    <DashboardAuthProvider value={createAuthValue({ ...apiClient, getEvent })}>
       <ThemeSelectorWorkspace eventId="evt_123" />
     </DashboardAuthProvider>,
   );
@@ -149,6 +188,25 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
     } as DashboardAuthContextValue["user"],
   };
 }
+
+const dashboardEvent: Event = {
+  createdAt: "2030-01-01T00:00:00.000Z",
+  eventType: "wedding",
+  id: "evt_123",
+  ownerUserId: "user_123",
+  publicSettings: {},
+  rsvpSettings: {},
+  slug: "garden-evening",
+  startsAt: "2030-06-01T10:30:00.000Z",
+  status: "draft",
+  themeConfig: {},
+  themeMode: "toggleable",
+  timezone: "Asia/Singapore",
+  title: "Garden Evening",
+  updatedAt: "2030-01-01T00:00:00.000Z",
+  venueAddress: "18 Marina Gardens Drive",
+  venueName: "Emerald Gardens",
+};
 
 const premiumTheme: Theme = {
   defaultMode: "toggleable",
