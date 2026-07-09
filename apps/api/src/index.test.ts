@@ -342,6 +342,18 @@ describe("API app", () => {
     expect(response.headers.get("access-control-expose-headers")).toContain("X-Request-Id");
   });
 
+  it("does not allow browser origins outside configured apps", async () => {
+    const app = createApp({ config: loadTestConfig() });
+    const response = await app.request("/health", {
+      headers: {
+        origin: "https://attacker.example",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
   it("returns the shared API error shape for known errors", async () => {
     const app = createApp({ config: loadTestConfig() });
     const response = await app.request("/__test/error", {
@@ -797,6 +809,8 @@ describe("API app", () => {
       summary: eventSummary,
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("pragma")).toBe("no-cache");
     expect(findEventAccess).toHaveBeenCalledWith(eventId, localUser.id);
     expect(getEventSummary).toHaveBeenCalledWith(eventId);
   });
@@ -907,6 +921,8 @@ describe("API app", () => {
       },
     });
     expect(response.status).toBe(401);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("pragma")).toBe("no-cache");
     expect(getEventSummary).not.toHaveBeenCalled();
   });
 
@@ -1312,6 +1328,63 @@ describe("API app", () => {
     expect(replaceSections).not.toHaveBeenCalled();
   });
 
+  it("rejects unsafe section content before replacing configured sections", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { replaceSections, themeSectionStore } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventType: "dinner",
+        selectedThemeId: "premium",
+        themeMode: "light",
+      },
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              title: "Welcome",
+              body: '<script>alert("bad")</script>',
+            },
+            sectionKey: "welcome",
+            sectionType: "introduction",
+            settings: {},
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "unsafe-section-request-id",
+      },
+      method: "PUT",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid event sections",
+        requestId: "unsafe-section-request-id",
+      },
+    });
+    expect(body.error.fields).toContainEqual({
+      message: "welcome: content.body contains unsafe markup or script",
+      path: ["sections", 0],
+    });
+    expect(replaceSections).not.toHaveBeenCalled();
+  });
+
   it("lists guest groups after enforcing manager access", async () => {
     const { authStore, findEventAccess } = createTestAuthStore({
       access: roleAccess("viewer"),
@@ -1618,6 +1691,8 @@ describe("API app", () => {
     });
     expect(JSON.stringify(body)).not.toContain("ownerUserId");
     expect(JSON.stringify(body)).not.toContain(baseGuestGroup.label);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("pragma")).toBe("no-cache");
     expect(getPublicEventBySlug).toHaveBeenCalledWith(baseEvent.slug);
   });
 
@@ -1793,6 +1868,49 @@ describe("API app", () => {
         message: "Excited to attend.",
       },
     });
+  });
+
+  it("rate limits repeated RSVP submissions for the same guest link and client", async () => {
+    const guestToken = "rsvp-rate-limit-token-for-public-route";
+    const { rsvpStore, submitGuestRsvp } = createTestRsvpStore();
+    const app = createApp({
+      config: loadTestConfig(),
+      rsvpStore,
+    });
+    const requestBody = JSON.stringify({
+      responseStatus: "attending",
+      attendeeCount: 1,
+    });
+    const submit = () =>
+      app.request(`/public/events/${baseEvent.slug}/guest/${guestToken}/rsvp`, {
+        body: requestBody,
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": "203.0.113.10",
+        },
+        method: "POST",
+      });
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const response = await submit();
+      expect(response.status).toBe(200);
+    }
+
+    const limitedResponse = await submit();
+    const body = await limitedResponse.json();
+
+    expect(limitedResponse.status).toBe(429);
+    expect(body).toEqual({
+      error: {
+        code: "RATE_LIMITED",
+        message: "Too many RSVP attempts. Please try again shortly.",
+        requestId: expect.any(String),
+      },
+    });
+    expect(limitedResponse.headers.get("retry-after")).toEqual(expect.any(String));
+    expect(limitedResponse.headers.get("x-ratelimit-limit")).toBe("20");
+    expect(limitedResponse.headers.get("x-ratelimit-remaining")).toBe("0");
+    expect(submitGuestRsvp).toHaveBeenCalledTimes(20);
   });
 
   it("submits not attending RSVPs", async () => {

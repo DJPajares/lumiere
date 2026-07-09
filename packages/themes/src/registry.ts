@@ -26,6 +26,9 @@ export type ThemeSectionValidationResult =
       issues: string[];
     };
 
+const unsafeMarkupPattern =
+  /<\s*\/?\s*(?:script|iframe|object|embed|link|meta|style|svg|math)\b|\son[a-z]+\s*=|javascript\s*:/i;
+
 export function isThemeId(themeId: string): themeId is ThemeId {
   return availableThemeIds.includes(themeId as ThemeId);
 }
@@ -100,6 +103,17 @@ export function validateThemeSection(
     issues.push(`${section.sectionKey}: invalid visibility`);
   }
 
+  const unsafeContentPaths = [
+    ...findUnsafeStringPaths(section.content, ["content"]),
+    ...findUnsafeStringPaths(section.settings, ["settings"]),
+  ];
+
+  issues.push(
+    ...unsafeContentPaths.map(
+      (path) => `${section.sectionKey}: ${path} contains unsafe markup or script`,
+    ),
+  );
+
   if (issues.length > 0) {
     return { ok: false, issues };
   }
@@ -110,3 +124,23 @@ export function validateThemeSection(
 export function validateThemeSections(themeId: ThemeId, sections: EventSectionMutationInput[]) {
   return sections.map((section) => validateThemeSection(themeId, section));
 }
+
+const findUnsafeStringPaths = (value: unknown, path: (number | string)[]): string[] => {
+  if (typeof value === "string") {
+    return unsafeMarkupPattern.test(value) ? [formatPath(path)] : [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => findUnsafeStringPaths(item, [...path, index]));
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return Object.entries(value).flatMap(([key, item]) =>
+      findUnsafeStringPaths(item, [...path, key]),
+    );
+  }
+
+  return [];
+};
+
+const formatPath = (path: (number | string)[]) => path.join(".");

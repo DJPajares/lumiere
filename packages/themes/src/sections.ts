@@ -9,8 +9,25 @@ const optionalText = z
   .optional()
   .transform((value) => (value === "" ? undefined : value));
 
+const publicUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .refine(
+    (value) => {
+      try {
+        return ["http:", "https:"].includes(new URL(value).protocol);
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "Use HTTP or HTTPS URLs",
+    },
+  );
+
 const assetSchema = z.object({
-  url: z.string().trim().url(),
+  url: publicUrlSchema,
   alt: z.string().trim().min(1).max(180),
   caption: z.string().trim().max(240).optional(),
 });
@@ -111,7 +128,7 @@ export const dressCodeContentSchema = z.object({
 export const locationContentSchema = z.object({
   venueName: nonEmptyString.max(180),
   address: nonEmptyString.max(500),
-  mapUrl: z.string().trim().url().optional(),
+  mapUrl: publicUrlSchema.optional(),
   notes: z.string().trim().max(800).optional(),
 });
 

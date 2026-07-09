@@ -1,5 +1,5 @@
 import type { ApiEnv } from "@lumiere/config";
-import { Hono, type Context } from "hono";
+import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
@@ -28,6 +28,13 @@ export type CreateAppOptions = {
 
 const resolveRequestId = (context: Context<ApiBindings>) => context.get("requestId") || "unknown";
 
+const noStoreMiddleware: MiddlewareHandler<ApiBindings> = async (context, next) => {
+  context.header("Cache-Control", "no-store");
+  context.header("Pragma", "no-cache");
+
+  await next();
+};
+
 export const createApp = ({
   authStore,
   config,
@@ -51,6 +58,10 @@ export const createApp = ({
   );
   app.use("*", secureHeaders());
   app.use("*", requestIdMiddleware());
+  app.use("/events", noStoreMiddleware);
+  app.use("/events/*", noStoreMiddleware);
+  app.use("/public/events", noStoreMiddleware);
+  app.use("/public/events/*", noStoreMiddleware);
 
   app.route(
     "/",

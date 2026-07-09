@@ -151,6 +151,38 @@ describe("theme registry", () => {
     }
   });
 
+  it("rejects unsafe executable markup in section content", () => {
+    const result = validateThemeSection("premium", {
+      ...baseSections[0],
+      content: {
+        title: "Launch Night",
+        body: '<img src="x" onerror="alert(1)">',
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.join(" ")).toContain("contains unsafe markup or script");
+      expect(result.issues.join(" ")).toContain("content.body");
+    }
+  });
+
+  it("rejects non-http media and map URLs", () => {
+    const result = validateThemeSection("premium", {
+      ...baseSections[2],
+      content: {
+        venueName: "The Glasshouse",
+        address: "12 Orchard Road, Singapore",
+        mapUrl: "ftp://maps.example.com/the-glasshouse",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.join(" ")).toContain("Use HTTP or HTTPS URLs");
+    }
+  });
+
   it("rejects unsupported theme sections", () => {
     const result = validateThemeSection("kids", {
       sectionType: "entourage",

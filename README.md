@@ -380,6 +380,15 @@ Each app should include its own `favicon.ico`, `apple-touch-icon.png`, `icon-192
 - Validate all section content against supported schemas.
 - Use a consistent error shape with request IDs.
 
+### Security Checklist
+
+- Manager endpoints require Supabase bearer auth and per-event access checks before returning or mutating event data.
+- Public event endpoints return public event summaries only; guest endpoints return the invite context needed for RSVP without guest contact details, invite tokens, or manager-only fields.
+- Guest invite tokens are generated from 32 random bytes, returned only inside share URLs, and stored as HMAC-SHA256 hashes using `INVITE_TOKEN_SECRET`.
+- Sensitive `/events/*` and `/public/events/*` API responses send `Cache-Control: no-store` and `Pragma: no-cache`.
+- Public RSVP submissions have a basic per-app rate limiter keyed by client, event slug, and hashed guest token. For multi-instance production, replace or extend this with a shared Redis, edge, or gateway limiter using the same route and token-hash boundary.
+- Section content is schema-validated and rejects executable-looking markup, inline event handlers, `javascript:` URLs, and non-HTTP media/map URLs before persistence.
+
 ## API Endpoints
 
 ```text

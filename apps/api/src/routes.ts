@@ -16,6 +16,7 @@ import {
   type ThemeMode,
 } from "@lumiere/types";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
+import { createHmac } from "node:crypto";
 
 import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
 import type { DashboardDataStore } from "./dashboard-data";
@@ -66,6 +67,14 @@ type SafeParseSchema<TOutput> = {
         success: false;
       };
 };
+
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rsvpRateLimitMaxAttempts = 20;
+const rsvpRateLimitWindowMs = 10 * 60 * 1000;
 
 export const createRoutes = ({
   authStore,
@@ -148,35 +157,39 @@ export const createRoutes = ({
     return context.json(toPublicGuestInviteResponse(publicGuestInvite));
   });
 
-  routes.post("/public/events/:eventSlug/guest/:guestToken/rsvp", async (context) => {
-    const store = requireRsvpStore(rsvpStore);
-    const { eventSlug, guestToken } = parseGuestInviteParams({
-      eventSlug: context.req.param("eventSlug"),
-      guestToken: context.req.param("guestToken"),
-    });
-    const submission = await parseJsonBody(context, rsvpSubmissionRequestSchema);
-    const result = await store.submitGuestRsvp({
-      eventSlug,
-      inviteTokenHash: hashInviteToken(guestToken, config.INVITE_TOKEN_SECRET),
-      submission,
-    });
-
-    if (!result) {
-      throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
-    }
-
-    if (result === "disabled") {
-      throw new ApiHttpError("FORBIDDEN", "Guest invite is disabled");
-    }
-
-    if ("response" in result) {
-      return context.json({
-        response: result.response,
+  routes.post(
+    "/public/events/:eventSlug/guest/:guestToken/rsvp",
+    createRsvpRateLimitMiddleware(config),
+    async (context) => {
+      const store = requireRsvpStore(rsvpStore);
+      const { eventSlug, guestToken } = parseGuestInviteParams({
+        eventSlug: context.req.param("eventSlug"),
+        guestToken: context.req.param("guestToken"),
       });
-    }
+      const submission = await parseJsonBody(context, rsvpSubmissionRequestSchema);
+      const result = await store.submitGuestRsvp({
+        eventSlug,
+        inviteTokenHash: hashInviteToken(guestToken, config.INVITE_TOKEN_SECRET),
+        submission,
+      });
 
-    throwRsvpRejection(result);
-  });
+      if (!result) {
+        throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
+      }
+
+      if (result === "disabled") {
+        throw new ApiHttpError("FORBIDDEN", "Guest invite is disabled");
+      }
+
+      if ("response" in result) {
+        return context.json({
+          response: result.response,
+        });
+      }
+
+      throwRsvpRejection(result);
+    },
+  );
 
   routes.get("/events", requireManagerAuth({ authStore, config }), async (context) => {
     const store = requireEventStore(eventStore);
@@ -684,6 +697,66 @@ export const createRoutes = ({
   );
 
   return routes;
+};
+
+const createRsvpRateLimitMiddleware = (config: ApiEnv): MiddlewareHandler<ApiBindings> => {
+  const attempts = new Map<string, RateLimitEntry>();
+
+  return async (context, next) => {
+    const now = Date.now();
+    const key = createRsvpRateLimitKey(context, config.INVITE_TOKEN_SECRET);
+    const current = attempts.get(key);
+    const entry =
+      current && current.resetAt > now
+        ? current
+        : {
+            count: 0,
+            resetAt: now + rsvpRateLimitWindowMs,
+          };
+
+    entry.count += 1;
+    attempts.set(key, entry);
+
+    if (attempts.size > 1000) {
+      pruneExpiredRateLimitEntries(attempts, now);
+    }
+
+    context.header("X-RateLimit-Limit", String(rsvpRateLimitMaxAttempts));
+    context.header(
+      "X-RateLimit-Remaining",
+      String(Math.max(0, rsvpRateLimitMaxAttempts - entry.count)),
+    );
+    context.header("X-RateLimit-Reset", String(Math.ceil(entry.resetAt / 1000)));
+
+    if (entry.count > rsvpRateLimitMaxAttempts) {
+      context.header("Retry-After", String(Math.max(1, Math.ceil((entry.resetAt - now) / 1000))));
+      throw new ApiHttpError("RATE_LIMITED", "Too many RSVP attempts. Please try again shortly.");
+    }
+
+    await next();
+  };
+};
+
+const createRsvpRateLimitKey = (context: Context<ApiBindings>, secret: string) => {
+  const eventSlug = context.req.param("eventSlug") || "unknown-event";
+  const guestToken = context.req.param("guestToken") || "unknown-token";
+  const clientFingerprint =
+    context.req.header("cf-connecting-ip") ??
+    context.req.header("x-real-ip") ??
+    context.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown-client";
+
+  return createHmac("sha256", secret)
+    .update(`${clientFingerprint}:${eventSlug}:${guestToken}`)
+    .digest("hex");
+};
+
+const pruneExpiredRateLimitEntries = (attempts: Map<string, RateLimitEntry>, now: number) => {
+  for (const [key, entry] of attempts) {
+    if (entry.resetAt <= now) {
+      attempts.delete(key);
+    }
+  }
 };
 
 const requireTestMode = (config: ApiEnv): MiddlewareHandler<ApiBindings> => {
