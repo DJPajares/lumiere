@@ -75,6 +75,7 @@ type BuilderReadyState = {
   error: null;
   formMessage: string | null;
   isSaving: boolean;
+  savedSections: SectionDraft[];
   sectionErrors: SectionErrorMap;
   sections: SectionDraft[];
   status: "ready";
@@ -146,17 +147,20 @@ export function SectionBuilderWorkspace({ eventId }: { eventId: string }) {
         return;
       }
 
+      const sectionDrafts = createSectionDrafts({
+        event: eventResponse.event,
+        existingSections: sectionsResponse.sections,
+        theme: themeResponse.theme,
+      });
+
       setState({
         error: null,
         event: eventResponse.event,
         formMessage: null,
         isSaving: false,
+        savedSections: sectionDrafts,
         sectionErrors: {},
-        sections: createSectionDrafts({
-          event: eventResponse.event,
-          existingSections: sectionsResponse.sections,
-          theme: themeResponse.theme,
-        }),
+        sections: sectionDrafts,
         status: "ready",
         theme: themeResponse.theme,
       });
@@ -248,6 +252,9 @@ function SectionBuilderContent({
   const [selectedSectionKey, setSelectedSectionKey] = useState(
     () => state.sections[0]?.sectionKey ?? "",
   );
+  const [expandedSectionKey, setExpandedSectionKey] = useState(
+    () => state.sections[0]?.sectionKey ?? "",
+  );
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
   const previewModels = useMemo(
     () => createSectionPreviewModels(state.sections, state.theme, state.event),
@@ -256,7 +263,17 @@ function SectionBuilderContent({
   const selectedPreview =
     previewModels.find((model) => model.section.sectionKey === selectedSectionKey) ??
     previewModels[0];
+  const selectedPreviewIndex = selectedPreview
+    ? previewModels.findIndex(
+        (model) => model.section.sectionKey === selectedPreview.section.sectionKey,
+      )
+    : -1;
   const nextSuggestedSection = getNextSuggestedSection(previewModels);
+  const dirtySectionKeys = useMemo(
+    () => getDirtySectionKeys(state.sections, state.savedSections),
+    [state.savedSections, state.sections],
+  );
+  const hasUnsavedChanges = dirtySectionKeys.size > 0;
   const validEnabledCount = previewModels.filter(
     (model) => model.section.enabled && model.status !== "invalid",
   ).length;
@@ -268,6 +285,18 @@ function SectionBuilderContent({
       setSelectedSectionKey(previewModels[0]?.section.sectionKey ?? "");
     }
   }, [previewModels, selectedSectionKey]);
+
+  const openSectionEditor = (sectionKey: string) => {
+    setSelectedSectionKey(sectionKey);
+    setExpandedSectionKey((currentSectionKey) =>
+      currentSectionKey === sectionKey ? "" : sectionKey,
+    );
+  };
+
+  const expandSectionEditor = (sectionKey: string) => {
+    setSelectedSectionKey(sectionKey);
+    setExpandedSectionKey(sectionKey);
+  };
 
   const updateSection = (sectionKey: string, updates: Partial<SectionDraft>) => {
     updateState((current) =>
@@ -284,6 +313,29 @@ function SectionBuilderContent({
                   }
                 : section,
             ),
+          }
+        : current,
+    );
+  };
+
+  const cancelChanges = () => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    if (
+      !window.confirm("Discard all unsaved section changes and return to the last saved draft?")
+    ) {
+      return;
+    }
+
+    updateState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            formMessage: null,
+            sectionErrors: {},
+            sections: cloneSectionDrafts(current.savedSections),
           }
         : current,
     );
@@ -366,6 +418,11 @@ function SectionBuilderContent({
 
     try {
       const response = await apiClient.updateEventSections(eventId, parsed.input);
+      const sectionDrafts = createSectionDrafts({
+        event: state.event,
+        existingSections: response.sections,
+        theme: state.theme,
+      });
 
       updateState((current) =>
         current.status === "ready"
@@ -373,12 +430,9 @@ function SectionBuilderContent({
               ...current,
               formMessage: "Sections saved.",
               isSaving: false,
+              savedSections: sectionDrafts,
               sectionErrors: {},
-              sections: createSectionDrafts({
-                event: current.event,
-                existingSections: response.sections,
-                theme: current.theme,
-              }),
+              sections: sectionDrafts,
             }
           : current,
       );
@@ -403,7 +457,7 @@ function SectionBuilderContent({
       return;
     }
 
-    setSelectedSectionKey(nextSuggestedSection.section.sectionKey);
+    expandSectionEditor(nextSuggestedSection.section.sectionKey);
     updateSection(nextSuggestedSection.section.sectionKey, {
       enabled: true,
     });
@@ -426,20 +480,31 @@ function SectionBuilderContent({
               contract.
             </p>
           </div>
-          <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={state.isSaving}
-            onClick={() => void saveSections()}
-            type="button"
-          >
-            {state.isSaving ? "Saving sections..." : "Save sections"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className={secondaryButtonClassName}
+              disabled={!hasUnsavedChanges || state.isSaving}
+              onClick={cancelChanges}
+              type="button"
+            >
+              Cancel changes
+            </button>
+            <button
+              className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={state.isSaving}
+              onClick={() => void saveSections()}
+              type="button"
+            >
+              {state.isSaving ? "Saving sections..." : "Save sections"}
+            </button>
+          </div>
         </div>
 
-        <dl className="grid gap-3 text-sm sm:grid-cols-4">
+        <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-6">
           <SummaryItem label="Enabled sections" value={`${enabledCount}`} />
           <SummaryItem label="Ready to publish" value={`${validEnabledCount}`} />
           <SummaryItem label="Needs fixes" value={`${invalidEnabledCount}`} />
+          <SummaryItem label="Unsaved changes" value={`${dirtySectionKeys.size}`} />
           <SummaryItem label="Selected theme" value={state.theme.name} />
           <SummaryItem label="Theme mode" value={formatMode(state.event.themeMode)} />
         </dl>
@@ -479,11 +544,21 @@ function SectionBuilderContent({
         ) : null}
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(21rem,0.78fr)] xl:items-start">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] xl:items-start">
         <SectionOrderPanel
+          canSave={!state.isSaving}
+          dirtySectionKeys={dirtySectionKeys}
+          expandedSectionKey={expandedSectionKey}
+          isSaving={state.isSaving}
           models={previewModels}
-          onSelect={setSelectedSectionKey}
+          moveSection={moveSection}
+          onCancel={cancelChanges}
+          onOpen={openSectionEditor}
+          onSave={() => void saveSections()}
+          sectionErrors={state.sectionErrors}
           selectedSectionKey={selectedPreview?.section.sectionKey}
+          selectedSectionIndex={selectedPreviewIndex}
+          updateSection={updateSection}
         />
 
         <SectionPreviewPanel
@@ -493,54 +568,51 @@ function SectionBuilderContent({
           setPreviewContext={setPreviewContext}
           theme={state.theme}
         />
-
-        <section className="grid gap-4 xl:col-start-1" aria-label="Supported sections">
-          {previewModels.map((model, index) => (
-            <SectionEditor
-              errors={{
-                ...model.errors,
-                ...(state.sectionErrors[model.section.sectionKey] ?? {}),
-              }}
-              isFirst={index === 0}
-              isLast={index === previewModels.length - 1}
-              isSelected={model.section.sectionKey === selectedPreview?.section.sectionKey}
-              key={model.section.sectionKey}
-              moveSection={moveSection}
-              onSelect={setSelectedSectionKey}
-              requirement={model.requirement}
-              section={model.section}
-              canDisable={model.canDisable}
-              disableLockReason={model.disableLockReason}
-              statusLabel={model.statusLabel}
-              updateSection={updateSection}
-            />
-          ))}
-        </section>
       </div>
     </div>
   );
 }
 
 function SectionOrderPanel({
+  canSave,
+  dirtySectionKeys,
+  expandedSectionKey,
+  isSaving,
   models,
-  onSelect,
+  moveSection,
+  onCancel,
+  onOpen,
+  onSave,
+  sectionErrors,
   selectedSectionKey,
+  selectedSectionIndex,
+  updateSection,
 }: {
+  canSave: boolean;
+  dirtySectionKeys: Set<string>;
+  expandedSectionKey?: string;
+  isSaving: boolean;
   models: SectionPreviewModel[];
-  onSelect: (sectionKey: string) => void;
+  moveSection: (sectionKey: string, direction: -1 | 1) => void;
+  onCancel: () => void;
+  onOpen: (sectionKey: string) => void;
+  onSave: () => void;
+  sectionErrors: SectionErrorMap;
   selectedSectionKey?: string;
+  selectedSectionIndex: number;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
 }) {
   return (
     <section
       aria-label="Section order and validation"
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:col-start-1"
+      className="grid min-w-0 gap-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:col-start-1"
     >
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-semibold text-[var(--accent-strong)]">Preview order</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight">Sections in invite order</h2>
-        <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          Select a section to preview its current draft. Statuses update before save so invalid
-          JSON, hidden content, and guest-only sections are visible early.
+        <p className="mt-2 max-w-prose text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+          Open a section card to edit its fields beside the live preview. Statuses update before
+          save so invalid fields, hidden content, and guest-only sections are visible early.
         </p>
       </div>
 
@@ -548,37 +620,79 @@ function SectionOrderPanel({
         {models.map((model, index) => {
           const definition = getSectionDefinition(model.section.sectionType);
           const isSelected = selectedSectionKey === model.section.sectionKey;
+          const isExpanded = expandedSectionKey === model.section.sectionKey;
+          const isDirty = dirtySectionKeys.has(model.section.sectionKey);
 
           return (
-            <li key={model.section.sectionKey}>
-              <button
-                aria-current={isSelected ? "true" : undefined}
-                className={`grid w-full gap-3 rounded-[var(--radius-md)] border p-3 text-left transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${
+            <li className="min-w-0" key={model.section.sectionKey}>
+              <article
+                className={`min-w-0 overflow-hidden rounded-[var(--radius-md)] border transition ${
                   isSelected
-                    ? "border-[var(--accent)] bg-[var(--surface-muted)]"
+                    ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_10%,transparent)]"
                     : "border-[var(--border)] bg-[var(--surface)]"
                 }`}
-                onClick={() => onSelect(model.section.sectionKey)}
-                type="button"
               >
-                <span className="flex items-start justify-between gap-3">
-                  <span>
-                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-                      {String(index + 1).padStart(2, "0")} · {formatRequirement(model.requirement)}
+                <button
+                  aria-current={isSelected ? "true" : undefined}
+                  aria-expanded={isExpanded}
+                  aria-label={`Open ${definition.label} editor`}
+                  className="grid min-w-0 w-full gap-3 p-3 text-left transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]"
+                  data-section-card-key={model.section.sectionKey}
+                  onClick={() => onOpen(model.section.sectionKey)}
+                  type="button"
+                >
+                  <span className="flex min-w-0 items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                        {String(index + 1).padStart(2, "0")} ·{" "}
+                        {formatRequirement(model.requirement)}
+                      </span>
+                      <span className="mt-1 block truncate font-semibold">{definition.label}</span>
                     </span>
-                    <span className="mt-1 block font-semibold">{definition.label}</span>
+                    <span className={`${statusPillClassName(model.status)} shrink-0`}>
+                      {model.statusLabel}
+                    </span>
                   </span>
-                  <span className={statusPillClassName(model.status)}>{model.statusLabel}</span>
-                </span>
-                <span className="flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-1">
-                    {formatVisibility(model)}
+                  <span className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-1">
+                      {formatVisibility(model)}
+                    </span>
+                    {isDirty ? (
+                      <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,var(--surface))] px-2.5 py-1 font-semibold">
+                        Unsaved
+                      </span>
+                    ) : null}
+                    <span className="max-w-full break-all rounded-full bg-[var(--surface-muted)] px-2.5 py-1 font-mono">
+                      {definition.rendererKey}
+                    </span>
                   </span>
-                  <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-1 font-mono">
-                    {definition.rendererKey}
-                  </span>
-                </span>
-              </button>
+                </button>
+
+                {isExpanded ? (
+                  <div className="border-t border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+                    <SectionEditor
+                      errors={{
+                        ...model.errors,
+                        ...(sectionErrors[model.section.sectionKey] ?? {}),
+                      }}
+                      isDirty={isDirty}
+                      isFirst={selectedSectionIndex === 0}
+                      isLast={selectedSectionIndex === models.length - 1}
+                      isSaving={isSaving}
+                      moveSection={moveSection}
+                      onCancel={onCancel}
+                      onSave={onSave}
+                      requirement={model.requirement}
+                      section={model.section}
+                      canDisable={model.canDisable}
+                      disableLockReason={model.disableLockReason}
+                      statusLabel={model.statusLabel}
+                      updateSection={updateSection}
+                      canSave={canSave}
+                    />
+                  </div>
+                ) : null}
+              </article>
             </li>
           );
         })}
@@ -607,7 +721,7 @@ function SectionPreviewPanel({
     previewContext === "public" ? model?.visibleInPublic : model?.visibleInGuest;
 
   return (
-    <aside className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:sticky xl:top-4 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+    <aside className="grid min-w-0 gap-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:sticky xl:top-4 xl:col-start-2 xl:row-start-1">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between xl:flex-col">
         <div>
           <p className="text-sm font-semibold text-[var(--accent-strong)]">Live preview</p>
@@ -793,26 +907,32 @@ function PreviewSectionBody({
 
 function SectionEditor({
   canDisable,
+  canSave,
   disableLockReason,
   errors,
+  isDirty,
   isFirst,
   isLast,
-  isSelected,
+  isSaving,
   moveSection,
-  onSelect,
+  onCancel,
+  onSave,
   requirement,
   section,
   statusLabel,
   updateSection,
 }: {
   canDisable: boolean;
+  canSave: boolean;
   disableLockReason?: string;
   errors: SectionErrors;
+  isDirty: boolean;
   isFirst: boolean;
   isLast: boolean;
-  isSelected: boolean;
+  isSaving: boolean;
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
-  onSelect: (sectionKey: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
   requirement: SectionBlueprintRequirement;
   section: SectionDraft;
   statusLabel: string;
@@ -825,14 +945,7 @@ function SectionEditor({
   const titleId = `${section.sectionKey}-editor-title`;
 
   return (
-    <article
-      aria-labelledby={titleId}
-      className={`grid gap-4 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-5 ${
-        isSelected
-          ? "border-[var(--accent)] shadow-[0_16px_48px_color-mix(in_srgb,var(--accent)_12%,transparent)]"
-          : "border-[var(--border)]"
-      }`}
-    >
+    <div aria-labelledby={titleId} className="grid gap-6" role="region">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -851,19 +964,13 @@ function SectionEditor({
                     : "neutral"
               }
             />
+            {isDirty ? <Badge label="Unsaved" tone="neutral" /> : null}
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {definition.description}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            className={secondaryButtonClassName}
-            onClick={() => onSelect(section.sectionKey)}
-            type="button"
-          >
-            {isSelected ? "Previewing" : "Preview"}
-          </button>
           <button
             aria-label={`${definition.label} move up`}
             className={secondaryButtonClassName}
@@ -885,16 +992,37 @@ function SectionEditor({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[minmax(12rem,16rem)_1fr]">
-        <div className="grid content-start gap-4">
-          <label className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-3 text-sm hover:bg-[var(--surface-muted)]">
+      <div className="grid gap-6">
+        <div className="grid gap-4 lg:grid-cols-[minmax(15rem,1fr)_minmax(15rem,1fr)]">
+          <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+            <p className="text-sm font-semibold">Editor actions</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!canSave}
+                onClick={onSave}
+                type="button"
+              >
+                {isSaving ? "Saving..." : "Save sections"}
+              </button>
+              <button
+                className={secondaryButtonClassName}
+                disabled={!isDirty || isSaving}
+                onClick={onCancel}
+                type="button"
+              >
+                Cancel changes
+              </button>
+            </div>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-4 text-sm hover:bg-[var(--surface-muted)]">
             <input
               aria-label={`Enable ${definition.label}`}
               checked={section.enabled}
               className="mt-1 size-4 accent-[var(--accent)]"
               disabled={section.enabled && !canDisable}
               onChange={(event) => {
-                onSelect(section.sectionKey);
                 if (!event.target.checked && !canDisable) {
                   return;
                 }
@@ -912,7 +1040,7 @@ function SectionEditor({
             </span>
           </label>
 
-          <div className="grid gap-2">
+          <div className="grid gap-2 lg:col-span-2">
             <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-visibility`}>
               Visibility
             </label>
@@ -943,7 +1071,7 @@ function SectionEditor({
           </div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           <SectionFieldForm
             disabled={!section.enabled}
             errors={errors}
@@ -959,7 +1087,7 @@ function SectionEditor({
           />
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -1024,9 +1152,9 @@ function SectionFieldForm({
   };
 
   return (
-    <fieldset className="grid gap-4" disabled={disabled}>
+    <fieldset className="grid gap-6" disabled={disabled}>
       <legend className="sr-only">Edit {getSectionDefinition(section.sectionType).label}</legend>
-      <div className="grid gap-1">
+      <div className="grid gap-2">
         <p className="text-sm font-semibold">Content fields</p>
         <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
           These controls write the same validated section data used by the invite renderers.
@@ -1071,7 +1199,7 @@ function SectionContentFields({ controller }: { controller: SectionFieldControll
 
 function IntroductionFields({ controller }: { controller: SectionFieldController }) {
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Eyebrow" path={["eyebrow"]} scope="content" />
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <TextField controller={controller} label="Subtitle" path={["subtitle"]} scope="content" />
@@ -1083,7 +1211,7 @@ function IntroductionFields({ controller }: { controller: SectionFieldController
 
 function DateFields({ controller }: { controller: SectionFieldController }) {
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} scope="content" />
       <DateTimeField controller={controller} label="Starts at" path={["startsAt"]} required />
       <DateTimeField controller={controller} label="Ends at" path={["endsAt"]} />
@@ -1114,7 +1242,7 @@ function DetailsFields({ controller }: { controller: SectionFieldController }) {
   const items = readRecordArray(controller.content.items);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <RepeaterField
         addLabel="Add schedule item"
@@ -1172,7 +1300,7 @@ function DressCodeFields({ controller }: { controller: SectionFieldController })
   const palette = readRecordArray(controller.content.palette);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <TextField
         controller={controller}
@@ -1226,7 +1354,7 @@ function EntourageFields({ controller }: { controller: SectionFieldController })
   const groups = readRecordArray(controller.content.groups);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <RepeaterField
         addLabel="Add group"
@@ -1275,7 +1403,7 @@ function GalleryFields({ controller }: { controller: SectionFieldController }) {
   const images = readRecordArray(controller.content.images);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} scope="content" />
       <RepeaterField
         addLabel="Add image"
@@ -1331,7 +1459,7 @@ function GalleryFields({ controller }: { controller: SectionFieldController }) {
 
 function LocationFields({ controller }: { controller: SectionFieldController }) {
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField
         controller={controller}
         label="Venue name"
@@ -1355,7 +1483,7 @@ function LocationFields({ controller }: { controller: SectionFieldController }) 
 
 function OutroFields({ controller }: { controller: SectionFieldController }) {
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <TextField
         controller={controller}
@@ -1373,7 +1501,7 @@ function ProfileFields({ controller }: { controller: SectionFieldController }) {
   const people = readRecordArray(controller.content.people);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <RepeaterField
         addLabel="Add person"
@@ -1431,7 +1559,7 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
   const questions = readRecordArray(controller.content.questions);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <TextField
         controller={controller}
@@ -1524,7 +1652,7 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
   const paragraphs = readStringArray(controller.content.paragraphs);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <RepeaterField
         addLabel="Add story paragraph"
@@ -1567,7 +1695,7 @@ function CustomFields({ controller }: { controller: SectionFieldController }) {
   const blocks = readRecordArray(controller.content.blocks);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <RepeaterField
         addLabel="Add block"
@@ -3034,6 +3162,38 @@ function previewColumnClassName(columns: number) {
   }
 
   return "grid gap-3 sm:grid-cols-2";
+}
+
+function getDirtySectionKeys(sections: SectionDraft[], savedSections: SectionDraft[]) {
+  const savedByKey = new Map(
+    savedSections.map((section) => [section.sectionKey, sectionDraftSignature(section)]),
+  );
+  const dirtyKeys = new Set<string>();
+
+  sections.forEach((section) => {
+    if (sectionDraftSignature(section) !== savedByKey.get(section.sectionKey)) {
+      dirtyKeys.add(section.sectionKey);
+    }
+  });
+
+  return dirtyKeys;
+}
+
+function sectionDraftSignature(section: SectionDraft) {
+  return JSON.stringify({
+    contentText: section.contentText,
+    enabled: section.enabled,
+    id: section.id,
+    sectionKey: section.sectionKey,
+    sectionType: section.sectionType,
+    settingsText: section.settingsText,
+    sortOrder: section.sortOrder,
+    visibility: section.visibility,
+  });
+}
+
+function cloneSectionDrafts(sections: SectionDraft[]) {
+  return sections.map((section) => ({ ...section }));
 }
 
 function createSectionDrafts({
