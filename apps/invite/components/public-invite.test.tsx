@@ -35,6 +35,20 @@ describe("public invite section renderers", () => {
           }),
           createSection({
             content: {
+              people: [
+                {
+                  name: "Amara",
+                  role: "Host",
+                },
+              ],
+              title: "The hosts",
+            },
+            sectionKey: "hosts",
+            sectionType: "profile",
+            sortOrder: 2,
+          }),
+          createSection({
+            content: {
               paragraphs: ["First the quiet hello.", "Then a life gathered around one table."],
               title: "Our story",
             },
@@ -43,7 +57,7 @@ describe("public invite section renderers", () => {
             settings: {
               layout: "timeline",
             },
-            sortOrder: 2,
+            sortOrder: 3,
           }),
           createSection({
             content: {
@@ -54,7 +68,7 @@ describe("public invite section renderers", () => {
             },
             sectionKey: "venue",
             sectionType: "location",
-            sortOrder: 3,
+            sortOrder: 4,
           }),
           createSection({
             content: {
@@ -72,16 +86,21 @@ describe("public invite section renderers", () => {
             },
             sectionKey: "gallery",
             sectionType: "gallery",
-            sortOrder: 4,
+            sortOrder: 5,
           }),
         ]),
       }),
     );
 
+    expect(html).toContain('data-ambient-audio="optional"');
+    expect(html).toContain('data-ambient-audio-controls="external-controls"');
+    expect(html).toContain('data-theme-hero-composition="layered-portrait"');
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain('data-section-composition="timeline"');
     expect(html).toContain('data-section-composition="editorial-split"');
     expect(html).toContain('data-section-composition="gallery-feature"');
+    expect(html).toContain('data-section-key="hosts"');
+    expect(html).toContain('data-section-layout="split"');
     expect(html).toContain('data-motion-kind="timeline-reveal"');
     expect(html).toContain('data-motion-kind="media-reveal"');
     expect(html).toContain('data-section-renderer="section.gallery"');

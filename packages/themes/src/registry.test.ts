@@ -102,6 +102,37 @@ describe("theme registry", () => {
     ).toBe(true);
   });
 
+  it("defines visual composition, RSVP treatment, and preview data for every initial theme", () => {
+    expect(
+      Object.values(themeRegistry).every(
+        (theme) =>
+          theme.composition.rsvpDesign &&
+          theme.composition.hero.composition &&
+          theme.composition.sectionDefaults.rsvp &&
+          theme.previewData.sections.length > 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("sets Premium apart as a full-viewport editorial invitation theme", () => {
+    const premium = themeRegistry.premium;
+    const premiumCompositions = new Set(
+      Object.values(premium.composition.sectionDefaults).map((section) => section.composition),
+    );
+
+    expect(premium.composition.hero.fullViewport).toBe(true);
+    expect(premium.composition.hero.composition).toBe("layered-portrait");
+    expect(premium.composition.rsvpDesign).toBe("premium");
+    expect(premium.composition.ambientMedia).toMatchObject({
+      audioSlot: "optional",
+      controlStrategy: "external-controls",
+      defaultAutoplay: false,
+    });
+    expect(premiumCompositions.size).toBeGreaterThan(3);
+    expect(premium.composition.sectionDefaults.gallery?.composition).toBe("gallery-feature");
+    expect(premium.composition.sectionDefaults.story?.composition).toBe("timeline");
+  });
+
   it("validates sample event sections against a supported theme", () => {
     const results = validateThemeSections("premium", [...baseSections]);
 

@@ -22,7 +22,10 @@ export function InviteShell({
   return (
     <main
       className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)]"
+      data-ambient-audio={theme.composition.ambientMedia.audioSlot}
+      data-ambient-audio-controls={theme.composition.ambientMedia.controlStrategy}
       data-invite-context={context}
+      data-theme-hero={theme.composition.hero.composition}
       data-theme-id={theme.id}
       data-theme-mode={mode}
       data-theme-resolved-mode={resolvedMode}
@@ -41,7 +44,10 @@ function themeToStyle(theme: ThemeDefinition | undefined, mode: "dark" | "light"
     "--accent-strong": tokens?.accentStrong,
     "--background": tokens?.background,
     "--border": tokens?.border,
+    "--eyebrow-tracking": theme?.typography.css.eyebrowLetterSpacing,
     "--error": tokens?.error,
+    "--font-body": theme?.typography.css.bodyFamily,
+    "--font-display": theme?.typography.css.displayFamily,
     "--focus": tokens?.focus,
     "--foreground": tokens?.foreground,
     "--radius-lg": theme?.radius.lg,
@@ -51,6 +57,7 @@ function themeToStyle(theme: ThemeDefinition | undefined, mode: "dark" | "light"
     "--surface": tokens?.surface,
     "--surface-muted": tokens?.surfaceMuted,
     "--warning": tokens?.warning,
+    fontFamily: "var(--font-body)",
   } as CSSProperties;
 }
 

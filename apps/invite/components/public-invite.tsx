@@ -1,4 +1,11 @@
-import { getSectionDefinition } from "@lumiere/themes";
+import {
+  getSectionDefinition,
+  getTheme,
+  isThemeId,
+  type ThemeDefinition,
+  type ThemeSectionComposition,
+  type ThemeSectionDensity,
+} from "@lumiere/themes";
 import type {
   EventSection,
   JsonValue,
@@ -13,9 +20,8 @@ type JsonObject = Record<string, JsonValue>;
 type InvitationContext = "guest" | "public";
 type InviteResponse = PublicEventResponse | PublicGuestInviteResponse;
 type GuestContext = PublicGuestInviteResponse["guest"];
-type SectionComposition =
-  "editorial-split" | "framed" | "full-bleed" | "gallery-feature" | "layered-media" | "timeline";
-type SectionDensity = "balanced" | "compact" | "spacious";
+type SectionComposition = ThemeSectionComposition;
+type SectionDensity = ThemeSectionDensity;
 
 type RenderableSection = {
   content: JsonObject;
@@ -74,7 +80,8 @@ function InvitationFrame({
     context === "guest"
       ? "This guest invite is valid. More private details will appear here as the host enables them."
       : "The host has published this event. Public sections will appear here as they are enabled.";
-  const rsvpDesign = resolveRsvpDesign(invite.selectedThemeId ?? invite.theme?.id);
+  const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
+  const rsvpDesign = theme.composition.rsvpDesign;
 
   return (
     <InviteShell
@@ -82,8 +89,12 @@ function InvitationFrame({
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
-      <article className="min-h-[100dvh]">
-        <PublicHero invite={invite} section={introduction} />
+      <article
+        className="min-h-[100dvh]"
+        data-rsvp-design={rsvpDesign}
+        data-theme-design-read={theme.designRead}
+      >
+        <PublicHero invite={invite} section={introduction} theme={theme} />
 
         {guest ? <GuestContextPanel guest={guest} /> : null}
 
@@ -98,6 +109,7 @@ function InvitationFrame({
                 key={item.section.id}
                 item={item}
                 rsvpDesign={rsvpDesign}
+                theme={theme}
               />
             ))}
           </div>
@@ -184,9 +196,11 @@ function InvitationUnavailable({
 function PublicHero({
   invite,
   section,
+  theme,
 }: {
   invite: InviteResponse;
   section: RenderableSection | undefined;
+  theme: ThemeDefinition;
 }) {
   const content = section?.content ?? {};
   const coverImage = readAsset(content.coverImage);
@@ -198,10 +212,15 @@ function PublicHero({
     ? (readString(section.settings.anchorId) ?? section.section.sectionKey)
     : "introduction";
   const layout = section ? (readString(section.settings.layout) ?? "editorial") : "editorial";
+  const fullViewport = theme.composition.hero.fullViewport;
 
   return (
     <section
-      className="lumiere-section lumiere-section--hero lumiere-section--full-bleed grid min-h-[82dvh] content-center gap-8 px-5 py-10 sm:px-8 lg:px-12"
+      className={joinClassNames(
+        "lumiere-section lumiere-section--hero lumiere-section--full-bleed grid content-center gap-8 overflow-hidden px-5 py-10 sm:px-8 lg:px-12",
+        fullViewport ? "min-h-[100dvh]" : "min-h-[82dvh]",
+        getHeroFrameClassName(theme),
+      )}
       data-motion-kind="hero-reveal"
       data-motion-scope="invite-section"
       data-section-composition="full-bleed"
@@ -209,15 +228,16 @@ function PublicHero({
       data-section-key={section?.section.sectionKey ?? "introduction"}
       data-section-layout={layout}
       data-section-type="introduction"
+      data-theme-hero-composition={theme.composition.hero.composition}
       id={anchorId}
     >
-      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div className={getHeroInnerClassName(theme, Boolean(coverImage))}>
         <div className="grid gap-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent-strong)]">
+          <p className="text-sm font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
             {eyebrow}
           </p>
           <div className="grid gap-4">
-            <h1 className="max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
+            <h1 className="lumiere-display max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
               {title}
             </h1>
             {subtitle ? (
@@ -242,10 +262,10 @@ function PublicHero({
         </div>
 
         {coverImage ? (
-          <figure className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_15%,transparent)]">
+          <figure className={getHeroMediaClassName(theme)}>
             <img
               alt={coverImage.alt}
-              className="aspect-[4/5] w-full object-cover"
+              className={getHeroImageClassName(theme)}
               decoding="async"
               fetchPriority="high"
               src={coverImage.url}
@@ -257,9 +277,9 @@ function PublicHero({
             ) : null}
           </figure>
         ) : (
-          <aside className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_12%,transparent)]">
+          <aside className={getHeroFallbackClassName(theme)}>
             <p className="text-sm font-semibold text-[var(--accent-strong)]">Public details</p>
-            <h2 className="text-2xl font-semibold">{invite.event.title}</h2>
+            <h2 className="lumiere-display text-2xl font-semibold">{invite.event.title}</h2>
             <div className="grid gap-3">
               <DetailLine
                 label="Date"
@@ -277,15 +297,84 @@ function PublicHero({
   );
 }
 
+function getHeroFrameClassName(theme: ThemeDefinition) {
+  switch (theme.id) {
+    case "premium":
+      return "lumiere-hero--premium bg-[radial-gradient(circle_at_12%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_28%),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_64%,var(--background)),var(--background))]";
+    case "kids":
+      return "lumiere-hero--kids bg-[radial-gradient(circle_at_15%_18%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_24%),linear-gradient(180deg,var(--surface),var(--background))]";
+    case "noel":
+      return "lumiere-hero--noel bg-[radial-gradient(circle_at_80%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_30%),linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_54%,var(--background)))]";
+    default:
+      return "bg-[linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_42%,var(--background)))]";
+  }
+}
+
+function getHeroInnerClassName(theme: ThemeDefinition, hasImage: boolean) {
+  if (!hasImage) {
+    return "mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center";
+  }
+
+  switch (theme.id) {
+    case "premium":
+      return "mx-auto grid w-full max-w-6xl gap-9 lg:grid-cols-[0.9fr_1.1fr] lg:items-center";
+    case "kids":
+      return "mx-auto grid w-full max-w-4xl gap-7 text-center";
+    case "noel":
+      return "mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center";
+    default:
+      return "mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center";
+  }
+}
+
+function getHeroMediaClassName(theme: ThemeDefinition) {
+  const base =
+    "lumiere-hero-media overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_15%,transparent)]";
+
+  switch (theme.id) {
+    case "premium":
+      return joinClassNames(
+        base,
+        "order-first mx-auto w-full max-w-[20rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
+      );
+    case "kids":
+      return joinClassNames(base, "mx-auto w-full max-w-[22rem] rounded-[var(--radius-lg)]");
+    case "noel":
+      return joinClassNames(base, "order-first rounded-[var(--radius-lg)] lg:order-none");
+    default:
+      return joinClassNames(base, "rounded-[var(--radius-lg)]");
+  }
+}
+
+function getHeroImageClassName(theme: ThemeDefinition) {
+  switch (theme.id) {
+    case "kids":
+      return "aspect-[4/3] w-full object-cover sm:aspect-[1/1]";
+    case "noel":
+      return "aspect-[4/5] w-full object-cover sm:aspect-[16/12]";
+    default:
+      return "aspect-[4/5] w-full object-cover";
+  }
+}
+
+function getHeroFallbackClassName(theme: ThemeDefinition) {
+  return joinClassNames(
+    "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_12%,transparent)]",
+    theme.id === "premium" ? "lumiere-hero-media" : undefined,
+  );
+}
+
 function GuestContextPanel({ guest }: { guest: GuestContext }) {
   return (
-    <section className="mx-auto w-full max-w-5xl px-5 pb-4 sm:px-8 lg:px-12">
+    <section className="lumiere-guest-panel mx-auto w-full max-w-5xl px-5 pb-4 sm:px-8 lg:px-12">
       <div className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
             Guest invitation
           </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">{guest.guestGroup.label}</h2>
+          <h2 className="lumiere-display mt-2 text-2xl font-semibold tracking-tight">
+            {guest.guestGroup.label}
+          </h2>
           <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             This private link is prepared for your guest group. Please do not forward it outside
             your party.
@@ -307,6 +396,7 @@ function PublicSection({
   index,
   item,
   rsvpDesign,
+  theme,
 }: {
   eventSlug: string;
   guest?: GuestContext;
@@ -314,19 +404,20 @@ function PublicSection({
   index: number;
   item: RenderableSection;
   rsvpDesign: RsvpDesign;
+  theme: ThemeDefinition;
 }) {
   const definition = getSectionDefinition(item.section.sectionType);
   const anchorId = readString(item.settings.anchorId) ?? item.section.sectionKey;
-  const composition = resolveSectionComposition(item);
-  const density = readSectionDensity(item.settings.density);
-  const layout = readString(item.settings.layout) ?? readString(item.settings.variant) ?? "default";
+  const composition = resolveSectionComposition(item, theme);
+  const density = resolveSectionDensity(item, theme);
+  const layout = resolveSectionLayout(item, theme);
   const titleId = `${anchorId}-title`;
 
   return (
     <section
       aria-labelledby={titleId}
       className={getSectionFrameClassName(composition, density)}
-      data-motion-kind={resolveMotionKind(item.section.sectionType, composition)}
+      data-motion-kind={resolveMotionKind(item, composition, theme)}
       data-motion-order={index}
       data-motion-scope="invite-section"
       data-section-composition={composition}
@@ -349,6 +440,7 @@ function PublicSection({
             guest={guest}
             guestToken={guestToken}
             item={item}
+            layout={layout}
             rsvpDesign={rsvpDesign}
             titleId={titleId}
           />
@@ -364,6 +456,7 @@ function SectionBody({
   guest,
   guestToken,
   item,
+  layout,
   rsvpDesign,
   titleId,
 }: {
@@ -372,6 +465,7 @@ function SectionBody({
   guest?: GuestContext;
   guestToken?: string;
   item: RenderableSection;
+  layout: string;
   rsvpDesign: RsvpDesign;
   titleId: string;
 }) {
@@ -393,7 +487,7 @@ function SectionBody({
     case "outro":
       return <OutroSection composition={composition} content={content} titleId={titleId} />;
     case "profile":
-      return <ProfileSection content={content} settings={settings} titleId={titleId} />;
+      return <ProfileSection content={content} layout={layout} titleId={titleId} />;
     case "rsvp":
       return (
         <RsvpSection
@@ -435,7 +529,7 @@ function DateSection({
     <div className="grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
       <div className="grid gap-3">
         <h2
-          className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
+          className="lumiere-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
           id={titleId}
         >
           {title}
@@ -473,7 +567,7 @@ function DetailsSection({
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {items.length > 0 ? (
@@ -517,7 +611,7 @@ function LocationSection({
   return (
     <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
       <div className="grid gap-3">
-        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
           {venueName}
         </h2>
         {address ? <p className="text-lg leading-8">{address}</p> : null}
@@ -565,7 +659,7 @@ function StorySection({
       }
     >
       <div className="grid gap-4">
-        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
           {title}
         </h2>
         <div
@@ -593,24 +687,26 @@ function StorySection({
 
 function ProfileSection({
   content,
-  settings,
+  layout,
   titleId,
 }: {
   content: JsonObject;
-  settings: JsonObject;
+  layout: string;
   titleId: string;
 }) {
   const title = readString(content.title) ?? "Hosts";
   const people = readRecordArray(content.people);
-  const layout = readString(settings.layout) ?? "cards";
+  const resolvedLayout = layout === "split" || layout === "stacked" ? layout : "cards";
 
   return (
-    <div className={layout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4"}>
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+    <div
+      className={resolvedLayout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4"}
+    >
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {people.length > 0 ? (
-        <div className={layout === "stacked" ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
+        <div className={resolvedLayout === "stacked" ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
           {people.map((person, index) => {
             const image = readAsset(person.image);
 
@@ -657,7 +753,7 @@ function EntourageSection({
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {groups.length > 0 ? (
@@ -694,7 +790,7 @@ function DressCodeSection({
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {description ? <p className="text-base leading-7">{description}</p> : null}
@@ -739,7 +835,7 @@ function GallerySection({
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {images.length > 0 ? (
@@ -806,7 +902,7 @@ function RsvpSection({
     <div className="grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
       <div className="grid gap-4">
         <div className="grid gap-3">
-          <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+          <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
             {title}
           </h2>
           <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
@@ -903,7 +999,7 @@ function OutroSection({
       }
     >
       <div className="grid gap-4">
-        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
           {title}
         </h2>
         {message ? <p className="text-base leading-7">{message}</p> : null}
@@ -919,7 +1015,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {blocks.length > 0 ? (
@@ -941,7 +1037,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
 function GenericSection({ content, titleId }: { content: JsonObject; titleId: string }) {
   return (
     <div className="grid gap-3">
-      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {readString(content.title) ?? "Event detail"}
       </h2>
       {readString(content.body) ? (
@@ -1122,14 +1218,28 @@ function getColumnGridClassName(columns: number) {
   }
 }
 
-function resolveSectionComposition(item: RenderableSection): SectionComposition {
+function resolveSectionComposition(
+  item: RenderableSection,
+  theme: ThemeDefinition,
+): SectionComposition {
   const variantComposition = readSectionComposition(item.settings.variant);
 
   if (variantComposition) {
     return variantComposition;
   }
 
-  const layout = readString(item.settings.layout);
+  const explicitLayout = hasOriginalSetting(item, "layout");
+  const layout = explicitLayout ? readString(item.settings.layout) : undefined;
+
+  if (!layout) {
+    const themeComposition = getThemeSectionDefault(theme, item.section.sectionType)?.composition;
+
+    if (themeComposition) {
+      return themeComposition;
+    }
+  }
+
+  const resolvedLayout = layout ?? readString(item.settings.layout);
 
   switch (item.section.sectionType) {
     case "date":
@@ -1140,18 +1250,47 @@ function resolveSectionComposition(item: RenderableSection): SectionComposition 
     case "location":
       return "editorial-split";
     case "outro":
-      return layout === "editorial" ? "layered-media" : "full-bleed";
+      return resolvedLayout === "editorial" ? "layered-media" : "full-bleed";
     case "profile":
-      return layout === "split" ? "editorial-split" : "framed";
+      return resolvedLayout === "split" ? "editorial-split" : "framed";
     case "story":
-      if (layout === "timeline") {
+      if (resolvedLayout === "timeline") {
         return "timeline";
       }
 
-      return layout === "stacked" ? "framed" : "editorial-split";
+      return resolvedLayout === "stacked" ? "framed" : "editorial-split";
     default:
       return "framed";
   }
+}
+
+function resolveSectionDensity(item: RenderableSection, theme: ThemeDefinition): SectionDensity {
+  if (hasOriginalSetting(item, "density")) {
+    return readSectionDensity(item.settings.density);
+  }
+
+  return getThemeSectionDefault(theme, item.section.sectionType)?.density ?? "balanced";
+}
+
+function resolveSectionLayout(item: RenderableSection, theme: ThemeDefinition) {
+  if (hasOriginalSetting(item, "layout")) {
+    return readString(item.settings.layout) ?? "default";
+  }
+
+  return (
+    getThemeSectionDefault(theme, item.section.sectionType)?.layout ??
+    readString(item.settings.layout) ??
+    readString(item.settings.variant) ??
+    "default"
+  );
+}
+
+function getThemeSectionDefault(theme: ThemeDefinition, sectionType: EventSection["sectionType"]) {
+  return theme.composition.sectionDefaults[sectionType];
+}
+
+function hasOriginalSetting(item: RenderableSection, key: string) {
+  return Object.prototype.hasOwnProperty.call(item.section.settings, key);
 }
 
 function readSectionComposition(value: JsonValue | undefined): SectionComposition | undefined {
@@ -1179,9 +1318,18 @@ function readSectionDensity(value: JsonValue | undefined): SectionDensity {
 }
 
 function resolveMotionKind(
-  sectionType: EventSection["sectionType"],
+  item: RenderableSection,
   composition: SectionComposition,
+  theme: ThemeDefinition,
 ) {
+  if (!hasOriginalSetting(item, "variant")) {
+    const themeMotion = getThemeSectionDefault(theme, item.section.sectionType)?.motion;
+
+    if (themeMotion) {
+      return themeMotion;
+    }
+  }
+
   if (composition === "gallery-feature" || composition === "layered-media") {
     return "media-reveal";
   }
@@ -1190,7 +1338,7 @@ function resolveMotionKind(
     return "timeline-reveal";
   }
 
-  if (sectionType === "date" || sectionType === "rsvp") {
+  if (item.section.sectionType === "date" || item.section.sectionType === "rsvp") {
     return "section-reveal";
   }
 
@@ -1201,17 +1349,10 @@ function joinClassNames(...classNames: Array<string | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
 
-function resolveRsvpDesign(themeId: string | undefined): RsvpDesign {
-  switch (themeId) {
-    case "kids":
-      return "kids";
-    case "noel":
-      return "noel";
-    case "premium":
-      return "premium";
-    default:
-      return "default";
-  }
+function resolveInviteTheme(themeId: string | undefined) {
+  return (
+    (themeId && isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!
+  );
 }
 
 function getRenderableSections(

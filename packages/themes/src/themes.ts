@@ -14,6 +14,48 @@ export type ThemeTokenSet = {
   focus: string;
 };
 
+export type ThemeSectionComposition =
+  "editorial-split" | "framed" | "full-bleed" | "gallery-feature" | "layered-media" | "timeline";
+
+export type ThemeSectionDensity = "balanced" | "compact" | "spacious";
+
+export type ThemeSectionDefault = {
+  composition: ThemeSectionComposition;
+  density: ThemeSectionDensity;
+  layout?: string;
+  motion: "card-reveal" | "media-reveal" | "section-reveal" | "timeline-reveal";
+};
+
+export type ThemeComposition = {
+  backgroundTreatment: string;
+  hero: {
+    composition: "centered-media" | "editorial-split" | "layered-portrait" | "seasonal-tableau";
+    fullViewport: boolean;
+    mediaTreatment: string;
+  };
+  sectionDefaults: Partial<Record<SectionType, ThemeSectionDefault>>;
+  rsvpDesign: "default" | "kids" | "noel" | "premium";
+  ambientMedia: {
+    audioSlot: "none" | "optional";
+    controlStrategy: "external-controls" | "not-supported";
+    defaultAutoplay: boolean;
+    mood: string;
+  };
+};
+
+export type ThemePreviewData = {
+  eventTitle: string;
+  eyebrow: string;
+  subtitle: string;
+  venueName: string;
+  heroImageAlt: string;
+  sections: Array<{
+    summary: string;
+    title: string;
+    type: SectionType;
+  }>;
+};
+
 export type ThemeDefinition = {
   id: ThemeId;
   label: string;
@@ -30,6 +72,7 @@ export type ThemeDefinition = {
     light: ThemeTokenSet;
     dark?: ThemeTokenSet;
   };
+  composition: ThemeComposition;
   radius: {
     sm: string;
     md: string;
@@ -38,6 +81,11 @@ export type ThemeDefinition = {
   typography: {
     display: string;
     body: string;
+    css: {
+      bodyFamily: string;
+      displayFamily: string;
+      eyebrowLetterSpacing: string;
+    };
     scale: "restrained" | "editorial" | "playful";
   };
   imageTreatment: string;
@@ -46,6 +94,7 @@ export type ThemeDefinition = {
     swatch: string;
     summary: string;
   };
+  previewData: ThemePreviewData;
   accessibilityNotes: string[];
 };
 
@@ -111,10 +160,55 @@ export const themeRegistry = {
         focus: "#dfad73",
       },
     },
+    composition: {
+      ambientMedia: {
+        audioSlot: "none",
+        controlStrategy: "not-supported",
+        defaultAutoplay: false,
+        mood: "Quiet room tone only; no theme-owned audio by default.",
+      },
+      backgroundTreatment: "Warm parchment surface with restrained section framing.",
+      hero: {
+        composition: "editorial-split",
+        fullViewport: false,
+        mediaTreatment: "Soft rectangular cover image beside practical event facts.",
+      },
+      rsvpDesign: "default",
+      sectionDefaults: {
+        date: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        gallery: {
+          composition: "framed",
+          density: "balanced",
+          layout: "grid",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        rsvp: {
+          composition: "framed",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+      },
+    },
     radius: { sm: "0.5rem", md: "0.75rem", lg: "1rem" },
     typography: {
       display: "system sans with refined tracking",
       body: "system sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        eyebrowLetterSpacing: "0.16em",
+      },
       scale: "restrained",
     },
     imageTreatment: "Soft rectangular image slots with reserved aspect ratios.",
@@ -122,6 +216,30 @@ export const themeRegistry = {
     dashboardPreview: {
       swatch: "#b97732",
       summary: "Balanced neutral base for most private events.",
+    },
+    previewData: {
+      eventTitle: "Dinner at Dusk",
+      eyebrow: "Private invitation",
+      heroImageAlt: "Long dinner table in warm evening light",
+      sections: [
+        {
+          summary: "A clear event opening with date, venue, and host context.",
+          title: "Welcome",
+          type: "introduction",
+        },
+        {
+          summary: "Practical timing and location sections with gentle framing.",
+          title: "The evening",
+          type: "details",
+        },
+        {
+          summary: "Guest-only RSVP stays simple and readable.",
+          title: "Reply",
+          type: "rsvp",
+        },
+      ],
+      subtitle: "A warm, flexible design for private gatherings.",
+      venueName: "The Lantern Room",
     },
     accessibilityNotes: [
       "Uses off-white and off-black surfaces instead of pure extremes.",
@@ -199,10 +317,89 @@ export const themeRegistry = {
         focus: "#d8a567",
       },
     },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Soft instrumental or venue ambience, controlled outside visual sections.",
+      },
+      backgroundTreatment:
+        "Layered ivory field with candlelit radial light, editorial whitespace, and media-led section breaks.",
+      hero: {
+        composition: "layered-portrait",
+        fullViewport: true,
+        mediaTreatment:
+          "Tall portrait media with offset frame, depth shadow, and subtle parallax hooks.",
+      },
+      rsvpDesign: "premium",
+      sectionDefaults: {
+        date: {
+          composition: "full-bleed",
+          density: "spacious",
+          motion: "section-reveal",
+        },
+        details: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        dress_code: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        entourage: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "spacious",
+          layout: "masonry",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "spacious",
+          motion: "media-reveal",
+        },
+        outro: {
+          composition: "layered-media",
+          density: "spacious",
+          layout: "editorial",
+          motion: "media-reveal",
+        },
+        profile: {
+          composition: "editorial-split",
+          density: "balanced",
+          layout: "split",
+          motion: "media-reveal",
+        },
+        rsvp: {
+          composition: "full-bleed",
+          density: "spacious",
+          motion: "section-reveal",
+        },
+        story: {
+          composition: "timeline",
+          density: "spacious",
+          layout: "timeline",
+          motion: "timeline-reveal",
+        },
+      },
+    },
     radius: { sm: "0.375rem", md: "0.625rem", lg: "0.875rem" },
     typography: {
       display: "editorial display serif when selected by theme renderer",
       body: "legible sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+        eyebrowLetterSpacing: "0.22em",
+      },
       scale: "editorial",
     },
     imageTreatment: "Large editorial imagery with strong crops and generous whitespace.",
@@ -210,6 +407,30 @@ export const themeRegistry = {
     dashboardPreview: {
       swatch: "#a36a2f",
       summary: "Refined editorial theme for formal celebrations.",
+    },
+    previewData: {
+      eventTitle: "Amara & Jules",
+      eyebrow: "You are invited",
+      heroImageAlt: "Formal garden portrait framed by warm archways",
+      sections: [
+        {
+          summary: "Full-viewport opening with portrait media and ceremony pacing.",
+          title: "Opening portrait",
+          type: "introduction",
+        },
+        {
+          summary: "Story, date, and venue alternate between timeline and editorial compositions.",
+          title: "The celebration",
+          type: "story",
+        },
+        {
+          summary: "Gallery and RSVP become feature moments instead of utility cards.",
+          title: "Gallery and reply",
+          type: "gallery",
+        },
+      ],
+      subtitle: "An intimate garden celebration with candlelit rhythm.",
+      venueName: "Emerald Gardens",
     },
     accessibilityNotes: [
       "Display typography must preserve readable line height on mobile.",
@@ -261,10 +482,68 @@ export const themeRegistry = {
         focus: "#ef7b45",
       },
     },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Light playful background music can be offered with explicit controls.",
+      },
+      backgroundTreatment:
+        "Sunny layered paper fields, rounded image frames, and energetic but readable spacing.",
+      hero: {
+        composition: "centered-media",
+        fullViewport: true,
+        mediaTreatment:
+          "Bright celebrant image with large rounded corners and simple caption space.",
+      },
+      rsvpDesign: "kids",
+      sectionDefaults: {
+        date: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        details: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "balanced",
+          layout: "grid",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "framed",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        profile: {
+          composition: "framed",
+          density: "balanced",
+          layout: "cards",
+          motion: "card-reveal",
+        },
+        rsvp: {
+          composition: "framed",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+      },
+    },
     radius: { sm: "0.75rem", md: "1rem", lg: "1.25rem" },
     typography: {
       display: "rounded sans display",
       body: "friendly sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily:
+          'ui-rounded, "Arial Rounded MT Bold", ui-sans-serif, system-ui, -apple-system, sans-serif',
+        eyebrowLetterSpacing: "0.12em",
+      },
       scale: "playful",
     },
     imageTreatment: "Bright image slots with rounded corners and simple caption support.",
@@ -272,6 +551,30 @@ export const themeRegistry = {
     dashboardPreview: {
       swatch: "#ef7b45",
       summary: "Warm playful birthday theme without emoji-heavy UI.",
+    },
+    previewData: {
+      eventTitle: "Mika Turns Seven",
+      eyebrow: "Birthday party",
+      heroImageAlt: "Child smiling at a bright birthday table",
+      sections: [
+        {
+          summary: "Playful hero for celebrant details and party energy.",
+          title: "Party start",
+          type: "introduction",
+        },
+        {
+          summary: "Parent-friendly schedule, venue, and notes stay easy to scan.",
+          title: "Party details",
+          type: "details",
+        },
+        {
+          summary: "RSVP copy is casual while max pax remains clear.",
+          title: "Family reply",
+          type: "rsvp",
+        },
+      ],
+      subtitle: "A cheerful party design that stays clear for parents.",
+      venueName: "Sunbeam Studio",
     },
     accessibilityNotes: [
       "Playful color is restrained enough for text contrast.",
@@ -344,10 +647,70 @@ export const themeRegistry = {
         focus: "#8bc6a6",
       },
     },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Warm acoustic holiday music with guest-controlled playback.",
+      },
+      backgroundTreatment:
+        "Evergreen and candlelight layers with cozy framed details, never emoji-heavy clutter.",
+      hero: {
+        composition: "seasonal-tableau",
+        fullViewport: true,
+        mediaTreatment: "Warm table or gathering image with evergreen framing and soft light.",
+      },
+      rsvpDesign: "noel",
+      sectionDefaults: {
+        date: {
+          composition: "full-bleed",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        details: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        dress_code: {
+          composition: "framed",
+          density: "balanced",
+          motion: "card-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "balanced",
+          layout: "grid",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        rsvp: {
+          composition: "framed",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        story: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+      },
+    },
     radius: { sm: "0.5rem", md: "0.75rem", lg: "1rem" },
     typography: {
       display: "warm serif or humanist sans depending on renderer",
       body: "humanist sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+        eyebrowLetterSpacing: "0.18em",
+      },
       scale: "editorial",
     },
     imageTreatment: "Warm gallery frames with seasonal captions and preserved aspect ratios.",
@@ -355,6 +718,30 @@ export const themeRegistry = {
     dashboardPreview: {
       swatch: "#2f6d52",
       summary: "Seasonal holiday theme with light and candlelit dark variants.",
+    },
+    previewData: {
+      eventTitle: "Noel Supper",
+      eyebrow: "Holiday gathering",
+      heroImageAlt: "Candlelit holiday table with evergreen branches",
+      sections: [
+        {
+          summary: "Seasonal opening with warm table imagery and cozy pacing.",
+          title: "Gathering",
+          type: "introduction",
+        },
+        {
+          summary: "Dinner details, dress notes, and venue use restrained festive framing.",
+          title: "Candlelit details",
+          type: "details",
+        },
+        {
+          summary: "Holiday RSVP stays warm, brief, and accessible.",
+          title: "Holiday reply",
+          type: "rsvp",
+        },
+      ],
+      subtitle: "A cozy year-end invitation with evergreen restraint.",
+      venueName: "The Hearth Room",
     },
     accessibilityNotes: [
       "Red/green seasonal cues must include text labels.",
