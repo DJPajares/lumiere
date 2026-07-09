@@ -180,7 +180,7 @@ export function SectionBuilderWorkspace({ eventId }: { eventId: string }) {
             return here to configure content, visibility, and order.
           </p>
           <Link
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
             href={`/events/${eventId}/theme`}
           >
             Choose theme
@@ -412,7 +412,7 @@ function SectionBuilderContent({
             </p>
           </div>
           <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={state.isSaving}
             onClick={() => void saveSections()}
             type="button"
@@ -1188,7 +1188,7 @@ function PreviewLocation({ content, settings }: { content: JsonObject; settings:
           </p>
         ) : null}
         {mapUrl ? (
-          <span className="inline-flex min-h-10 w-fit items-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white">
+          <span className="inline-flex min-h-10 w-fit items-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)]">
             Open map
           </span>
         ) : null}
@@ -1308,7 +1308,7 @@ function PreviewRsvp({ content, settings }: { content: JsonObject; settings: Jso
           label="Access"
           value={requiresGuestToken ? "Guest token required" : "Public RSVP allowed"}
         />
-        <span className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white">
+        <span className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)]">
           {readString(content.submitLabel) ?? "Send RSVP"}
         </span>
       </div>

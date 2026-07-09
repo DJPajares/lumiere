@@ -8,6 +8,7 @@
   --surface-muted: #ebe7df;
   --border: #d8d1c5;
   --accent: #6f5a38;
+  --accent-contrast: #ffffff;
   --accent-strong: #3f3422;
   --success: #28724f;
   --warning: #9b651c;
@@ -26,6 +27,7 @@
     --surface-muted: #2b302d;
     --border: #3c433e;
     --accent: #c3a36c;
+    --accent-contrast: #151716;
     --accent-strong: #dfc58e;
   }
 }
@@ -44,9 +46,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 ::selection {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

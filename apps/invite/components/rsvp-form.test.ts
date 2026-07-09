@@ -31,6 +31,7 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain("Tan Family");
     expect(html).toContain("4 seats");
     expect(html).toContain("Awaiting reply");
+    expect(html).toContain("focus-within:ring-2");
   });
 
   it("renders an already-submitted reply as an update flow", () => {

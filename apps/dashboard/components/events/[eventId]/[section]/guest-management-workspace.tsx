@@ -382,7 +382,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
               {readyState.isRefreshing ? "Refreshing..." : "Refresh"}
             </button>
             <button
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
+              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
               onClick={startCreate}
               type="button"
             >
@@ -511,7 +511,10 @@ function GuestGroupForm({
       </div>
 
       {errors._form ? (
-        <p className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm text-[var(--error)]">
+        <p
+          className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm text-[var(--error)]"
+          role="alert"
+        >
           {errors._form}
         </p>
       ) : null}
@@ -550,19 +553,26 @@ function GuestGroupForm({
         />
       </div>
 
-      <label className="grid gap-2 text-sm font-medium">
+      <label className="grid gap-2 text-sm font-medium" htmlFor="guest-notes">
         Notes
         <textarea
+          aria-describedby={errors.notes ? "guest-notes-error" : undefined}
+          aria-invalid={errors.notes ? true : undefined}
           className="min-h-24 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+          id="guest-notes"
           onChange={(event) => onUpdate("notes", event.target.value)}
           value={values.notes}
         />
-        {errors.notes ? <span className="text-sm text-[var(--error)]">{errors.notes}</span> : null}
+        {errors.notes ? (
+          <span className="text-sm text-[var(--error)]" id="guest-notes-error">
+            {errors.notes}
+          </span>
+        ) : null}
       </label>
 
       <div className="flex flex-wrap gap-2">
         <button
-          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={submitting}
           onClick={onSubmit}
           type="button"
@@ -688,7 +698,7 @@ function GuestGroupList({
                     value={inviteLink}
                   />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface-muted)]"
+                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface-muted)]"
                     onClick={() => onCopy(group)}
                     type="button"
                   >
@@ -723,7 +733,7 @@ function GuestGroupList({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isBusy}
                     onClick={() =>
                       pending.type === "regenerate"
@@ -776,13 +786,18 @@ function TextField({
   type?: "email" | "number" | "text";
   value: string;
 }) {
+  const inputId = `guest-${toFieldId(label)}`;
+  const errorId = `${inputId}-error`;
+
   return (
-    <label className="grid gap-2 text-sm font-medium">
+    <label className="grid gap-2 text-sm font-medium" htmlFor={inputId}>
       {label}
       <input
         aria-label={label}
+        aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? true : undefined}
         className="min-h-10 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+        id={inputId}
         inputMode={inputMode}
         max={max}
         min={min}
@@ -791,9 +806,20 @@ function TextField({
         type={type}
         value={value}
       />
-      {error ? <span className="text-sm text-[var(--error)]">{error}</span> : null}
+      {error ? (
+        <span className="text-sm text-[var(--error)]" id={errorId}>
+          {error}
+        </span>
+      ) : null}
     </label>
   );
+}
+
+function toFieldId(label: string) {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function StatusBadge({ status }: { status: GuestGroupStatus }) {

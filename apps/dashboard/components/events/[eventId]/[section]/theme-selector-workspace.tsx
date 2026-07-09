@@ -281,7 +281,7 @@ function ThemeSelectorContent({
             </p>
           </div>
           <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={state.isSaving}
             onClick={() => void saveTheme()}
             type="button"
@@ -421,6 +421,7 @@ function ThemeOption({
           </p>
         </div>
         <span
+          aria-hidden="true"
           className="size-10 rounded-[var(--radius-md)] border border-[var(--border)]"
           style={{ backgroundColor: preview.swatch }}
         />
@@ -479,6 +480,7 @@ function ThemePreview({ theme }: { theme?: Theme }) {
       <div className="grid grid-cols-4 gap-2">
         {[tokens.accent, tokens.surfaceMuted, tokens.success, tokens.warning].map((color) => (
           <span
+            aria-hidden="true"
             className="h-10 rounded-[var(--radius-sm)] border"
             key={color}
             style={{ backgroundColor: color, borderColor: tokens.border }}

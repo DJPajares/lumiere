@@ -137,7 +137,7 @@ export function AmbientAudioControls({ audio, context, themeId }: AmbientAudioCo
       >
         <span
           aria-hidden="true"
-          className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-white shadow-sm"
+          className="grid size-9 place-items-center rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm"
         >
           {isPlaying ? "II" : "Play"}
         </span>
@@ -145,7 +145,10 @@ export function AmbientAudioControls({ audio, context, themeId }: AmbientAudioCo
           <span className="block truncate text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
             {audio.label}
           </span>
-          <span className="block truncate text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          <span
+            aria-live="polite"
+            className="block truncate text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
+          >
             {statusLabel}
           </span>
         </span>

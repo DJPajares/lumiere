@@ -87,6 +87,12 @@ describe("GuestManagementWorkspace", () => {
     expect(createGuestGroup).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Group label").getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByLabelText("Max pax").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Group label").getAttribute("aria-describedby")).toBe(
+      "guest-group-label-error",
+    );
+    expect(screen.getByLabelText("Max pax").getAttribute("aria-describedby")).toBe(
+      "guest-max-pax-error",
+    );
   });
 
   it("creates a guest group and copies the fresh invite link", async () => {

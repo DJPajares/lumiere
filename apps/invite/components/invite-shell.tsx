@@ -46,6 +46,7 @@ function themeToStyle(theme: ThemeDefinition | undefined, mode: "dark" | "light"
 
   return {
     "--accent": tokens?.accent,
+    "--accent-contrast": getAccentContrast(tokens?.accent),
     "--accent-strong": tokens?.accentStrong,
     "--background": tokens?.background,
     "--border": tokens?.border,
@@ -64,6 +65,46 @@ function themeToStyle(theme: ThemeDefinition | undefined, mode: "dark" | "light"
     "--warning": tokens?.warning,
     fontFamily: "var(--font-body)",
   } as CSSProperties;
+}
+
+function getAccentContrast(accent: string | undefined) {
+  if (!accent) {
+    return "#111111";
+  }
+
+  return contrastRatio("#ffffff", accent) >= 4.5 ? "#ffffff" : "#111111";
+}
+
+function contrastRatio(left: string, right: string) {
+  const leftLuminance = relativeLuminance(left);
+  const rightLuminance = relativeLuminance(right);
+  const lighter = Math.max(leftLuminance, rightLuminance);
+  const darker = Math.min(leftLuminance, rightLuminance);
+
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance(hex: string) {
+  const [red = 0, green = 0, blue = 0] = normalizeHex(hex).map((value) => {
+    const channel = value / 255;
+
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+
+  return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+}
+
+function normalizeHex(hex: string) {
+  const value = hex.replace("#", "");
+  const normalized =
+    value.length === 3
+      ? value
+          .split("")
+          .map((char) => `${char}${char}`)
+          .join("")
+      : value;
+
+  return [0, 2, 4].map((index) => Number.parseInt(normalized.slice(index, index + 2), 16));
 }
 
 function getInviteTheme(themeId: string) {

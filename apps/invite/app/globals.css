@@ -8,6 +8,7 @@
   --surface-muted: #f8ead8;
   --border: #ead8bd;
   --accent: #b97732;
+  --accent-contrast: #111111;
   --accent-strong: #7d451f;
   --success: #247a55;
   --warning: #a56316;
@@ -26,6 +27,7 @@
     --surface-muted: #33251b;
     --border: #4a3729;
     --accent: #dfad73;
+    --accent-contrast: #18130f;
     --accent-strong: #f3c994;
   }
 }
