@@ -115,6 +115,8 @@ describe("dashboard routes", () => {
     const html = renderWithAuth(element);
 
     expect(html).toContain("Event workspace");
+    expect(html).toContain("Current context");
+    expect(html).toContain("Event demo-event");
     expect(html).toContain("Loading event overview");
     expect(html).toContain("/events/demo-event/content");
   });
@@ -129,6 +131,8 @@ describe("dashboard routes", () => {
     const html = renderWithAuth(element);
 
     expect(html).toContain("Guests setup");
+    expect(html).toContain("Current:");
+    expect(html).toContain("Guests");
     expect(html).toContain("Loading guest groups");
     expect(html).toContain("/events/demo-event/guests");
   });

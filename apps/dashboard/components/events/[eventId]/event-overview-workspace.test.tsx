@@ -45,7 +45,11 @@ describe("EventOverviewWorkspace", () => {
     expect(screen.getAllByText("Pending")).toHaveLength(2);
     expect(screen.getByText("6 pax")).toBeTruthy();
     expect(screen.getByText("Total invited")).toBeTruthy();
-    expect(screen.getAllByText("24 pax")).toHaveLength(2);
+    expect(screen.getByText("10 groups")).toBeTruthy();
+    expect(screen.getByText("Maximum attendance")).toBeTruthy();
+    expect(screen.getByText("24 pax")).toBeTruthy();
+    expect(screen.getAllByText("Recent activity")).toHaveLength(2);
+    expect(screen.getByText("1 updates")).toBeTruthy();
     expect(screen.getByText("RSVP submitted by Tan family")).toBeTruthy();
   });
 

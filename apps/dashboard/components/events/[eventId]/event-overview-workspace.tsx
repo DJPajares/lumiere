@@ -170,7 +170,7 @@ function EventOverviewContent({
   isRefreshing: boolean;
   onRefresh: () => void;
 }) {
-  const summaryCards = useMemo(() => getSummaryCards(summary), [summary]);
+  const summaryCards = useMemo(() => getSummaryCards(summary, activity), [activity, summary]);
 
   return (
     <div className="grid gap-5">
@@ -308,7 +308,9 @@ function MetadataItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function getSummaryCards(summary: EventSummary) {
+function getSummaryCards(summary: EventSummary, activity: ActivityEvent[]) {
+  const latestActivity = activity[0];
+
   return [
     {
       badge: "Yes",
@@ -341,16 +343,25 @@ function getSummaryCards(summary: EventSummary) {
     {
       badge: "Invited",
       badgeClassName: statusBadgeClassName("neutral"),
-      detail: `${summary.totalGroups} active guest groups`,
+      detail: `${summary.totalInvitedPax} max pax across active guest groups`,
       label: "Total invited",
-      value: `${summary.totalInvitedPax} pax`,
+      value: `${summary.totalGroups} groups`,
     },
     {
       badge: "Max pax",
       badgeClassName: statusBadgeClassName("neutral"),
-      detail: `${summary.totalRespondedPax} pax responded so far`,
+      detail: `${summary.totalRespondedPax} pax have submitted an RSVP count`,
       label: "Maximum attendance",
       value: `${summary.totalInvitedPax} pax`,
+    },
+    {
+      badge: "Activity",
+      badgeClassName: statusBadgeClassName("neutral"),
+      detail: latestActivity
+        ? `Latest: ${formatDateTime(latestActivity.createdAt)}`
+        : "No manager or guest actions yet",
+      label: "Recent activity",
+      value: `${activity.length} updates`,
     },
   ];
 }

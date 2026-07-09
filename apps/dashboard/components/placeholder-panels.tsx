@@ -107,28 +107,42 @@ export function ManagementPlaceholder({ eventId, section }: { eventId: string; s
 }
 
 export function EventTabs({ active, eventId }: { active?: string; eventId: string }) {
+  const activeLabel = active
+    ? (eventTabs.find((tab) => tab.href === active)?.label ?? active)
+    : "Overview";
+
   return (
-    <nav
-      className="flex gap-2 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2 text-sm"
-      aria-label="Event management sections"
-    >
-      <Link
-        aria-current={!active ? "page" : undefined}
-        className="whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-        href={`/events/${eventId}`}
+    <section className="grid gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2">
+      <div className="flex flex-col gap-1 px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+          Event sections
+        </p>
+        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          Current: <span className="font-semibold text-[var(--accent-strong)]">{activeLabel}</span>
+        </p>
+      </div>
+      <nav
+        className="flex gap-2 overflow-x-auto pb-1 text-sm [-webkit-overflow-scrolling:touch]"
+        aria-label={`Event management sections for ${eventId}`}
       >
-        Overview
-      </Link>
-      {eventTabs.map((tab) => (
         <Link
-          aria-current={active === tab.href ? "page" : undefined}
-          className="whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-          href={`/events/${eventId}/${tab.href}`}
-          key={tab.href}
+          aria-current={!active ? "page" : undefined}
+          className="shrink-0 whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+          href={`/events/${eventId}`}
         >
-          {tab.label}
+          Overview
         </Link>
-      ))}
-    </nav>
+        {eventTabs.map((tab) => (
+          <Link
+            aria-current={active === tab.href ? "page" : undefined}
+            className="shrink-0 whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 font-medium hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+            href={`/events/${eventId}/${tab.href}`}
+            key={tab.href}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </nav>
+    </section>
   );
 }
