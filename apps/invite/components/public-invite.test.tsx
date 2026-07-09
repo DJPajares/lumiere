@@ -185,6 +185,52 @@ describe("public invite section renderers", () => {
     expect(html).not.toContain("background-color:#e7d6b8");
   });
 
+  it("renders theme-aware ambient audio controls when audio metadata is configured", () => {
+    const invite = createInvite([]);
+    invite.themeConfig = {
+      ambientAudio: {
+        autoplay: true,
+        label: "Evening music",
+        lowDistraction: true,
+        src: "https://audio.example.com/garden-strings.mp3",
+        title: "Garden strings",
+      },
+    };
+
+    const html = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
+
+    expect(html).toContain('data-audio-status="idle"');
+    expect(html).toContain('data-low-distraction="true"');
+    expect(html).toContain('preload="metadata"');
+    expect(html).toContain('src="https://audio.example.com/garden-strings.mp3"');
+    expect(html).toContain("Evening music");
+    expect(html).toContain("Play Garden strings");
+    expect(html).toContain("Tap to begin");
+  });
+
+  it("omits ambient audio controls when audio is missing or disabled", () => {
+    const missingAudioHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, {
+        invite: createInvite([]),
+      }),
+    );
+    const disabledInvite = createInvite([]);
+    disabledInvite.themeConfig = {
+      ambientAudio: {
+        enabled: false,
+        src: "https://audio.example.com/disabled.mp3",
+      },
+    };
+    const disabledAudioHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, {
+        invite: disabledInvite,
+      }),
+    );
+
+    expect(missingAudioHtml).not.toContain("data-audio-status");
+    expect(disabledAudioHtml).not.toContain("data-audio-status");
+  });
+
   it("renders guest-only RSVP sections with guest context", () => {
     const invite: PublicGuestInviteResponse = {
       ...createInvite([
@@ -223,6 +269,13 @@ describe("public invite section renderers", () => {
         },
         responseStatus: null,
       },
+      themeConfig: {
+        ambientAudio: {
+          label: "Private music",
+          src: "https://audio.example.com/private-suite.mp3",
+          title: "Private suite",
+        },
+      },
     };
     const html = renderToStaticMarkup(
       createElement(GuestInvitation, {
@@ -238,6 +291,8 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Meal choice");
     expect(html).toContain("Will you celebrate with us?");
     expect(html).toContain('data-rsvp-design="premium"');
+    expect(html).toContain("Private music");
+    expect(html).toContain('src="https://audio.example.com/private-suite.mp3"');
   });
 });
 

@@ -14,6 +14,7 @@ import type {
   PublicGuestInviteResponse,
 } from "@lumiere/types";
 
+import type { AmbientAudioConfig } from "./ambient-audio-controls";
 import { InviteShell } from "./invite-shell";
 import { RsvpForm, type RsvpDesign, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
@@ -84,9 +85,11 @@ function InvitationFrame({
   const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
   const rsvpDesign = theme.composition.rsvpDesign;
   const visualSystem = theme.composition.visualSystem;
+  const ambientAudio = resolveAmbientAudioConfig(invite, theme);
 
   return (
     <InviteShell
+      ambientAudio={ambientAudio}
       context={context}
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
@@ -1418,6 +1421,43 @@ function resolveInviteTheme(themeId: string | undefined) {
   return (
     (themeId && isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!
   );
+}
+
+export function resolveAmbientAudioConfig(
+  invite: Pick<InviteResponse, "event" | "themeConfig">,
+  theme: ThemeDefinition,
+): AmbientAudioConfig | undefined {
+  const themeAudio = theme.composition.ambientMedia;
+
+  if (themeAudio.audioSlot !== "optional" || themeAudio.controlStrategy !== "external-controls") {
+    return undefined;
+  }
+
+  const config =
+    readAmbientAudioObject(invite.themeConfig.ambientAudio) ??
+    readAmbientAudioObject(invite.event.publicSettings.ambientAudio);
+
+  if (!config || readBoolean(config.enabled, true) === false) {
+    return undefined;
+  }
+
+  const src = readString(config.src) ?? readString(config.url);
+
+  if (!src) {
+    return undefined;
+  }
+
+  return {
+    autoplay: readBoolean(config.autoplay, themeAudio.defaultAutoplay),
+    label: readString(config.label) ?? "Music",
+    lowDistraction: readBoolean(config.lowDistraction, false),
+    src,
+    title: readString(config.title) ?? readString(config.label) ?? "Ambient music",
+  };
+}
+
+function readAmbientAudioObject(value: JsonValue | undefined) {
+  return isJsonObject(value) ? value : undefined;
 }
 
 function getRenderableSections(

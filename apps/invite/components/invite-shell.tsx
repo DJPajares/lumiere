@@ -2,7 +2,10 @@ import { getTheme, isThemeId, type ThemeDefinition } from "@lumiere/themes";
 import type { ThemeMode } from "@lumiere/types";
 import type { CSSProperties, ReactNode } from "react";
 
+import { AmbientAudioControls, type AmbientAudioConfig } from "./ambient-audio-controls";
+
 type InviteShellProps = {
+  ambientAudio?: AmbientAudioConfig;
   children: ReactNode;
   context: "guest" | "public";
   mode?: ThemeMode;
@@ -10,6 +13,7 @@ type InviteShellProps = {
 };
 
 export function InviteShell({
+  ambientAudio,
   children,
   context,
   mode = "light",
@@ -32,6 +36,7 @@ export function InviteShell({
       style={style}
     >
       {children}
+      <AmbientAudioControls audio={ambientAudio} context={context} themeId={theme.id} />
     </main>
   );
 }
