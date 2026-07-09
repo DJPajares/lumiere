@@ -1,8 +1,8 @@
 import { ApiClientError } from "@lumiere/api-client";
 import type { Metadata } from "next";
 
-import { PublicInvitation, PublicInvitationUnavailable } from "../../components/public-invite";
-import { createInviteApiClient } from "../../lib/invite-api";
+import { PublicInvitation, PublicInvitationUnavailable } from "../../../components/public-invite";
+import { createInviteApiClient } from "../../../lib/invite-api";
 
 type PublicEventPageProps = {
   params: Promise<{

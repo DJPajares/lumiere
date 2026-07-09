@@ -3,9 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
-import GuestEventPage from "./e/[eventSlug]/g/[guestToken]/page";
-import PublicEventPage from "./e/[eventSlug]/page";
-import InviteHome from "./page";
+import GuestEventPage from "../app/e/[eventSlug]/g/[guestToken]/page";
+import PublicEventPage from "../app/e/[eventSlug]/page";
+import InviteHome from "../app/page";
 
 describe("invite app routes", () => {
   afterEach(() => {

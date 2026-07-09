@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 
-import { useDashboardAuth, type DashboardApiClient } from "../auth/dashboard-auth-provider";
+import { useDashboardAuth, type DashboardApiClient } from "../../auth/dashboard-auth-provider";
 
 type FieldErrors = Partial<Record<EventFormField, string>>;
 

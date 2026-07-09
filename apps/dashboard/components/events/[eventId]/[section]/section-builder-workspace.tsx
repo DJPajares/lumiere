@@ -23,8 +23,8 @@ import {
   type SetStateAction,
 } from "react";
 
-import { useDashboardAuth } from "../../../auth/dashboard-auth-provider";
-import { EventTabs } from "../../../components/placeholder-panels";
+import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
+import { EventTabs } from "../../../placeholder-panels";
 
 type JsonObject = Record<string, JsonValue>;
 

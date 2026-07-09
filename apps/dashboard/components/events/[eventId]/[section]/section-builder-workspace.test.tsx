@@ -9,7 +9,7 @@ import {
   DashboardAuthProvider,
   type DashboardApiClient,
   type DashboardAuthContextValue,
-} from "../../../auth/dashboard-auth-provider";
+} from "../../../../auth/dashboard-auth-provider";
 import { SectionBuilderWorkspace } from "./section-builder-workspace";
 
 describe("SectionBuilderWorkspace", () => {

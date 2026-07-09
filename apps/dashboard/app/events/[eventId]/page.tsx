@@ -1,6 +1,6 @@
-import { DashboardShell } from "../../components/dashboard-shell";
-import { ProtectedDashboard } from "../../components/protected-dashboard";
-import { EventOverviewWorkspace } from "./event-overview-workspace";
+import { DashboardShell } from "../../../components/dashboard-shell";
+import { EventOverviewWorkspace } from "../../../components/events/[eventId]/event-overview-workspace";
+import { ProtectedDashboard } from "../../../components/protected-dashboard";
 
 type EventPageProps = {
   params: Promise<{

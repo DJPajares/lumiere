@@ -10,8 +10,8 @@ import {
 } from "@lumiere/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { useDashboardAuth } from "../../../auth/dashboard-auth-provider";
-import { EventTabs } from "../../../components/placeholder-panels";
+import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
+import { EventTabs } from "../../../placeholder-panels";
 
 type GuestWorkspaceData = {
   event: Event;

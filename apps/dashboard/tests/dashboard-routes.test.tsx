@@ -6,13 +6,13 @@ import {
   DashboardAuthProvider,
   type DashboardAuthContextValue,
   toFriendlyAuthError,
-} from "./auth/dashboard-auth-provider";
-import { createDashboardApiClient } from "./lib/dashboard-api";
-import EventSectionPage from "./events/[eventId]/[section]/page";
-import EventPage from "./events/[eventId]/page";
-import EventsPage from "./events/page";
-import LoginPage from "./login/page";
-import DashboardHome from "./page";
+} from "../auth/dashboard-auth-provider";
+import { createDashboardApiClient } from "../lib/dashboard-api";
+import EventSectionPage from "../app/events/[eventId]/[section]/page";
+import EventPage from "../app/events/[eventId]/page";
+import EventsPage from "../app/events/page";
+import LoginPage from "../app/login/page";
+import DashboardHome from "../app/page";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/events",

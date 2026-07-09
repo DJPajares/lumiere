@@ -8,7 +8,7 @@ import {
   DashboardAuthProvider,
   type DashboardAuthContextValue,
   type DashboardApiClient,
-} from "../auth/dashboard-auth-provider";
+} from "../../auth/dashboard-auth-provider";
 import type { Event } from "@lumiere/types";
 import { EventsWorkspace } from "./events-workspace";
 

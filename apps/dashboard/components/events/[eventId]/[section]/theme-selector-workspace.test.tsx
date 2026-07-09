@@ -9,7 +9,7 @@ import {
   DashboardAuthProvider,
   type DashboardApiClient,
   type DashboardAuthContextValue,
-} from "../../../auth/dashboard-auth-provider";
+} from "../../../../auth/dashboard-auth-provider";
 import { ThemeSelectorWorkspace } from "./theme-selector-workspace";
 
 describe("ThemeSelectorWorkspace", () => {

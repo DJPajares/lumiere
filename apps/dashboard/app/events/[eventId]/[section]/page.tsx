@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 
-import { DashboardShell, eventTabs } from "../../../components/dashboard-shell";
-import { ManagementPlaceholder } from "../../../components/placeholder-panels";
-import { ProtectedDashboard } from "../../../components/protected-dashboard";
-import { GuestManagementWorkspace } from "./guest-management-workspace";
-import { ResponsesActivityWorkspace } from "./responses-activity-workspace";
-import { SectionBuilderWorkspace } from "./section-builder-workspace";
-import { ThemeSelectorWorkspace } from "./theme-selector-workspace";
+import { DashboardShell, eventTabs } from "../../../../components/dashboard-shell";
+import { GuestManagementWorkspace } from "../../../../components/events/[eventId]/[section]/guest-management-workspace";
+import { ResponsesActivityWorkspace } from "../../../../components/events/[eventId]/[section]/responses-activity-workspace";
+import { SectionBuilderWorkspace } from "../../../../components/events/[eventId]/[section]/section-builder-workspace";
+import { ThemeSelectorWorkspace } from "../../../../components/events/[eventId]/[section]/theme-selector-workspace";
+import { ManagementPlaceholder } from "../../../../components/placeholder-panels";
+import { ProtectedDashboard } from "../../../../components/protected-dashboard";
 
 type EventSectionPageProps = {
   params: Promise<{

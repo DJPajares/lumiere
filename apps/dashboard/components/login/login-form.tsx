@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
-import { useDashboardAuth } from "../auth/dashboard-auth-provider";
+import { useDashboardAuth } from "../../auth/dashboard-auth-provider";
 
 export function LoginForm() {
   const router = useRouter();

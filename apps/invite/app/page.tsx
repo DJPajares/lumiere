@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { InviteShell } from "./components/invite-shell";
+import { InviteShell } from "../components/invite-shell";
 
 export default function InviteHome() {
   return (

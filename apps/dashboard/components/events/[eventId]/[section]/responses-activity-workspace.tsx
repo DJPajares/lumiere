@@ -12,8 +12,8 @@ import type {
 } from "@lumiere/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { useDashboardAuth } from "../../../auth/dashboard-auth-provider";
-import { EventTabs } from "../../../components/placeholder-panels";
+import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
+import { EventTabs } from "../../../placeholder-panels";
 
 type WorkspaceMode = "activity" | "responses";
 
