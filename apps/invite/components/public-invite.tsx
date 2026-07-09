@@ -12,6 +12,9 @@ type JsonObject = Record<string, JsonValue>;
 type InvitationContext = "guest" | "public";
 type InviteResponse = PublicEventResponse | PublicGuestInviteResponse;
 type GuestContext = PublicGuestInviteResponse["guest"];
+type SectionComposition =
+  "editorial-split" | "framed" | "full-bleed" | "gallery-feature" | "layered-media" | "timeline";
+type SectionDensity = "balanced" | "compact" | "spacious";
 
 type RenderableSection = {
   content: JsonObject;
@@ -69,9 +72,9 @@ function InvitationFrame({
         {guest ? <GuestContextPanel guest={guest} /> : null}
 
         {bodySections.length > 0 ? (
-          <div className="mx-auto grid w-full max-w-5xl gap-5 px-5 py-8 sm:px-8 lg:px-12">
-            {bodySections.map((item) => (
-              <PublicSection guest={guest} key={item.section.id} item={item} />
+          <div className="grid w-full gap-0 py-2 sm:py-4">
+            {bodySections.map((item, index) => (
+              <PublicSection guest={guest} index={index} key={item.section.id} item={item} />
             ))}
           </div>
         ) : (
@@ -167,9 +170,23 @@ function PublicHero({
   const title = readString(content.title) ?? invite.event.title;
   const subtitle = readString(content.subtitle);
   const body = readString(content.body);
+  const anchorId = section
+    ? (readString(section.settings.anchorId) ?? section.section.sectionKey)
+    : "introduction";
+  const layout = section ? (readString(section.settings.layout) ?? "editorial") : "editorial";
 
   return (
-    <section className="grid min-h-[82dvh] content-center gap-8 px-5 py-10 sm:px-8 lg:px-12">
+    <section
+      className="lumiere-section lumiere-section--hero lumiere-section--full-bleed grid min-h-[82dvh] content-center gap-8 px-5 py-10 sm:px-8 lg:px-12"
+      data-motion-kind="hero-reveal"
+      data-motion-scope="invite-section"
+      data-section-composition="full-bleed"
+      data-section-density="spacious"
+      data-section-key={section?.section.sectionKey ?? "introduction"}
+      data-section-layout={layout}
+      data-section-type="introduction"
+      id={anchorId}
+    >
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="grid gap-6">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent-strong)]">
@@ -205,6 +222,8 @@ function PublicHero({
             <img
               alt={coverImage.alt}
               className="aspect-[4/5] w-full object-cover"
+              decoding="async"
+              fetchPriority="high"
               src={coverImage.url}
             />
             {coverImage.caption ? (
@@ -257,215 +276,373 @@ function GuestContextPanel({ guest }: { guest: GuestContext }) {
   );
 }
 
-function PublicSection({ guest, item }: { guest?: GuestContext; item: RenderableSection }) {
+function PublicSection({
+  guest,
+  index,
+  item,
+}: {
+  guest?: GuestContext;
+  index: number;
+  item: RenderableSection;
+}) {
   const definition = getSectionDefinition(item.section.sectionType);
   const anchorId = readString(item.settings.anchorId) ?? item.section.sectionKey;
+  const composition = resolveSectionComposition(item);
+  const density = readSectionDensity(item.settings.density);
+  const layout = readString(item.settings.layout) ?? readString(item.settings.variant) ?? "default";
+  const titleId = `${anchorId}-title`;
 
   return (
     <section
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_16px_54px_color-mix(in_srgb,var(--accent)_8%,transparent)] sm:p-7"
+      aria-labelledby={titleId}
+      className={getSectionFrameClassName(composition, density)}
+      data-motion-kind={resolveMotionKind(item.section.sectionType, composition)}
+      data-motion-order={index}
+      data-motion-scope="invite-section"
+      data-section-composition={composition}
+      data-section-density={density}
+      data-section-key={item.section.sectionKey}
+      data-section-layout={layout}
+      data-section-renderer={definition.rendererKey}
       data-section-type={item.section.sectionType}
+      data-section-variant={readString(item.settings.variant) ?? "default"}
       id={anchorId}
     >
-      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-        {definition.label}
-      </p>
-      <SectionBody guest={guest} item={item} />
+      <div className={getSectionInnerClassName(composition, density)}>
+        <p className="lumiere-section__eyebrow text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+          {definition.label}
+        </p>
+        <div className="lumiere-section__body">
+          <SectionBody composition={composition} guest={guest} item={item} titleId={titleId} />
+        </div>
+      </div>
     </section>
   );
 }
 
-function SectionBody({ guest, item }: { guest?: GuestContext; item: RenderableSection }) {
-  const { content, section } = item;
+function SectionBody({
+  composition,
+  guest,
+  item,
+  titleId,
+}: {
+  composition: SectionComposition;
+  guest?: GuestContext;
+  item: RenderableSection;
+  titleId: string;
+}) {
+  const { content, section, settings } = item;
 
   switch (section.sectionType) {
     case "date":
-      return <DateSection content={content} />;
+      return <DateSection content={content} settings={settings} titleId={titleId} />;
     case "details":
-      return <DetailsSection content={content} />;
+      return <DetailsSection content={content} settings={settings} titleId={titleId} />;
     case "dress_code":
-      return <DressCodeSection content={content} />;
+      return <DressCodeSection content={content} settings={settings} titleId={titleId} />;
     case "entourage":
-      return <EntourageSection content={content} />;
+      return <EntourageSection content={content} settings={settings} titleId={titleId} />;
     case "gallery":
-      return <GallerySection content={content} />;
+      return <GallerySection composition={composition} content={content} titleId={titleId} />;
     case "location":
-      return <LocationSection content={content} />;
+      return <LocationSection content={content} settings={settings} titleId={titleId} />;
     case "outro":
-      return <OutroSection content={content} />;
+      return <OutroSection composition={composition} content={content} titleId={titleId} />;
     case "profile":
-      return <ProfileSection content={content} />;
+      return <ProfileSection content={content} settings={settings} titleId={titleId} />;
     case "rsvp":
-      return <RsvpSection content={content} guest={guest} />;
+      return <RsvpSection content={content} guest={guest} settings={settings} titleId={titleId} />;
     case "story":
-      return <StorySection content={content} />;
+      return <StorySection composition={composition} content={content} titleId={titleId} />;
     case "custom":
-      return <CustomSection content={content} />;
+      return <CustomSection content={content} titleId={titleId} />;
     default:
-      return <GenericSection content={content} />;
+      return <GenericSection content={content} titleId={titleId} />;
   }
 }
 
-function DateSection({ content }: { content: JsonObject }) {
+function DateSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Date and time";
   const startsAt = readString(content.startsAt);
   const timezone = readString(content.timezone) ?? "UTC";
   const displayText = readString(content.displayText);
+  const countdownLabel = readString(content.countdownLabel);
+  const showCountdown = readBoolean(settings.showCountdown, true);
 
   return (
-    <div className="grid gap-3">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      <p className="text-lg leading-8">
-        {displayText ?? (startsAt ? formatEventDate(startsAt, timezone) : "Date to be announced")}
-      </p>
-      <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-        Timezone: {timezone}
-      </p>
-    </div>
-  );
-}
-
-function DetailsSection({ content }: { content: JsonObject }) {
-  const title = readString(content.title) ?? "Details";
-  const items = readRecordArray(content.items);
-
-  return (
-    <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {items.map((item, index) => (
-          <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4" key={index}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
-              {readString(item.label) ?? "Detail"}
-            </p>
-            <p className="mt-2 text-base leading-7">{readString(item.value)}</p>
-            {readString(item.hint) ? (
-              <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-                {readString(item.hint)}
-              </p>
-            ) : null}
-          </div>
-        ))}
+    <div className="grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
+      <div className="grid gap-3">
+        <h2
+          className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
+          id={titleId}
+        >
+          {title}
+        </h2>
+        {showCountdown && countdownLabel ? (
+          <p className="w-fit rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
+            {countdownLabel}
+          </p>
+        ) : null}
+      </div>
+      <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
+        <p className="text-lg leading-8">
+          {displayText ?? (startsAt ? formatEventDate(startsAt, timezone) : "Date to be announced")}
+        </p>
+        <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+          Timezone: {timezone}
+        </p>
       </div>
     </div>
   );
 }
 
-function LocationSection({ content }: { content: JsonObject }) {
+function DetailsSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
+  const title = readString(content.title) ?? "Details";
+  const items = readRecordArray(content.items);
+  const columns = readInteger(settings.columns, 2, 1, 3);
+
+  return (
+    <div className="grid gap-4">
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
+      {items.length > 0 ? (
+        <div className={getColumnGridClassName(columns)}>
+          {items.map((item, index) => (
+            <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4" key={index}>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+                {readString(item.label) ?? "Detail"}
+              </p>
+              <p className="mt-2 text-base leading-7">{readString(item.value)}</p>
+              {readString(item.hint) ? (
+                <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                  {readString(item.hint)}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptySectionMessage message="Details will appear here once the host adds them." />
+      )}
+    </div>
+  );
+}
+
+function LocationSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const venueName = readString(content.venueName) ?? "Venue";
   const address = readString(content.address);
   const mapUrl = readString(content.mapUrl);
   const notes = readString(content.notes);
+  const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
-    <div className="grid gap-3">
-      <h2 className="text-3xl font-semibold tracking-tight">{venueName}</h2>
-      {address ? <p className="text-lg leading-8">{address}</p> : null}
-      {notes ? (
-        <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          {notes}
-        </p>
-      ) : null}
-      {mapUrl ? (
-        <a
-          className="inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
-          href={mapUrl}
-        >
-          Open map
-        </a>
+    <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+      <div className="grid gap-3">
+        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+          {venueName}
+        </h2>
+        {address ? <p className="text-lg leading-8">{address}</p> : null}
+        {notes ? (
+          <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            {notes}
+          </p>
+        ) : null}
+        {mapUrl ? (
+          <a
+            className="inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+            href={mapUrl}
+          >
+            Open map
+          </a>
+        ) : null}
+      </div>
+      {showMapPreview ? (
+        <MapPreview address={address} mapUrl={mapUrl} venueName={venueName} />
       ) : null}
     </div>
   );
 }
 
-function StorySection({ content }: { content: JsonObject }) {
+function StorySection({
+  composition,
+  content,
+  titleId,
+}: {
+  composition: SectionComposition;
+  content: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Story";
   const paragraphs = readStringArray(content.paragraphs);
   const image = readAsset(content.image);
+  const isTimeline = composition === "timeline";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-      <div className="grid gap-3">
-        <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-        {paragraphs.map((paragraph, index) => (
-          <p
-            className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]"
-            key={index}
-          >
-            {paragraph}
-          </p>
-        ))}
+    <div
+      className={
+        image
+          ? "grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start"
+          : "mx-auto grid max-w-3xl gap-4"
+      }
+    >
+      <div className="grid gap-4">
+        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+          {title}
+        </h2>
+        <div
+          className={isTimeline ? "grid gap-4 border-l border-[var(--border)] pl-5" : "grid gap-3"}
+        >
+          {paragraphs.map((paragraph, index) => (
+            <div className={isTimeline ? "relative" : undefined} key={index}>
+              {isTimeline ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute -left-[1.65rem] top-2 size-2 rounded-full bg-[var(--accent)]"
+                />
+              ) : null}
+              <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
+                {paragraph}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-      {image ? <SectionImage asset={image} /> : null}
+      {image ? <SectionImage asset={image} feature={composition === "layered-media"} /> : null}
     </div>
   );
 }
 
-function ProfileSection({ content }: { content: JsonObject }) {
+function ProfileSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Hosts";
   const people = readRecordArray(content.people);
+  const layout = readString(settings.layout) ?? "cards";
 
   return (
-    <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {people.map((person, index) => {
-          const image = readAsset(person.image);
+    <div className={layout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4"}>
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
+      {people.length > 0 ? (
+        <div className={layout === "stacked" ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
+          {people.map((person, index) => {
+            const image = readAsset(person.image);
 
-          return (
-            <article
-              className="grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
-              key={index}
-            >
-              {image ? <SectionImage asset={image} compact /> : null}
-              <div>
-                <h3 className="text-xl font-semibold">{readString(person.name)}</h3>
-                {readString(person.role) ? (
-                  <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">
-                    {readString(person.role)}
-                  </p>
-                ) : null}
-                {readString(person.bio) ? (
-                  <p className="mt-2 text-sm leading-6">{readString(person.bio)}</p>
-                ) : null}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+            return (
+              <article
+                className="grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
+                key={index}
+              >
+                {image ? <SectionImage asset={image} compact /> : null}
+                <div>
+                  <h3 className="text-xl font-semibold">{readString(person.name)}</h3>
+                  {readString(person.role) ? (
+                    <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">
+                      {readString(person.role)}
+                    </p>
+                  ) : null}
+                  {readString(person.bio) ? (
+                    <p className="mt-2 text-sm leading-6">{readString(person.bio)}</p>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptySectionMessage message="Featured people will appear here once the host adds them." />
+      )}
     </div>
   );
 }
 
-function EntourageSection({ content }: { content: JsonObject }) {
+function EntourageSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Entourage";
   const groups = readRecordArray(content.groups);
+  const columns = readInteger(settings.columns, 2, 1, 3);
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {groups.map((group, index) => (
-          <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4" key={index}>
-            <p className="font-semibold text-[var(--accent-strong)]">
-              {readString(group.label) ?? "Group"}
-            </p>
-            <p className="mt-2 text-sm leading-6">{readStringArray(group.names).join(", ")}</p>
-          </div>
-        ))}
-      </div>
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
+      {groups.length > 0 ? (
+        <div className={getColumnGridClassName(columns)}>
+          {groups.map((group, index) => (
+            <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4" key={index}>
+              <p className="font-semibold text-[var(--accent-strong)]">
+                {readString(group.label) ?? "Group"}
+              </p>
+              <p className="mt-2 text-sm leading-6">{readStringArray(group.names).join(", ")}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptySectionMessage message="Entourage details will appear here once they are added." />
+      )}
     </div>
   );
 }
 
-function DressCodeSection({ content }: { content: JsonObject }) {
+function DressCodeSection({
+  content,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Dress code";
   const description = readString(content.description);
   const palette = readRecordArray(content.palette);
+  const showSwatches = readBoolean(settings.showSwatches, true);
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
       {description ? <p className="text-base leading-7">{description}</p> : null}
       {palette.length > 0 ? (
         <div className="flex flex-wrap gap-3">
@@ -474,7 +651,7 @@ function DressCodeSection({ content }: { content: JsonObject }) {
               className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
               key={index}
             >
-              {readString(item.color) ? (
+              {showSwatches && readString(item.color) ? (
                 <span
                   aria-hidden="true"
                   className="size-4 rounded-full border border-[var(--border)]"
@@ -490,40 +667,94 @@ function DressCodeSection({ content }: { content: JsonObject }) {
   );
 }
 
-function GallerySection({ content }: { content: JsonObject }) {
+function GallerySection({
+  composition,
+  content,
+  titleId,
+}: {
+  composition: SectionComposition;
+  content: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "Gallery";
   const images = readRecordArray(content.images).flatMap((item) => {
     const asset = readAsset(item);
     return asset ? [asset] : [];
   });
+  const [featuredImage, ...supportingImages] = images;
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {images.map((image) => (
-          <SectionImage asset={image} key={image.url} />
-        ))}
-      </div>
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
+      {images.length > 0 ? (
+        <div
+          className={
+            composition === "gallery-feature" && featuredImage
+              ? "grid gap-3 lg:grid-cols-[1.15fr_0.85fr]"
+              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          }
+        >
+          {composition === "gallery-feature" && featuredImage ? (
+            <SectionImage asset={featuredImage} feature />
+          ) : null}
+          <div
+            className={
+              composition === "gallery-feature" && featuredImage
+                ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-1"
+                : "contents"
+            }
+          >
+            {(composition === "gallery-feature" && featuredImage ? supportingImages : images).map(
+              (image) => (
+                <SectionImage asset={image} key={image.url} />
+              ),
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="grid aspect-[3/2] place-items-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-5 text-center text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          Gallery images will appear here once the host adds them.
+        </div>
+      )}
     </div>
   );
 }
 
-function RsvpSection({ content, guest }: { content: JsonObject; guest?: GuestContext }) {
+function RsvpSection({
+  content,
+  guest,
+  settings,
+  titleId,
+}: {
+  content: JsonObject;
+  guest?: GuestContext;
+  settings: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "RSVP";
   const description =
     readString(content.description) ??
     "Review your guest details now. The RSVP form will open here when responses are enabled.";
   const questions = readRecordArray(content.questions);
+  const requireGuestToken = readBoolean(settings.requireGuestToken, true);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
       <div className="grid gap-4">
         <div className="grid gap-3">
-          <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
+          <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+            {title}
+          </h2>
           <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
             {description}
           </p>
+          {!guest && requireGuestToken ? (
+            <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+              RSVP details unlock from a valid guest invite link.
+            </p>
+          ) : null}
         </div>
 
         {questions.length > 0 ? (
@@ -579,43 +810,67 @@ function RsvpSection({ content, guest }: { content: JsonObject; guest?: GuestCon
   );
 }
 
-function OutroSection({ content }: { content: JsonObject }) {
+function OutroSection({
+  composition,
+  content,
+  titleId,
+}: {
+  composition: SectionComposition;
+  content: JsonObject;
+  titleId: string;
+}) {
   const title = readString(content.title) ?? "See you there";
   const message = readString(content.message);
   const image = readAsset(content.image);
 
   return (
-    <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      {message ? <p className="text-base leading-7">{message}</p> : null}
-      {image ? <SectionImage asset={image} /> : null}
+    <div
+      className={
+        image && composition === "layered-media"
+          ? "grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"
+          : "mx-auto grid max-w-3xl gap-4 text-center"
+      }
+    >
+      <div className="grid gap-4">
+        <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+          {title}
+        </h2>
+        {message ? <p className="text-base leading-7">{message}</p> : null}
+      </div>
+      {image ? <SectionImage asset={image} feature={composition === "layered-media"} /> : null}
     </div>
   );
 }
 
-function CustomSection({ content }: { content: JsonObject }) {
+function CustomSection({ content, titleId }: { content: JsonObject; titleId: string }) {
   const title = readString(content.title) ?? "Note";
   const blocks = readRecordArray(content.blocks);
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      {blocks.map((block, index) => (
-        <div className="grid gap-2" key={index}>
-          {readString(block.heading) ? (
-            <h3 className="text-xl font-semibold">{readString(block.heading)}</h3>
-          ) : null}
-          <p className="text-base leading-7">{readString(block.body)}</p>
-        </div>
-      ))}
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
+        {title}
+      </h2>
+      {blocks.length > 0 ? (
+        blocks.map((block, index) => (
+          <div className="grid gap-2" key={index}>
+            {readString(block.heading) ? (
+              <h3 className="text-xl font-semibold">{readString(block.heading)}</h3>
+            ) : null}
+            <p className="text-base leading-7">{readString(block.body)}</p>
+          </div>
+        ))
+      ) : (
+        <EmptySectionMessage message="This note will appear once the host adds copy." />
+      )}
     </div>
   );
 }
 
-function GenericSection({ content }: { content: JsonObject }) {
+function GenericSection({ content, titleId }: { content: JsonObject; titleId: string }) {
   return (
     <div className="grid gap-3">
-      <h2 className="text-3xl font-semibold tracking-tight">
+      <h2 className="text-3xl font-semibold tracking-tight" id={titleId}>
         {readString(content.title) ?? "Event detail"}
       </h2>
       {readString(content.body) ? (
@@ -658,18 +913,71 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function EmptySectionMessage({ message }: { message: string }) {
+  return (
+    <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+      {message}
+    </p>
+  );
+}
+
+function MapPreview({
+  address,
+  mapUrl,
+  venueName,
+}: {
+  address: string | undefined;
+  mapUrl: string | undefined;
+  venueName: string;
+}) {
+  return (
+    <div className="grid aspect-[4/3] min-h-64 place-items-end overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
+      <div className="w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+          Map preview
+        </p>
+        <p className="mt-2 font-semibold">{venueName}</p>
+        {address ? (
+          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+            {address}
+          </p>
+        ) : (
+          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+            Address to be announced.
+          </p>
+        )}
+        {mapUrl ? (
+          <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+            Opens in your map app.
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function SectionImage({
   asset,
   compact = false,
+  feature = false,
 }: {
   asset: { alt: string; caption?: string; url: string };
   compact?: boolean;
+  feature?: boolean;
 }) {
+  const aspectClassName = feature
+    ? "aspect-[4/5] sm:aspect-[16/11]"
+    : compact
+      ? "aspect-[4/3]"
+      : "aspect-[3/2]";
+
   return (
-    <figure className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
+    <figure className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]">
       <img
         alt={asset.alt}
-        className={`${compact ? "aspect-[4/3]" : "aspect-[3/2]"} w-full object-cover`}
+        className={`${aspectClassName} w-full object-cover`}
+        decoding="async"
+        loading="lazy"
         src={asset.url}
       />
       {asset.caption ? (
@@ -679,6 +987,147 @@ function SectionImage({
       ) : null}
     </figure>
   );
+}
+
+function getSectionFrameClassName(composition: SectionComposition, density: SectionDensity) {
+  return joinClassNames(
+    "lumiere-section",
+    `lumiere-section--${composition}`,
+    getSectionSpacingClassName(density),
+    composition === "full-bleed" || composition === "gallery-feature"
+      ? "border-y border-[var(--border)] bg-[var(--surface-muted)]"
+      : undefined,
+    composition === "layered-media"
+      ? "bg-[radial-gradient(circle_at_20%_10%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_32%),var(--background)]"
+      : undefined,
+    composition === "timeline" ? "bg-[var(--background)]" : undefined,
+  );
+}
+
+function getSectionInnerClassName(composition: SectionComposition, density: SectionDensity) {
+  const spaciousInnerPadding = density === "compact" ? "p-5 sm:p-6" : "p-5 sm:p-7 lg:p-8";
+
+  if (composition === "framed") {
+    return joinClassNames(
+      "lumiere-section__inner mx-auto grid w-full max-w-5xl gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[0_16px_54px_color-mix(in_srgb,var(--accent)_8%,transparent)]",
+      spaciousInnerPadding,
+    );
+  }
+
+  if (composition === "timeline") {
+    return "lumiere-section__inner mx-auto grid w-full max-w-5xl gap-5 px-5 sm:px-8 lg:px-12";
+  }
+
+  if (composition === "editorial-split") {
+    return "lumiere-section__inner mx-auto grid w-full max-w-6xl gap-5 px-5 sm:px-8 lg:px-12";
+  }
+
+  if (composition === "gallery-feature") {
+    return "lumiere-section__inner mx-auto grid w-full max-w-6xl gap-5 px-5 sm:px-8 lg:px-12";
+  }
+
+  return "lumiere-section__inner mx-auto grid w-full max-w-6xl gap-5 px-5 sm:px-8 lg:px-12";
+}
+
+function getSectionSpacingClassName(density: SectionDensity) {
+  switch (density) {
+    case "compact":
+      return "py-8 sm:py-10";
+    case "spacious":
+      return "py-16 sm:py-24";
+    default:
+      return "py-12 sm:py-16";
+  }
+}
+
+function getColumnGridClassName(columns: number) {
+  switch (columns) {
+    case 1:
+      return "grid gap-3";
+    case 3:
+      return "grid gap-3 sm:grid-cols-2 lg:grid-cols-3";
+    default:
+      return "grid gap-3 sm:grid-cols-2";
+  }
+}
+
+function resolveSectionComposition(item: RenderableSection): SectionComposition {
+  const variantComposition = readSectionComposition(item.settings.variant);
+
+  if (variantComposition) {
+    return variantComposition;
+  }
+
+  const layout = readString(item.settings.layout);
+
+  switch (item.section.sectionType) {
+    case "date":
+    case "rsvp":
+      return "full-bleed";
+    case "gallery":
+      return "gallery-feature";
+    case "location":
+      return "editorial-split";
+    case "outro":
+      return layout === "editorial" ? "layered-media" : "full-bleed";
+    case "profile":
+      return layout === "split" ? "editorial-split" : "framed";
+    case "story":
+      if (layout === "timeline") {
+        return "timeline";
+      }
+
+      return layout === "stacked" ? "framed" : "editorial-split";
+    default:
+      return "framed";
+  }
+}
+
+function readSectionComposition(value: JsonValue | undefined): SectionComposition | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+
+  switch (normalized) {
+    case "editorial-split":
+    case "framed":
+    case "full-bleed":
+    case "gallery-feature":
+    case "layered-media":
+    case "timeline":
+      return normalized;
+    default:
+      return undefined;
+  }
+}
+
+function readSectionDensity(value: JsonValue | undefined): SectionDensity {
+  return value === "compact" || value === "spacious" ? value : "balanced";
+}
+
+function resolveMotionKind(
+  sectionType: EventSection["sectionType"],
+  composition: SectionComposition,
+) {
+  if (composition === "gallery-feature" || composition === "layered-media") {
+    return "media-reveal";
+  }
+
+  if (composition === "timeline") {
+    return "timeline-reveal";
+  }
+
+  if (sectionType === "date" || sectionType === "rsvp") {
+    return "section-reveal";
+  }
+
+  return composition === "framed" ? "card-reveal" : "section-reveal";
+}
+
+function joinClassNames(...classNames: Array<string | undefined>) {
+  return classNames.filter(Boolean).join(" ");
 }
 
 function getRenderableSections(
@@ -725,6 +1174,18 @@ function getRenderableSections(
 
 function readString(value: JsonValue | undefined) {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function readBoolean(value: JsonValue | undefined, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function readInteger(value: JsonValue | undefined, fallback: number, min: number, max: number) {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(value, min), max);
 }
 
 function readStringArray(value: JsonValue | undefined) {
