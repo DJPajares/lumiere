@@ -26,6 +26,15 @@ export type RsvpFormState = {
 };
 
 export type RsvpFormErrors = Record<string, string>;
+export type RsvpRecoveryKind = "closed" | "disabled" | "expired" | "rate_limited" | "unavailable";
+
+export type RsvpRecoveryState = {
+  body: string;
+  kind: RsvpRecoveryKind;
+  title: string;
+};
+
+type ReplyTone = "accepted" | "blocked" | "declined" | "draft" | "sent" | "updating";
 
 export type SubmitRsvp = (
   eventSlug: string,
@@ -37,6 +46,7 @@ export type RsvpFormSubmitResult =
   | {
       errors: RsvpFormErrors;
       ok: false;
+      recoveryState?: RsvpRecoveryState;
     }
   | {
       response: RsvpSubmissionResponse["response"];
@@ -75,16 +85,42 @@ export function RsvpForm({
   const [submittedResponse, setSubmittedResponse] = useState<
     RsvpSubmissionResponse["response"] | null
   >(null);
+  const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(() =>
     questions.some((question) => question.required),
   );
   const copy = getRsvpDesignCopy(design);
   const style = getRsvpDesignStyle(design);
+  const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
+  const isUpdatingExistingReply = Boolean(initialResponseStatus && !submittedResponse);
+  const hasSubmittedReply = Boolean(submittedResponse);
+  const isResponding = state.responseStatus !== "not_attending";
+  const isLocked = isRsvpLocked(recoveryState);
+  const statusTone = getReplyTone({
+    hasSubmittedReply,
+    isUpdatingExistingReply,
+    recoveryState,
+    responseStatus,
+  });
+  const statusCopy = getReplyStatusCopy({
+    attendeeCount: submittedResponse?.attendeeCount ?? state.attendeeCount,
+    guestGroupLabel: guestGroup.label,
+    hasSubmittedReply,
+    initialResponseStatus,
+    maxPax: guestGroup.maxPax,
+    recoveryState,
+    responseStatus,
+  });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLocked) {
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmittedResponse(null);
+    setRecoveryState(null);
 
     const result = await submitRsvpFormState({
       eventSlug,
@@ -98,21 +134,27 @@ export function RsvpForm({
     if (result.ok) {
       setErrors({});
       setSubmittedResponse(result.response);
+      setDetailsOpen(false);
     } else {
       setErrors(result.errors);
+      setRecoveryState(result.recoveryState ?? null);
       setDetailsOpen(true);
     }
 
     setIsSubmitting(false);
   };
 
-  const isResponding = state.responseStatus !== "not_attending";
   const reservedSeatsCopy = `We've saved ${guestGroup.maxPax} ${
     guestGroup.maxPax === 1 ? "seat" : "seats"
   } for your party.`;
 
   return (
-    <form className={style.card} data-rsvp-design={design} onSubmit={handleSubmit}>
+    <form
+      className={style.card}
+      data-rsvp-design={design}
+      data-rsvp-state={statusTone}
+      onSubmit={handleSubmit}
+    >
       <div className="grid gap-2">
         <p className={style.eyebrow}>{copy.eyebrow}</p>
         <h3 className={style.title}>
@@ -124,12 +166,19 @@ export function RsvpForm({
         </p>
       </div>
 
+      <ReplyStatusPanel copy={statusCopy} tone={statusTone} />
+
       {submittedResponse ? (
         <div
-          className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-4 text-center"
+          className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-5 text-center"
           role="status"
         >
-          <p className="font-semibold text-[var(--success)]">{copy.successTitle}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--success)]">
+            {copy.successTitle}
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+            Your reply is with the host.
+          </p>
           <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {formatRsvpStatus(submittedResponse.responseStatus)}
             {submittedResponse.attendeeCount > 0
@@ -142,6 +191,8 @@ export function RsvpForm({
         </div>
       ) : null}
 
+      {recoveryState ? <RecoveryNotice state={recoveryState} /> : null}
+
       {errors.form ? (
         <p
           className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--error)_44%,var(--border))] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm leading-6 text-[var(--error)]"
@@ -151,7 +202,13 @@ export function RsvpForm({
         </p>
       ) : null}
 
-      <fieldset className="grid gap-3">
+      {isUpdatingExistingReply ? (
+        <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+          You already sent a reply. Changes here will update the host's copy when you submit again.
+        </p>
+      ) : null}
+
+      <fieldset className="grid gap-3" disabled={isLocked || isSubmitting}>
         <legend className={style.fieldLabel}>{copy.attendancePrompt}</legend>
         <div className="grid rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner sm:grid-cols-2">
           <RsvpStatusOption
@@ -184,7 +241,7 @@ export function RsvpForm({
             className="grid grid-cols-[3.5rem_1fr_3.5rem] items-center rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
           >
             <CounterButton
-              disabled={state.attendeeCount <= 1}
+              disabled={isLocked || isSubmitting || state.attendeeCount <= 1}
               label="Remove one guest"
               onClick={() =>
                 setState((current) =>
@@ -201,7 +258,7 @@ export function RsvpForm({
               </span>
             </div>
             <CounterButton
-              disabled={state.attendeeCount >= guestGroup.maxPax}
+              disabled={isLocked || isSubmitting || state.attendeeCount >= guestGroup.maxPax}
               label="Add one guest"
               onClick={() =>
                 setState((current) =>
@@ -250,6 +307,7 @@ export function RsvpForm({
                     }
                     aria-invalid={Boolean(errors[`guestNames.${index}`])}
                     className={style.input}
+                    disabled={isLocked || isSubmitting}
                     id={`guestName-${index}`}
                     onChange={(event) => {
                       const value = event.currentTarget.value;
@@ -282,6 +340,7 @@ export function RsvpForm({
               {questions.map((question) => (
                 <QuestionField
                   error={errors[`answers.${question.key}`]}
+                  isDisabled={isLocked || isSubmitting}
                   inputClassName={style.input}
                   key={question.key}
                   onChange={(value) =>
@@ -306,6 +365,7 @@ export function RsvpForm({
             <span className={style.fieldLabel}>{copy.messageLabel}</span>
             <textarea
               className={`${style.input} min-h-24 py-3 leading-6`}
+              disabled={isLocked || isSubmitting}
               id="rsvp-message"
               onChange={(event) =>
                 setState((current) => ({
@@ -320,10 +380,59 @@ export function RsvpForm({
         </div>
       </details>
 
-      <button className={style.submit} disabled={isSubmitting} type="submit">
-        {isSubmitting ? copy.submittingLabel : submitLabel}
+      <button className={style.submit} disabled={isSubmitting || isLocked} type="submit">
+        {isSubmitting
+          ? isUpdatingExistingReply
+            ? copy.updatingLabel
+            : copy.submittingLabel
+          : isUpdatingExistingReply
+            ? copy.updateLabel
+            : submitLabel}
       </button>
     </form>
+  );
+}
+
+function ReplyStatusPanel({
+  copy,
+  tone,
+}: {
+  copy: {
+    body: string;
+    meta: string;
+    title: string;
+  };
+  tone: ReplyTone;
+}) {
+  return (
+    <section className={replyStatusClassName(tone)} aria-live="polite">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] opacity-70">{copy.meta}</p>
+        <p className="mt-2 text-xl font-semibold">{copy.title}</p>
+        <p className="mt-1 text-sm leading-6 opacity-75">{copy.body}</p>
+      </div>
+      <span
+        aria-hidden="true"
+        className="hidden h-px flex-1 bg-[color-mix(in_srgb,currentColor_28%,transparent)] sm:block"
+      />
+    </section>
+  );
+}
+
+function RecoveryNotice({ state }: { state: RsvpRecoveryState }) {
+  return (
+    <section
+      className="grid gap-2 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--warning)_42%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_84%,transparent)]"
+      role="alert"
+    >
+      <p className="font-semibold">{state.title}</p>
+      <p className="text-sm leading-6">{state.body}</p>
+      {!isRsvpLocked(state) ? (
+        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+          Your answers are still here. Review the highlighted fields, then try again.
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -365,6 +474,8 @@ function getRsvpDesignCopy(design: RsvpDesign) {
         messageLabel: "Anything the host should know?",
         submittingLabel: "Sending reply...",
         successTitle: "Reply sent",
+        updateLabel: "Update reply",
+        updatingLabel: "Updating reply...",
       };
     case "noel":
       return {
@@ -378,6 +489,8 @@ function getRsvpDesignCopy(design: RsvpDesign) {
         messageLabel: "A note for the host",
         submittingLabel: "Sending reply...",
         successTitle: "Reply received",
+        updateLabel: "Update reply",
+        updatingLabel: "Updating reply...",
       };
     case "premium":
       return {
@@ -391,6 +504,8 @@ function getRsvpDesignCopy(design: RsvpDesign) {
         messageLabel: "Message for the host",
         submittingLabel: "Sending reply...",
         successTitle: "Reply received",
+        updateLabel: "Update attendance",
+        updatingLabel: "Updating attendance...",
       };
     default:
       return {
@@ -404,6 +519,8 @@ function getRsvpDesignCopy(design: RsvpDesign) {
         messageLabel: "Message for the host",
         submittingLabel: "Sending RSVP...",
         successTitle: "RSVP received",
+        updateLabel: "Update RSVP",
+        updatingLabel: "Updating RSVP...",
       };
   }
 }
@@ -416,7 +533,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
     fieldLabel:
       "text-xs font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
     input:
-      "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]",
+      "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
     submit:
       "min-h-12 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
     title: "text-3xl font-light tracking-tight",
@@ -487,12 +604,14 @@ function RsvpStatusOption({
 
 function QuestionField({
   error,
+  isDisabled,
   inputClassName,
   onChange,
   question,
   value,
 }: {
   error?: string;
+  isDisabled: boolean;
   inputClassName: string;
   onChange: (value: string | string[]) => void;
   question: RsvpQuestion;
@@ -509,6 +628,7 @@ function QuestionField({
           aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
           className={`${inputClassName} min-h-24 py-3 leading-6`}
+          disabled={isDisabled}
           id={inputId}
           onChange={(event) => onChange(event.currentTarget.value)}
           value={typeof value === "string" ? value : ""}
@@ -526,6 +646,7 @@ function QuestionField({
           aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
           className={inputClassName}
+          disabled={isDisabled}
           id={inputId}
           onChange={(event) => onChange(event.currentTarget.value)}
           value={typeof value === "string" ? value : ""}
@@ -559,6 +680,7 @@ function QuestionField({
               <input
                 checked={values.includes(option)}
                 className="size-4 accent-[var(--accent)]"
+                disabled={isDisabled}
                 onChange={(event) => {
                   onChange(
                     event.currentTarget.checked
@@ -585,6 +707,7 @@ function QuestionField({
         aria-describedby={describedBy}
         aria-invalid={Boolean(error)}
         className={inputClassName}
+        disabled={isDisabled}
         id={inputId}
         onChange={(event) => onChange(event.currentTarget.value)}
         value={typeof value === "string" ? value : ""}
@@ -752,8 +875,141 @@ export async function submitRsvpFormState({
         form: readSubmitErrorMessage(error),
       },
       ok: false,
+      recoveryState: readRsvpRecoveryState(error),
     };
   }
+}
+
+function getReplyStatusCopy({
+  attendeeCount,
+  guestGroupLabel,
+  hasSubmittedReply,
+  initialResponseStatus,
+  maxPax,
+  recoveryState,
+  responseStatus,
+}: {
+  attendeeCount: number;
+  guestGroupLabel: string;
+  hasSubmittedReply: boolean;
+  initialResponseStatus: RsvpStatus | null;
+  maxPax: number;
+  recoveryState: RsvpRecoveryState | null;
+  responseStatus: RsvpStatus | "";
+}) {
+  if (recoveryState) {
+    return {
+      body:
+        recoveryState.kind === "rate_limited"
+          ? "Please wait a moment before trying again. Your reply details have been kept here."
+          : "This invite cannot accept a reply right now. Your latest draft remains visible below.",
+      meta: "RSVP status",
+      title: recoveryState.title,
+    };
+  }
+
+  if (hasSubmittedReply) {
+    return {
+      body: `${formatRsvpStatus(responseStatus || "attending")} for ${guestGroupLabel}. ${
+        attendeeCount > 0 ? `${attendeeCount} of ${maxPax} seats confirmed.` : "No seats claimed."
+      }`,
+      meta: "Saved reply",
+      title: "The host has your latest response.",
+    };
+  }
+
+  if (initialResponseStatus) {
+    return {
+      body: `Current host record: ${formatRsvpStatus(initialResponseStatus)}. Adjust anything below and send an update when ready.`,
+      meta: "Already submitted",
+      title: "You can still update this reply.",
+    };
+  }
+
+  if (responseStatus === "attending" || responseStatus === "maybe") {
+    return {
+      body: `${attendeeCount} of ${maxPax} reserved seats selected for ${guestGroupLabel}.`,
+      meta: "Draft reply",
+      title: "We will tell the host you plan to attend.",
+    };
+  }
+
+  if (responseStatus === "not_attending") {
+    return {
+      body: `No seats will be held for ${guestGroupLabel}. You can still leave the host a note.`,
+      meta: "Draft reply",
+      title: "Sending regrets is okay.",
+    };
+  }
+
+  return {
+    body: `${maxPax} ${maxPax === 1 ? "seat is" : "seats are"} reserved for ${guestGroupLabel}.`,
+    meta: "Awaiting reply",
+    title: "Tell the host whether you can make it.",
+  };
+}
+
+function getReplyTone({
+  hasSubmittedReply,
+  isUpdatingExistingReply,
+  recoveryState,
+  responseStatus,
+}: {
+  hasSubmittedReply: boolean;
+  isUpdatingExistingReply: boolean;
+  recoveryState: RsvpRecoveryState | null;
+  responseStatus: RsvpStatus | "";
+}): ReplyTone {
+  if (recoveryState) {
+    return "blocked";
+  }
+
+  if (hasSubmittedReply) {
+    return "sent";
+  }
+
+  if (isUpdatingExistingReply) {
+    return "updating";
+  }
+
+  if (responseStatus === "not_attending") {
+    return "declined";
+  }
+
+  if (responseStatus === "attending" || responseStatus === "maybe") {
+    return "accepted";
+  }
+
+  return "draft";
+}
+
+function replyStatusClassName(tone: ReplyTone) {
+  const base =
+    "flex flex-col gap-3 rounded-[var(--radius-lg)] border px-4 py-4 text-[var(--foreground)] sm:flex-row sm:items-center";
+
+  switch (tone) {
+    case "accepted":
+      return `${base} border-[color-mix(in_srgb,var(--success)_34%,var(--border))] bg-[color-mix(in_srgb,var(--success)_8%,var(--surface))]`;
+    case "blocked":
+      return `${base} border-[color-mix(in_srgb,var(--warning)_38%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))]`;
+    case "declined":
+      return `${base} border-[color-mix(in_srgb,var(--foreground)_22%,var(--border))] bg-[var(--surface-muted)]`;
+    case "sent":
+      return `${base} border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))]`;
+    case "updating":
+      return `${base} border-[color-mix(in_srgb,var(--accent)_34%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))]`;
+    default:
+      return `${base} border-[var(--border)] bg-[var(--surface-muted)]`;
+  }
+}
+
+function isRsvpLocked(recoveryState: RsvpRecoveryState | null) {
+  return (
+    recoveryState?.kind === "closed" ||
+    recoveryState?.kind === "disabled" ||
+    recoveryState?.kind === "expired" ||
+    recoveryState?.kind === "unavailable"
+  );
 }
 
 function withResponseStatus(
@@ -806,6 +1062,12 @@ function isEmptyAnswer(value: string | string[]) {
 
 function readSubmitErrorMessage(error: unknown) {
   if (error instanceof ApiClientError) {
+    const recoveryState = readRsvpRecoveryState(error);
+
+    if (recoveryState) {
+      return recoveryState.body;
+    }
+
     switch (error.apiError.error.code) {
       case "FORBIDDEN":
         return error.message || "This RSVP is not available anymore.";
@@ -819,6 +1081,57 @@ function readSubmitErrorMessage(error: unknown) {
   }
 
   return "We could not send your RSVP. Please try again.";
+}
+
+export function readRsvpRecoveryState(error: unknown): RsvpRecoveryState | undefined {
+  if (!(error instanceof ApiClientError)) {
+    return undefined;
+  }
+
+  const message = error.apiError.error.message || error.message;
+  const normalized = message.toLowerCase();
+
+  if (error.apiError.error.code === "RATE_LIMITED") {
+    return {
+      body: "Too many reply attempts were sent in a short time. Please wait a moment, then try again.",
+      kind: "rate_limited",
+      title: "Please pause before trying again.",
+    };
+  }
+
+  if (normalized.includes("expired")) {
+    return {
+      body: "This RSVP link appears to be expired. Ask the host for a fresh invite link.",
+      kind: "expired",
+      title: "This invite link has expired.",
+    };
+  }
+
+  if (normalized.includes("disabled")) {
+    return {
+      body: "This guest invite is disabled. Ask the host for help before sending another reply.",
+      kind: "disabled",
+      title: "This guest invite is disabled.",
+    };
+  }
+
+  if (normalized.includes("closed")) {
+    return {
+      body: "RSVP is closed for this event. You can still contact the host directly.",
+      kind: "closed",
+      title: "RSVP is closed.",
+    };
+  }
+
+  if (error.apiError.error.code === "NOT_FOUND") {
+    return {
+      body: "This guest invite could not be found. Ask the host for a fresh link.",
+      kind: "unavailable",
+      title: "We could not find this invite.",
+    };
+  }
+
+  return undefined;
 }
 
 function readApiFieldErrors(error: unknown) {

@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+import { ApiClientError } from "@lumiere/api-client";
 import type { RsvpSubmissionResponse } from "@lumiere/types";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
+  createInitialRsvpFormState,
+  RsvpForm,
+  readRsvpRecoveryState,
   submitRsvpFormState,
   validateRsvpFormState,
   type RsvpFormState,
@@ -9,6 +15,41 @@ import {
 } from "./rsvp-form";
 
 describe("RSVP form flow helpers", () => {
+  it("renders an awaiting-reply state with the guest group and max pax", () => {
+    const html = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        eventSlug: "garden-evening",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: null,
+        questions,
+        submitLabel: "Send RSVP",
+      }),
+    );
+
+    expect(html).toContain('data-rsvp-state="draft"');
+    expect(html).toContain("Tan Family");
+    expect(html).toContain("4 seats");
+    expect(html).toContain("Awaiting reply");
+  });
+
+  it("renders an already-submitted reply as an update flow", () => {
+    const html = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        eventSlug: "garden-evening",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: "attending",
+        questions,
+        submitLabel: "Send RSVP",
+      }),
+    );
+
+    expect(html).toContain('data-rsvp-state="updating"');
+    expect(html).toContain("Already submitted");
+    expect(html).toContain("Update RSVP");
+  });
+
   it("submits an attending RSVP with guest names and custom answers", async () => {
     const submit = vi.fn(async (): Promise<RsvpSubmissionResponse> => createResponse("attending"));
     const state: RsvpFormState = {
@@ -158,6 +199,78 @@ describe("RSVP form flow helpers", () => {
       responseStatus: "attending",
     });
   });
+
+  it("keeps submitted guests in update mode for already-submitted attending replies", () => {
+    expect(createInitialRsvpFormState(4, "attending")).toEqual({
+      answers: {},
+      attendeeCount: 1,
+      guestNames: [""],
+      message: "",
+      responseStatus: "attending",
+    });
+  });
+
+  it("maps closed RSVP API failures to a blocking recovery state", async () => {
+    const submit = vi.fn(async (): Promise<RsvpSubmissionResponse> => {
+      throw createApiError("FORBIDDEN", "RSVP is closed");
+    });
+    const state: RsvpFormState = {
+      answers: {
+        meal: "Fish",
+      },
+      attendeeCount: 1,
+      guestNames: ["Ari Tan"],
+      message: "Please keep this note.",
+      responseStatus: "attending",
+    };
+
+    const result = await submitRsvpFormState({
+      eventSlug: "garden-evening",
+      guestToken: "sample-guest-token-for-preview",
+      maxPax: 4,
+      questions,
+      state,
+      submit,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.ok ? undefined : result.recoveryState).toEqual({
+      body: "RSVP is closed for this event. You can still contact the host directly.",
+      kind: "closed",
+      title: "RSVP is closed.",
+    });
+    expect(result.ok ? undefined : result.errors.form).toBe(
+      "RSVP is closed for this event. You can still contact the host directly.",
+    );
+    expect(state.message).toBe("Please keep this note.");
+  });
+
+  it("classifies disabled, expired, unavailable, and rate-limited recovery states", () => {
+    expect(
+      readRsvpRecoveryState(createApiError("FORBIDDEN", "Guest invite is disabled")),
+    ).toMatchObject({
+      kind: "disabled",
+      title: "This guest invite is disabled.",
+    });
+    expect(
+      readRsvpRecoveryState(createApiError("FORBIDDEN", "Guest invite expired")),
+    ).toMatchObject({
+      kind: "expired",
+      title: "This invite link has expired.",
+    });
+    expect(
+      readRsvpRecoveryState(createApiError("NOT_FOUND", "Guest invite not found")),
+    ).toMatchObject({
+      kind: "unavailable",
+      title: "We could not find this invite.",
+    });
+    expect(
+      readRsvpRecoveryState(createApiError("RATE_LIMITED", "Too many requests")),
+    ).toMatchObject({
+      kind: "rate_limited",
+      title: "Please pause before trying again.",
+    });
+  });
 });
 
 const questions: RsvpQuestion[] = [
@@ -177,6 +290,11 @@ const questions: RsvpQuestion[] = [
   },
 ];
 
+const guestGroup = {
+  label: "Tan Family",
+  maxPax: 4,
+};
+
 function createResponse(
   responseStatus: RsvpSubmissionResponse["response"]["responseStatus"],
   attendeeCount = 2,
@@ -194,4 +312,17 @@ function createResponse(
       updatedAt: "2030-01-01T00:00:00.000Z",
     },
   };
+}
+
+function createApiError(
+  code: ConstructorParameters<typeof ApiClientError>[1]["error"]["code"],
+  message: string,
+) {
+  return new ApiClientError(403, {
+    error: {
+      code,
+      message,
+      requestId: "request_for_rsvp_test",
+    },
+  });
 }
