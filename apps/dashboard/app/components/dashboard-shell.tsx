@@ -78,6 +78,8 @@ export function DashboardShell({
 }
 
 function DashboardNav({ activePath, className = "" }: { activePath: string; className?: string }) {
+  const activeEventId = getActiveEventId(activePath);
+
   return (
     <nav className={`gap-1 text-sm ${className}`} aria-label="Dashboard navigation">
       {primaryNav.map((item) => (
@@ -90,8 +92,42 @@ function DashboardNav({ activePath, className = "" }: { activePath: string; clas
           {item.label}
         </Link>
       ))}
+      {activeEventId ? (
+        <div className="mt-5 grid gap-1 border-t border-[var(--border)] pt-4">
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+            Event workspace
+          </p>
+          <Link
+            aria-current={activePath === `/events/${activeEventId}` ? "page" : undefined}
+            className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+            href={`/events/${activeEventId}`}
+          >
+            Overview
+          </Link>
+          {eventTabs.map((item) => {
+            const href = `/events/${activeEventId}/${item.href}`;
+
+            return (
+              <Link
+                aria-current={activePath === href ? "page" : undefined}
+                className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
+                href={href}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </nav>
   );
+}
+
+function getActiveEventId(activePath: string) {
+  const match = activePath.match(/^\/events\/([^/]+)/);
+
+  return match?.[1];
 }
 
 export function AuthRequiredPlaceholder() {

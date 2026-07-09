@@ -385,6 +385,23 @@ function EventList({
               <dd className="mt-1 font-medium">{event.venueName || "Venue not set"}</dd>
             </div>
           </dl>
+          <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+            <Link
+              className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+              href={`/events/${event.id}`}
+            >
+              Open workspace
+            </Link>
+            {eventQuickLinks.map((item) => (
+              <Link
+                className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                href={`/events/${event.id}/${item.href}`}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </article>
       ))}
     </div>
@@ -650,3 +667,10 @@ function statusClassName(value: Event["status"]) {
 
 const inputClassName =
   "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--foreground)_42%,transparent)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]";
+
+const eventQuickLinks = [
+  { href: "theme", label: "Theme" },
+  { href: "content", label: "Content" },
+  { href: "guests", label: "Guests" },
+  { href: "activity", label: "Activity" },
+] as const;

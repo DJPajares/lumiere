@@ -52,28 +52,27 @@ describe("EventsWorkspace", () => {
     ).toBeTruthy();
   });
 
+  it("shows direct workspace links for existing events", async () => {
+    renderWithAuth({
+      listEvents: vi.fn(async () => ({ events: [springDinnerEvent] })),
+    });
+
+    expect(await screen.findByText("Spring Dinner")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open workspace" }).getAttribute("href")).toBe(
+      "/events/evt_123",
+    );
+    expect(screen.getByRole("link", { name: "Theme" }).getAttribute("href")).toBe(
+      "/events/evt_123/theme",
+    );
+    expect(screen.getByRole("link", { name: "Activity" }).getAttribute("href")).toBe(
+      "/events/evt_123/activity",
+    );
+  });
+
   it("creates an event and navigates to the event workspace", async () => {
     const user = userEvent.setup();
-    const createdEvent: Event = {
-      createdAt: "2030-01-01T00:00:00.000Z",
-      eventType: "dinner",
-      id: "evt_123",
-      ownerUserId: "user_123",
-      publicSettings: {},
-      rsvpSettings: {},
-      slug: "spring-dinner",
-      startsAt: "2030-06-01T10:30:00.000Z",
-      status: "draft",
-      themeConfig: {},
-      themeMode: "system",
-      timezone: "Asia/Singapore",
-      title: "Spring Dinner",
-      updatedAt: "2030-01-01T00:00:00.000Z",
-      venueAddress: "12 Orchard Road",
-      venueName: "Glass Hall",
-    };
     const createEvent = vi.fn<DashboardApiClient["createEvent"]>(async () => ({
-      event: createdEvent,
+      event: springDinnerEvent,
     }));
 
     renderWithAuth({
@@ -110,6 +109,25 @@ describe("EventsWorkspace", () => {
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/events/evt_123"));
   });
 });
+
+const springDinnerEvent: Event = {
+  createdAt: "2030-01-01T00:00:00.000Z",
+  eventType: "dinner",
+  id: "evt_123",
+  ownerUserId: "user_123",
+  publicSettings: {},
+  rsvpSettings: {},
+  slug: "spring-dinner",
+  startsAt: "2030-06-01T10:30:00.000Z",
+  status: "draft",
+  themeConfig: {},
+  themeMode: "system",
+  timezone: "Asia/Singapore",
+  title: "Spring Dinner",
+  updatedAt: "2030-01-01T00:00:00.000Z",
+  venueAddress: "12 Orchard Road",
+  venueName: "Glass Hall",
+};
 
 function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
   return render(
