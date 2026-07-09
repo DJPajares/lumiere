@@ -9,7 +9,16 @@ type InviteApiClientOptions = {
 
 export function createInviteApiClient(options: InviteApiClientOptions = {}) {
   const baseUrl = options.baseUrl ?? readInvitePublicEnv().apiBaseUrl;
-  const fetchImplementation = options.fetch ?? globalThis.fetch?.bind(globalThis);
+  const defaultFetch = globalThis.fetch?.bind(globalThis);
+  const fetchImplementation =
+    options.fetch ??
+    (defaultFetch
+      ? (input, init) =>
+          defaultFetch(input, {
+            ...init,
+            cache: "no-store",
+          })
+      : undefined);
 
   if (!fetchImplementation) {
     throw new Error("Invite API requests require a fetch implementation.");
@@ -17,6 +26,10 @@ export function createInviteApiClient(options: InviteApiClientOptions = {}) {
 
   return createApiClient({
     baseUrl,
-    fetch: fetchImplementation,
+    fetch: (input, init) =>
+      fetchImplementation(input, {
+        ...init,
+        cache: "no-store",
+      }),
   });
 }

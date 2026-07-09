@@ -3,6 +3,7 @@ import { eventSections, events, guestGroups, rsvpResponses } from "@lumiere/db";
 import type { Event, EventSection, PublicEventSummary, PublicGuestContext } from "@lumiere/types";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
+import { toIsoDateTime } from "./serialization";
 import { toApiEventSection } from "./theme-sections";
 
 type PublicEventRow = Pick<
@@ -165,14 +166,16 @@ const listEnabledSections = (
     )
     .orderBy(asc(eventSections.sortOrder), asc(eventSections.createdAt));
 
-const toPublicEventRecord = (event: PublicEventRow): Omit<PublicEventRecord, "sections"> => ({
+export const toPublicEventRecord = (
+  event: PublicEventRow,
+): Omit<PublicEventRecord, "sections"> => ({
   event: {
-    endsAt: event.endsAt ?? undefined,
+    endsAt: event.endsAt ? toIsoDateTime(event.endsAt) : undefined,
     eventType: event.eventType,
     id: event.id,
     publicSettings: event.publicSettingsJson as Event["publicSettings"],
     slug: event.slug,
-    startsAt: event.startsAt,
+    startsAt: toIsoDateTime(event.startsAt),
     status: event.status,
     timezone: event.timezone,
     title: event.title,

@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { PublicInvitation, PublicInvitationUnavailable } from "../../../components/public-invite";
 import { createInviteApiClient } from "../../../lib/invite-api";
 
+export const dynamic = "force-dynamic";
+
 type PublicEventPageProps = {
   params: Promise<{
     eventSlug: string;

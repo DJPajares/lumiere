@@ -3,12 +3,14 @@ import {
   eventSectionsResponseSchema,
   guestGroupsResponseSchema,
   notificationsResponseSchema,
+  publicEventResponseSchema,
   rsvpSubmissionResponseSchema,
 } from "@lumiere/types";
 import { describe, expect, it } from "vitest";
 
 import { toApiActivityEvent, toApiNotification } from "./dashboard-data";
 import { toApiGuestGroup } from "./guest-groups";
+import { toPublicEventRecord } from "./public-invites";
 import { toApiRsvpResponse } from "./rsvps";
 import { toApiEventSection } from "./theme-sections";
 
@@ -130,6 +132,39 @@ describe("API serialization", () => {
         submittedAt: "2026-07-08T08:00:00.000Z",
         updatedAt: "2026-07-08T08:01:00.000Z",
       }),
+    });
+  });
+
+  it("serializes public event timestamps as shared API datetimes", () => {
+    const publicEvent = toPublicEventRecord({
+      endsAt: "2026-08-23 15:30:00+00",
+      eventType: "wedding",
+      id: eventId,
+      publicSettingsJson: {},
+      selectedThemeId: "premium",
+      slug: "lumiere-demo",
+      startsAt: "2026-08-23 09:00:00+00",
+      status: "published",
+      themeConfigJson: {},
+      themeMode: "toggleable",
+      timezone: "Asia/Singapore",
+      title: "Amara & Theo",
+      venueAddress: "18 Marina Gardens Drive, Singapore 018953",
+      venueName: "Emerald Gardens",
+    } as Parameters<typeof toPublicEventRecord>[0]);
+
+    expect(
+      publicEventResponseSchema.parse({
+        ...publicEvent,
+        sections: [],
+      }),
+    ).toEqual({
+      ...publicEvent,
+      event: expect.objectContaining({
+        endsAt: "2026-08-23T15:30:00.000Z",
+        startsAt: "2026-08-23T09:00:00.000Z",
+      }),
+      sections: [],
     });
   });
 });

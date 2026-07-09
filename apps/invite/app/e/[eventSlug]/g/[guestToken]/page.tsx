@@ -1,8 +1,13 @@
 import { ApiClientError } from "@lumiere/api-client";
 import type { Metadata } from "next";
 
-import { GuestInvitation, GuestInvitationUnavailable } from "../../../../../components/public-invite";
+import {
+  GuestInvitation,
+  GuestInvitationUnavailable,
+} from "../../../../../components/public-invite";
 import { createInviteApiClient } from "../../../../../lib/invite-api";
+
+export const dynamic = "force-dynamic";
 
 type GuestEventPageProps = {
   params: Promise<{
