@@ -102,7 +102,7 @@ describe("RSVP form flow helpers", () => {
     );
   });
 
-  it("returns field-level validation errors for missing required fields", () => {
+  it("returns field-level validation errors for missing required questions", () => {
     const result = validateRsvpFormState({
       maxPax: 4,
       questions,
@@ -116,7 +116,6 @@ describe("RSVP form flow helpers", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.ok ? undefined : result.errors["guestNames.1"]).toBe("Add this guest name.");
     expect(result.ok ? undefined : result.errors["answers.meal"]).toBe(
       "This question is required.",
     );

@@ -7,7 +7,7 @@ import type {
 } from "@lumiere/types";
 
 import { InviteShell } from "./invite-shell";
-import { RsvpForm, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
+import { RsvpForm, type RsvpDesign, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
 type JsonObject = Record<string, JsonValue>;
 type InvitationContext = "guest" | "public";
@@ -74,6 +74,7 @@ function InvitationFrame({
     context === "guest"
       ? "This guest invite is valid. More private details will appear here as the host enables them."
       : "The host has published this event. Public sections will appear here as they are enabled.";
+  const rsvpDesign = resolveRsvpDesign(invite.selectedThemeId ?? invite.theme?.id);
 
   return (
     <InviteShell
@@ -96,6 +97,7 @@ function InvitationFrame({
                 index={index}
                 key={item.section.id}
                 item={item}
+                rsvpDesign={rsvpDesign}
               />
             ))}
           </div>
@@ -304,12 +306,14 @@ function PublicSection({
   guestToken,
   index,
   item,
+  rsvpDesign,
 }: {
   eventSlug: string;
   guest?: GuestContext;
   guestToken?: string;
   index: number;
   item: RenderableSection;
+  rsvpDesign: RsvpDesign;
 }) {
   const definition = getSectionDefinition(item.section.sectionType);
   const anchorId = readString(item.settings.anchorId) ?? item.section.sectionKey;
@@ -345,6 +349,7 @@ function PublicSection({
             guest={guest}
             guestToken={guestToken}
             item={item}
+            rsvpDesign={rsvpDesign}
             titleId={titleId}
           />
         </div>
@@ -359,6 +364,7 @@ function SectionBody({
   guest,
   guestToken,
   item,
+  rsvpDesign,
   titleId,
 }: {
   composition: SectionComposition;
@@ -366,6 +372,7 @@ function SectionBody({
   guest?: GuestContext;
   guestToken?: string;
   item: RenderableSection;
+  rsvpDesign: RsvpDesign;
   titleId: string;
 }) {
   const { content, section, settings } = item;
@@ -394,6 +401,7 @@ function SectionBody({
           eventSlug={eventSlug}
           guest={guest}
           guestToken={guestToken}
+          rsvpDesign={rsvpDesign}
           settings={settings}
           titleId={titleId}
         />
@@ -773,6 +781,7 @@ function RsvpSection({
   eventSlug,
   guest,
   guestToken,
+  rsvpDesign,
   settings,
   titleId,
 }: {
@@ -780,6 +789,7 @@ function RsvpSection({
   eventSlug: string;
   guest?: GuestContext;
   guestToken?: string;
+  rsvpDesign: RsvpDesign;
   settings: JsonObject;
   titleId: string;
 }) {
@@ -789,7 +799,7 @@ function RsvpSection({
     "Review your guest details now. The RSVP form will open here when responses are enabled.";
   const questions = readRsvpQuestions(content.questions);
   const requireGuestToken = readBoolean(settings.requireGuestToken, true);
-  const submitLabel = readString(content.submitLabel) ?? "Send RSVP";
+  const submitLabel = readSubmitLabel(content.submitLabel);
   const submitContext = guest && guestToken ? { guest, guestToken } : null;
 
   return (
@@ -833,6 +843,7 @@ function RsvpSection({
 
       {submitContext ? (
         <RsvpForm
+          design={rsvpDesign}
           eventSlug={eventSlug}
           guestGroup={submitContext.guest.guestGroup}
           guestToken={submitContext.guestToken}
@@ -1190,6 +1201,19 @@ function joinClassNames(...classNames: Array<string | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
 
+function resolveRsvpDesign(themeId: string | undefined): RsvpDesign {
+  switch (themeId) {
+    case "kids":
+      return "kids";
+    case "noel":
+      return "noel";
+    case "premium":
+      return "premium";
+    default:
+      return "default";
+  }
+}
+
 function getRenderableSections(
   sections: EventSection[],
   context: InvitationContext,
@@ -1278,6 +1302,12 @@ function readRsvpQuestions(value: JsonValue | undefined): RsvpQuestion[] {
       },
     ];
   });
+}
+
+function readSubmitLabel(value: JsonValue | undefined) {
+  const label = readString(value);
+
+  return !label || label === "Send RSVP" ? "Confirm attendance" : label;
 }
 
 function readRsvpQuestionType(value: JsonValue | undefined): RsvpQuestionType | undefined {

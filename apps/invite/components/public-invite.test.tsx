@@ -205,7 +205,8 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
     expect(html).toContain("Meal choice");
-    expect(html).toContain("Will you attend?");
+    expect(html).toContain("Will you celebrate with us?");
+    expect(html).toContain('data-rsvp-design="premium"');
   });
 });
 
