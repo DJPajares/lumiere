@@ -1,11 +1,12 @@
-import { getTheme, type ThemeDefinition, type ThemeId } from "@lumiere/themes";
+import { getTheme, isThemeId, type ThemeDefinition } from "@lumiere/themes";
+import type { ThemeMode } from "@lumiere/types";
 import type { CSSProperties, ReactNode } from "react";
 
 type InviteShellProps = {
   children: ReactNode;
   context: "guest" | "public";
-  mode?: "dark" | "light";
-  themeId?: ThemeId;
+  mode?: ThemeMode;
+  themeId?: string;
 };
 
 export function InviteShell({
@@ -14,15 +15,17 @@ export function InviteShell({
   mode = "light",
   themeId = "lumiere-default",
 }: InviteShellProps) {
-  const theme = getTheme(themeId) ?? getTheme("lumiere-default");
-  const style = themeToStyle(theme, mode);
+  const theme = getInviteTheme(themeId);
+  const resolvedMode = resolveThemeMode(mode, theme);
+  const style = themeToStyle(theme, resolvedMode);
 
   return (
     <main
       className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)]"
       data-invite-context={context}
-      data-theme-id={theme?.id}
+      data-theme-id={theme.id}
       data-theme-mode={mode}
+      data-theme-resolved-mode={resolvedMode}
       style={style}
     >
       {children}
@@ -49,4 +52,20 @@ function themeToStyle(theme: ThemeDefinition | undefined, mode: "dark" | "light"
     "--surface-muted": tokens?.surfaceMuted,
     "--warning": tokens?.warning,
   } as CSSProperties;
+}
+
+function getInviteTheme(themeId: string) {
+  return (isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!;
+}
+
+function resolveThemeMode(mode: ThemeMode, theme: ThemeDefinition): "dark" | "light" {
+  if (mode === "dark" && theme.tokens.dark) {
+    return "dark";
+  }
+
+  if (mode === "system" && theme.defaultMode === "dark" && theme.tokens.dark) {
+    return "dark";
+  }
+
+  return "light";
 }
