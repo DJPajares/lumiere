@@ -4,6 +4,7 @@ import type { Event, EventCreate, EventUpdate } from "@lumiere/types";
 import { desc, eq, sql } from "drizzle-orm";
 
 import { ApiHttpError } from "./errors";
+import { toIsoDateTime } from "./serialization";
 
 type EventRow = typeof events.$inferSelect;
 
@@ -126,16 +127,6 @@ export const toApiEvent = (event: EventRow): Event => ({
   venueAddress: event.venueAddress ?? undefined,
   venueName: event.venueName ?? undefined,
 });
-
-const toIsoDateTime = (value: string) => {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toISOString();
-};
 
 const toEventUpdateSet = (input: EventUpdate) => ({
   ...(input.slug !== undefined ? { slug: input.slug } : {}),

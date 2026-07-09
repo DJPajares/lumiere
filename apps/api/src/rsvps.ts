@@ -10,6 +10,8 @@ import {
 import type { Event, RsvpResponse, RsvpSubmission } from "@lumiere/types";
 import { and, eq, sql } from "drizzle-orm";
 
+import { toIsoDateTime } from "./serialization";
+
 type RsvpResponseRow = typeof rsvpResponses.$inferSelect;
 type RsvpNotificationType = "rsvp_submitted" | "rsvp_updated";
 
@@ -218,7 +220,7 @@ const isPast = (isoDateTime: string | undefined) =>
     ? Number.isFinite(Date.parse(isoDateTime)) && Date.parse(isoDateTime) <= Date.now()
     : false;
 
-const toApiRsvpResponse = (response: RsvpResponseRow): RsvpResponse => ({
+export const toApiRsvpResponse = (response: RsvpResponseRow): RsvpResponse => ({
   answers: response.answersJson,
   attendeeCount: response.attendeeCount,
   eventId: response.eventId,
@@ -227,6 +229,6 @@ const toApiRsvpResponse = (response: RsvpResponseRow): RsvpResponse => ({
   id: response.id,
   message: response.message ?? undefined,
   responseStatus: response.responseStatus,
-  submittedAt: response.submittedAt,
-  updatedAt: response.updatedAt,
+  submittedAt: toIsoDateTime(response.submittedAt),
+  updatedAt: toIsoDateTime(response.updatedAt),
 });

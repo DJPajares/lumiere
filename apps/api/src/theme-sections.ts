@@ -12,6 +12,8 @@ import type {
 } from "@lumiere/types";
 import { asc, eq, sql } from "drizzle-orm";
 
+import { toIsoDateTime } from "./serialization";
+
 type EventSectionRow = typeof eventSections.$inferSelect;
 type JsonObject = Event["themeConfig"];
 
@@ -151,7 +153,7 @@ export const toApiTheme = (theme: ThemeDefinition): Theme => ({
 
 export const toApiEventSection = (section: EventSectionRow): EventSection => ({
   content: section.contentJson as EventSection["content"],
-  createdAt: section.createdAt,
+  createdAt: toIsoDateTime(section.createdAt),
   enabled: section.enabled,
   eventId: section.eventId,
   id: section.id,
@@ -159,6 +161,6 @@ export const toApiEventSection = (section: EventSectionRow): EventSection => ({
   sectionType: section.sectionType,
   settings: section.settingsJson as EventSection["settings"],
   sortOrder: section.sortOrder,
-  updatedAt: section.updatedAt,
+  updatedAt: toIsoDateTime(section.updatedAt),
   visibility: section.visibility,
 });

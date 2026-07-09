@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-07T00:00:00+08:00'
-modified: '2026-07-09T08:41:43+08:00'
+modified: '2026-07-09T08:47:30+08:00'
 completedAt: null
 labels: ['dashboard', 'uiux', 'information-architecture', 'frontend']
 depends_on: ['t21-dashboard-event-overview', 't22-dashboard-theme-selector', 't23-dashboard-section-builder', 't24-dashboard-guest-management', 't25-dashboard-responses-activity']
@@ -55,3 +55,4 @@ Use `SKILL.md` dashboard quality bar. Keep decorative event styling mostly in pr
 
 - 2026-07-07T00:00:00+08:00: Task created.
 - 2026-07-09T08:41:43+08:00: Improved dashboard navigation discoverability after manager feedback. Event list cards now expose direct workspace/theme/content/guest/activity links, and the dashboard sidebar shows event workspace sections when viewing an event route.
+- 2026-07-09T08:47:30+08:00: Fixed invalid API response errors on guest, responses, activity, section, and RSVP payloads by normalizing database timestamp strings to shared API ISO datetimes before client schema parsing.

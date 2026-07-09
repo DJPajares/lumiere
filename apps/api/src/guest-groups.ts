@@ -5,6 +5,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { createHmac, randomBytes } from "node:crypto";
 
 import { ApiHttpError } from "./errors";
+import { toIsoDateTime } from "./serialization";
 
 type GuestGroupRow = typeof guestGroups.$inferSelect;
 
@@ -149,16 +150,16 @@ export const buildGuestInviteLink = ({
 export const toApiGuestGroup = (guestGroup: GuestGroupRow): GuestGroup => ({
   contactEmail: guestGroup.contactEmail ?? undefined,
   contactName: guestGroup.contactName ?? undefined,
-  createdAt: guestGroup.createdAt,
+  createdAt: toIsoDateTime(guestGroup.createdAt),
   eventId: guestGroup.eventId,
   id: guestGroup.id,
   inviteCode: guestGroup.inviteCode,
   label: guestGroup.label,
-  lastOpenedAt: guestGroup.lastOpenedAt ?? undefined,
+  lastOpenedAt: guestGroup.lastOpenedAt ? toIsoDateTime(guestGroup.lastOpenedAt) : undefined,
   maxPax: guestGroup.maxPax,
   notes: guestGroup.notes ?? undefined,
   status: guestGroup.status,
-  updatedAt: guestGroup.updatedAt,
+  updatedAt: toIsoDateTime(guestGroup.updatedAt),
 });
 
 const withInviteConflictHandling = async <TValue>(operation: () => Promise<TValue>) => {

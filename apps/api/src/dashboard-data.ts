@@ -3,6 +3,8 @@ import { activityEvents, guestGroups, notifications, rsvpResponses } from "@lumi
 import type { ActivityEvent, EventSummary, Notification } from "@lumiere/types";
 import { and, desc, eq } from "drizzle-orm";
 
+import { toIsoDateTime } from "./serialization";
+
 type GuestGroupSummaryRow = Pick<typeof guestGroups.$inferSelect, "id" | "maxPax" | "status">;
 type RsvpSummaryRow = Pick<
   typeof rsvpResponses.$inferSelect,
@@ -120,24 +122,24 @@ export const buildEventSummary = (
   return summary;
 };
 
-const toApiActivityEvent = (activity: ActivityEventRow): ActivityEvent => ({
+export const toApiActivityEvent = (activity: ActivityEventRow): ActivityEvent => ({
   actorId: activity.actorId ?? undefined,
   actorType: activity.actorType,
   activityType: activity.activityType,
-  createdAt: activity.createdAt,
+  createdAt: toIsoDateTime(activity.createdAt),
   eventId: activity.eventId,
   id: activity.id,
   metadata: activity.metadataJson as ActivityEvent["metadata"],
 });
 
-const toApiNotification = (notification: NotificationRow): Notification => ({
-  createdAt: notification.createdAt,
+export const toApiNotification = (notification: NotificationRow): Notification => ({
+  createdAt: toIsoDateTime(notification.createdAt),
   eventId: notification.eventId,
   id: notification.id,
   message: notification.message,
   metadata: notification.metadataJson as Notification["metadata"],
   notificationType: notification.notificationType,
-  readAt: notification.readAt ?? undefined,
+  readAt: notification.readAt ? toIsoDateTime(notification.readAt) : undefined,
   title: notification.title,
   userId: notification.userId,
 });
