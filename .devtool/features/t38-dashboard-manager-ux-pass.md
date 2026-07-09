@@ -1,12 +1,12 @@
 ---
 id: "t38-dashboard-manager-ux-pass"
-status: "in-progress"
+status: "backlog"
 priority: "high"
 assignee: null
 epic: "frontend"
 dueDate: null
 created: "2026-07-07T00:00:00+08:00"
-modified: "2026-07-09T09:09:07+08:00"
+modified: "2026-07-09T01:24:12.106Z"
 completedAt: null
 labels: ["dashboard", "uiux", "information-architecture", "frontend"]
 order: "a38"

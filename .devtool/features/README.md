@@ -11,3 +11,4 @@ Lumiere-specific UI/UX additions:
 - `t39-section-builder-live-preview-ux`
 - `t40-rsvp-flow-delight-and-recovery`
 - `t41-accessibility-visual-qa-audit`
+- `t42-invite-ambient-audio-and-media-controls`

@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-07T00:00:00+08:00'
-modified: '2026-07-07T00:00:00+08:00'
+modified: '2026-07-09T13:18:44+08:00'
 completedAt: null
 labels: ['frontend', 'themes', 'sections']
 depends_on: ['t06-theme-registry-package', 't26-invite-public-event-page']
@@ -22,7 +22,7 @@ order: 'a28'
 
 ## Scope
 
-Build initial section renderers for common event sections such as introduction, date, story, people, location, gallery, dress code, RSVP slot, and outro.
+Build initial section renderers for common event sections such as introduction, date, story, people, location, gallery, dress code, RSVP slot, and outro. Renderers should expose enough structure for both simple card themes and richer immersive themes.
 
 ## Suggested Agent
 
@@ -33,6 +33,8 @@ Build initial section renderers for common event sections such as introduction, 
 
 - [ ] Renderers consume validated section content and settings.
 - [ ] Renderers support mobile-first layout and desktop enhancements.
+- [ ] Renderers support theme-provided composition variants such as full-bleed, editorial split, layered media, timeline, gallery feature, and framed/basic card treatment.
+- [ ] Renderers expose stable hooks/classes/data attributes needed for theme motion without coupling section data to a single animation implementation.
 - [ ] Missing optional content degrades gracefully.
 - [ ] Location and gallery sections reserve image/embed space.
 - [ ] Renderers respect theme tokens and mode.
@@ -49,8 +51,9 @@ Build initial section renderers for common event sections such as introduction, 
 
 ## Notes
 
-Keep renderers reusable across event types. Specific themes can style them differently later.
+Keep renderers reusable across event types. Specific themes can style them differently later, including immersive premium themes and simpler neutral themes.
 
 ## Progress Log
 
 - 2026-07-07T00:00:00+08:00: Task created.
+- 2026-07-09T13:18:44+08:00: Added composition-variant and motion-hook requirements so section renderers can support premium immersive themes without becoming one-off components.
