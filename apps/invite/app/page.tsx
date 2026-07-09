@@ -7,9 +7,17 @@ export default function InviteHome() {
     <InviteShell context="public">
       <section className="grid min-h-[100dvh] content-center gap-8 px-5 py-10 sm:px-8 lg:px-16">
         <div className="mx-auto grid max-w-3xl gap-6 text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-            Lumiere invite app
-          </p>
+          <div className="mx-auto inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[var(--accent-strong)]">
+            <img
+              alt=""
+              aria-hidden="true"
+              className="h-12 w-auto object-contain"
+              height={48}
+              src="/logo.png"
+              width={48}
+            />
+            <span>Lumiere invite app</span>
+          </div>
           <h1 className="text-5xl font-semibold leading-[0.95] text-balance sm:text-7xl">
             Public invitations begin at an event URL.
           </h1>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { useDashboardAuth } from "../auth/dashboard-auth-provider";
+import { DashboardBrandLockup } from "./dashboard-brand";
 
 type ProtectedDashboardProps = {
   children: ReactNode;
@@ -31,7 +32,7 @@ export function ProtectedDashboard({ children }: ProtectedDashboardProps) {
         className="grid w-full max-w-md gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm"
         aria-live="polite"
       >
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">Lumiere Dashboard</p>
+        <DashboardBrandLockup className="text-sm font-semibold text-[var(--accent-strong)]" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {status === "loading" ? "Checking manager session" : "Sign in required"}

@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
@@ -32,12 +33,45 @@ describe("invite app routes", () => {
       capable: true,
       title: "Lumiere Invite",
     });
-    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/lumiere-mark.svg");
     expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/icon-192.png");
+    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/icon-512.png");
+    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/apple-touch-icon.png");
+    expect(JSON.stringify(inviteAppMetadata.icons)).toContain("/icons/maskable-icon-512.png");
+    expect(JSON.stringify(inviteAppMetadata.icons)).not.toContain(".svg");
     expect(inviteAppMetadata.robots).toMatchObject({
       follow: false,
       index: false,
     });
+  });
+
+  it("declares invite install icons in the web manifest", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+    );
+
+    expect(manifest).toMatchObject({
+      background_color: "#fffaf1",
+      name: "Lumiere Invite",
+      short_name: "Lumiere",
+      theme_color: "#b97732",
+    });
+    expect(manifest.icons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          src: "/icons/icon-192.png",
+          purpose: "any",
+        }),
+        expect.objectContaining({
+          src: "/icons/maskable-icon-192.png",
+          purpose: "maskable",
+        }),
+        expect.objectContaining({
+          src: "/icons/maskable-icon-512.png",
+          purpose: "maskable",
+        }),
+      ]),
+    );
+    expect(JSON.stringify(manifest.icons)).not.toContain(".svg");
   });
 
   it("renders the generic public event route without guest RSVP context", async () => {

@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -30,14 +31,45 @@ describe("dashboard routes", () => {
       capable: true,
       title: "Lumiere Dashboard",
     });
-    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain(
-      "/icons/lumiere-dashboard-mark.svg",
-    );
     expect(JSON.stringify(dashboardAppMetadata.icons)).toContain("/icons/icon-192.png");
+    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain("/icons/icon-512.png");
+    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain("/apple-touch-icon.png");
+    expect(JSON.stringify(dashboardAppMetadata.icons)).toContain("/icons/maskable-icon-512.png");
+    expect(JSON.stringify(dashboardAppMetadata.icons)).not.toContain(".svg");
     expect(dashboardAppMetadata.robots).toMatchObject({
       follow: false,
       index: false,
     });
+  });
+
+  it("declares dashboard install icons in the web manifest", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+    );
+
+    expect(manifest).toMatchObject({
+      background_color: "#f7f5f0",
+      name: "Lumiere Dashboard",
+      short_name: "Dashboard",
+      theme_color: "#6f5a38",
+    });
+    expect(manifest.icons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          src: "/icons/icon-192.png",
+          purpose: "any",
+        }),
+        expect.objectContaining({
+          src: "/icons/maskable-icon-192.png",
+          purpose: "maskable",
+        }),
+        expect.objectContaining({
+          src: "/icons/maskable-icon-512.png",
+          purpose: "maskable",
+        }),
+      ]),
+    );
+    expect(JSON.stringify(manifest.icons)).not.toContain(".svg");
   });
 
   it("renders the root dashboard shell for authenticated managers", () => {

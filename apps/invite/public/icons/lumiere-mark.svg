@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Lumiere mark</title>
-  <desc id="desc">A warm circular light mark for the Lumiere invite app.</desc>
-  <rect width="512" height="512" rx="112" fill="#fffaf1"/>
-  <circle cx="256" cy="256" r="142" fill="#b97732"/>
-  <circle cx="256" cy="256" r="82" fill="#fffaf1"/>
-  <path d="M256 92v64M256 356v64M420 256h-64M156 256H92M372 140l-45 45M185 327l-45 45M372 372l-45-45M185 185l-45-45" stroke="#7d451f" stroke-width="28" stroke-linecap="round"/>
-</svg>

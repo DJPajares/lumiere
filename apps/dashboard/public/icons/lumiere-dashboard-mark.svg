@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Lumiere dashboard mark</title>
-  <desc id="desc">A composed square light mark for the Lumiere dashboard app.</desc>
-  <rect width="512" height="512" rx="96" fill="#f7f5f0"/>
-  <rect x="116" y="116" width="280" height="280" rx="48" fill="#6f5a38"/>
-  <path d="M172 198h168M172 256h128M172 314h168" stroke="#fffefd" stroke-width="28" stroke-linecap="round"/>
-</svg>

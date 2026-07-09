@@ -13,13 +13,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/icons/lumiere-mark.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/favicon.ico", type: "image/x-icon", sizes: "any" },
       { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
       { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/icons/maskable-icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/maskable-icon-512.png", type: "image/png", sizes: "512x512" },
     ],
     shortcut: "/favicon.ico",
-    apple: [{ url: "/logo.png", type: "image/png", sizes: "1024x1024" }],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,

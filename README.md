@@ -395,7 +395,19 @@ Use separate Lumiere PWA assets for each app:
 - `apps/invite/public/` uses the main Lumiere public invite assets.
 - `apps/dashboard/public/` uses the Lumiere Dashboard assets.
 
-Each app should include its own `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, maskable icons, `manifest.webmanifest`, and metadata/head tags. Guest-specific URLs must avoid leaking private guest context in public share metadata.
+Each app should include its own:
+
+- `favicon.ico`
+- `apple-touch-icon.png`
+- `logo.png`
+- `icons/icon-192.png`
+- `icons/icon-512.png`
+- `icons/maskable-icon-192.png`
+- `icons/maskable-icon-512.png`
+- `manifest.webmanifest`
+- metadata/head tags in the app layout
+
+When updating the logo pack, use `logo.png` as the visible brand source for each app and keep the public invite logo distinct from the dashboard logo. Install surfaces should use the PNG icon files, including maskable PNGs when a background or safe mask area is needed. The invite brand should appear in install surfaces, metadata, and top-level app chrome without overpowering event-specific themes. The dashboard brand can appear in the manager app shell because it frames operational work. Guest-specific URLs must avoid private guest data in Open Graph, title, description, and share metadata.
 
 ## Frontend Development
 

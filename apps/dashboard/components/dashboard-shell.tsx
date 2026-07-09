@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { DashboardBrandLockup } from "./dashboard-brand";
 import { DashboardSessionControls } from "./session-controls";
 
 export const eventTabs = [
@@ -38,7 +39,7 @@ export function DashboardShell({
               className="text-sm font-semibold text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               href="/events"
             >
-              Lumiere Dashboard
+              <DashboardBrandLockup />
             </Link>
             <DashboardSessionControls />
           </div>
