@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { Event, EventSection, JsonValue, Theme } from "@lumiere/types";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -38,12 +38,77 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Story"));
+    fireEvent.change(screen.getByLabelText("Story content JSON"), {
+      target: {
+        value: JSON.stringify(
+          {
+            title: "Story",
+          },
+          null,
+          2,
+        ),
+      },
+    });
     await user.click(screen.getByRole("button", { name: "Save sections" }));
 
     expect(
       await screen.findByText("Check the highlighted section fields before saving."),
     ).toBeTruthy();
     expect(screen.getAllByText(/paragraphs:/).length).toBeGreaterThan(0);
+  });
+
+  it("locks enabled required sections once the event is published", async () => {
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: {
+        ...dashboardEvent,
+        status: "published",
+      },
+    }));
+    const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({
+      sections: [savedIntroductionSection],
+    }));
+
+    renderWithAuth(
+      createApiClientStub({
+        getEvent,
+        listEventSections,
+      }),
+    );
+
+    await screen.findByText("Configure content for Spring Dinner");
+
+    expect(
+      screen.getByText("Required sections stay enabled once the event is no longer a draft."),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("Enable Introduction") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Enable Story") as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it("shows required section details before saving a published event", async () => {
+    const user = userEvent.setup();
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: {
+        ...dashboardEvent,
+        status: "published",
+      },
+    }));
+    const updateEventSections = vi.fn<DashboardApiClient["updateEventSections"]>();
+
+    renderWithAuth(
+      createApiClientStub({
+        getEvent,
+        updateEventSections,
+      }),
+    );
+
+    await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByRole("button", { name: "Save sections" }));
+
+    expect(
+      await screen.findByText(/Introduction is required before publishing Dinner events/),
+    ).toBeTruthy();
+    expect(screen.getByText(/RSVP is required before publishing Dinner events/)).toBeTruthy();
+    expect(updateEventSections).not.toHaveBeenCalled();
   });
 
   it("saves enabled sections with visibility and accessible reordering", async () => {
@@ -158,6 +223,26 @@ const dashboardEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "12 Orchard Road",
   venueName: "Glass Hall",
+};
+
+const savedIntroductionSection: EventSection = {
+  content: {
+    eyebrow: "You're invited",
+    title: "Spring Dinner",
+  },
+  createdAt: "2030-01-01T00:00:00.000Z",
+  enabled: true,
+  eventId: "evt_123",
+  id: "section_intro",
+  sectionKey: "introduction",
+  sectionType: "introduction",
+  settings: {
+    density: "spacious",
+    layout: "editorial",
+  },
+  sortOrder: 0,
+  updatedAt: "2030-01-01T00:00:00.000Z",
+  visibility: "public",
 };
 
 const premiumTheme: Theme = {

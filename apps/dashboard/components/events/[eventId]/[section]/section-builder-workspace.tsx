@@ -1,7 +1,18 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
-import { getSectionDefinition, getTheme, isThemeId, type ThemeDefinition } from "@lumiere/themes";
+import {
+  canDisableBlueprintSection,
+  getBlueprintSectionOrder,
+  getBlueprintSectionRequirement,
+  getSectionBlueprint,
+  getSectionDefinition,
+  getTheme,
+  isThemeId,
+  validateEventTypeSections,
+  type SectionBlueprintRequirement,
+  type ThemeDefinition,
+} from "@lumiere/themes";
 import {
   eventSectionsUpdateRequestSchema,
   jsonObjectSchema,
@@ -44,12 +55,12 @@ type SectionErrors = Partial<Record<"content" | "settings" | "visibility", strin
 type SectionErrorMap = Record<string, SectionErrors>;
 type PreviewContext = "guest" | "public";
 
-type SectionRequirement = "optional" | "recommended" | "required";
-
 type SectionPreviewModel = {
+  canDisable: boolean;
   content?: JsonObject;
+  disableLockReason?: string;
   errors: SectionErrors;
-  requirement: SectionRequirement;
+  requirement: SectionBlueprintRequirement;
   section: SectionDraft;
   settings?: JsonObject;
   status: "disabled" | "hidden" | "invalid" | "ready";
@@ -238,8 +249,8 @@ function SectionBuilderContent({
   );
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
   const previewModels = useMemo(
-    () => createSectionPreviewModels(state.sections, state.theme),
-    [state.sections, state.theme],
+    () => createSectionPreviewModels(state.sections, state.theme, state.event),
+    [state.event, state.sections, state.theme],
   );
   const selectedPreview =
     previewModels.find((model) => model.section.sectionKey === selectedSectionKey) ??
@@ -249,6 +260,7 @@ function SectionBuilderContent({
     (model) => model.section.enabled && model.status !== "invalid",
   ).length;
   const invalidEnabledCount = previewModels.filter((model) => model.status === "invalid").length;
+  const formDetail = state.sectionErrors._form?.content;
 
   useEffect(() => {
     if (!previewModels.some((model) => model.section.sectionKey === selectedSectionKey)) {
@@ -323,7 +335,9 @@ function SectionBuilderContent({
       return;
     }
 
-    const parsed = parseSectionDrafts(state.sections);
+    const parsed = parseSectionDrafts(state.sections, {
+      event: state.event,
+    });
 
     if (!parsed.ok) {
       updateState((current) =>
@@ -435,7 +449,8 @@ function SectionBuilderContent({
               <p className="text-sm font-semibold">Recommended next section</p>
               <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
                 Add {getSectionDefinition(nextSuggestedSection.section.sectionType).label} next. It
-                is {nextSuggestedSection.requirement} for this theme and event rhythm.
+                is {nextSuggestedSection.requirement} for {formatEventType(state.event.eventType)}{" "}
+                events in the selected theme.
               </p>
             </div>
             <button
@@ -449,7 +464,7 @@ function SectionBuilderContent({
         ) : null}
 
         {state.formMessage ? (
-          <p
+          <div
             className={`rounded-[var(--radius-md)] border px-3 py-2 text-sm ${
               Object.keys(state.sectionErrors).length > 0
                 ? "border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
@@ -457,8 +472,9 @@ function SectionBuilderContent({
             }`}
             role="status"
           >
-            {state.formMessage}
-          </p>
+            <p>{state.formMessage}</p>
+            {formDetail ? <p className="mt-1 leading-6">{formDetail}</p> : null}
+          </div>
         ) : null}
       </section>
 
@@ -492,6 +508,8 @@ function SectionBuilderContent({
               onSelect={setSelectedSectionKey}
               requirement={model.requirement}
               section={model.section}
+              canDisable={model.canDisable}
+              disableLockReason={model.disableLockReason}
               statusLabel={model.statusLabel}
               updateSection={updateSection}
             />
@@ -773,6 +791,8 @@ function PreviewSectionBody({
 }
 
 function SectionEditor({
+  canDisable,
+  disableLockReason,
   errors,
   isFirst,
   isLast,
@@ -784,13 +804,15 @@ function SectionEditor({
   statusLabel,
   updateSection,
 }: {
+  canDisable: boolean;
+  disableLockReason?: string;
   errors: SectionErrors;
   isFirst: boolean;
   isLast: boolean;
   isSelected: boolean;
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
   onSelect: (sectionKey: string) => void;
-  requirement: SectionRequirement;
+  requirement: SectionBlueprintRequirement;
   section: SectionDraft;
   statusLabel: string;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
@@ -865,8 +887,12 @@ function SectionEditor({
               aria-label={`Enable ${definition.label}`}
               checked={section.enabled}
               className="mt-1 size-4 accent-[var(--accent)]"
+              disabled={section.enabled && !canDisable}
               onChange={(event) => {
                 onSelect(section.sectionKey);
+                if (!event.target.checked && !canDisable) {
+                  return;
+                }
                 updateSection(section.sectionKey, {
                   enabled: event.target.checked,
                 });
@@ -876,7 +902,7 @@ function SectionEditor({
             <span>
               <span className="block font-semibold">Enabled</span>
               <span className="mt-1 block text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
-                Disabled sections are omitted from the saved invite config.
+                {disableLockReason ?? "Disabled sections are omitted from the saved invite config."}
               </span>
             </span>
           </label>
@@ -1463,10 +1489,19 @@ function Badge({
   );
 }
 
-function createSectionPreviewModels(sections: SectionDraft[], theme: Theme): SectionPreviewModel[] {
+function createSectionPreviewModels(
+  sections: SectionDraft[],
+  theme: Theme,
+  event: Event,
+): SectionPreviewModel[] {
   return sections.map((section) => {
     const definition = getSectionDefinition(section.sectionType);
-    const requirement = getSectionRequirement(section.sectionType, theme);
+    const requirement = getBlueprintSectionRequirement(event.eventType, section.sectionType);
+    const canDisable = canDisableBlueprintSection({
+      eventStatus: event.status,
+      eventType: event.eventType,
+      sectionType: section.sectionType,
+    });
     const validation = validateSectionDraft(section, section.enabled);
     const visibleInPublic =
       section.enabled &&
@@ -1493,6 +1528,11 @@ function createSectionPreviewModels(sections: SectionDraft[], theme: Theme): Sec
 
     return {
       content: validation.content,
+      canDisable,
+      disableLockReason:
+        section.enabled && !canDisable
+          ? "Required sections stay enabled once the event is no longer a draft."
+          : undefined,
       errors: validation.errors,
       requirement,
       section,
@@ -1552,21 +1592,6 @@ function validateSectionDraft(section: SectionDraft, collectErrors: boolean) {
   };
 }
 
-function getSectionRequirement(sectionType: SectionType, theme: Theme): SectionRequirement {
-  const requiredTypes = readSectionTypes(theme.metadata.requiredSections);
-  const recommendedTypes = readSectionTypes(theme.metadata.recommendedSections);
-
-  if (requiredTypes.includes(sectionType)) {
-    return "required";
-  }
-
-  if (recommendedTypes.includes(sectionType)) {
-    return "recommended";
-  }
-
-  return "optional";
-}
-
 function getNextSuggestedSection(models: SectionPreviewModel[]) {
   return (
     models.find((model) => !model.section.enabled && model.requirement === "required") ??
@@ -1575,7 +1600,7 @@ function getNextSuggestedSection(models: SectionPreviewModel[]) {
   );
 }
 
-function formatRequirement(requirement: SectionRequirement) {
+function formatRequirement(requirement: SectionBlueprintRequirement) {
   return requirement.charAt(0).toUpperCase() + requirement.slice(1);
 }
 
@@ -1756,39 +1781,46 @@ function createSectionDrafts({
   theme: Theme;
 }) {
   const supportedTypes = readSectionTypes(theme.metadata.supportedSections);
-  const rhythmTypes = readSectionTypes(theme.metadata.sectionRhythm);
+  const blueprintTypes = getBlueprintSectionOrder(event.eventType, supportedTypes);
   const existingByType = new Map(
     existingSections
       .filter((section) => supportedTypes.includes(section.sectionType))
       .sort((first, second) => first.sortOrder - second.sortOrder)
       .map((section) => [section.sectionType, section] as const),
   );
-  const orderedTypes = uniqueSectionTypes([
-    ...existingByType.keys(),
-    ...rhythmTypes.filter((type) => supportedTypes.includes(type)),
-    ...supportedTypes,
-  ]);
+  const orderedTypes = uniqueSectionTypes([...existingByType.keys(), ...blueprintTypes]);
 
   return orderedTypes.map((sectionType, index) => {
     const existing = existingByType.get(sectionType);
     const definition = getSectionDefinition(sectionType);
+    const blueprint = getSectionBlueprint(event.eventType, sectionType);
 
     return {
       contentText: formatJsonText(
-        existing?.content ?? defaultContentForSection(sectionType, event),
+        existing?.content ??
+          blueprint?.createDefaultContent(event) ??
+          defaultContentForSection(sectionType, event),
       ),
-      enabled: existing?.enabled ?? false,
+      enabled: existing?.enabled ?? blueprint?.defaultEnabled ?? false,
       id: existing?.id,
-      sectionKey: existing?.sectionKey ?? toSectionKey(sectionType),
+      sectionKey: existing?.sectionKey ?? blueprint?.sectionKey ?? toSectionKey(sectionType),
       sectionType,
-      settingsText: formatJsonText(existing?.settings ?? {}),
+      settingsText: formatJsonText(existing?.settings ?? blueprint?.createDefaultSettings() ?? {}),
       sortOrder: index,
-      visibility: existing?.visibility ?? definition.defaultVisibility,
+      visibility:
+        existing?.visibility ?? blueprint?.defaultVisibility ?? definition.defaultVisibility,
     };
   });
 }
 
-export function parseSectionDrafts(sections: SectionDraft[]):
+export function parseSectionDrafts(
+  sections: SectionDraft[],
+  {
+    event,
+  }: {
+    event: Event;
+  },
+):
   | {
       input: EventSectionsUpdateRequest;
       ok: true;
@@ -1861,6 +1893,24 @@ export function parseSectionDrafts(sections: SectionDraft[]):
       formMessage: "Check the highlighted section fields before saving.",
       ok: false,
       sectionErrors,
+    };
+  }
+
+  const eventTypeIssues = validateEventTypeSections({
+    eventStatus: event.status,
+    eventType: event.eventType,
+    sections: mutations,
+  });
+
+  if (eventTypeIssues.length > 0) {
+    return {
+      formMessage: "Check the highlighted section fields before saving.",
+      ok: false,
+      sectionErrors: {
+        _form: {
+          content: eventTypeIssues.map((issue) => issue.message).join(" "),
+        },
+      },
     };
   }
 
@@ -2046,11 +2096,23 @@ function withoutSectionErrors(errors: SectionErrorMap, sectionKey: string) {
   return nextErrors;
 }
 
-function toSectionFormError(error: unknown) {
+function toSectionFormError(error: unknown): {
+  formMessage: string;
+  sectionErrors: SectionErrorMap;
+} {
   if (error instanceof ApiClientError) {
+    const fieldSummary = error.apiError.error.fields?.map((field) => field.message).join(" ");
+    const sectionErrors: SectionErrorMap = fieldSummary
+      ? {
+          _form: {
+            content: fieldSummary,
+          },
+        }
+      : {};
+
     return {
       formMessage: error.apiError.error.message,
-      sectionErrors: {},
+      sectionErrors,
     };
   }
 

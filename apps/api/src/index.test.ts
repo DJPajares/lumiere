@@ -108,6 +108,7 @@ const baseGuestGroup: GuestGroup = {
 
 const baseThemeState: EventThemeState = {
   eventId,
+  eventStatus: "draft",
   eventType: "launch",
   selectedThemeId: "lumiere-default",
   themeConfig: {},
@@ -1409,6 +1410,121 @@ describe("API app", () => {
         visibility: "public",
       },
     ]);
+  });
+
+  it("rejects published events that are missing required blueprint sections", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { replaceSections, themeSectionStore } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventStatus: "published",
+        eventType: "launch",
+        selectedThemeId: "lumiere-default",
+        themeMode: "light",
+      },
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              title: "Launch Night",
+            },
+            sectionKey: "welcome",
+            sectionType: "introduction",
+            settings: {},
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "missing-required-section-request-id",
+      },
+      method: "PUT",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid event sections",
+        requestId: "missing-required-section-request-id",
+      },
+    });
+    expect(body.error.fields).toEqual(
+      expect.arrayContaining([
+        {
+          message: "Date and Time is required before publishing Launch events",
+          path: ["sections"],
+        },
+        {
+          message: "Details is required before publishing Launch events",
+          path: ["sections"],
+        },
+      ]),
+    );
+    expect(replaceSections).not.toHaveBeenCalled();
+  });
+
+  it("rejects sections unsupported by the event type blueprint", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { replaceSections, themeSectionStore } = createTestThemeSectionStore({
+      themeState: {
+        ...baseThemeState,
+        eventType: "kids_party",
+        selectedThemeId: "kids",
+        themeMode: "light",
+      },
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      themeSectionStore,
+    });
+    const response = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              people: [{ name: "Host" }],
+              title: "Hosts",
+            },
+            sectionKey: "hosts",
+            sectionType: "profile",
+            settings: {},
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "unsupported-event-section-request-id",
+      },
+      method: "PUT",
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body.error.fields).toContainEqual({
+      message: "Profile is not supported for Kids party events",
+      path: ["sections", 0, "sectionType"],
+    });
+    expect(replaceSections).not.toHaveBeenCalled();
   });
 
   it("rejects sections that violate registry schemas", async () => {
@@ -2950,6 +3066,7 @@ function createIntegrationSmokeStores() {
       event && requestedEventId === event.id
         ? {
             eventId: event.id,
+            eventStatus: event.status,
             eventType: event.eventType,
             selectedThemeId: event.selectedThemeId,
             themeConfig: event.themeConfig,
@@ -2995,6 +3112,7 @@ function createIntegrationSmokeStores() {
 
       return {
         eventId: event.id,
+        eventStatus: event.status,
         eventType: event.eventType,
         selectedThemeId: event.selectedThemeId,
         themeConfig: event.themeConfig,

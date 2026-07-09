@@ -1,5 +1,11 @@
 import type { ApiEnv } from "@lumiere/config";
-import { availableThemes, getTheme, isThemeId, validateThemeSections } from "@lumiere/themes";
+import {
+  availableThemes,
+  getTheme,
+  isThemeId,
+  validateEventTypeSections,
+  validateThemeSections,
+} from "@lumiere/themes";
 import {
   byEventAndGuestGroupIdParamsSchema,
   byEventIdParamsSchema,
@@ -511,10 +517,18 @@ export const createRoutes = ({
               path: ["sections", index],
             })),
       );
+      const invalidBlueprintFields = validateEventTypeSections({
+        eventStatus: state.eventStatus,
+        eventType: state.eventType,
+        sections: input.sections,
+      }).map((issue) => ({
+        message: issue.message,
+        path: issue.path,
+      }));
 
-      if (invalidSectionFields.length > 0) {
+      if (invalidSectionFields.length > 0 || invalidBlueprintFields.length > 0) {
         throw new ApiHttpError("VALIDATION_ERROR", "Invalid event sections", {
-          fields: invalidSectionFields,
+          fields: [...invalidSectionFields, ...invalidBlueprintFields],
         });
       }
 

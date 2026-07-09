@@ -5,6 +5,7 @@ import type {
   Event,
   EventSection,
   EventSectionMutation,
+  EventStatus,
   EventThemeUpdate,
   EventType,
   Theme,
@@ -19,6 +20,7 @@ type JsonObject = Event["themeConfig"];
 
 export type EventThemeState = {
   eventId: string;
+  eventStatus: EventStatus;
   eventType: EventType;
   selectedThemeId?: string;
   themeConfig: JsonObject;
@@ -39,6 +41,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
         eventType: events.eventType,
         id: events.id,
         selectedThemeId: events.selectedThemeId,
+        status: events.status,
         themeConfigJson: events.themeConfigJson,
         themeMode: events.themeMode,
       })
@@ -49,6 +52,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
     return event
       ? {
           eventId: event.id,
+          eventStatus: event.status,
           eventType: event.eventType,
           selectedThemeId: event.selectedThemeId ?? undefined,
           themeConfig: event.themeConfigJson as JsonObject,
@@ -111,6 +115,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
         eventType: events.eventType,
         id: events.id,
         selectedThemeId: events.selectedThemeId,
+        status: events.status,
         themeConfigJson: events.themeConfigJson,
         themeMode: events.themeMode,
       });
@@ -118,6 +123,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
     return event
       ? {
           eventId: event.id,
+          eventStatus: event.status,
           eventType: event.eventType,
           selectedThemeId: event.selectedThemeId ?? undefined,
           themeConfig: event.themeConfigJson as JsonObject,

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   availableThemeIds,
+  canDisableBlueprintSection,
+  eventTypeBlueprints,
+  getBlueprintSectionRequirement,
+  getBlueprintSectionsForEventType,
   getThemesForEventType,
   inviteCompositionFamilies,
   inviteMotionRules,
@@ -13,6 +17,7 @@ import {
   themeTemplateSpecIds,
   themeTemplateSpecs,
   validateThemeSection,
+  validateEventTypeSections,
   validateThemeSections,
 } from ".";
 
@@ -94,6 +99,121 @@ describe("theme registry", () => {
     expect(sectionDefinitions.rsvp.rendererKey).toBe("section.rsvp");
     expect(sectionDefinitions.rsvp.requiresGuestContext).toBe(true);
     expect(typeof sectionDefinitions.rsvp.rendererKey).toBe("string");
+  });
+
+  it("defines event-type section blueprints for wedding and birthday defaults", () => {
+    const weddingSections = getBlueprintSectionsForEventType("wedding");
+    const birthdaySections = getBlueprintSectionsForEventType("birthday");
+
+    expect(eventTypeBlueprints.wedding.label).toBe("Wedding");
+    expect(eventTypeBlueprints.other.label).toBe("Generic celebration");
+    expect(weddingSections.map((section) => section.sectionType).slice(0, 4)).toEqual([
+      "introduction",
+      "date",
+      "location",
+      "rsvp",
+    ]);
+    expect(weddingSections.find((section) => section.sectionType === "profile")).toMatchObject({
+      requirement: "recommended",
+      rendererKey: "section.profile",
+      sectionKey: "hosts",
+    });
+    expect(
+      weddingSections.every((section) => section.contentSchema && section.settingsSchema),
+    ).toBe(true);
+    expect(birthdaySections.map((section) => section.sectionType)).toEqual(
+      expect.arrayContaining(["introduction", "date", "details", "gallery", "rsvp"]),
+    );
+    expect(getBlueprintSectionRequirement("birthday", "entourage")).toBe("optional");
+  });
+
+  it("validates required and unsupported sections against event type blueprints", () => {
+    expect(
+      validateEventTypeSections({
+        eventStatus: "published",
+        eventType: "wedding",
+        sections: [
+          {
+            content: {
+              title: "Welcome",
+            },
+            sectionKey: "welcome",
+            sectionType: "introduction",
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }).map((issue) => issue.message),
+    ).toEqual(
+      expect.arrayContaining([
+        "Date and Time is required before publishing Wedding events",
+        "Location is required before publishing Wedding events",
+        "RSVP is required before publishing Wedding events",
+      ]),
+    );
+
+    expect(
+      validateEventTypeSections({
+        eventStatus: "published",
+        eventType: "wedding",
+        sections: [
+          {
+            content: {
+              startsAt: "2026-12-24T18:30:00+08:00",
+              timezone: "Asia/Singapore",
+            },
+            enabled: false,
+            sectionKey: "date",
+            sectionType: "date",
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }).map((issue) => issue.message),
+    ).toContain("Date and Time is required before publishing Wedding events");
+    expect(
+      canDisableBlueprintSection({
+        eventStatus: "draft",
+        eventType: "wedding",
+        sectionType: "date",
+      }),
+    ).toBe(true);
+    expect(
+      canDisableBlueprintSection({
+        eventStatus: "published",
+        eventType: "wedding",
+        sectionType: "date",
+      }),
+    ).toBe(false);
+    expect(
+      canDisableBlueprintSection({
+        eventStatus: "published",
+        eventType: "wedding",
+        sectionType: "custom",
+      }),
+    ).toBe(true);
+
+    expect(
+      validateEventTypeSections({
+        eventStatus: "draft",
+        eventType: "kids_party",
+        sections: [
+          {
+            content: {
+              people: [{ name: "Host" }],
+              title: "Hosts",
+            },
+            sectionKey: "hosts",
+            sectionType: "profile",
+            sortOrder: 0,
+            visibility: "public",
+          },
+        ],
+      }),
+    ).toContainEqual({
+      message: "Profile is not supported for Kids party events",
+      path: ["sections", 0, "sectionType"],
+    });
   });
 
   it("keeps renderer contracts as identifiers instead of executable database content", () => {
