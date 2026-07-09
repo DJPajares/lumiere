@@ -1,12 +1,12 @@
 ---
 id: "t38-dashboard-manager-ux-pass"
-status: "backlog"
+status: "in-progress"
 priority: "high"
 assignee: null
 epic: "frontend"
 dueDate: null
 created: "2026-07-07T00:00:00+08:00"
-modified: "2026-07-09T01:00:26.471Z"
+modified: "2026-07-09T09:09:07+08:00"
 completedAt: null
 labels: ["dashboard", "uiux", "information-architecture", "frontend"]
 order: "a38"
@@ -54,3 +54,4 @@ Use `SKILL.md` dashboard quality bar. Keep decorative event styling mostly in pr
 - 2026-07-07T00:00:00+08:00: Task created.
 - 2026-07-09T08:41:43+08:00: Improved dashboard navigation discoverability after manager feedback. Event list cards now expose direct workspace/theme/content/guest/activity links, and the dashboard sidebar shows event workspace sections when viewing an event route.
 - 2026-07-09T08:47:30+08:00: Fixed invalid API response errors on guest, responses, activity, section, and RSVP payloads by normalizing database timestamp strings to shared API ISO datetimes before client schema parsing.
+- 2026-07-09T09:09:07+08:00: Added deterministic local demo seed data for dashboard and invite validation, including a published event, theme sections, guest groups, RSVP responses, activity, notifications, and ready-to-open URLs.

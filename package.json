@@ -16,6 +16,7 @@
     "test:watch": "turbo test:watch",
     "db:generate": "pnpm --filter @lumiere/db db:generate",
     "db:migrate": "pnpm --filter @lumiere/db db:migrate",
+    "db:seed": "pnpm --filter @lumiere/api exec node --import tsx ../../packages/db/src/seed.ts",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

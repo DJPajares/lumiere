@@ -242,6 +242,33 @@ Run all apps together when the API database is ready:
 pnpm dev
 ```
 
+### Seed Demo Data
+
+After migrations, seed a published demo invite with sections, guest groups, RSVP
+responses, activity, and notifications:
+
+```bash
+pnpm db:seed
+```
+
+The command reads `apps/api/.env` by default, including `DATABASE_URL`,
+`INVITE_TOKEN_SECRET`, `PUBLIC_APP_BASE_URL`, and `DASHBOARD_APP_BASE_URL`.
+It prints ready-to-open dashboard, public invite, and guest invite URLs.
+
+For dashboard access, seed the event against your Supabase auth user. If you
+know your Supabase user id, run:
+
+```bash
+SEED_MANAGER_EMAIL=you@example.com SEED_SUPABASE_USER_ID=your-supabase-user-id pnpm db:seed
+```
+
+If you do not know the id, sign in to the dashboard once so the API mirrors your
+user into the local database, then rerun:
+
+```bash
+SEED_MANAGER_EMAIL=you@example.com pnpm db:seed
+```
+
 ## Common Development Commands
 
 ```bash
@@ -258,6 +285,7 @@ pnpm test
 pnpm test:watch
 pnpm db:generate
 pnpm db:migrate
+pnpm db:seed
 pnpm db:up
 pnpm db:down
 pnpm db:logs
