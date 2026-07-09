@@ -309,6 +309,19 @@ pnpm lint-staged
 - `pnpm format` and `pnpm format:check` use the root Prettier config.
 - `pnpm lint-staged` formats staged files and runs a workspace typecheck for staged TypeScript changes.
 
+### Integration Smoke Tests
+
+The fast MVP smoke path lives in the API Vitest suite and exercises the HTTP routes with injected
+test stores plus mocked Supabase bearer tokens:
+
+```bash
+pnpm --filter @lumiere/api test
+```
+
+This covers the host-to-guest flow without requiring a live database on every local run. For
+database-backed verification, use the disposable PostgreSQL test container documented below and run
+the same API test command after migrations are applied.
+
 ### Database Commands
 
 Drizzle schema and migrations live in `packages/db`. Commands read `DATABASE_URL`, falling back to `postgresql://postgres:postgres@localhost:5432/lumiere` for local development.

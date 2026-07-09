@@ -12,7 +12,18 @@ import type {
   Notification,
   RsvpResponse,
 } from "@lumiere/types";
-import { eventResponseSchema } from "@lumiere/types";
+import {
+  apiErrorSchema,
+  eventCreateResponseSchema,
+  eventResponseSchema,
+  eventSectionsResponseSchema,
+  eventSummaryResponseSchema,
+  eventThemeResponseSchema,
+  guestGroupInviteResponseSchema,
+  publicEventResponseSchema,
+  publicGuestInviteResponseSchema,
+  rsvpSubmissionResponseSchema,
+} from "@lumiere/types";
 import { createHmac, generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -2011,6 +2022,329 @@ describe("API app", () => {
     });
     expect(response.status).toBe(422);
   });
+
+  it("smokes the MVP host-to-guest RSVP workflow across API contracts", async () => {
+    const smoke = createIntegrationSmokeStores();
+    const app = createApp({
+      authStore: smoke.authStore,
+      config: loadTestConfig(),
+      dashboardDataStore: smoke.dashboardDataStore,
+      eventStore: smoke.eventStore,
+      guestGroupStore: smoke.guestGroupStore,
+      publicInviteStore: smoke.publicInviteStore,
+      rsvpStore: smoke.rsvpStore,
+      themeSectionStore: smoke.themeSectionStore,
+    });
+    const managerHeaders = {
+      authorization: `Bearer ${createSupabaseToken()}`,
+      "content-type": "application/json",
+    };
+
+    const createEventResponse = await app.request("/events", {
+      body: JSON.stringify({
+        eventType: "wedding",
+        publicSettings: {},
+        rsvpSettings: {
+          enabled: true,
+        },
+        slug: "smoke-wedding",
+        startsAt: "2031-02-14T10:30:00.000Z",
+        timezone: "Asia/Singapore",
+        title: "Smoke Wedding",
+        venueAddress: "18 Marina Gardens Drive, Singapore",
+        venueName: "Emerald Gardens",
+      }),
+      headers: managerHeaders,
+      method: "POST",
+    });
+    const createdEvent = eventCreateResponseSchema.parse(await createEventResponse.json()).event;
+
+    expect(createEventResponse.status).toBe(201);
+    expect(createdEvent).toMatchObject({
+      eventType: "wedding",
+      id: eventId,
+      slug: "smoke-wedding",
+      status: "draft",
+      title: "Smoke Wedding",
+    });
+
+    const publishResponse = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        status: "published",
+      }),
+      headers: managerHeaders,
+      method: "PATCH",
+    });
+    const publishedEvent = eventResponseSchema.parse(await publishResponse.json()).event;
+
+    expect(publishResponse.status).toBe(200);
+    expect(publishedEvent.status).toBe("published");
+
+    const themeResponse = await app.request(`/events/${eventId}/theme`, {
+      body: JSON.stringify({
+        selectedThemeId: "premium",
+        themeConfig: {
+          entrance: "garden",
+        },
+        themeMode: "light",
+      }),
+      headers: managerHeaders,
+      method: "PUT",
+    });
+    const themeBody = eventThemeResponseSchema.parse(await themeResponse.json());
+
+    expect(themeResponse.status).toBe(200);
+    expect(themeBody.selectedThemeId).toBe("premium");
+    expect(themeBody.theme?.metadata).toMatchObject({
+      composition: expect.objectContaining({
+        rsvpDesign: "premium",
+      }),
+      rsvpTreatment: expect.any(String),
+    });
+
+    const sectionsResponse = await app.request(`/events/${eventId}/sections`, {
+      body: JSON.stringify({
+        sections: [
+          {
+            content: {
+              eyebrow: "Wedding invitation",
+              subtitle: "A garden celebration with dinner and dancing.",
+              title: "Amara and Jules",
+            },
+            sectionKey: "welcome",
+            sectionType: "introduction",
+            settings: {
+              density: "spacious",
+            },
+            sortOrder: 0,
+            visibility: "public",
+          },
+          {
+            content: {
+              displayText: "Saturday, 14 February 2031 at 6:30 PM",
+              startsAt: "2031-02-14T10:30:00.000Z",
+              timezone: "Asia/Singapore",
+              title: "When",
+            },
+            sectionKey: "date",
+            sectionType: "date",
+            settings: {},
+            sortOrder: 1,
+            visibility: "public",
+          },
+          {
+            content: {
+              address: "18 Marina Gardens Drive, Singapore",
+              notes: "Please use the Garden East entrance.",
+              venueName: "Emerald Gardens",
+            },
+            sectionKey: "venue",
+            sectionType: "location",
+            settings: {},
+            sortOrder: 2,
+            visibility: "public",
+          },
+          {
+            content: {
+              questions: [
+                {
+                  key: "meal-choice",
+                  label: "Meal choice",
+                  options: ["Classic", "Vegetarian"],
+                  required: true,
+                  type: "single_choice",
+                },
+              ],
+              title: "Your reply",
+            },
+            sectionKey: "rsvp",
+            sectionType: "rsvp",
+            settings: {
+              requireGuestToken: true,
+            },
+            sortOrder: 3,
+            visibility: "guest_only",
+          },
+        ],
+      }),
+      headers: managerHeaders,
+      method: "PUT",
+    });
+    const sectionsBody = eventSectionsResponseSchema.parse(await sectionsResponse.json());
+
+    expect(sectionsResponse.status).toBe(200);
+    expect(sectionsBody.sections.map((section) => section.sectionType)).toEqual([
+      "introduction",
+      "date",
+      "location",
+      "rsvp",
+    ]);
+
+    const guestGroupResponse = await app.request(`/events/${eventId}/guest-groups`, {
+      body: JSON.stringify({
+        contactEmail: "mina@example.com",
+        contactName: "Mina Tan",
+        label: "Tan Family",
+        maxPax: 4,
+      }),
+      headers: managerHeaders,
+      method: "POST",
+    });
+    const guestGroupBody = guestGroupInviteResponseSchema.parse(await guestGroupResponse.json());
+    const guestToken = extractGuestToken(guestGroupBody.inviteLink);
+
+    expect(guestGroupResponse.status).toBe(201);
+    expect(guestGroupBody.guestGroup).toMatchObject({
+      eventId,
+      label: "Tan Family",
+      maxPax: 4,
+      status: "pending",
+    });
+    expect(guestToken.length).toBeGreaterThanOrEqual(32);
+    expect(JSON.stringify(guestGroupBody.guestGroup)).not.toContain(guestToken);
+
+    const publicEventResponse = await app.request("/public/events/smoke-wedding");
+    const publicEventBody = publicEventResponseSchema.parse(await publicEventResponse.json());
+
+    expect(publicEventResponse.status).toBe(200);
+    expect(publicEventBody.event).toMatchObject({
+      slug: "smoke-wedding",
+      title: "Smoke Wedding",
+    });
+    expect(publicEventBody.selectedThemeId).toBe("premium");
+    expect(publicEventBody.sections.map((section) => section.sectionType)).toEqual([
+      "introduction",
+      "date",
+      "location",
+    ]);
+    expect(JSON.stringify(publicEventBody)).not.toContain("Tan Family");
+    expect(JSON.stringify(publicEventBody)).not.toContain("mina@example.com");
+
+    const guestInviteResponse = await app.request(
+      `/public/events/smoke-wedding/guest/${guestToken}`,
+    );
+    const guestInviteBody = publicGuestInviteResponseSchema.parse(await guestInviteResponse.json());
+
+    expect(guestInviteResponse.status).toBe(200);
+    expect(guestInviteBody.guest).toEqual({
+      guestGroup: {
+        label: "Tan Family",
+        maxPax: 4,
+        status: "pending",
+      },
+      responseStatus: null,
+    });
+    expect(guestInviteBody.sections.map((section) => section.sectionType)).toContain("rsvp");
+    expect(JSON.stringify(guestInviteBody)).not.toContain("mina@example.com");
+    expect(JSON.stringify(guestInviteBody)).not.toContain(guestToken);
+
+    const rsvpResponse = await app.request(
+      `/public/events/smoke-wedding/guest/${guestToken}/rsvp`,
+      {
+        body: JSON.stringify({
+          answers: [
+            {
+              questionKey: "meal-choice",
+              value: "Vegetarian",
+            },
+          ],
+          attendeeCount: 2,
+          guestNames: ["Mina Tan", "Alex Tan"],
+          message: "Excited to celebrate.",
+          responseStatus: "attending",
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+    const rsvpBody = rsvpSubmissionResponseSchema.parse(await rsvpResponse.json());
+
+    expect(rsvpResponse.status).toBe(200);
+    expect(rsvpBody.response).toMatchObject({
+      attendeeCount: 2,
+      eventId,
+      guestGroupId,
+      guestNames: ["Mina Tan", "Alex Tan"],
+      responseStatus: "attending",
+    });
+
+    const summaryResponse = await app.request(`/events/${eventId}/summary`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+    const summaryBody = eventSummaryResponseSchema.parse(await summaryResponse.json());
+
+    expect(summaryResponse.status).toBe(200);
+    expect(summaryBody.summary).toEqual({
+      attending: {
+        groups: 1,
+        pax: 2,
+      },
+      maybe: {
+        groups: 0,
+        pax: 0,
+      },
+      notAttending: {
+        groups: 0,
+        pax: 0,
+      },
+      pending: {
+        groups: 0,
+        pax: 0,
+      },
+      totalGroups: 1,
+      totalInvitedPax: 4,
+      totalRespondedPax: 2,
+    });
+  });
+
+  it("smokes critical integration failure states", async () => {
+    const smoke = createIntegrationSmokeStores();
+    const app = createApp({
+      authStore: smoke.authStore,
+      config: loadTestConfig(),
+      dashboardDataStore: smoke.dashboardDataStore,
+      publicInviteStore: smoke.publicInviteStore,
+    });
+
+    const invalidGuestResponse = await app.request(
+      "/public/events/smoke-wedding/guest/not-a-real-guest-token",
+      {
+        headers: {
+          "x-request-id": "smoke-invalid-guest-token",
+        },
+      },
+    );
+    const invalidGuestBody = apiErrorSchema.parse(await invalidGuestResponse.json());
+
+    expect(invalidGuestResponse.status).toBe(404);
+    expect(invalidGuestBody).toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "Guest invite not found",
+        requestId: "smoke-invalid-guest-token",
+      },
+    });
+
+    const unauthorizedSummaryResponse = await app.request(`/events/${eventId}/summary`, {
+      headers: {
+        "x-request-id": "smoke-unauthorized-dashboard",
+      },
+    });
+    const unauthorizedSummaryBody = apiErrorSchema.parse(await unauthorizedSummaryResponse.json());
+
+    expect(unauthorizedSummaryResponse.status).toBe(401);
+    expect(unauthorizedSummaryBody).toEqual({
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Missing bearer token",
+        requestId: "smoke-unauthorized-dashboard",
+      },
+    });
+  });
 });
 
 function loadTestConfig() {
@@ -2229,6 +2563,474 @@ function createTestRsvpStore({
   return {
     rsvpStore,
     submitGuestRsvp,
+  };
+}
+
+function createIntegrationSmokeStores() {
+  const smokeNow = "2031-01-01T00:00:00.000Z";
+  let event: Event | null = null;
+  let sections: EventSection[] = [];
+  let guestGroupRecord: (GuestGroup & InviteTokenRecord) | null = null;
+  let responseRecord: RsvpResponse | null = null;
+  let activity: ActivityEvent[] = [];
+  let notifications: Notification[] = [];
+
+  const authStore: AuthStore = {
+    findEventAccess: vi.fn(
+      async (requestedEventId: string, userId: string): Promise<EventAccessLookup> => {
+        if (!event || requestedEventId !== event.id) {
+          return {
+            eventFound: false as const,
+          };
+        }
+
+        return {
+          access:
+            userId === localUser.id
+              ? {
+                  eventId: event.id,
+                  role: "owner" as const,
+                  userId,
+                }
+              : null,
+          eventFound: true as const,
+        };
+      },
+    ),
+    upsertUserProfile: vi.fn(async (input) => ({
+      ...localUser,
+      displayName: input.displayName,
+      email: input.email,
+      supabaseUserId: input.supabaseUserId,
+    })),
+  };
+
+  const eventStore: EventStore = {
+    archiveEvent: vi.fn(async (requestedEventId) => {
+      if (!event || requestedEventId !== event.id) {
+        return null;
+      }
+
+      event = {
+        ...event,
+        status: "archived",
+        updatedAt: smokeNow,
+      };
+
+      return event;
+    }),
+    createEvent: vi.fn(async (ownerUserId, input) => {
+      event = {
+        createdAt: smokeNow,
+        endsAt: input.endsAt,
+        eventType: input.eventType,
+        id: eventId,
+        ownerUserId,
+        publicSettings: input.publicSettings,
+        rsvpSettings: input.rsvpSettings,
+        selectedThemeId: input.selectedThemeId,
+        slug: input.slug,
+        startsAt: input.startsAt,
+        status: "draft",
+        themeConfig: {},
+        themeMode: input.themeMode,
+        timezone: input.timezone,
+        title: input.title,
+        updatedAt: smokeNow,
+        venueAddress: input.venueAddress,
+        venueName: input.venueName,
+      };
+
+      return event;
+    }),
+    getEvent: vi.fn(async (requestedEventId) =>
+      event && requestedEventId === event.id ? event : null,
+    ),
+    listManagedEvents: vi.fn(async (userId) =>
+      event && event.ownerUserId === userId ? [event] : [],
+    ),
+    updateEvent: vi.fn(async (requestedEventId, input) => {
+      if (!event || requestedEventId !== event.id) {
+        return null;
+      }
+
+      event = {
+        ...event,
+        ...input,
+        updatedAt: smokeNow,
+      };
+
+      return event;
+    }),
+  };
+
+  const themeSectionStore: ThemeSectionStore = {
+    getEventTheme: vi.fn(async (requestedEventId) =>
+      event && requestedEventId === event.id
+        ? {
+            eventId: event.id,
+            eventType: event.eventType,
+            selectedThemeId: event.selectedThemeId,
+            themeConfig: event.themeConfig,
+            themeMode: event.themeMode,
+          }
+        : null,
+    ),
+    listSections: vi.fn(async (requestedEventId) =>
+      event && requestedEventId === event.id ? [...sections] : [],
+    ),
+    replaceSections: vi.fn(
+      async (
+        requestedEventId: string,
+        inputSections: Parameters<ThemeSectionStore["replaceSections"]>[1],
+      ) => {
+        if (!event || requestedEventId !== event.id) {
+          return [];
+        }
+
+        sections = inputSections.map((section, index) => ({
+          ...section,
+          createdAt: smokeNow,
+          eventId: eventId,
+          id: smokeSectionId(index),
+          updatedAt: smokeNow,
+        }));
+
+        return [...sections];
+      },
+    ),
+    updateEventTheme: vi.fn(async (requestedEventId, input) => {
+      if (!event || requestedEventId !== event.id) {
+        return null;
+      }
+
+      event = {
+        ...event,
+        selectedThemeId: input.selectedThemeId,
+        themeConfig: input.themeConfig,
+        themeMode: input.themeMode,
+        updatedAt: smokeNow,
+      };
+
+      return {
+        eventId: event.id,
+        eventType: event.eventType,
+        selectedThemeId: event.selectedThemeId,
+        themeConfig: event.themeConfig,
+        themeMode: event.themeMode,
+      };
+    }),
+  };
+
+  const guestGroupStore: GuestGroupStore = {
+    createGuestGroup: vi.fn(async (requestedEventId, input, invite) => {
+      if (!event || requestedEventId !== event.id) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      guestGroupRecord = {
+        contactEmail: input.contactEmail,
+        contactName: input.contactName,
+        createdAt: smokeNow,
+        eventId: event.id,
+        id: guestGroupId,
+        inviteCode: invite.inviteCode,
+        inviteTokenHash: invite.inviteTokenHash,
+        label: input.label,
+        lastOpenedAt: undefined,
+        maxPax: input.maxPax,
+        notes: input.notes,
+        status: input.status ?? "pending",
+        updatedAt: smokeNow,
+      };
+
+      return toSmokeGuestGroup(guestGroupRecord!);
+    }),
+    disableGuestGroup: vi.fn(async (_requestedEventId, requestedGroupId) => {
+      if (!guestGroupRecord || requestedGroupId !== guestGroupRecord.id) {
+        return null;
+      }
+
+      guestGroupRecord = {
+        ...guestGroupRecord,
+        status: "disabled",
+        updatedAt: smokeNow,
+      };
+
+      return toSmokeGuestGroup(guestGroupRecord!);
+    }),
+    listGuestGroups: vi.fn(async (requestedEventId) =>
+      guestGroupRecord && requestedEventId === guestGroupRecord.eventId
+        ? [toSmokeGuestGroup(guestGroupRecord)]
+        : [],
+    ),
+    regenerateInvite: vi.fn(async (_requestedEventId, requestedGroupId, invite) => {
+      if (!guestGroupRecord || requestedGroupId !== guestGroupRecord.id) {
+        return null;
+      }
+
+      guestGroupRecord = {
+        ...guestGroupRecord,
+        inviteCode: invite.inviteCode,
+        inviteTokenHash: invite.inviteTokenHash,
+        status: "pending",
+        updatedAt: smokeNow,
+      };
+
+      return toSmokeGuestGroup(guestGroupRecord!);
+    }),
+    updateGuestGroup: vi.fn(async (_requestedEventId, requestedGroupId, input) => {
+      if (!guestGroupRecord || requestedGroupId !== guestGroupRecord.id) {
+        return null;
+      }
+
+      guestGroupRecord = {
+        ...guestGroupRecord,
+        ...input,
+        updatedAt: smokeNow,
+      };
+
+      return toSmokeGuestGroup(guestGroupRecord!);
+    }),
+  };
+
+  const publicInviteStore: PublicInviteStore = {
+    getPublicEventBySlug: vi.fn(async (eventSlug) => {
+      const publicEvent = toSmokePublicEventRecord(event, sections);
+
+      return publicEvent && publicEvent.event.slug === eventSlug ? publicEvent : null;
+    }),
+    getPublicGuestInvite: vi.fn(async ({ eventSlug, inviteTokenHash }) => {
+      const publicEvent = toSmokePublicEventRecord(event, sections);
+
+      if (!publicEvent || publicEvent.event.slug !== eventSlug || !guestGroupRecord) {
+        return null;
+      }
+
+      if (guestGroupRecord.inviteTokenHash !== inviteTokenHash) {
+        return null;
+      }
+
+      if (guestGroupRecord.status === "disabled") {
+        return "disabled";
+      }
+
+      return {
+        ...publicEvent,
+        guest: {
+          guestGroup: {
+            label: guestGroupRecord.label,
+            maxPax: guestGroupRecord.maxPax,
+            status: guestGroupRecord.status,
+          },
+          responseStatus: responseRecord?.responseStatus ?? null,
+        },
+        sections: sections
+          .filter(
+            (section) =>
+              section.enabled &&
+              (section.visibility === "public" || section.visibility === "guest_only"),
+          )
+          .sort((left, right) => left.sortOrder - right.sortOrder),
+      };
+    }),
+  };
+
+  const rsvpStore: RsvpStore = {
+    submitGuestRsvp: vi.fn(
+      async ({
+        eventSlug,
+        inviteTokenHash,
+        submission,
+      }: Parameters<RsvpStore["submitGuestRsvp"]>[0]): Promise<RsvpSubmissionResult> => {
+        if (
+          !event ||
+          event.status !== "published" ||
+          event.slug !== eventSlug ||
+          !guestGroupRecord
+        ) {
+          return null;
+        }
+
+        if (guestGroupRecord.inviteTokenHash !== inviteTokenHash) {
+          return null;
+        }
+
+        if (guestGroupRecord.status === "disabled") {
+          return "disabled";
+        }
+
+        if (submission.attendeeCount > guestGroupRecord.maxPax) {
+          return {
+            maxPax: guestGroupRecord.maxPax,
+            reason: "max_pax_exceeded" as const,
+          };
+        }
+
+        responseRecord = {
+          answers: submission.answers,
+          attendeeCount: submission.attendeeCount,
+          eventId: event.id,
+          guestGroupId: guestGroupRecord.id,
+          guestNames: submission.guestNames,
+          id: baseRsvpResponse.id,
+          message: submission.message,
+          responseStatus: submission.responseStatus,
+          submittedAt: smokeNow,
+          updatedAt: smokeNow,
+        };
+        guestGroupRecord = {
+          ...guestGroupRecord,
+          status: "responded",
+          updatedAt: smokeNow,
+        };
+        activity = [
+          {
+            actorId: guestGroupRecord.id,
+            actorType: "guest",
+            activityType: "rsvp_submitted",
+            createdAt: smokeNow,
+            eventId: event.id,
+            id: activityEvent.id,
+            metadata: {
+              guestGroupLabel: guestGroupRecord.label,
+            },
+          },
+        ];
+        notifications = [
+          {
+            createdAt: smokeNow,
+            eventId: event.id,
+            id: notification.id,
+            message: `${guestGroupRecord.label} submitted an RSVP for ${event.title}.`,
+            metadata: {
+              guestGroupId: guestGroupRecord.id,
+            },
+            notificationType: "rsvp_submitted",
+            readAt: undefined,
+            title: "RSVP submitted",
+            userId: localUser.id,
+          },
+        ];
+
+        return {
+          response: responseRecord,
+          updatedExisting: false,
+        };
+      },
+    ),
+  };
+
+  const dashboardDataStore: DashboardDataStore = {
+    getEventSummary: vi.fn(async () => buildSmokeSummary(guestGroupRecord, responseRecord)),
+    listActivity: vi.fn(async () => activity),
+    listNotifications: vi.fn(async () => notifications),
+  };
+
+  return {
+    authStore,
+    dashboardDataStore,
+    eventStore,
+    guestGroupStore,
+    publicInviteStore,
+    rsvpStore,
+    themeSectionStore,
+  };
+}
+
+function smokeSectionId(index: number) {
+  return `00000000-0000-4000-8000-${String(700 + index).padStart(12, "0")}`;
+}
+
+function toSmokeGuestGroup(record: GuestGroup & InviteTokenRecord): GuestGroup {
+  const { inviteTokenHash: _inviteTokenHash, ...guestGroup } = record;
+
+  return guestGroup;
+}
+
+function toSmokePublicEventRecord(
+  event: Event | null,
+  sections: EventSection[],
+): PublicEventRecord | null {
+  if (!event || event.status !== "published") {
+    return null;
+  }
+
+  return {
+    event: {
+      endsAt: event.endsAt,
+      eventType: event.eventType,
+      id: event.id,
+      publicSettings: event.publicSettings,
+      slug: event.slug,
+      startsAt: event.startsAt,
+      status: event.status,
+      timezone: event.timezone,
+      title: event.title,
+      venueAddress: event.venueAddress,
+      venueName: event.venueName,
+    },
+    selectedThemeId: event.selectedThemeId,
+    sections: sections
+      .filter((section) => section.enabled && section.visibility === "public")
+      .sort((left, right) => left.sortOrder - right.sortOrder),
+    themeConfig: event.themeConfig,
+    themeMode: event.themeMode,
+  };
+}
+
+function buildSmokeSummary(
+  guestGroup: (GuestGroup & InviteTokenRecord) | null,
+  response: RsvpResponse | null,
+): EventSummary {
+  const empty = {
+    groups: 0,
+    pax: 0,
+  };
+
+  if (!guestGroup) {
+    return {
+      attending: empty,
+      maybe: empty,
+      notAttending: empty,
+      pending: empty,
+      totalGroups: 0,
+      totalInvitedPax: 0,
+      totalRespondedPax: 0,
+    };
+  }
+
+  return {
+    attending:
+      response?.responseStatus === "attending"
+        ? {
+            groups: 1,
+            pax: response.attendeeCount,
+          }
+        : empty,
+    maybe:
+      response?.responseStatus === "maybe"
+        ? {
+            groups: 1,
+            pax: response.attendeeCount,
+          }
+        : empty,
+    notAttending:
+      response?.responseStatus === "not_attending"
+        ? {
+            groups: 1,
+            pax: response.attendeeCount,
+          }
+        : empty,
+    pending: response
+      ? empty
+      : {
+          groups: 1,
+          pax: guestGroup.maxPax,
+        },
+    totalGroups: 1,
+    totalInvitedPax: guestGroup.maxPax,
+    totalRespondedPax: response ? response.attendeeCount : 0,
   };
 }
 
