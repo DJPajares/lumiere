@@ -22,11 +22,13 @@ describe("SectionBuilderWorkspace", () => {
 
     expect(screen.getByLabelText("Loading sections")).toBeTruthy();
     expect(await screen.findByText("Configure content for Spring Dinner")).toBeTruthy();
-    expect(screen.getByText("Introduction")).toBeTruthy();
-    expect(screen.getByText("Date and Time")).toBeTruthy();
-    expect(screen.getByText("Story")).toBeTruthy();
-    expect(screen.getByText("Location")).toBeTruthy();
-    expect(screen.getByText("RSVP")).toBeTruthy();
+    expect(screen.getByText("Sections in invite order")).toBeTruthy();
+    expect(screen.getByText("Live preview")).toBeTruthy();
+    expect(screen.getByText("Recommended next section")).toBeTruthy();
+    expect(screen.getByText(/Preview contract:/)).toBeTruthy();
+    ["Introduction", "Date and Time", "Story", "Location", "RSVP"].forEach((label) => {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    });
   });
 
   it("shows validation for enabled sections with missing required fields", async () => {
@@ -41,7 +43,7 @@ describe("SectionBuilderWorkspace", () => {
     expect(
       await screen.findByText("Check the highlighted section fields before saving."),
     ).toBeTruthy();
-    expect(screen.getByText(/paragraphs:/)).toBeTruthy();
+    expect(screen.getAllByText(/paragraphs:/).length).toBeGreaterThan(0);
   });
 
   it("saves enabled sections with visibility and accessible reordering", async () => {
