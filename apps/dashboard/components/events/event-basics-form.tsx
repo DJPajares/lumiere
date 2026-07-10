@@ -10,9 +10,17 @@ import {
   type EventType,
   type EventUpdateRequest,
 } from "@lumiere/types";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 
 import type { DashboardApiClient } from "../../auth/dashboard-auth-provider";
+import {
+  DashboardButton,
+  DashboardDateTimeInput,
+  DashboardNotice,
+  DashboardSelect,
+  DashboardTextArea,
+  DashboardTextInput,
+} from "../ui/dashboard-fields";
 
 export type FieldErrors = Partial<Record<EventFormField, string>>;
 
@@ -112,181 +120,139 @@ export function EventBasicsForm({
         </div>
       ) : null}
 
-      <Field label="Event title" error={formState.fieldErrors.title} htmlFor={`${formId}-title`}>
-        <input
-          aria-invalid={Boolean(formState.fieldErrors.title)}
-          className={inputClassName}
-          disabled={disabled}
-          id={`${formId}-title`}
-          name="title"
-          onChange={(event) => onFieldChange("title", event.target.value)}
-          type="text"
-          value={values.title}
-        />
-      </Field>
+      <DashboardTextInput
+        disabled={disabled}
+        error={formState.fieldErrors.title}
+        id={`${formId}-title`}
+        label="Event title"
+        name="title"
+        onChange={(event) => onFieldChange("title", event.target.value)}
+        required
+        type="text"
+        value={values.title}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Event type"
+        <DashboardSelect
+          disabled={disabled}
           error={formState.fieldErrors.eventType}
-          htmlFor={`${formId}-event-type`}
+          id={`${formId}-event-type`}
+          label="Event type"
+          name="eventType"
+          onChange={(event) => onFieldChange("eventType", event.target.value)}
+          value={values.eventType}
         >
-          <select
-            aria-invalid={Boolean(formState.fieldErrors.eventType)}
-            className={inputClassName}
-            disabled={disabled}
-            id={`${formId}-event-type`}
-            name="eventType"
-            onChange={(event) => onFieldChange("eventType", event.target.value)}
-            value={values.eventType}
-          >
-            {eventTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+          {eventTypes.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </DashboardSelect>
 
         {mode === "edit" ? (
-          <Field
-            label="Publish status"
+          <DashboardSelect
+            description={eventStatuses.find((status) => status.value === values.status)?.help}
+            disabled={disabled}
             error={formState.fieldErrors.status}
-            htmlFor={`${formId}-status`}
+            id={`${formId}-status`}
+            label="Publish status"
+            name="status"
+            onChange={(event) => onFieldChange("status", event.target.value)}
+            value={values.status}
           >
-            <select
-              aria-invalid={Boolean(formState.fieldErrors.status)}
-              className={inputClassName}
-              disabled={disabled}
-              id={`${formId}-status`}
-              name="status"
-              onChange={(event) => onFieldChange("status", event.target.value)}
-              value={values.status}
-            >
-              {eventStatuses.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-              {eventStatuses.find((status) => status.value === values.status)?.help}
-            </p>
-          </Field>
+            {eventStatuses.map((status) => (
+              <option key={status.value} value={status.value}>
+                {status.label}
+              </option>
+            ))}
+          </DashboardSelect>
         ) : null}
       </div>
 
-      <Field label="URL slug" error={formState.fieldErrors.slug} htmlFor={`${formId}-slug`}>
-        <input
-          aria-invalid={Boolean(formState.fieldErrors.slug)}
-          className={inputClassName}
-          disabled={disabled}
-          id={`${formId}-slug`}
-          name="slug"
-          onChange={(event) => onFieldChange("slug", toSlug(event.target.value))}
-          type="text"
-          value={values.slug}
-        />
-      </Field>
+      <DashboardTextInput
+        description="Lowercase letters, numbers, and hyphens only."
+        disabled={disabled}
+        error={formState.fieldErrors.slug}
+        id={`${formId}-slug`}
+        label="URL slug"
+        name="slug"
+        onChange={(event) => onFieldChange("slug", toSlug(event.target.value))}
+        required
+        type="text"
+        value={values.slug}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Starts"
+        <DashboardDateTimeInput
+          disabled={disabled}
           error={formState.fieldErrors.startsAt}
-          htmlFor={`${formId}-starts-at`}
-        >
-          <input
-            aria-invalid={Boolean(formState.fieldErrors.startsAt)}
-            className={inputClassName}
-            disabled={disabled}
-            id={`${formId}-starts-at`}
-            name="startsAt"
-            onChange={(event) => onFieldChange("startsAt", event.target.value)}
-            type="datetime-local"
-            value={values.startsAt}
-          />
-        </Field>
-        <Field
-          label="Ends optional"
+          id={`${formId}-starts-at`}
+          label="Starts"
+          name="startsAt"
+          onChange={(event) => onFieldChange("startsAt", event.target.value)}
+          required
+          timezone={values.timezone || getBrowserTimezone()}
+          value={values.startsAt}
+        />
+        <DashboardDateTimeInput
+          description="Leave blank if the event has no set end time."
+          disabled={disabled}
           error={formState.fieldErrors.endsAt}
-          htmlFor={`${formId}-ends-at`}
-        >
-          <input
-            aria-invalid={Boolean(formState.fieldErrors.endsAt)}
-            className={inputClassName}
-            disabled={disabled}
-            id={`${formId}-ends-at`}
-            name="endsAt"
-            onChange={(event) => onFieldChange("endsAt", event.target.value)}
-            type="datetime-local"
-            value={values.endsAt}
-          />
-        </Field>
+          id={`${formId}-ends-at`}
+          label="Ends optional"
+          name="endsAt"
+          onChange={(event) => onFieldChange("endsAt", event.target.value)}
+          timezone={values.timezone || getBrowserTimezone()}
+          value={values.endsAt}
+        />
       </div>
 
-      <Field label="Timezone" error={formState.fieldErrors.timezone} htmlFor={`${formId}-timezone`}>
-        <input
-          aria-invalid={Boolean(formState.fieldErrors.timezone)}
-          className={inputClassName}
-          disabled={disabled}
-          id={`${formId}-timezone`}
-          name="timezone"
-          onChange={(event) => onFieldChange("timezone", event.target.value)}
-          type="text"
-          value={values.timezone}
-        />
-      </Field>
+      <DashboardTextInput
+        description="Use an IANA timezone such as Asia/Singapore."
+        disabled={disabled}
+        error={formState.fieldErrors.timezone}
+        id={`${formId}-timezone`}
+        label="Timezone"
+        name="timezone"
+        onChange={(event) => onFieldChange("timezone", event.target.value)}
+        required
+        type="text"
+        value={values.timezone}
+      />
 
-      <Field
-        label="Venue name"
+      <DashboardTextInput
+        disabled={disabled}
         error={formState.fieldErrors.venueName}
-        htmlFor={`${formId}-venue-name`}
-      >
-        <input
-          aria-invalid={Boolean(formState.fieldErrors.venueName)}
-          className={inputClassName}
-          disabled={disabled}
-          id={`${formId}-venue-name`}
-          name="venueName"
-          onChange={(event) => onFieldChange("venueName", event.target.value)}
-          type="text"
-          value={values.venueName}
-        />
-      </Field>
+        id={`${formId}-venue-name`}
+        label="Venue name"
+        name="venueName"
+        onChange={(event) => onFieldChange("venueName", event.target.value)}
+        type="text"
+        value={values.venueName}
+      />
 
-      <Field
-        label="Venue address"
+      <DashboardTextArea
+        disabled={disabled}
         error={formState.fieldErrors.venueAddress}
-        htmlFor={`${formId}-venue-address`}
-      >
-        <textarea
-          aria-invalid={Boolean(formState.fieldErrors.venueAddress)}
-          className={`${inputClassName} min-h-24 resize-y`}
-          disabled={disabled}
-          id={`${formId}-venue-address`}
-          name="venueAddress"
-          onChange={(event) => onFieldChange("venueAddress", event.target.value)}
-          value={values.venueAddress}
-        />
-      </Field>
+        id={`${formId}-venue-address`}
+        label="Venue address"
+        name="venueAddress"
+        onChange={(event) => onFieldChange("venueAddress", event.target.value)}
+        value={values.venueAddress}
+      />
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <button
-          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        <DashboardButton
           disabled={disabled || (mode === "edit" && !dirty)}
+          variant="primary"
           type="submit"
         >
           {isSaving ? "Saving..." : submitLabel}
-        </button>
+        </DashboardButton>
         {onCancel ? (
-          <button
-            className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={disabled || !dirty}
-            onClick={onCancel}
-            type="button"
-          >
+          <DashboardButton disabled={disabled || !dirty} onClick={onCancel}>
             Cancel changes
-          </button>
+          </DashboardButton>
         ) : null}
       </div>
     </form>
@@ -518,54 +484,14 @@ function FormMessage({
   statusMessage?: string | null;
 }) {
   if (formError) {
-    return (
-      <p
-        className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]"
-        role="alert"
-      >
-        {formError}
-      </p>
-    );
+    return <DashboardNotice tone="error">{formError}</DashboardNotice>;
   }
 
   if (statusMessage) {
-    return (
-      <p
-        className="rounded-[var(--radius-md)] border border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--success)]"
-        role="status"
-      >
-        {statusMessage}
-      </p>
-    );
+    return <DashboardNotice tone="success">{statusMessage}</DashboardNotice>;
   }
 
   return null;
-}
-
-function Field({
-  children,
-  error,
-  htmlFor,
-  label,
-}: {
-  children: ReactNode;
-  error?: string;
-  htmlFor: string;
-  label: string;
-}) {
-  return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-      {error ? (
-        <p className="text-sm text-[var(--error)]" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
 }
 
 function readEventValuesFromFormData(formData: FormData): EventBasicsFormValues {
@@ -677,6 +603,3 @@ function toDateTimeLocalValue(value?: string) {
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
-
-const inputClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--foreground)_42%,transparent)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60";

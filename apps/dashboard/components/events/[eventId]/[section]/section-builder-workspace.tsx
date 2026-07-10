@@ -38,6 +38,14 @@ import {
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
+import {
+  DashboardCheckbox,
+  DashboardDateTimeInput,
+  DashboardSelect,
+  DashboardTextArea,
+  DashboardTextInput,
+  dashboardButtonClassName,
+} from "../../../ui/dashboard-fields";
 
 type JsonObject = Record<string, JsonValue>;
 
@@ -1016,40 +1024,36 @@ function SectionEditor({
             </div>
           </div>
 
-          <label className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-4 text-sm hover:bg-[var(--surface-muted)]">
-            <input
-              aria-label={`Enable ${definition.label}`}
-              checked={section.enabled}
-              className="mt-1 size-4 accent-[var(--accent)]"
-              disabled={section.enabled && !canDisable}
-              onChange={(event) => {
-                if (!event.target.checked && !canDisable) {
-                  return;
-                }
-                updateSection(section.sectionKey, {
-                  enabled: event.target.checked,
-                });
-              }}
-              type="checkbox"
-            />
-            <span>
-              <span className="block font-semibold">Enabled</span>
-              <span className="mt-1 block text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
-                {disableLockReason ?? "Disabled sections are omitted from the saved invite config."}
-              </span>
-            </span>
-          </label>
+          <DashboardCheckbox
+            aria-label={`Enable ${definition.label}`}
+            checked={section.enabled}
+            description={
+              disableLockReason ?? "Disabled sections are omitted from the saved invite config."
+            }
+            disabled={section.enabled && !canDisable}
+            id={`${section.sectionKey}-enabled`}
+            label="Enabled"
+            onChange={(event) => {
+              if (!event.target.checked && !canDisable) {
+                return;
+              }
+              updateSection(section.sectionKey, {
+                enabled: event.target.checked,
+              });
+            }}
+          />
 
-          <div className="grid gap-2 lg:col-span-2">
-            <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-visibility`}>
-              Visibility
-            </label>
-            <select
+          <div className="lg:col-span-2">
+            <DashboardSelect
               aria-label={`${definition.label} visibility`}
-              aria-invalid={hasVisibilityError}
-              className={inputClassName}
               disabled={!section.enabled}
+              error={
+                hasVisibilityError
+                  ? `Visibility for ${definition.label}: ${errors.visibility}`
+                  : undefined
+              }
               id={`${section.sectionKey}-visibility`}
+              label="Visibility"
               onChange={(event) =>
                 updateSection(section.sectionKey, {
                   visibility: event.target.value as SectionVisibility,
@@ -1062,12 +1066,7 @@ function SectionEditor({
                   {option.label}
                 </option>
               ))}
-            </select>
-            {errors.visibility ? (
-              <p className="text-sm text-[var(--error)]" role="alert">
-                Visibility for {definition.label}: {errors.visibility}
-              </p>
-            ) : null}
+            </DashboardSelect>
           </div>
         </div>
 
@@ -1856,40 +1855,31 @@ function TextField({
       ? controller.updateContentValue(path, nextValue)
       : controller.updateSettingsValue(path, nextValue);
 
+  if (multiline) {
+    return (
+      <DashboardTextArea
+        disabled={controller.disabled}
+        error={error}
+        id={id}
+        label={label}
+        onChange={(event) => update(event.target.value)}
+        required={required}
+        value={value}
+      />
+    );
+  }
+
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-        {required ? <span className="text-[var(--error)]"> *</span> : null}
-      </label>
-      {multiline ? (
-        <textarea
-          aria-describedby={error ? `${id}-error` : undefined}
-          aria-invalid={Boolean(error)}
-          className={`${inputClassName} min-h-24 resize-y`}
-          disabled={controller.disabled}
-          id={id}
-          onChange={(event) => update(event.target.value)}
-          value={value}
-        />
-      ) : (
-        <input
-          aria-describedby={error ? `${id}-error` : undefined}
-          aria-invalid={Boolean(error)}
-          className={inputClassName}
-          disabled={controller.disabled}
-          id={id}
-          onChange={(event) => update(event.target.value)}
-          type={type}
-          value={type === "color" && !value ? "#000000" : value}
-        />
-      )}
-      {error ? (
-        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <DashboardTextInput
+      disabled={controller.disabled}
+      error={error}
+      id={id}
+      label={label}
+      onChange={(event) => update(event.target.value)}
+      required={required}
+      type={type}
+      value={type === "color" && !value ? "#000000" : value}
+    />
   );
 }
 
@@ -1909,29 +1899,18 @@ function DateTimeField({
   const error = controller.fieldError("content", path);
 
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-        {required ? <span className="text-[var(--error)]"> *</span> : null}
-      </label>
-      <input
-        aria-describedby={error ? `${id}-error` : undefined}
-        aria-invalid={Boolean(error)}
-        className={inputClassName}
-        disabled={controller.disabled}
-        id={id}
-        onChange={(event) =>
-          controller.updateContentValue(path, dateTimeLocalToIso(event.target.value))
-        }
-        type="datetime-local"
-        value={value}
-      />
-      {error ? (
-        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <DashboardDateTimeInput
+      disabled={controller.disabled}
+      error={error}
+      id={id}
+      label={label}
+      onChange={(event) =>
+        controller.updateContentValue(path, dateTimeLocalToIso(event.target.value))
+      }
+      required={required}
+      timezone={getJsonString(controller.content, ["timezone"]) || undefined}
+      value={value}
+    />
   );
 }
 
@@ -1958,21 +1937,16 @@ function NumberField({
       : controller.updateSettingsValue(path, Number(nextValue));
 
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        className={inputClassName}
-        disabled={controller.disabled}
-        id={id}
-        max={max}
-        min={min}
-        onChange={(event) => update(event.target.value)}
-        type="number"
-        value={value}
-      />
-    </div>
+    <DashboardTextInput
+      disabled={controller.disabled}
+      id={id}
+      label={label}
+      max={max}
+      min={min}
+      onChange={(event) => update(event.target.value)}
+      type="number"
+      value={value}
+    />
   );
 }
 
@@ -1993,28 +1967,23 @@ function SelectField({
   const value = getJsonString(scope === "content" ? controller.content : controller.settings, path);
 
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-      </label>
-      <select
-        className={inputClassName}
-        disabled={controller.disabled}
-        id={id}
-        onChange={(event) =>
-          scope === "content"
-            ? controller.updateContentValue(path, event.target.value)
-            : controller.updateSettingsValue(path, event.target.value)
-        }
-        value={value || options[0]?.value}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <DashboardSelect
+      disabled={controller.disabled}
+      id={id}
+      label={label}
+      onChange={(event) =>
+        scope === "content"
+          ? controller.updateContentValue(path, event.target.value)
+          : controller.updateSettingsValue(path, event.target.value)
+      }
+      value={value || options[0]?.value}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </DashboardSelect>
   );
 }
 
@@ -2036,24 +2005,17 @@ function CheckboxField({
   );
 
   return (
-    <label
-      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-      htmlFor={id}
-    >
-      <input
-        checked={value}
-        className="size-4 accent-[var(--accent)]"
-        disabled={controller.disabled}
-        id={id}
-        onChange={(event) =>
-          scope === "content"
-            ? controller.updateContentValue(path, event.target.checked)
-            : controller.updateSettingsValue(path, event.target.checked)
-        }
-        type="checkbox"
-      />
-      <span className="font-semibold">{label}</span>
-    </label>
+    <DashboardCheckbox
+      checked={value}
+      disabled={controller.disabled}
+      id={id}
+      label={label}
+      onChange={(event) =>
+        scope === "content"
+          ? controller.updateContentValue(path, event.target.checked)
+          : controller.updateSettingsValue(path, event.target.checked)
+      }
+    />
   );
 }
 
@@ -2073,34 +2035,24 @@ function CommaListField({
   const error = controller.fieldError("content", path);
 
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-        {required ? <span className="text-[var(--error)]"> *</span> : null}
-      </label>
-      <input
-        aria-describedby={error ? `${id}-error` : undefined}
-        aria-invalid={Boolean(error)}
-        className={inputClassName}
-        disabled={controller.disabled}
-        id={id}
-        onChange={(event) =>
-          controller.updateContentValue(
-            path,
-            event.target.value
-              .split(",")
-              .map((item) => item.trim())
-              .filter(Boolean),
-          )
-        }
-        value={values.join(", ")}
-      />
-      {error ? (
-        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <DashboardTextInput
+      description="Separate values with commas."
+      disabled={controller.disabled}
+      error={error}
+      id={id}
+      label={label}
+      onChange={(event) =>
+        controller.updateContentValue(
+          path,
+          event.target.value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        )
+      }
+      required={required}
+      value={values.join(", ")}
+    />
   );
 }
 
@@ -2194,26 +2146,15 @@ function AssetTextField({
   const error = controller.fieldError("content", path);
 
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-semibold" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        aria-describedby={error ? `${id}-error` : undefined}
-        aria-invalid={Boolean(error)}
-        className={inputClassName}
-        disabled={controller.disabled}
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
-        type={type}
-        value={value}
-      />
-      {error ? (
-        <p className="text-sm text-[var(--error)]" id={`${id}-error`} role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <DashboardTextInput
+      disabled={controller.disabled}
+      error={error}
+      id={id}
+      label={label}
+      onChange={(event) => onChange(event.target.value)}
+      type={type}
+      value={value}
+    />
   );
 }
 
@@ -2323,9 +2264,6 @@ function DeveloperJsonEditor({
   section: SectionDraft;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
 }) {
-  const hasContentError = Boolean(errors.content);
-  const hasSettingsError = Boolean(errors.settings);
-
   return (
     <details className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-3">
       <summary className="cursor-pointer text-sm font-semibold">
@@ -2335,65 +2273,37 @@ function DeveloperJsonEditor({
         </span>
       </summary>
       <div className="mt-3 grid gap-4">
-        <div className="grid gap-2">
-          <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-content`}>
-            Content JSON
-          </label>
-          <textarea
-            aria-describedby={hasContentError ? `${section.sectionKey}-content-error` : undefined}
-            aria-label={`${getSectionDefinition(section.sectionType).label} content JSON`}
-            aria-invalid={hasContentError}
-            className={`${inputClassName} min-h-44 resize-y font-mono`}
-            disabled={disabled}
-            id={`${section.sectionKey}-content`}
-            onChange={(event) =>
-              updateSection(section.sectionKey, {
-                contentText: event.target.value,
-              })
-            }
-            spellCheck={false}
-            value={section.contentText}
-          />
-          {errors.content ? (
-            <p
-              className="text-sm text-[var(--error)]"
-              id={`${section.sectionKey}-content-error`}
-              role="alert"
-            >
-              Content JSON: {errors.content}
-            </p>
-          ) : null}
-        </div>
+        <DashboardTextArea
+          aria-label={`${getSectionDefinition(section.sectionType).label} content JSON`}
+          disabled={disabled}
+          error={errors.content ? `Content JSON: ${errors.content}` : undefined}
+          id={`${section.sectionKey}-content`}
+          label="Content JSON"
+          onChange={(event) =>
+            updateSection(section.sectionKey, {
+              contentText: event.target.value,
+            })
+          }
+          spellCheck={false}
+          textAreaClassName="min-h-44 font-mono"
+          value={section.contentText}
+        />
 
-        <div className="grid gap-2">
-          <label className="text-sm font-semibold" htmlFor={`${section.sectionKey}-settings`}>
-            Settings JSON
-          </label>
-          <textarea
-            aria-describedby={hasSettingsError ? `${section.sectionKey}-settings-error` : undefined}
-            aria-label={`${getSectionDefinition(section.sectionType).label} settings JSON`}
-            aria-invalid={hasSettingsError}
-            className={`${inputClassName} min-h-24 resize-y font-mono`}
-            disabled={disabled}
-            id={`${section.sectionKey}-settings`}
-            onChange={(event) =>
-              updateSection(section.sectionKey, {
-                settingsText: event.target.value,
-              })
-            }
-            spellCheck={false}
-            value={section.settingsText}
-          />
-          {errors.settings ? (
-            <p
-              className="text-sm text-[var(--error)]"
-              id={`${section.sectionKey}-settings-error`}
-              role="alert"
-            >
-              Settings JSON: {errors.settings}
-            </p>
-          ) : null}
-        </div>
+        <DashboardTextArea
+          aria-label={`${getSectionDefinition(section.sectionType).label} settings JSON`}
+          disabled={disabled}
+          error={errors.settings ? `Settings JSON: ${errors.settings}` : undefined}
+          id={`${section.sectionKey}-settings`}
+          label="Settings JSON"
+          onChange={(event) =>
+            updateSection(section.sectionKey, {
+              settingsText: event.target.value,
+            })
+          }
+          spellCheck={false}
+          textAreaClassName="min-h-24 font-mono"
+          value={section.settingsText}
+        />
       </div>
     </details>
   );
@@ -3771,8 +3681,4 @@ function toFriendlyApiMessage(error: unknown) {
   return "Unable to complete the dashboard request.";
 }
 
-const inputClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60";
-
-const secondaryButtonClassName =
-  "inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButtonClassName = dashboardButtonClassName;
