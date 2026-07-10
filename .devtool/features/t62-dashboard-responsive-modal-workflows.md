@@ -27,7 +27,7 @@ Use shadcn Base UI-backed Dialog on desktop/tablet and the project responsive Dr
 ## Suggested Agent
 
 - Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Reasoning level: `high`
 
 ## Acceptance
 

@@ -27,7 +27,7 @@ Implement the identifier strategy decided in the earlier policy task. Keep the d
 ## Suggested Agent
 
 - Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Reasoning level: `high`
 
 ## Acceptance
 

@@ -26,8 +26,8 @@ Add a notification bell immediately left of the right-aligned avatar. Use the av
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Suggested model: `GPT-5.6 Luna (gpt-5.6-luna)`
+- Reasoning level: `medium`
 
 ## Acceptance
 

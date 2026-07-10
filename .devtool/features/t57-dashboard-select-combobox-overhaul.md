@@ -27,7 +27,7 @@ Replace every native or weak custom dashboard dropdown with the shadcn Base UI S
 ## Suggested Agent
 
 - Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Reasoning level: `high`
 
 ## Acceptance
 

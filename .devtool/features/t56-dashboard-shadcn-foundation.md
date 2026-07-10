@@ -26,7 +26,7 @@ Adopt the latest stable shadcn/ui workflow as the dashboard-only component found
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
 - Reasoning level: `xhigh`
 
 ## Acceptance

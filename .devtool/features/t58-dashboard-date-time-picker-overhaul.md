@@ -27,7 +27,7 @@ Replace browser-native-looking date/time fields with polished event-aware picker
 ## Suggested Agent
 
 - Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Reasoning level: `high`
 
 ## Acceptance
 

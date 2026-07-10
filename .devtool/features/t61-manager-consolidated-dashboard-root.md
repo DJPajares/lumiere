@@ -26,7 +26,7 @@ Rebuild the dashboard root as a reliable consolidated manager overview rather th
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
 - Reasoning level: `xhigh`
 
 ## Acceptance

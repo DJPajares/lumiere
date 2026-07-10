@@ -26,8 +26,8 @@ Configure the official shadcn MCP server for both the Claude Code and Codex VS C
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
-- Reasoning level: `xhigh`
+- Suggested model: `GPT-5.6 Luna (gpt-5.6-luna)`
+- Reasoning level: `medium`
 
 ## Acceptance
 

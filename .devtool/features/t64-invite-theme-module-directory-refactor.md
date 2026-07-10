@@ -26,7 +26,7 @@ Replace the cramped `themes.ts` implementation with a scalable directory-per-the
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
 - Reasoning level: `xhigh`
 
 ## Acceptance

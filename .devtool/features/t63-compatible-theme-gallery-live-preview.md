@@ -26,7 +26,7 @@ Redesign theme selection so managers see compatible themes first and preview rep
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
 - Reasoning level: `xhigh`
 
 ## Acceptance
