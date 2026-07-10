@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-10T18:00:00+08:00'
-modified: '2026-07-10T23:17:14+08:00'
+modified: '2026-07-11T00:20:00+08:00'
 completedAt: '2026-07-10T23:17:14+08:00'
 labels: ['dashboard', 'shadcn', 'base-ui', 'navigation', 'responsive', 'scroll']
 depends_on: ['t42-dashboard-navigation-ia-reset', 't56-dashboard-shadcn-foundation']
@@ -60,3 +60,4 @@ Avoid separate hard-coded menu arrays. Use responsive composition around the sam
 - 2026-07-10T19:15:00+08:00: Scoped shadcn/Base UI to the dashboard only and updated the suggested model to GPT-5.6 Terra with xhigh reasoning.
 - 2026-07-10T23:07:28+08:00: Started the responsive top-navigation overhaul after confirming t42 and t56 are complete; selected one typed route model, Base UI-backed dropdowns and mobile drawer, and thresholded scroll visibility with interaction locks.
 - 2026-07-10T23:17:14+08:00: Completed the single-source responsive navigation with desktop/tablet dropdowns, a focus-restoring mobile drawer, event-aware active and disabled states, and interaction-safe scroll visibility. Verified 23 focused navigation/route tests, targeted Prettier, and `git diff --check`; dashboard typecheck reached only two unrelated in-progress profile-test fixture cast errors owned by the combined t60 integration.
+- 2026-07-11T00:20:00+08:00: Refined desktop/tablet navigation in response to product feedback: direct event links now render as a centered horizontal row rather than dropdowns, while the mobile drawer trigger moved to the far-left edge of the top bar. Verified route and top-navigation coverage plus dashboard typecheck.

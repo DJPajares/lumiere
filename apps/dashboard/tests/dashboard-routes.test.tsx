@@ -122,8 +122,8 @@ describe("dashboard routes", () => {
     expect(html).toContain("Event workspace");
     expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain("Overview for event demo-event");
-    expect(html).toContain('aria-label="Open event workspace navigation"');
-    expect(html).toContain("demo-event · Overview");
+    expect(html).toContain('href="/events/demo-event"');
+    expect(html).toContain(">Overview</a>");
     expect(html).toContain("Loading event overview");
     expect(html).not.toContain("Current context");
   });
@@ -139,8 +139,7 @@ describe("dashboard routes", () => {
 
     expect(html).toContain("Guests setup");
     expect(html).toContain("Guests for event demo-event");
-    expect(html).toContain('aria-label="Open event workspace navigation"');
-    expect(html).toContain("demo-event · Guests");
+    expect(html).toContain('href="/events/demo-event/guests"');
     expect(html).toContain("Guests");
     expect(html).toContain("Loading guest groups");
     expect(html).not.toContain("Current:");
@@ -157,7 +156,7 @@ describe("dashboard routes", () => {
 
     expect(html).toContain("Settings setup");
     expect(html).toContain("Settings for event demo-event");
-    expect(html).toContain("demo-event · Settings");
+    expect(html).toContain('href="/events/demo-event/settings"');
     expect(html).toContain("Loading event settings");
     expect(html).not.toContain("Settings workspace placeholder");
   });

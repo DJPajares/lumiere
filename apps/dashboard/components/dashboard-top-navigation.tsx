@@ -8,12 +8,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
 } from "@lumiere/dashboard-ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -32,8 +26,7 @@ type DashboardTopNavigationProps = {
 export function DashboardTopNavigation({ activePath }: DashboardTopNavigationProps) {
   const navigation = getDashboardNavigation(activePath);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<"manager" | "workspace" | null>(null);
-  const { isVisible, prefersReducedMotion } = useTopBarVisibility(drawerOpen || openMenu !== null);
+  const { isVisible, prefersReducedMotion } = useTopBarVisibility(drawerOpen);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia(DASHBOARD_DESKTOP_QUERY);
@@ -61,6 +54,37 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
       data-top-bar-state={isVisible ? "visible" : "hidden"}
     >
       <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} swipeDirection="left">
+          <DrawerTrigger
+            render={
+              <Button
+                aria-label="Open dashboard navigation"
+                className="md:hidden"
+                data-breakpoint="mobile-only"
+                size="icon-lg"
+                variant="ghost"
+              />
+            }
+          >
+            <MenuIcon />
+          </DrawerTrigger>
+          <DrawerContent className="[--drawer-content-width:min(22rem,calc(100vw-3rem))]">
+            <DrawerHeader className="border-b border-border px-5 pt-5 pb-4 text-left">
+              <DrawerTitle>Dashboard navigation</DrawerTitle>
+              <DrawerDescription>
+                {navigation.context.eventId
+                  ? `Managing event ${navigation.context.eventId}`
+                  : "Choose an event to open its workspace."}
+              </DrawerDescription>
+            </DrawerHeader>
+            <MobileNavigation
+              managerItems={navigation.manager}
+              onNavigate={() => setDrawerOpen(false)}
+              workspaceItems={navigation.workspace}
+            />
+          </DrawerContent>
+        </Drawer>
+
         <Link
           className="shrink-0 rounded-md text-sm font-semibold text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           href="/events"
@@ -70,148 +94,72 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
 
         <nav
           aria-label="Dashboard navigation"
-          className="hidden min-w-0 flex-1 items-center gap-2 md:flex"
+          className="hidden min-w-0 flex-1 overflow-x-auto md:flex md:justify-center"
           data-breakpoint="tablet-desktop"
         >
-          <NavigationDropdown
-            items={navigation.manager}
-            label="Manager"
-            onOpenChange={(open) =>
-              setOpenMenu((current) => (open ? "manager" : current === "manager" ? null : current))
-            }
-            open={openMenu === "manager"}
-          />
-          <NavigationDropdown
-            contextLabel={navigation.context.eventId}
-            items={navigation.workspace}
-            label="Event workspace"
-            onOpenChange={(open) =>
-              setOpenMenu((current) =>
-                open ? "workspace" : current === "workspace" ? null : current,
-              )
-            }
-            open={openMenu === "workspace"}
+          <HorizontalNavigation
+            managerItems={navigation.manager}
+            workspaceItems={navigation.workspace}
           />
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
-          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} swipeDirection="left">
-            <DrawerTrigger
-              render={
-                <Button
-                  aria-label="Open dashboard navigation"
-                  className="md:hidden"
-                  data-breakpoint="mobile-only"
-                  size="icon-lg"
-                  variant="ghost"
-                />
-              }
-            >
-              <MenuIcon />
-            </DrawerTrigger>
-            <DrawerContent className="[--drawer-content-width:min(22rem,calc(100vw-3rem))]">
-              <DrawerHeader className="border-b border-border px-5 pt-5 pb-4 text-left">
-                <DrawerTitle>Dashboard navigation</DrawerTitle>
-                <DrawerDescription>
-                  {navigation.context.eventId
-                    ? `Managing event ${navigation.context.eventId}`
-                    : "Choose an event to open its workspace."}
-                </DrawerDescription>
-              </DrawerHeader>
-              <MobileNavigation
-                managerItems={navigation.manager}
-                onNavigate={() => setDrawerOpen(false)}
-                workspaceItems={navigation.workspace}
-              />
-            </DrawerContent>
-          </Drawer>
-
-          <DashboardTopBarControls eventId={navigation.context.eventId} />
-        </div>
+        <DashboardTopBarControls className="ml-auto md:ml-0" eventId={navigation.context.eventId} />
       </div>
     </header>
   );
 }
 
-function NavigationDropdown({
-  contextLabel,
-  items,
-  label,
-  onOpenChange,
-  open,
+function HorizontalNavigation({
+  managerItems,
+  workspaceItems,
 }: {
-  contextLabel?: string;
-  items: DashboardNavigationItem[];
-  label: string;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
+  managerItems: DashboardNavigationItem[];
+  workspaceItems: DashboardNavigationItem[];
 }) {
-  const activeItem = items.find((item) => item.active);
-  const allDisabled = items.every((item) => item.disabled);
-  const triggerLabel = contextLabel
-    ? `${contextLabel} · ${activeItem?.label ?? "Overview"}`
-    : (activeItem?.label ?? label);
-
-  if (allDisabled) {
-    return (
-      <Button
-        aria-label={`${label} unavailable`}
-        disabled
-        title={items.find((item) => item.disabledReason)?.disabledReason}
-        variant="ghost"
-      >
-        <span className="max-w-44 truncate">Choose an event</span>
-        <ChevronDownIcon />
-      </Button>
-    );
-  }
+  const availableWorkspaceItems = workspaceItems.filter((item) => !item.disabled);
+  const unavailableReason = workspaceItems.find((item) => item.disabled)?.disabledReason;
 
   return (
-    <DropdownMenu open={open} onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger
-        render={
+    <ul className="flex min-w-max items-center justify-center gap-1 px-1">
+      {managerItems.map((item) => (
+        <HorizontalNavigationItem item={item} key={item.id} />
+      ))}
+      <li aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+      {availableWorkspaceItems.length > 0 ? (
+        availableWorkspaceItems.map((item) => (
+          <HorizontalNavigationItem item={item} key={item.id} />
+        ))
+      ) : (
+        <li>
           <Button
-            aria-label={`Open ${label.toLowerCase()} navigation`}
-            className="max-w-64"
+            aria-label="Event workspace unavailable"
+            disabled
+            title={unavailableReason}
             variant="ghost"
-          />
-        }
-      >
-        <span className="truncate">{triggerLabel}</span>
-        <ChevronDownIcon />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-52">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{label}</DropdownMenuLabel>
-          {items.map((item) => (
-            <NavigationDropdownItem item={item} key={item.id} />
-          ))}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          >
+            Choose an event
+          </Button>
+        </li>
+      )}
+    </ul>
   );
 }
 
-function NavigationDropdownItem({ item }: { item: DashboardNavigationItem }) {
-  const className = item.active ? "bg-accent text-accent-foreground" : undefined;
-
+function HorizontalNavigationItem({ item }: { item: DashboardNavigationItem }) {
   if (!item.href) {
-    return (
-      <DropdownMenuItem className={className} disabled title={item.disabledReason}>
-        {item.label}
-      </DropdownMenuItem>
-    );
+    return null;
   }
 
   return (
-    <DropdownMenuItem
-      aria-current={item.active ? "page" : undefined}
-      className={className}
-      render={<Link href={item.href} />}
-    >
-      {item.label}
-      {item.active ? <CurrentIcon /> : null}
-    </DropdownMenuItem>
+    <li>
+      <Link
+        aria-current={item.active ? "page" : undefined}
+        className="inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground"
+        href={item.href}
+      >
+        {item.label}
+      </Link>
+    </li>
   );
 }
 
@@ -298,20 +246,6 @@ function MenuIcon() {
         d="M4 7h16M4 12h16M4 17h16"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <path
-        d="m8 10 4 4 4-4"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         strokeWidth="1.8"
       />
     </svg>

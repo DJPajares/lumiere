@@ -26,18 +26,21 @@ describe("DashboardTopNavigation", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders separate mobile and tablet/desktop compositions from the same routes", () => {
+  it("renders centered horizontal desktop navigation and a leftmost mobile burger", () => {
     render(<DashboardTopNavigation activePath="/events/demo-event/theme" />);
 
-    expect(screen.getByRole("navigation", { name: "Dashboard navigation" }).className).toContain(
-      "md:flex",
+    const desktopNavigation = screen.getByRole("navigation", { name: "Dashboard navigation" });
+    const mobileTrigger = screen.getByRole("button", { name: "Open dashboard navigation" });
+    const brand = screen.getByRole("link", { name: "Lumiere Dashboard" });
+
+    expect(desktopNavigation.className).toContain("md:justify-center");
+    expect(mobileTrigger.className).toContain("md:hidden");
+    expect(mobileTrigger.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(screen.getByRole("button", { name: "Open dashboard navigation" }).className).toContain(
-      "md:hidden",
-    );
-    expect(
-      screen.getByRole("button", { name: "Open event workspace navigation" }).textContent,
-    ).toContain("demo-event · Theme");
+    expect(screen.getByRole("link", { name: "Theme" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Events" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 
   it("opens the mobile drawer, supports Escape, and restores trigger focus", async () => {
@@ -80,22 +83,12 @@ describe("DashboardTopNavigation", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
-  it("opens desktop menus from the keyboard and restores focus on Escape", async () => {
-    const user = userEvent.setup();
+  it("renders direct desktop event links without a dropdown menu", () => {
     render(<DashboardTopNavigation activePath="/events/demo-event/content" />);
-    const trigger = screen.getByRole("button", { name: "Open event workspace navigation" });
 
-    trigger.focus();
-    await user.keyboard("{ArrowDown}");
-
-    expect(await screen.findByRole("menu")).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Content" }).getAttribute("aria-current")).toBe(
-      "page",
-    );
-
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    expect(document.activeElement).toBe(trigger);
+    expect(screen.getByRole("link", { name: "Content" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 
   it("closes an open drawer when the viewport crosses into tablet width", async () => {
