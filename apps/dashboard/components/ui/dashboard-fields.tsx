@@ -1,11 +1,25 @@
 "use client";
 
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@lumiere/dashboard-ui/components/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lumiere/dashboard-ui/components/select";
+import {
   useId,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 
@@ -168,23 +182,45 @@ export function DashboardTextArea({
   );
 }
 
-type DashboardSelectProps = BaseFieldProps &
-  Omit<SelectHTMLAttributes<HTMLSelectElement>, "className" | "id"> & {
-    children: ReactNode;
-    selectClassName?: string;
-  };
+export type DashboardSelectOption = {
+  disabled?: boolean;
+  label: string;
+  value: string;
+};
+
+type DashboardSelectProps = BaseFieldProps & {
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean | "false" | "true";
+  "aria-label"?: string;
+  disabled?: boolean;
+  loading?: boolean;
+  name?: string;
+  onValueChange: (value: string) => void;
+  options: readonly DashboardSelectOption[];
+  placeholder?: string;
+  readOnly?: boolean;
+  selectClassName?: string;
+  value?: string | null;
+};
 
 export function DashboardSelect({
   "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
-  children,
+  "aria-label": ariaLabel,
   description,
+  disabled = false,
   error,
   id,
   label,
+  loading = false,
+  name,
+  onValueChange,
+  options,
+  placeholder = "Select an option",
+  readOnly = false,
   required = false,
   selectClassName,
-  ...selectProps
+  value,
 }: DashboardSelectProps) {
   const inputId = useResolvedId(id);
   const describedBy = describeBy(
@@ -201,16 +237,137 @@ export function DashboardSelect({
       label={label}
       required={required}
     >
-      <select
-        {...selectProps}
-        aria-describedby={describedBy}
-        aria-invalid={error ? true : ariaInvalid}
-        className={cx(dashboardInputClassName, selectClassName)}
-        id={inputId}
+      <Select
+        disabled={disabled || loading}
+        items={options}
+        modal={false}
+        name={name}
+        onValueChange={(nextValue) => {
+          if (nextValue !== null) {
+            onValueChange(nextValue);
+          }
+        }}
+        readOnly={readOnly}
         required={required}
+        value={loading ? null : value}
       >
-        {children}
-      </select>
+        <SelectTrigger
+          aria-busy={loading || undefined}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : ariaInvalid}
+          aria-label={ariaLabel}
+          className={cx("h-11 w-full px-3", selectClassName)}
+          id={inputId}
+        >
+          <SelectValue placeholder={loading ? "Loading options..." : placeholder} />
+        </SelectTrigger>
+        <SelectContent align="start" alignItemWithTrigger={false} sideOffset={6}>
+          {options.map((option) => (
+            <SelectItem disabled={option.disabled} key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </DashboardField>
+  );
+}
+
+type DashboardComboboxProps = BaseFieldProps & {
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean | "false" | "true";
+  "aria-label"?: string;
+  disabled?: boolean;
+  emptyMessage?: string;
+  inputClassName?: string;
+  loading?: boolean;
+  name?: string;
+  onValueChange: (value: string) => void;
+  options: readonly DashboardSelectOption[];
+  placeholder?: string;
+  readOnly?: boolean;
+  value?: string | null;
+};
+
+export function DashboardCombobox({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  "aria-label": ariaLabel,
+  description,
+  disabled = false,
+  emptyMessage = "No matching options.",
+  error,
+  id,
+  inputClassName,
+  label,
+  loading = false,
+  name,
+  onValueChange,
+  options,
+  placeholder = "Search options",
+  readOnly = false,
+  required = false,
+  value,
+}: DashboardComboboxProps) {
+  const inputId = useResolvedId(id);
+  const describedBy = describeBy(
+    ariaDescribedBy,
+    description ? `${inputId}-description` : undefined,
+    error ? `${inputId}-error` : undefined,
+  );
+  const optionValues = options.map((option) => option.value);
+  const labelForValue = (optionValue: string) =>
+    options.find((option) => option.value === optionValue)?.label ?? optionValue;
+
+  return (
+    <DashboardField
+      description={description}
+      error={error}
+      id={inputId}
+      label={label}
+      required={required}
+    >
+      <Combobox
+        disabled={disabled || loading}
+        itemToStringLabel={labelForValue}
+        itemToStringValue={(optionValue) => optionValue}
+        items={loading ? [] : optionValues}
+        name={name}
+        onValueChange={(nextValue) => {
+          if (nextValue !== null) {
+            onValueChange(nextValue);
+          }
+        }}
+        readOnly={readOnly}
+        required={required}
+        value={loading ? null : value}
+      >
+        <ComboboxInput
+          aria-busy={loading || undefined}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : ariaInvalid}
+          aria-label={ariaLabel}
+          className={cx("h-11 w-full", inputClassName)}
+          disabled={disabled || loading}
+          id={inputId}
+          placeholder={loading ? "Loading options..." : placeholder}
+          readOnly={readOnly}
+        />
+        <ComboboxContent>
+          <ComboboxEmpty>{loading ? "Loading options..." : emptyMessage}</ComboboxEmpty>
+          <ComboboxList>
+            {(optionValue: string) => {
+              const option = options.find((candidate) => candidate.value === optionValue);
+
+              return (
+                <ComboboxItem disabled={option?.disabled} key={optionValue} value={optionValue}>
+                  {option?.label ?? optionValue}
+                </ComboboxItem>
+              );
+            }}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
     </DashboardField>
   );
 }

@@ -1054,19 +1054,14 @@ function SectionEditor({
               }
               id={`${section.sectionKey}-visibility`}
               label="Visibility"
-              onChange={(event) =>
+              onValueChange={(value) =>
                 updateSection(section.sectionKey, {
-                  visibility: event.target.value as SectionVisibility,
+                  visibility: value as SectionVisibility,
                 })
               }
+              options={visibilityOptions}
               value={section.visibility}
-            >
-              {visibilityOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </DashboardSelect>
+            />
           </div>
         </div>
 
@@ -1971,19 +1966,14 @@ function SelectField({
       disabled={controller.disabled}
       id={id}
       label={label}
-      onChange={(event) =>
+      onValueChange={(value) =>
         scope === "content"
-          ? controller.updateContentValue(path, event.target.value)
-          : controller.updateSettingsValue(path, event.target.value)
+          ? controller.updateContentValue(path, value)
+          : controller.updateSettingsValue(path, value)
       }
+      options={options}
       value={value || options[0]?.value}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </DashboardSelect>
+    />
   );
 }
 

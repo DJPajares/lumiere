@@ -83,9 +83,11 @@ describe("EventsWorkspace", () => {
 
     await screen.findByText("Create your first event");
     await user.type(screen.getByLabelText("Event title"), "Spring Dinner");
-    await user.selectOptions(screen.getByLabelText("Event type"), "dinner");
+    await user.click(screen.getByLabelText("Event type"));
+    await user.click(screen.getByRole("option", { name: "Dinner" }));
     await user.clear(screen.getByLabelText("Timezone"));
-    await user.type(screen.getByLabelText("Timezone"), "Asia/Singapore");
+    await user.type(screen.getByLabelText("Timezone"), "Singapore");
+    await user.click(screen.getByRole("option", { name: "Asia/Singapore" }));
     await user.type(screen.getByLabelText("Starts"), "2030-06-01T18:30");
     await user.type(screen.getByLabelText("Venue name"), "Glass Hall");
     await user.type(screen.getByLabelText("Venue address"), "12 Orchard Road");
@@ -156,8 +158,12 @@ describe("EventsWorkspace", () => {
     const editPanel = within(screen.getByLabelText("Edit Spring Dinner"));
     await user.clear(editPanel.getByLabelText("Event title"));
     await user.type(editPanel.getByLabelText("Event title"), "Summer Dinner");
-    await user.selectOptions(editPanel.getByLabelText("Event type"), "private_event");
-    await user.selectOptions(editPanel.getByLabelText("Publish status"), "published");
+    editPanel.getByLabelText("Event type").focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("option", { name: "Private event" }));
+    editPanel.getByLabelText("Publish status").focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("option", { name: "Published" }));
     await user.click(editPanel.getByRole("button", { name: "Save event" }));
 
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));

@@ -15,6 +15,7 @@ import type { FormEvent } from "react";
 import type { DashboardApiClient } from "../../auth/dashboard-auth-provider";
 import {
   DashboardButton,
+  DashboardCombobox,
   DashboardDateTimeInput,
   DashboardNotice,
   DashboardSelect,
@@ -139,15 +140,10 @@ export function EventBasicsForm({
           id={`${formId}-event-type`}
           label="Event type"
           name="eventType"
-          onChange={(event) => onFieldChange("eventType", event.target.value)}
+          onValueChange={(value) => onFieldChange("eventType", value)}
+          options={eventTypes}
           value={values.eventType}
-        >
-          {eventTypes.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </DashboardSelect>
+        />
 
         {mode === "edit" ? (
           <DashboardSelect
@@ -157,15 +153,10 @@ export function EventBasicsForm({
             id={`${formId}-status`}
             label="Publish status"
             name="status"
-            onChange={(event) => onFieldChange("status", event.target.value)}
+            onValueChange={(value) => onFieldChange("status", value)}
+            options={eventStatuses}
             value={values.status}
-          >
-            {eventStatuses.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </DashboardSelect>
+          />
         ) : null}
       </div>
 
@@ -207,16 +198,18 @@ export function EventBasicsForm({
         />
       </div>
 
-      <DashboardTextInput
-        description="Use an IANA timezone such as Asia/Singapore."
+      <DashboardCombobox
+        description="Search IANA timezones by region or city."
         disabled={disabled}
+        emptyMessage="No matching timezone. Search by a region such as Asia or Europe."
         error={formState.fieldErrors.timezone}
         id={`${formId}-timezone`}
         label="Timezone"
         name="timezone"
-        onChange={(event) => onFieldChange("timezone", event.target.value)}
+        onValueChange={(value) => onFieldChange("timezone", value)}
+        options={getTimezoneOptions(values.timezone)}
+        placeholder="Search timezones"
         required
-        type="text"
         value={values.timezone}
       />
 
@@ -257,6 +250,40 @@ export function EventBasicsForm({
       </div>
     </form>
   );
+}
+
+const fallbackTimezones = [
+  "Africa/Johannesburg",
+  "America/Chicago",
+  "America/Los_Angeles",
+  "America/New_York",
+  "Asia/Dubai",
+  "Asia/Hong_Kong",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "Europe/London",
+  "Europe/Paris",
+  "Pacific/Auckland",
+  "UTC",
+];
+
+function getTimezoneOptions(currentTimezone: string) {
+  const supportedTimezones =
+    typeof Intl.supportedValuesOf === "function"
+      ? Intl.supportedValuesOf("timeZone")
+      : fallbackTimezones;
+  const timezones = new Set([...supportedTimezones, ...fallbackTimezones]);
+
+  if (currentTimezone) {
+    timezones.add(currentTimezone);
+  }
+
+  return [...timezones].sort().map((timezone) => ({
+    label: timezone.replaceAll("_", " "),
+    value: timezone,
+  }));
 }
 
 export function createBlankEventFormValues(): EventBasicsFormValues {

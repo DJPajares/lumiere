@@ -40,8 +40,12 @@ describe("EventSettingsWorkspace", () => {
 
     await user.clear(screen.getByLabelText("Event title"));
     await user.type(screen.getByLabelText("Event title"), "Summer Dinner");
-    await user.selectOptions(screen.getByLabelText("Event type"), "dinner");
-    await user.selectOptions(screen.getByLabelText("Publish status"), "published");
+    screen.getByLabelText("Event type").focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("option", { name: "Dinner" }));
+    screen.getByLabelText("Publish status").focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("option", { name: "Published" }));
     await user.click(screen.getByRole("button", { name: "Save settings" }));
 
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));

@@ -211,10 +211,9 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "Open Introduction editor" }));
     const reopenedIntroductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
 
-    await user.selectOptions(
-      reopenedIntroductionEditor.getByLabelText("Introduction visibility"),
-      "guest_only",
-    );
+    reopenedIntroductionEditor.getByLabelText("Introduction visibility").focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("option", { name: "Guest-only" }));
     await user.click(screen.getByRole("button", { name: "Open Date and Time editor" }));
     await user.click(screen.getByRole("button", { name: "Date and Time move up" }));
     await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);

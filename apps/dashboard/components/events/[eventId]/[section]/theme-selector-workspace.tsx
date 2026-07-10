@@ -25,6 +25,7 @@ import {
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
+import { DashboardSelect } from "../../../ui/dashboard-fields";
 
 type ThemeState = {
   selectedThemeId: string | null;
@@ -362,29 +363,18 @@ function ThemeSelectorContent({
 
           <ThemePreview compatibility={selectedCompatibility} theme={selectedTheme} />
 
-          <div className="grid gap-2">
-            <label className="text-sm font-semibold" htmlFor="theme-mode">
-              Theme mode
-            </label>
-            <select
-              className={inputClassName}
-              disabled={!selectedTheme}
-              id="theme-mode"
-              onChange={(event) => updateValues({ themeMode: event.target.value as ThemeMode })}
-              value={state.values.themeMode}
-            >
-              {supportedModes.map((mode) => (
-                <option key={mode} value={mode}>
-                  {formatMode(mode)}
-                </option>
-              ))}
-            </select>
-            {state.fieldErrors.themeMode ? (
-              <p className="text-sm text-[var(--error)]" role="alert">
-                {state.fieldErrors.themeMode}
-              </p>
-            ) : null}
-          </div>
+          <DashboardSelect
+            disabled={!selectedTheme}
+            error={state.fieldErrors.themeMode}
+            id="theme-mode"
+            label="Theme mode"
+            onValueChange={(value) => updateValues({ themeMode: value as ThemeMode })}
+            options={supportedModes.map((mode) => ({
+              label: formatMode(mode),
+              value: mode,
+            }))}
+            value={state.values.themeMode}
+          />
 
           <div className="grid gap-2">
             <label className="text-sm font-semibold" htmlFor="theme-config">
