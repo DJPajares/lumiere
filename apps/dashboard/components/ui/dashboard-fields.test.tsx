@@ -15,7 +15,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   DashboardCheckbox,
   DashboardCombobox,
-  DashboardDateTimeInput,
   DashboardNotice,
   DashboardSelect,
   DashboardTabs,
@@ -59,25 +58,6 @@ describe("dashboard field primitives", () => {
     expect(screen.getByRole("alert").textContent).toBe("Event title is required.");
   });
 
-  it("shows timezone context for date-time controls", () => {
-    render(
-      <DashboardDateTimeInput
-        description="Leave blank if the event has no set end time."
-        id="event-ends"
-        label="Ends optional"
-        onChange={vi.fn()}
-        timezone="Asia/Singapore"
-        value=""
-      />,
-    );
-
-    const input = screen.getByLabelText("Ends optional") as HTMLInputElement;
-
-    expect(input.type).toBe("datetime-local");
-    expect(screen.getByText("Leave blank if the event has no set end time.")).toBeTruthy();
-    expect(screen.getByText("Event timezone: Asia/Singapore")).toBeTruthy();
-  });
-
   it("selects an option with the mouse and restores the trigger value", async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();
@@ -96,7 +76,7 @@ describe("dashboard field primitives", () => {
     expect(trigger.textContent).toContain("Draft");
 
     await user.click(trigger);
-    await user.click(screen.getByRole("option", { name: "Published" }));
+    await user.click(await screen.findByRole("option", { name: "Published" }));
 
     expect(onValueChange).toHaveBeenCalledWith("published");
     expect(document.activeElement).toBe(trigger);

@@ -19,7 +19,12 @@ import {
 
 export type DashboardAuthStatus = "authenticated" | "error" | "loading" | "unauthenticated";
 
-type AuthActionResult = { ok: true } | { error: string; ok: false };
+export type AuthActionResult = { ok: true } | { error: string; ok: false };
+
+export type DashboardProfileInput = {
+  avatarUrl: string;
+  displayName: string;
+};
 
 export type DashboardApiClient = ReturnType<typeof createDashboardApiClient>;
 
@@ -31,6 +36,7 @@ export type DashboardAuthContextValue = {
   signIn: (input: { email: string; password: string }) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
   status: DashboardAuthStatus;
+  updateProfile: (input: DashboardProfileInput) => Promise<AuthActionResult>;
   user: User | null;
 };
 
@@ -155,7 +161,6 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
     }
 
     setErrorMessage(null);
-    setStatus("loading");
 
     const { error } = await dependencies.supabase.auth.signOut();
 
@@ -173,6 +178,60 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
     return { ok: true };
   }, [dependencies.errorMessage, dependencies.supabase, session]);
 
+  const updateProfile = useCallback(
+    async ({ avatarUrl, displayName }: DashboardProfileInput): Promise<AuthActionResult> => {
+      if (!dependencies.supabase) {
+        const message = dependencies.errorMessage ?? "Dashboard auth is not configured.";
+        setErrorMessage(message);
+
+        return { error: message, ok: false };
+      }
+
+      const normalizedDisplayName = displayName.trim();
+
+      if (!normalizedDisplayName) {
+        return { error: "Enter the manager name shown in the dashboard.", ok: false };
+      }
+
+      setErrorMessage(null);
+
+      const { data, error } = await dependencies.supabase.auth.updateUser({
+        data: {
+          ...(session?.user.user_metadata ?? {}),
+          avatar_url: avatarUrl.trim() || null,
+          display_name: normalizedDisplayName,
+          full_name: normalizedDisplayName,
+        },
+      });
+
+      if (error) {
+        const message = toFriendlyAuthError(error.message);
+        setErrorMessage(message);
+
+        return { error: message, ok: false };
+      }
+
+      if (!data.user) {
+        const message = "Supabase did not return the updated manager profile.";
+        setErrorMessage(message);
+
+        return { error: message, ok: false };
+      }
+
+      setSession((currentSession) =>
+        currentSession
+          ? {
+              ...currentSession,
+              user: data.user,
+            }
+          : currentSession,
+      );
+
+      return { ok: true };
+    },
+    [dependencies.errorMessage, dependencies.supabase, session?.user.user_metadata],
+  );
+
   const contextValue = useMemo<DashboardAuthContextValue>(
     () => ({
       apiClient: dependencies.apiClient ?? null,
@@ -182,9 +241,19 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
       signIn,
       signOut,
       status,
+      updateProfile,
       user: session?.user ?? null,
     }),
-    [dependencies.apiClient, errorMessage, getAccessToken, session, signIn, signOut, status],
+    [
+      dependencies.apiClient,
+      errorMessage,
+      getAccessToken,
+      session,
+      signIn,
+      signOut,
+      status,
+      updateProfile,
+    ],
   );
 
   return (
@@ -225,6 +294,7 @@ const missingProviderValue: DashboardAuthContextValue = {
   signIn: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   signOut: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   status: "error",
+  updateProfile: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   user: null,
 };
 

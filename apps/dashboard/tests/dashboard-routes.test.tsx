@@ -15,6 +15,8 @@ import EventPage from "../app/events/[eventId]/page";
 import EventsPage from "../app/events/page";
 import LoginPage from "../app/login/page";
 import DashboardHome from "../app/page";
+import AccountSettingsPage from "../app/settings/page";
+import ProfileSettingsPage from "../app/settings/profile/page";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/events",
@@ -76,8 +78,8 @@ describe("dashboard routes", () => {
     const html = renderWithAuth(createElement(DashboardHome));
 
     expect(html).toContain("Lumiere Dashboard");
-    expect(html).toContain("manager@example.com");
-    expect(html).toContain("Sign out");
+    expect(html).toContain('aria-label="Notifications"');
+    expect(html).toContain('aria-label="Open account menu for Lumiere manager"');
     expect(html).toContain("Event list placeholder");
   });
 
@@ -106,7 +108,7 @@ describe("dashboard routes", () => {
     expect(html).toContain("New event");
     expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain('aria-label="Dashboard navigation"');
-    expect(html).not.toContain("Event workspace navigation");
+    expect(html).toContain('aria-label="Event workspace unavailable"');
   });
 
   it("renders the event detail shell", async () => {
@@ -120,9 +122,9 @@ describe("dashboard routes", () => {
     expect(html).toContain("Event workspace");
     expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain("Overview for event demo-event");
-    expect(html).toContain('aria-label="Event workspace navigation for demo-event"');
+    expect(html).toContain('aria-label="Open event workspace navigation"');
+    expect(html).toContain("demo-event · Overview");
     expect(html).toContain("Loading event overview");
-    expect(html).toContain("/events/demo-event/content");
     expect(html).not.toContain("Current context");
   });
 
@@ -137,10 +139,10 @@ describe("dashboard routes", () => {
 
     expect(html).toContain("Guests setup");
     expect(html).toContain("Guests for event demo-event");
-    expect(html).toContain("Event sections");
+    expect(html).toContain('aria-label="Open event workspace navigation"');
+    expect(html).toContain("demo-event · Guests");
     expect(html).toContain("Guests");
     expect(html).toContain("Loading guest groups");
-    expect(html).toContain("/events/demo-event/guests");
     expect(html).not.toContain("Current:");
   });
 
@@ -155,9 +157,21 @@ describe("dashboard routes", () => {
 
     expect(html).toContain("Settings setup");
     expect(html).toContain("Settings for event demo-event");
+    expect(html).toContain("demo-event · Settings");
     expect(html).toContain("Loading event settings");
-    expect(html).toContain("/events/demo-event/settings");
     expect(html).not.toContain("Settings workspace placeholder");
+  });
+
+  it("renders protected manager account and profile routes", () => {
+    const accountHtml = renderWithAuth(createElement(AccountSettingsPage));
+    const profileHtml = renderWithAuth(createElement(ProfileSettingsPage));
+
+    expect(accountHtml).toContain("Account settings");
+    expect(accountHtml).toContain("Supabase manager account");
+    expect(accountHtml).toContain("manager@example.com");
+    expect(accountHtml).toContain('href="/settings/profile"');
+    expect(profileHtml).toContain("Edit profile");
+    expect(profileHtml).toContain("Save profile");
   });
 
   it("adds the Supabase access token to authenticated API requests", async () => {
@@ -199,6 +213,7 @@ const authenticatedAuthValue: DashboardAuthContextValue = {
   signIn: async () => ({ ok: true }),
   signOut: async () => ({ ok: true }),
   status: "authenticated",
+  updateProfile: async () => ({ ok: true }),
   user: {
     email: "manager@example.com",
   } as DashboardAuthContextValue["user"],

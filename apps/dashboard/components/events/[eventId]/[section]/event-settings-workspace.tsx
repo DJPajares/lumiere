@@ -236,7 +236,9 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
           <MetadataItem
             label="Starts"
             value={
-              readyState.values.startsAt ? formatDateTime(readyState.values.startsAt) : "Not set"
+              readyState.values.startsAt
+                ? formatDateTime(readyState.values.startsAt, readyState.values.timezone)
+                : "Not set"
             }
           />
         </dl>

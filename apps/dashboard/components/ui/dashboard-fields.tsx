@@ -372,37 +372,6 @@ export function DashboardCombobox({
   );
 }
 
-type DashboardDateTimeInputProps = Omit<DashboardTextInputProps, "description" | "type"> & {
-  description?: ReactNode;
-  timezone?: string;
-};
-
-export function DashboardDateTimeInput({
-  description,
-  timezone,
-  ...inputProps
-}: DashboardDateTimeInputProps) {
-  const timezoneDescription = timezone ? `Event timezone: ${timezone}` : undefined;
-  const fieldDescription =
-    description && timezoneDescription ? (
-      <>
-        <span className="block">{description}</span>
-        <span className="block">{timezoneDescription}</span>
-      </>
-    ) : (
-      (description ?? timezoneDescription)
-    );
-
-  return (
-    <DashboardTextInput
-      {...inputProps}
-      description={fieldDescription}
-      step={inputProps.step ?? 60}
-      type="datetime-local"
-    />
-  );
-}
-
 type DashboardCheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "type"> & {
   checkboxClassName?: string;
   description?: ReactNode;

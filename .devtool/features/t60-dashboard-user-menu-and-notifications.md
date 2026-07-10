@@ -1,12 +1,12 @@
 ---
 id: 't60-dashboard-user-menu-and-notifications'
-status: 'backlog'
+status: 'in-progress'
 priority: 'high'
 assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-10T18:00:00+08:00'
-modified: '2026-07-10T19:15:00+08:00'
+modified: '2026-07-10T23:20:00+08:00'
 completedAt: null
 labels: ['dashboard', 'shadcn', 'base-ui', 'avatar', 'notifications', 'profile']
 depends_on: ['t15-summary-activity-notification-api', 't19-dashboard-auth-flow', 't59-responsive-dashboard-top-navigation']
@@ -58,3 +58,4 @@ Keep notifications lightweight in this task. Real-time delivery can remain a lat
 - 2026-07-10T18:00:00+08:00: Original task created.
 - 2026-07-10T18:30:00+08:00: Updated to the current shadcn CLI v4 workflow with Base UI primitives and monorepo-aware component placement.
 - 2026-07-10T19:15:00+08:00: Scoped shadcn/Base UI to the dashboard only and updated the suggested model to GPT-5.6 Terra with xhigh reasoning.
+- 2026-07-10T23:20:00+08:00: Started t60 integration after completing the t59 top navigation dependency; wired the event-scoped notification and account controls into the shared top bar and added live protected account/profile routes.

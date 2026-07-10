@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { DashboardShell, eventTabs } from "../../../../components/dashboard-shell";
+import { getEventSectionDefinition } from "../../../../components/dashboard-navigation";
+import { DashboardShell } from "../../../../components/dashboard-shell";
 import { GuestManagementWorkspace } from "../../../../components/events/[eventId]/[section]/guest-management-workspace";
 import { EventSettingsWorkspace } from "../../../../components/events/[eventId]/[section]/event-settings-workspace";
 import { ResponsesActivityWorkspace } from "../../../../components/events/[eventId]/[section]/responses-activity-workspace";
@@ -18,7 +19,7 @@ type EventSectionPageProps = {
 
 export default async function EventSectionPage({ params }: EventSectionPageProps) {
   const { eventId, section } = await params;
-  const tab = eventTabs.find((item) => item.href === section);
+  const tab = getEventSectionDefinition(section);
 
   if (!tab) {
     notFound();

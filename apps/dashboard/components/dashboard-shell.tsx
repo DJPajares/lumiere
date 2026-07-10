@@ -1,21 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { DashboardBrandLockup } from "./dashboard-brand";
-import { DashboardSessionControls } from "./session-controls";
-
-export const eventTabs = [
-  { href: "content", label: "Content" },
-  { href: "theme", label: "Theme" },
-  { href: "guests", label: "Guests" },
-  { href: "responses", label: "Responses" },
-  { href: "activity", label: "Activity" },
-  { href: "settings", label: "Settings" },
-] as const;
-
-export type EventTabHref = (typeof eventTabs)[number]["href"];
-
-const primaryNav = [{ href: "/events", label: "Events" }] as const;
+import {
+  type DashboardWorkspaceContext,
+  getDashboardWorkspaceContext,
+} from "./dashboard-navigation";
+import { DashboardTopNavigation } from "./dashboard-top-navigation";
 
 type DashboardShellProps = {
   activePath?: string;
@@ -30,38 +20,13 @@ export function DashboardShell({
   eyebrow = "Manager workspace",
   title,
 }: DashboardShellProps) {
-  const workspaceContext = getWorkspaceContext(activePath);
+  const workspaceContext = getDashboardWorkspaceContext(activePath);
   const isEventList = !workspaceContext.eventId;
 
   return (
     <main className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)]">
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[14rem_1fr] lg:px-8">
-        <aside className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 lg:sticky lg:top-4 lg:min-h-[calc(100dvh-2rem)]">
-          <div className="flex items-center justify-between gap-3">
-            <Link
-              className="text-sm font-semibold text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-              href="/events"
-            >
-              <DashboardBrandLockup />
-            </Link>
-            <DashboardSessionControls />
-          </div>
-
-          <details className="mt-4 lg:hidden">
-            <summary className="cursor-pointer rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
-              Dashboard menu
-            </summary>
-            <DashboardNav activePath={activePath} className="mt-3 grid" />
-          </details>
-
-          <div className="mt-6 hidden lg:grid lg:gap-2">
-            <p className="px-3 text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
-              Manager
-            </p>
-            <DashboardNav activePath={activePath} className="grid" />
-          </div>
-        </aside>
-
+      <DashboardTopNavigation activePath={activePath} />
+      <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <section className="grid content-start gap-5">
           <header className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -91,45 +56,7 @@ export function DashboardShell({
   );
 }
 
-function DashboardNav({ activePath, className = "" }: { activePath: string; className?: string }) {
-  return (
-    <nav className={`gap-1 text-sm ${className}`} aria-label="Dashboard navigation">
-      {primaryNav.map((item) => (
-        <Link
-          aria-current={
-            activePath === item.href || activePath.startsWith(`${item.href}/`) ? "page" : undefined
-          }
-          className="rounded-[var(--radius-md)] px-3 py-2 font-medium transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-[current=page]:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--accent-strong)]"
-          href={item.href}
-          key={item.href}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
-function getActiveEventId(activePath: string) {
-  const match = activePath.match(/^\/events\/([^/]+)/);
-
-  return match?.[1];
-}
-
-function getWorkspaceContext(activePath: string) {
-  const eventId = getActiveEventId(activePath);
-  const sectionKey = activePath.match(/^\/events\/[^/]+\/([^/]+)/)?.[1];
-  const activeTab = sectionKey ? eventTabs.find((item) => item.href === sectionKey) : undefined;
-  const sectionLabel = activeTab?.label ?? (eventId ? "Overview" : "Event list");
-
-  return {
-    eventId,
-    sectionKey,
-    sectionLabel,
-  };
-}
-
-function DashboardBreadcrumb({ context }: { context: ReturnType<typeof getWorkspaceContext> }) {
+function DashboardBreadcrumb({ context }: { context: DashboardWorkspaceContext }) {
   return (
     <nav
       aria-label="Breadcrumb"

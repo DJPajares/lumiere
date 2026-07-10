@@ -189,6 +189,7 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
     signIn: async () => ({ ok: true }),
     signOut: async () => ({ ok: true }),
     status: "authenticated",
+    updateProfile: async () => ({ ok: true }),
     user: {
       email: "manager@example.com",
     } as DashboardAuthContextValue["user"],

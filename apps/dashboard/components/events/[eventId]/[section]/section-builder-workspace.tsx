@@ -40,12 +40,17 @@ import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
 import {
   DashboardCheckbox,
-  DashboardDateTimeInput,
   DashboardSelect,
   DashboardTextArea,
   DashboardTextInput,
   dashboardButtonClassName,
 } from "../../../ui/dashboard-fields";
+import {
+  EventDateTimeField,
+  eventIsoToLocalDateTime,
+  eventLocalDateTimeToIso,
+  isCompleteEventLocalDateTime,
+} from "../../../ui/event-date-time-picker";
 
 type JsonObject = Record<string, JsonValue>;
 
@@ -1890,20 +1895,28 @@ function DateTimeField({
   required?: boolean;
 }) {
   const id = fieldId(controller.section, "content", path);
-  const value = isoToDateTimeLocal(getJsonString(controller.content, path));
+  const storedValue = getJsonString(controller.content, path);
+  const timezone = getJsonString(controller.content, ["timezone"]) || "UTC";
+  const value =
+    isCompleteEventLocalDateTime(storedValue) || storedValue.endsWith("T")
+      ? storedValue
+      : eventIsoToLocalDateTime(storedValue, timezone);
   const error = controller.fieldError("content", path);
 
   return (
-    <DashboardDateTimeInput
+    <EventDateTimeField
       disabled={controller.disabled}
       error={error}
       id={id}
       label={label}
-      onChange={(event) =>
-        controller.updateContentValue(path, dateTimeLocalToIso(event.target.value))
+      onValueChange={(nextValue) =>
+        controller.updateContentValue(
+          path,
+          nextValue ? (eventLocalDateTimeToIso(nextValue, timezone) ?? nextValue) : undefined,
+        )
       }
       required={required}
-      timezone={getJsonString(controller.content, ["timezone"]) || undefined}
+      timezone={timezone}
       value={value}
     />
   );
@@ -3456,30 +3469,6 @@ function moveArrayItem<TItem>(items: TItem[], from: number, to: number) {
   nextItems.splice(to, 0, item);
 
   return nextItems;
-}
-
-function isoToDateTimeLocal(value: string) {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toISOString().slice(0, 16);
-}
-
-function dateTimeLocalToIso(value: string): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 function readString(value: JsonValue | undefined) {

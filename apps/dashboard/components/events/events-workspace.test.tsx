@@ -10,6 +10,7 @@ import {
   type DashboardApiClient,
 } from "../../auth/dashboard-auth-provider";
 import type { Event } from "@lumiere/types";
+import { eventLocalDateTimeToIso, formatEventTime } from "../ui/event-date-time-picker";
 import { EventsWorkspace } from "./events-workspace";
 
 const routerPush = vi.fn();
@@ -84,11 +85,19 @@ describe("EventsWorkspace", () => {
     await screen.findByText("Create your first event");
     await user.type(screen.getByLabelText("Event title"), "Spring Dinner");
     await user.click(screen.getByLabelText("Event type"));
-    await user.click(screen.getByRole("option", { name: "Dinner" }));
+    await user.click(await screen.findByRole("option", { name: "Dinner" }));
     await user.clear(screen.getByLabelText("Timezone"));
     await user.type(screen.getByLabelText("Timezone"), "Singapore");
-    await user.click(screen.getByRole("option", { name: "Asia/Singapore" }));
-    await user.type(screen.getByLabelText("Starts"), "2030-06-01T18:30");
+    await user.click(await screen.findByRole("option", { name: "Asia/Singapore" }));
+    const selectedDate = toDateValue(new Date());
+    await user.click(screen.getByLabelText("Starts date"));
+    const todayButton = [...document.querySelectorAll<HTMLButtonElement>("[data-day]")].find(
+      (button) => button.dataset.day === new Date().toLocaleDateString(),
+    );
+    expect(todayButton).toBeDefined();
+    await user.click(todayButton as HTMLButtonElement);
+    await user.click(screen.getByLabelText("Starts time"));
+    await user.click(await screen.findByRole("option", { name: formatEventTime("18:30") }));
     await user.type(screen.getByLabelText("Venue name"), "Glass Hall");
     await user.type(screen.getByLabelText("Venue address"), "12 Orchard Road");
     await user.click(screen.getByRole("button", { name: "Create event" }));
@@ -107,7 +116,9 @@ describe("EventsWorkspace", () => {
     const createdInput = createEvent.mock.calls[0]?.[0];
 
     expect(createdInput).toBeDefined();
-    expect(createdInput?.startsAt).toMatch(/2030-06-01T/);
+    expect(createdInput?.startsAt).toBe(
+      eventLocalDateTimeToIso(`${selectedDate}T18:30`, "Asia/Singapore"),
+    );
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/events/evt_123"));
   });
@@ -160,10 +171,10 @@ describe("EventsWorkspace", () => {
     await user.type(editPanel.getByLabelText("Event title"), "Summer Dinner");
     editPanel.getByLabelText("Event type").focus();
     await user.keyboard("{ArrowDown}");
-    await user.click(screen.getByRole("option", { name: "Private event" }));
+    await user.click(await screen.findByRole("option", { name: "Private event" }));
     editPanel.getByLabelText("Publish status").focus();
     await user.keyboard("{ArrowDown}");
-    await user.click(screen.getByRole("option", { name: "Published" }));
+    await user.click(await screen.findByRole("option", { name: "Published" }));
     await user.click(editPanel.getByRole("button", { name: "Save event" }));
 
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
@@ -222,8 +233,13 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
     signIn: async () => ({ ok: true }),
     signOut: async () => ({ ok: true }),
     status: "authenticated",
+    updateProfile: async () => ({ ok: true }),
     user: {
       email: "manager@example.com",
     } as DashboardAuthContextValue["user"],
   };
+}
+
+function toDateValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

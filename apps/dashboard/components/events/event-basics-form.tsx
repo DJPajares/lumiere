@@ -16,12 +16,16 @@ import type { DashboardApiClient } from "../../auth/dashboard-auth-provider";
 import {
   DashboardButton,
   DashboardCombobox,
-  DashboardDateTimeInput,
   DashboardNotice,
   DashboardSelect,
   DashboardTextArea,
   DashboardTextInput,
 } from "../ui/dashboard-fields";
+import {
+  EventDateTimeRange,
+  eventIsoToLocalDateTime,
+  eventLocalDateTimeToIso,
+} from "../ui/event-date-time-picker";
 
 export type FieldErrors = Partial<Record<EventFormField, string>>;
 
@@ -173,30 +177,20 @@ export function EventBasicsForm({
         value={values.slug}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <DashboardDateTimeInput
-          disabled={disabled}
-          error={formState.fieldErrors.startsAt}
-          id={`${formId}-starts-at`}
-          label="Starts"
-          name="startsAt"
-          onChange={(event) => onFieldChange("startsAt", event.target.value)}
-          required
-          timezone={values.timezone || getBrowserTimezone()}
-          value={values.startsAt}
-        />
-        <DashboardDateTimeInput
-          description="Leave blank if the event has no set end time."
-          disabled={disabled}
-          error={formState.fieldErrors.endsAt}
-          id={`${formId}-ends-at`}
-          label="Ends optional"
-          name="endsAt"
-          onChange={(event) => onFieldChange("endsAt", event.target.value)}
-          timezone={values.timezone || getBrowserTimezone()}
-          value={values.endsAt}
-        />
-      </div>
+      <EventDateTimeRange
+        disabled={disabled}
+        endError={formState.fieldErrors.endsAt}
+        endId={`${formId}-ends-at`}
+        endName="endsAt"
+        endValue={values.endsAt}
+        onEndValueChange={(value) => onFieldChange("endsAt", value)}
+        onStartValueChange={(value) => onFieldChange("startsAt", value)}
+        startError={formState.fieldErrors.startsAt}
+        startId={`${formId}-starts-at`}
+        startName="startsAt"
+        startValue={values.startsAt}
+        timezone={values.timezone || getBrowserTimezone()}
+      />
 
       <DashboardCombobox
         description="Search IANA timezones by region or city."
@@ -302,10 +296,10 @@ export function createBlankEventFormValues(): EventBasicsFormValues {
 
 export function createEventFormValuesFromEvent(event: Event): EventBasicsFormValues {
   return {
-    endsAt: toDateTimeLocalValue(event.endsAt),
+    endsAt: eventIsoToLocalDateTime(event.endsAt, event.timezone),
     eventType: event.eventType,
     slug: event.slug,
-    startsAt: toDateTimeLocalValue(event.startsAt),
+    startsAt: eventIsoToLocalDateTime(event.startsAt, event.timezone),
     status: event.status,
     timezone: event.timezone,
     title: event.title,
@@ -337,13 +331,15 @@ export function parseEventCreateValues(values: EventBasicsFormValues):
       formError: string | null;
       ok: false;
     } {
+  const normalizedDateTimes = normalizeEventDateTimes(values);
+
   const input = {
-    endsAt: toOptionalIsoDateTime(values.endsAt),
+    endsAt: normalizedDateTimes.endsAt,
     eventType: values.eventType,
     publicSettings: {},
     rsvpSettings: {},
     slug: values.slug,
-    startsAt: toIsoDateTime(values.startsAt),
+    startsAt: normalizedDateTimes.startsAt,
     themeMode: "system",
     timezone: values.timezone || getBrowserTimezone(),
     title: values.title,
@@ -353,7 +349,7 @@ export function parseEventCreateValues(values: EventBasicsFormValues):
 
   const parsed = eventCreateRequestSchema.safeParse(input);
 
-  if (parsed.success) {
+  if (parsed.success && Object.keys(normalizedDateTimes.fieldErrors).length === 0) {
     return {
       input: parsed.data,
       ok: true,
@@ -361,7 +357,10 @@ export function parseEventCreateValues(values: EventBasicsFormValues):
   }
 
   return {
-    fieldErrors: issuesToFieldErrors(parsed.error.issues),
+    fieldErrors: {
+      ...(parsed.success ? {} : issuesToFieldErrors(parsed.error.issues)),
+      ...normalizedDateTimes.fieldErrors,
+    },
     formError: "Check the highlighted fields before creating the event.",
     ok: false,
   };
@@ -377,11 +376,13 @@ export function parseEventUpdateValues(values: EventBasicsFormValues):
       formError: string | null;
       ok: false;
     } {
+  const normalizedDateTimes = normalizeEventDateTimes(values);
+
   const input = {
-    endsAt: toOptionalIsoDateTime(values.endsAt),
+    endsAt: normalizedDateTimes.endsAt ?? null,
     eventType: values.eventType,
     slug: values.slug,
-    startsAt: toIsoDateTime(values.startsAt),
+    startsAt: normalizedDateTimes.startsAt,
     status: values.status,
     timezone: values.timezone,
     title: values.title,
@@ -391,7 +392,7 @@ export function parseEventUpdateValues(values: EventBasicsFormValues):
 
   const parsed = eventUpdateRequestSchema.safeParse(input);
 
-  if (parsed.success) {
+  if (parsed.success && Object.keys(normalizedDateTimes.fieldErrors).length === 0) {
     return {
       input: parsed.data,
       ok: true,
@@ -399,7 +400,10 @@ export function parseEventUpdateValues(values: EventBasicsFormValues):
   }
 
   return {
-    fieldErrors: issuesToFieldErrors(parsed.error.issues),
+    fieldErrors: {
+      ...(parsed.success ? {} : issuesToFieldErrors(parsed.error.issues)),
+      ...normalizedDateTimes.fieldErrors,
+    },
     formError: "Check the highlighted fields before saving the event.",
     ok: false,
   };
@@ -467,7 +471,11 @@ export function getBrowserTimezone() {
 }
 
 export function formatDateTime(value: string, timeZone?: string) {
-  const date = new Date(value);
+  const canonicalValue =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) && timeZone
+      ? eventLocalDateTimeToIso(value, timeZone)
+      : value;
+  const date = new Date(canonicalValue ?? value);
 
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -593,40 +601,29 @@ function readFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function toIsoDateTime(value: string) {
-  if (!value) {
-    return value;
-  }
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
-}
-
-function toOptionalIsoDateTime(value: string) {
-  return value ? toIsoDateTime(value) : undefined;
-}
-
 function toOptionalString(value: string) {
   return value || undefined;
 }
 
-function toDateTimeLocalValue(value?: string) {
-  if (!value) {
-    return "";
+function normalizeEventDateTimes(values: EventBasicsFormValues) {
+  const timezone = values.timezone || getBrowserTimezone();
+  const startsAt = eventLocalDateTimeToIso(values.startsAt, timezone);
+  const endsAt = values.endsAt ? eventLocalDateTimeToIso(values.endsAt, timezone) : undefined;
+  const fieldErrors: FieldErrors = {};
+
+  if (!startsAt) {
+    fieldErrors.startsAt = values.startsAt
+      ? "Choose a valid start date and time in the event timezone."
+      : "Choose the event start date and time.";
   }
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
+  if (values.endsAt && !endsAt) {
+    fieldErrors.endsAt = "Choose a valid end date and time in the event timezone.";
   }
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return {
+    endsAt: values.endsAt ? (endsAt ?? values.endsAt) : undefined,
+    fieldErrors,
+    startsAt: startsAt ?? values.startsAt,
+  };
 }

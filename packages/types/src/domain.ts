@@ -82,7 +82,7 @@ export const eventUpdateSchema = z
     status: eventStatusSchema.optional(),
     timezone: timezoneSchema.optional(),
     startsAt: isoDateTimeSchema.optional(),
-    endsAt: isoDateTimeSchema.optional(),
+    endsAt: isoDateTimeSchema.nullable().optional(),
     venueName: z
       .string()
       .trim()

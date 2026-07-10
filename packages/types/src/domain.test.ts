@@ -68,6 +68,10 @@ describe("shared schemas", () => {
     expect(() => eventUpdateSchema.parse({})).toThrow("At least one event field is required");
   });
 
+  it("allows an event update to clear its optional end time", () => {
+    expect(eventUpdateSchema.parse({ endsAt: null })).toEqual({ endsAt: null });
+  });
+
   it("rejects duplicate section keys", () => {
     expect(() =>
       eventSectionsUpdateSchema.parse({
