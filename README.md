@@ -90,6 +90,15 @@ PUBLIC_APP_BASE_URL=http://localhost:3000
 DASHBOARD_APP_BASE_URL=http://localhost:3001
 ```
 
+Generate `INVITE_TOKEN_SECRET` with Node.js and copy the output into
+`apps/api/.env`:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Keep this value private and use a different secret for each environment.
+
 ### Invite App
 
 ```env
