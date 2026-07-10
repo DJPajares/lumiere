@@ -258,6 +258,7 @@ export const guestGroups = pgTable(
     contactEmail: varchar("contact_email", { length: 320 }),
     maxPax: integer("max_pax").notNull().default(1),
     inviteTokenHash: text("invite_token_hash").notNull(),
+    inviteTokenEncrypted: text("invite_token_encrypted"),
     inviteCode: varchar("invite_code", { length: 120 }).notNull(),
     status: guestGroupStatusEnum("status").notNull().default("pending"),
     notes: text("notes"),

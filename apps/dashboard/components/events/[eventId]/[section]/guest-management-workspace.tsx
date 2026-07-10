@@ -122,7 +122,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
             guestGroups: guestGroupResponse.guestGroups,
           },
           error: null,
-          inviteLinks: current.inviteLinks,
+          inviteLinks: Object.fromEntries(
+            guestGroupResponse.guestGroups
+              .filter((group) => group.inviteLink)
+              .map((group) => [group.id, group.inviteLink as string]),
+          ),
           isRefreshing: false,
           status: "ready",
         }));
@@ -368,8 +372,8 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
               Manage invites for {readyState.data.event.title}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              Create one private invite per household or group. Full invite URLs only appear when a
-              link is created or regenerated.
+              Create one private invite per household or group. Your current invite URL stays ready
+              to copy whenever you return to this workspace.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -707,8 +711,8 @@ function GuestGroupList({
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                  Full URL unavailable after reload. Regenerate this group to copy a fresh shareable
-                  link. Invite code:{" "}
+                  Full URL unavailable for this older invite. Regenerate this group once to create a
+                  copyable shareable link. Invite code:{" "}
                   <span className="font-mono text-[var(--foreground)]">{group.inviteCode}</span>
                 </p>
               )}

@@ -211,6 +211,7 @@ export const guestGroupSchema = z.object({
   contactEmail: z.string().trim().email().optional(),
   maxPax: z.number().int().min(1).max(50),
   inviteCode: z.string().trim().min(8).max(120),
+  inviteLink: z.string().url().optional(),
   status: guestGroupStatusSchema,
   notes: z.string().trim().max(2000).optional(),
   lastOpenedAt: isoDateTimeSchema.optional(),

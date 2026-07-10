@@ -2,7 +2,7 @@ import type { Database } from "@lumiere/db";
 import { guestGroups } from "@lumiere/db";
 import type { GuestGroup, GuestGroupMutation } from "@lumiere/types";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { createHmac, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
 import { ApiHttpError } from "./errors";
 import { toIsoDateTime } from "./serialization";
@@ -11,8 +11,11 @@ type GuestGroupRow = typeof guestGroups.$inferSelect;
 
 export type InviteTokenRecord = {
   inviteCode: string;
+  inviteTokenEncrypted?: string;
   inviteTokenHash: string;
 };
+
+export type GuestGroupWithInviteToken = GuestGroup & { inviteTokenEncrypted?: string };
 
 export type GuestGroupStore = {
   createGuestGroup(
@@ -21,7 +24,7 @@ export type GuestGroupStore = {
     invite: InviteTokenRecord,
   ): Promise<GuestGroup>;
   disableGuestGroup(eventId: string, groupId: string): Promise<GuestGroup | null>;
-  listGuestGroups(eventId: string): Promise<GuestGroup[]>;
+  listGuestGroups(eventId: string): Promise<GuestGroupWithInviteToken[]>;
   regenerateInvite(
     eventId: string,
     groupId: string,
@@ -48,6 +51,7 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
           contactName: input.contactName,
           eventId,
           inviteCode: invite.inviteCode,
+          inviteTokenEncrypted: invite.inviteTokenEncrypted,
           inviteTokenHash: invite.inviteTokenHash,
           label: input.label,
           maxPax: input.maxPax,
@@ -84,7 +88,10 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
       .where(eq(guestGroups.eventId, eventId))
       .orderBy(desc(guestGroups.createdAt));
 
-    return rows.map(toApiGuestGroup);
+    return rows.map((row) => ({
+      ...toApiGuestGroup(row),
+      ...(row.inviteTokenEncrypted ? { inviteTokenEncrypted: row.inviteTokenEncrypted } : {}),
+    }));
   },
 
   async regenerateInvite(eventId, groupId, invite) {
@@ -93,6 +100,7 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
         .update(guestGroups)
         .set({
           inviteCode: invite.inviteCode,
+          inviteTokenEncrypted: invite.inviteTokenEncrypted,
           inviteTokenHash: invite.inviteTokenHash,
           lastOpenedAt: null,
           status: "pending",
@@ -128,6 +136,7 @@ export const generateInvite = (inviteTokenSecret: string): GeneratedInvite => {
   const token = randomBytes(32).toString("base64url");
 
   return {
+    inviteTokenEncrypted: encryptInviteToken(token, inviteTokenSecret),
     inviteCode: randomBytes(8).toString("base64url"),
     inviteTokenHash: hashInviteToken(token, inviteTokenSecret),
     token,
@@ -136,6 +145,25 @@ export const generateInvite = (inviteTokenSecret: string): GeneratedInvite => {
 
 export const hashInviteToken = (token: string, inviteTokenSecret: string) =>
   createHmac("sha256", inviteTokenSecret).update(token).digest("hex");
+
+export const decryptInviteToken = (value: string, secret: string) => {
+  try {
+    const [ivValue, tagValue, encryptedValue] = value.split(".");
+    if (!ivValue || !tagValue || !encryptedValue) return undefined;
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      createHash("sha256").update(secret).digest(),
+      Buffer.from(ivValue, "base64url"),
+    );
+    decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedValue, "base64url")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return undefined;
+  }
+};
 
 export const buildGuestInviteLink = ({
   baseUrl,
@@ -146,6 +174,17 @@ export const buildGuestInviteLink = ({
   eventSlug: string;
   token: string;
 }) => `${baseUrl.replace(/\/+$/, "")}/e/${eventSlug}/g/${token}`;
+
+const encryptInviteToken = (token: string, secret: string) => {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", createHash("sha256").update(secret).digest(), iv);
+  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
+  return [
+    iv.toString("base64url"),
+    cipher.getAuthTag().toString("base64url"),
+    encrypted.toString("base64url"),
+  ].join(".");
+};
 
 export const toApiGuestGroup = (guestGroup: GuestGroupRow): GuestGroup => ({
   contactEmail: guestGroup.contactEmail ?? undefined,

@@ -32,6 +32,7 @@ import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
 import {
   buildGuestInviteLink,
+  decryptInviteToken,
   generateInvite,
   type GuestGroupStore,
   type InviteTokenRecord,
@@ -580,7 +581,26 @@ export const createRoutes = ({
         eventId,
         manager: context.get("manager"),
       });
-      const guestGroups = await stores.guestGroupStore.listGuestGroups(eventId);
+      const event = await stores.eventStore.getEvent(eventId);
+      if (!event) throw new ApiHttpError("NOT_FOUND", "Event not found");
+      const guestGroups = (await stores.guestGroupStore.listGuestGroups(eventId)).map((group) => {
+        const token = group.inviteTokenEncrypted
+          ? decryptInviteToken(group.inviteTokenEncrypted, config.INVITE_TOKEN_SECRET)
+          : undefined;
+        const { inviteTokenEncrypted: _encrypted, ...apiGroup } = group;
+        return {
+          ...apiGroup,
+          ...(token
+            ? {
+                inviteLink: buildGuestInviteLink({
+                  baseUrl: config.PUBLIC_APP_BASE_URL,
+                  eventSlug: event.slug,
+                  token,
+                }),
+              }
+            : {}),
+        };
+      });
 
       return context.json({
         guestGroups,
@@ -1223,9 +1243,11 @@ const assertThemeCanBeApplied = ({
 
 const toInviteTokenRecord = ({
   inviteCode,
+  inviteTokenEncrypted,
   inviteTokenHash,
 }: InviteTokenRecord): InviteTokenRecord => ({
   inviteCode,
+  inviteTokenEncrypted,
   inviteTokenHash,
 });
 
