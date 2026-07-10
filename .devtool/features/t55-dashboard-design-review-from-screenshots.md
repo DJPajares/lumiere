@@ -9,7 +9,7 @@ created: '2026-07-09T00:00:00+08:00'
 modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['dashboard', 'visual-qa', 'uiux', 'review']
-depends_on: ['t42-dashboard-navigation-ia-reset', 't49-dashboard-component-system-and-field-overhaul', 't43-dashboard-event-edit-flow']
+depends_on: ['t42-dashboard-navigation-ia-reset', 't49-dashboard-component-system-and-field-overhaul', 't43-dashboard-event-edit-flow', 't56-dashboard-shadcn-foundation', 't57-dashboard-select-combobox-overhaul', 't58-dashboard-date-time-picker-overhaul', 't59-responsive-dashboard-top-navigation', 't60-dashboard-user-menu-and-notifications', 't61-manager-consolidated-dashboard-root', 't62-dashboard-responsive-modal-workflows', 't63-compatible-theme-gallery-live-preview', 't64-invite-theme-module-directory-refactor', 't65-event-public-id-and-slug-implementation', 't66-dashboard-redesign-integration-and-visual-regression', 't67-shadcn-mcp-agent-workflow']
 order: 'a55'
 ---
 
