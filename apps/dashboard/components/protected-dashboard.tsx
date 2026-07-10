@@ -18,7 +18,7 @@ export function ProtectedDashboard({ children }: ProtectedDashboardProps) {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(`/login?redirectTo=${encodeURIComponent(pathname || "/events")}`);
+      router.replace(`/login?redirectTo=${encodeURIComponent(pathname || "/")}`);
     }
   }, [pathname, router, status]);
 

@@ -34,7 +34,7 @@ describe("EventsWorkspace", () => {
 
     expect(screen.getByLabelText("Loading events")).toBeTruthy();
     expect(await screen.findByText("Create your first event")).toBeTruthy();
-    expect(screen.getByText(/Add the event details first/)).toBeTruthy();
+    expect(screen.getByText(/Add the public details first/)).toBeTruthy();
   });
 
   it("shows validation errors near required create fields", async () => {
@@ -44,8 +44,10 @@ describe("EventsWorkspace", () => {
     });
 
     await screen.findByText("Create your first event");
-    await user.click(screen.getByRole("button", { name: "Create event" }));
+    await user.click(screen.getAllByRole("button", { name: "Create event" })[0] as HTMLElement);
 
+    expect(await screen.findByRole("dialog", { name: "Create event" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Create event" }));
     expect(await screen.findByText("Event title is required.")).toBeTruthy();
     expect(screen.getByText("Choose the event start date and time.")).toBeTruthy();
     expect(
@@ -62,7 +64,7 @@ describe("EventsWorkspace", () => {
     expect(screen.getByRole("link", { name: "Open workspace" }).getAttribute("href")).toBe(
       "/events/evt_123",
     );
-    expect(screen.getByRole("button", { name: "Edit" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit Spring Dinner" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Theme" }).getAttribute("href")).toBe(
       "/events/evt_123/theme",
     );
@@ -83,6 +85,8 @@ describe("EventsWorkspace", () => {
     });
 
     await screen.findByText("Create your first event");
+    await user.click(screen.getAllByRole("button", { name: "Create event" })[0] as HTMLElement);
+    await screen.findByRole("dialog", { name: "Create event" });
     await user.type(screen.getByLabelText("Event title"), "Spring Dinner");
     await user.click(screen.getByLabelText("Event type"));
     await user.click(await screen.findByRole("option", { name: "Dinner" }));
@@ -135,9 +139,10 @@ describe("EventsWorkspace", () => {
     });
 
     await screen.findByText("Spring Dinner");
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editTrigger = screen.getByRole("button", { name: "Edit Spring Dinner" });
+    await user.click(editTrigger);
 
-    const editPanel = within(screen.getByLabelText("Edit Spring Dinner"));
+    const editPanel = within(await screen.findByRole("dialog", { name: "Edit Spring Dinner" }));
     await user.clear(editPanel.getByLabelText("Event title"));
     await user.click(editPanel.getByRole("button", { name: "Save event" }));
 
@@ -164,9 +169,9 @@ describe("EventsWorkspace", () => {
     });
 
     await screen.findByText("Spring Dinner");
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Edit Spring Dinner" }));
 
-    const editPanel = within(screen.getByLabelText("Edit Spring Dinner"));
+    const editPanel = within(await screen.findByRole("dialog", { name: "Edit Spring Dinner" }));
     await user.clear(editPanel.getByLabelText("Event title"));
     await user.type(editPanel.getByLabelText("Event title"), "Summer Dinner");
     editPanel.getByLabelText("Event type").focus();
@@ -186,9 +191,38 @@ describe("EventsWorkspace", () => {
         title: "Summer Dinner",
       }),
     );
-    expect(await screen.findByText("Event basics saved.")).toBeTruthy();
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Published").length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("keeps failed edits open and confirms before discarding unsaved changes", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth({
+      listEvents: vi.fn(async () => ({ events: [springDinnerEvent] })),
+      updateEvent: vi.fn(async () => {
+        throw new Error("Unable to save event details.");
+      }),
+    });
+
+    await screen.findByText("Spring Dinner");
+    const editTrigger = screen.getByRole("button", { name: "Edit Spring Dinner" });
+    await user.click(editTrigger);
+    await user.clear(screen.getByLabelText("Event title"));
+    await user.type(screen.getByLabelText("Event title"), "Changed Dinner");
+    await user.click(screen.getByRole("button", { name: "Save event" }));
+
+    expect(await screen.findByText("Unable to save event details.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Close Edit Spring Dinner" }));
+    expect(await screen.findByText("Discard unsaved changes?")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.getByDisplayValue("Changed Dinner")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Close Edit Spring Dinner" }));
+    await user.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(editTrigger);
   });
 });
 

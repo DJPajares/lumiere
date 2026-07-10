@@ -3,6 +3,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 
 import {
   DashboardAuthProvider,
@@ -10,6 +11,12 @@ import {
   type DashboardAuthContextValue,
 } from "../auth/dashboard-auth-provider";
 import { ManagerOverviewWorkspace } from "./manager-overview-workspace";
+
+const routerPush = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
 
 describe("ManagerOverviewWorkspace", () => {
   afterEach(() => cleanup());
@@ -32,9 +39,7 @@ describe("ManagerOverviewWorkspace", () => {
 
     expect(await screen.findByText("Create your first Lumiere event")).toBeTruthy();
     expect(screen.queryByLabelText("Event title")).toBeNull();
-    expect(screen.getByRole("link", { name: "Create event" }).getAttribute("href")).toBe(
-      "/events#new-event",
-    );
+    expect(screen.getByRole("button", { name: "Create event" })).toBeTruthy();
   });
 
   it("combines multi-event status, RSVP movement, milestones, actions, and activity", async () => {
@@ -89,20 +94,20 @@ describe("ManagerOverviewWorkspace", () => {
     );
   });
 
-  it("exposes direct create and open actions with stable route targets", async () => {
+  it("opens event creation in a modal and keeps stable workspace targets", async () => {
+    const user = userEvent.setup();
     renderOverview({
       getEventSummary: vi.fn(async () => ({ summary: springSummary })),
       listEventActivity: vi.fn(async () => ({ activity: [] })),
       listEvents: vi.fn(async () => ({ events: [springDinner] })),
     });
 
-    const createAction = await screen.findByRole("link", { name: "Create event" });
+    const createAction = await screen.findByRole("button", { name: "Create event" });
     const openAction = screen.getByRole("link", { name: "Open Spring Dinner" });
 
-    expect(createAction.getAttribute("href")).toBe("/events#new-event");
     expect(openAction.getAttribute("href")).toBe(`/events/${springDinner.id}`);
-    createAction.focus();
-    expect(document.activeElement).toBe(createAction);
+    await user.click(createAction);
+    expect(await screen.findByRole("dialog", { name: "Create event" })).toBeTruthy();
     openAction.focus();
     expect(document.activeElement).toBe(openAction);
   });

@@ -14,7 +14,6 @@ describe("dashboard navigation model", () => {
 
     expect(dashboardNavigationModel.map((item) => item.id)).toEqual([
       "manager-overview",
-      "events",
       "event-overview",
       "event-content",
       "event-theme",
@@ -26,7 +25,6 @@ describe("dashboard navigation model", () => {
     expect(navigation.manager).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ active: false, href: "/", id: "manager-overview" }),
-        expect.objectContaining({ active: true, href: "/events", id: "events" }),
       ]),
     );
     expect(navigation.workspace.find((item) => item.id === "event-guests")).toEqual(
@@ -61,7 +59,7 @@ describe("dashboard navigation model", () => {
     expect(navigation.manager.find((item) => item.id === "manager-overview")).toEqual(
       expect.objectContaining({ active: true, href: "/" }),
     );
-    expect(navigation.manager.find((item) => item.id === "events")?.active).toBe(false);
+    expect(navigation.manager).toHaveLength(1);
   });
 });
 

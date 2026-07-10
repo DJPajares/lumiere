@@ -39,7 +39,8 @@ describe("DashboardTopNavigation", () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(screen.getByRole("link", { name: "Theme" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("link", { name: "Events" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Home" })).toBeTruthy();
+    expect(brand.getAttribute("href")).toBe("/");
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 

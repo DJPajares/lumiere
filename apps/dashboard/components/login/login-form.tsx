@@ -12,7 +12,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
-  const [redirectTo, setRedirectTo] = useState("/events");
+  const [redirectTo, setRedirectTo] = useState("/");
 
   useEffect(() => {
     const nextRedirect = new URLSearchParams(window.location.search).get("redirectTo");
@@ -99,7 +99,7 @@ export function LoginForm() {
       </button>
       <Link
         className="text-sm font-semibold text-[var(--accent-strong)] underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-        href="/events"
+        href="/"
       >
         Return to dashboard
       </Link>
@@ -109,7 +109,7 @@ export function LoginForm() {
 
 function toSafeRedirect(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/events";
+    return "/";
   }
 
   return value;

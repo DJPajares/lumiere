@@ -12,6 +12,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
+import { DashboardSelect } from "../../../ui/dashboard-fields";
+import { ResponsiveModal } from "../../../ui/responsive-modal";
 
 type GuestWorkspaceData = {
   event: Event;
@@ -40,6 +42,7 @@ type FormValues = {
   label: string;
   maxPax: string;
   notes: string;
+  status: string;
 };
 
 type FormErrors = Partial<Record<keyof FormValues | "_form", string>>;
@@ -55,6 +58,7 @@ const defaultFormValues: FormValues = {
   label: "",
   maxPax: "2",
   notes: "",
+  status: "pending",
 };
 
 const guestStatuses: GuestGroupStatus[] = [
@@ -75,12 +79,14 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     status: "loading",
   });
   const [formValues, setFormValues] = useState<FormValues>(defaultFormValues);
+  const [baselineValues, setBaselineValues] = useState<FormValues>(defaultFormValues);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [submitting, setSubmitting] = useState(false);
   const [busyGroupId, setBusyGroupId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   const loadGuests = useCallback(
     async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
@@ -153,21 +159,28 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const startCreate = () => {
     setEditingGroupId(null);
     setFormValues(defaultFormValues);
+    setBaselineValues(defaultFormValues);
     setFormErrors({});
     setActionMessage(null);
+    setFormOpen(true);
   };
 
   const startEdit = (group: GuestGroup) => {
     setEditingGroupId(group.id);
-    setFormValues({
+    const values = {
       contactEmail: group.contactEmail ?? "",
       contactName: group.contactName ?? "",
       label: group.label,
       maxPax: String(group.maxPax),
       notes: group.notes ?? "",
-    });
+      status: group.status,
+    };
+
+    setFormValues(values);
+    setBaselineValues(values);
     setFormErrors({});
     setActionMessage(null);
+    setFormOpen(true);
   };
 
   const updateField = (field: keyof FormValues, value: string) => {
@@ -188,7 +201,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       return;
     }
 
-    const parsed = parseGuestGroupForm(formValues, editingGroup?.status);
+    const parsed = parseGuestGroupForm(formValues);
 
     if (!parsed.ok) {
       setFormErrors(parsed.errors);
@@ -205,6 +218,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         const response = await apiClient.updateGuestGroup(eventId, editingGroup.id, parsed.input);
         replaceGuestGroup(response.guestGroup);
         setActionMessage(`${response.guestGroup.label} updated.`);
+        setFormOpen(false);
       } else {
         const response = await apiClient.createGuestGroup(eventId, parsed.input);
         setState((current) =>
@@ -224,6 +238,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         );
         setFormValues(defaultFormValues);
         setActionMessage(`${response.guestGroup.label} created. Invite link ready to copy.`);
+        setFormOpen(false);
       }
     } catch (error) {
       setFormErrors(toFormErrors(error));
@@ -407,15 +422,33 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         </div>
       ) : null}
 
-      <GuestGroupForm
-        editingGroup={editingGroup}
-        errors={formErrors}
-        onCancel={startCreate}
-        onSubmit={() => void submitForm()}
-        onUpdate={updateField}
-        submitting={submitting}
-        values={formValues}
-      />
+      <ResponsiveModal
+        description={
+          editingGroup
+            ? "Update the group identity, capacity, invite status, and private notes."
+            : "Create one private invite for a household, table, or guest group."
+        }
+        dirty={JSON.stringify(formValues) !== JSON.stringify(baselineValues)}
+        onDiscard={() => {
+          setFormValues(baselineValues);
+          setFormErrors({});
+        }}
+        onOpenChange={setFormOpen}
+        open={formOpen}
+        title={editingGroup ? `Edit ${editingGroup.label}` : "Create guest group"}
+      >
+        {({ requestClose }) => (
+          <GuestGroupForm
+            editingGroup={editingGroup}
+            errors={formErrors}
+            onCancel={requestClose}
+            onSubmit={() => void submitForm()}
+            onUpdate={updateField}
+            submitting={submitting}
+            values={formValues}
+          />
+        )}
+      </ResponsiveModal>
 
       <GuestGroupList
         busyGroupId={busyGroupId}
@@ -504,16 +537,7 @@ function GuestGroupForm({
   values: FormValues;
 }) {
   return (
-    <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
-      <div>
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">
-          {editingGroup ? "Edit guest group" : "Create guest group"}
-        </p>
-        <h2 className="mt-1 text-xl font-semibold">
-          {editingGroup ? editingGroup.label : "Add a household or invite group"}
-        </h2>
-      </div>
-
+    <div className="grid gap-4">
       {errors._form ? (
         <p
           className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm text-[var(--error)]"
@@ -544,7 +568,7 @@ function GuestGroupForm({
         />
         <TextField
           error={errors.contactName}
-          label="Contact name"
+          label="Guest names / contact"
           onChange={(value) => onUpdate("contactName", value)}
           value={values.contactName}
         />
@@ -556,6 +580,20 @@ function GuestGroupForm({
           value={values.contactEmail}
         />
       </div>
+
+      {editingGroup ? (
+        <DashboardSelect
+          error={errors.status}
+          id="guest-invite-status"
+          label="Invite status"
+          onValueChange={(value) => onUpdate("status", value)}
+          options={guestStatuses.map((status) => ({
+            label: formatStatus(status),
+            value: status,
+          }))}
+          value={values.status}
+        />
+      ) : null}
 
       <label className="grid gap-2 text-sm font-medium" htmlFor="guest-notes">
         Notes
@@ -583,17 +621,15 @@ function GuestGroupForm({
         >
           {submitting ? "Saving..." : editingGroup ? "Save guest group" : "Create guest group"}
         </button>
-        {editingGroup ? (
-          <button
-            className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            onClick={onCancel}
-            type="button"
-          >
-            Cancel edit
-          </button>
-        ) : null}
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancel
+        </button>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -666,6 +702,7 @@ function GuestGroupList({
 
               <div className="flex flex-wrap gap-2">
                 <button
+                  aria-label={`Edit ${group.label}`}
                   className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   onClick={() => onEdit(group)}
                   type="button"
@@ -864,10 +901,7 @@ function GuestLoading() {
   );
 }
 
-function parseGuestGroupForm(
-  values: FormValues,
-  status?: GuestGroupStatus,
-):
+function parseGuestGroupForm(values: FormValues):
   | {
       input: GuestGroupMutationRequest;
       ok: true;
@@ -883,7 +917,7 @@ function parseGuestGroupForm(
     label: values.label,
     maxPax,
     notes: values.notes,
-    ...(status ? { status } : {}),
+    status: values.status,
   });
 
   if (result.success) {
@@ -958,7 +992,8 @@ function isFormField(value: string): value is keyof FormValues {
     value === "contactName" ||
     value === "label" ||
     value === "maxPax" ||
-    value === "notes"
+    value === "notes" ||
+    value === "status"
   );
 }
 

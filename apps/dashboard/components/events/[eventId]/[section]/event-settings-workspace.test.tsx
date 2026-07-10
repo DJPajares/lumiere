@@ -37,6 +37,8 @@ describe("EventSettingsWorkspace", () => {
 
     expect(screen.getByLabelText("Loading event settings")).toBeTruthy();
     expect(await screen.findByText("Event settings")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Edit event details" }));
+    expect(await screen.findByRole("dialog", { name: "Edit Spring Dinner" })).toBeTruthy();
 
     await user.clear(screen.getByLabelText("Event title"));
     await user.type(screen.getByLabelText("Event title"), "Summer Dinner");
@@ -46,7 +48,7 @@ describe("EventSettingsWorkspace", () => {
     screen.getByLabelText("Publish status").focus();
     await user.keyboard("{ArrowDown}");
     await user.click(screen.getByRole("option", { name: "Published" }));
-    await user.click(screen.getByRole("button", { name: "Save settings" }));
+    await user.click(screen.getByRole("button", { name: "Save event" }));
 
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
     expect(updateEvent).toHaveBeenCalledWith(
@@ -57,8 +59,7 @@ describe("EventSettingsWorkspace", () => {
         title: "Summer Dinner",
       }),
     );
-    expect(await screen.findByText("Event settings saved.")).toBeTruthy();
-    expect(screen.getByText("All changes saved")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
   });
 
@@ -73,9 +74,11 @@ describe("EventSettingsWorkspace", () => {
     });
 
     await screen.findByText("Event settings");
+    await user.click(screen.getByRole("button", { name: "Edit event details" }));
+    await screen.findByRole("dialog", { name: "Edit Spring Dinner" });
     await user.clear(screen.getByLabelText("Event title"));
     await user.type(screen.getByLabelText("Event title"), "Summer Dinner");
-    await user.click(screen.getByRole("button", { name: "Save settings" }));
+    await user.click(screen.getByRole("button", { name: "Save event" }));
 
     expect(await screen.findByText("Unable to save event settings.")).toBeTruthy();
     expect(screen.getByDisplayValue("Summer Dinner")).toBeTruthy();

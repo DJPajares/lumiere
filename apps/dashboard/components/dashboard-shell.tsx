@@ -15,7 +15,7 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({
-  activePath = "/events",
+  activePath = "/",
   children,
   eyebrow = "Manager workspace",
   title,
@@ -42,9 +42,9 @@ export function DashboardShell({
               {isEventList ? null : (
                 <Link
                   className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                  href="/events"
+                  href="/"
                 >
-                  All events
+                  Home
                 </Link>
               )}
             </div>
@@ -70,7 +70,7 @@ function DashboardBreadcrumb({
         className="flex flex-wrap items-center gap-2 text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
       >
         <span aria-current="page" className="text-[var(--foreground)]">
-          Overview
+          Home
         </span>
       </nav>
     );
@@ -82,12 +82,19 @@ function DashboardBreadcrumb({
       className="flex flex-wrap items-center gap-2 text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
     >
       <Link
-        aria-current={context.eventId ? undefined : "page"}
         className="rounded-[var(--radius-sm)] text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-        href="/events"
+        href="/"
       >
-        Events
+        Home
       </Link>
+      {!context.eventId ? (
+        <>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-[var(--foreground)]">
+            Events
+          </span>
+        </>
+      ) : null}
       {context.eventId ? (
         <>
           <span aria-hidden="true">/</span>

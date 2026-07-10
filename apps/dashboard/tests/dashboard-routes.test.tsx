@@ -107,7 +107,7 @@ describe("dashboard routes", () => {
 
     expect(html).toContain("Events");
     expect(html).toContain("Published events");
-    expect(html).toContain("New event");
+    expect(html).toContain("Create event");
     expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain('aria-label="Dashboard navigation"');
     expect(html).toContain('aria-label="Event workspace unavailable"');

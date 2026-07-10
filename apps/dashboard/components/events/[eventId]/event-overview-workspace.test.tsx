@@ -2,6 +2,7 @@
 
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -62,6 +63,20 @@ describe("EventOverviewWorkspace", () => {
 
     expect(await screen.findByText("No activity yet")).toBeTruthy();
     expect(screen.getByText(/Activity will appear after managers publish changes/)).toBeTruthy();
+  });
+
+  it("opens bounded event details from the event workspace", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth({
+      getEvent: vi.fn(async () => ({ event: overviewEvent })),
+      getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
+      listEventActivity: vi.fn(async () => ({ activity: [] })),
+    });
+
+    await screen.findByText("Spring Dinner");
+    await user.click(screen.getByRole("button", { name: "Edit event" }));
+    expect(await screen.findByRole("dialog", { name: "Edit Spring Dinner" })).toBeTruthy();
   });
 });
 

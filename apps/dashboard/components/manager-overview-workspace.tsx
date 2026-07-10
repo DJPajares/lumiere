@@ -6,9 +6,11 @@ import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@lumiere/dashboard-ui/components/tabs";
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useDashboardAuth } from "../auth/dashboard-auth-provider";
+import { EventBasicsModal } from "./events/event-basics-modal";
 import {
   formatDateTime,
   formatEventType,
@@ -40,9 +42,12 @@ const initialState: ManagerOverviewState = {
 };
 
 export function ManagerOverviewWorkspace() {
+  const router = useRouter();
   const { apiClient } = useDashboardAuth();
   const [state, setState] = useState<ManagerOverviewState>(initialState);
   const requestRevision = useRef(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const loadOverview = useCallback(async () => {
     const revision = requestRevision.current + 1;
@@ -130,17 +135,77 @@ export function ManagerOverviewWorkspace() {
   }
 
   if (state.data.events.length === 0) {
-    return <ManagerOverviewEmpty />;
+    return (
+      <>
+        <ManagerOverviewEmpty
+          onCreate={() => {
+            setEditingEvent(null);
+            setModalOpen(true);
+          }}
+        />
+        <EventBasicsModal
+          event={editingEvent}
+          onOpenChange={setModalOpen}
+          onSaved={(event) => router.push(`/events/${event.id}`)}
+          open={modalOpen}
+        />
+      </>
+    );
   }
 
-  return <ManagerOverviewContent data={state.data} onRefresh={() => void loadOverview()} />;
+  return (
+    <>
+      <ManagerOverviewContent
+        data={state.data}
+        onCreate={() => {
+          setEditingEvent(null);
+          setModalOpen(true);
+        }}
+        onEdit={(event) => {
+          setEditingEvent(event);
+          setModalOpen(true);
+        }}
+        onRefresh={() => void loadOverview()}
+      />
+      <EventBasicsModal
+        event={editingEvent}
+        onOpenChange={setModalOpen}
+        onSaved={(event) => {
+          if (editingEvent) {
+            setState((current) =>
+              current.status === "ready"
+                ? {
+                    ...current,
+                    data: {
+                      events: current.data.events.map((item) =>
+                        item.id === event.id ? event : item,
+                      ),
+                      insights: current.data.insights.map((insight) =>
+                        insight.event.id === event.id ? { ...insight, event } : insight,
+                      ),
+                    },
+                  }
+                : current,
+            );
+          } else {
+            router.push(`/events/${event.id}`);
+          }
+        }}
+        open={modalOpen}
+      />
+    </>
+  );
 }
 
 function ManagerOverviewContent({
   data,
+  onCreate,
+  onEdit,
   onRefresh,
 }: {
   data: ManagerOverviewData;
+  onCreate: () => void;
+  onEdit: (event: Event) => void;
   onRefresh: () => void;
 }) {
   const now = new Date();
@@ -170,7 +235,7 @@ function ManagerOverviewContent({
             <Button className="min-h-10" onClick={onRefresh} variant="outline">
               Refresh overview
             </Button>
-            <Button className="min-h-10" render={<Link href="/events#new-event" />}>
+            <Button className="min-h-10" onClick={onCreate}>
               Create event
             </Button>
           </div>
@@ -213,7 +278,7 @@ function ManagerOverviewContent({
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]">
         <div className="grid gap-5">
           <UpcomingMilestones milestones={overview.milestones} />
-          <ManagedEvents events={data.events} now={now} />
+          <ManagedEvents events={data.events} now={now} onEdit={onEdit} />
         </div>
         <div className="grid gap-5">
           <PendingActions actions={overview.pendingActions} />
@@ -276,7 +341,15 @@ function UpcomingMilestones({ milestones }: { milestones: Event[] }) {
   );
 }
 
-function ManagedEvents({ events, now }: { events: Event[]; now: Date }) {
+function ManagedEvents({
+  events,
+  now,
+  onEdit,
+}: {
+  events: Event[];
+  now: Date;
+  onEdit: (event: Event) => void;
+}) {
   const allEvents = [...events]
     .sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt))
     .slice(0, 5);
@@ -315,13 +388,17 @@ function ManagedEvents({ events, now }: { events: Event[]; now: Date }) {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="all">
-          <ManagerEventRows events={allEvents} />
+          <ManagerEventRows events={allEvents} onEdit={onEdit} />
         </TabsContent>
         <TabsContent value="upcoming">
-          <ManagerEventRows emptyMessage="No upcoming events." events={upcomingEvents} />
+          <ManagerEventRows
+            emptyMessage="No upcoming events."
+            events={upcomingEvents}
+            onEdit={onEdit}
+          />
         </TabsContent>
         <TabsContent value="drafts">
-          <ManagerEventRows emptyMessage="No draft events." events={draftEvents} />
+          <ManagerEventRows emptyMessage="No draft events." events={draftEvents} onEdit={onEdit} />
         </TabsContent>
       </Tabs>
     </section>
@@ -331,9 +408,11 @@ function ManagedEvents({ events, now }: { events: Event[]; now: Date }) {
 function ManagerEventRows({
   emptyMessage = "No managed events.",
   events,
+  onEdit,
 }: {
   emptyMessage?: string;
   events: Event[];
+  onEdit: (event: Event) => void;
 }) {
   if (events.length === 0) {
     return <p className="rounded-[var(--radius-md)] bg-muted/60 p-4 text-sm">{emptyMessage}</p>;
@@ -355,14 +434,25 @@ function ManagerEventRows({
               {formatEventType(event.eventType)} · {formatDateTime(event.startsAt, event.timezone)}
             </p>
           </div>
-          <Button
-            className="min-h-10"
-            render={<Link href={`/events/${event.id}`} />}
-            size="sm"
-            variant="outline"
-          >
-            Open {event.title}
-          </Button>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Button
+              className="min-h-10"
+              render={<Link href={`/events/${event.id}`} />}
+              size="sm"
+              variant="outline"
+            >
+              Open {event.title}
+            </Button>
+            <Button
+              aria-label={`Edit ${event.title}`}
+              className="min-h-10"
+              onClick={() => onEdit(event)}
+              size="sm"
+              variant="ghost"
+            >
+              Edit event
+            </Button>
+          </div>
         </li>
       ))}
     </ul>
@@ -448,7 +538,7 @@ function RecentActivity({ activity }: { activity: ManagerActivity[] }) {
   );
 }
 
-function ManagerOverviewEmpty() {
+function ManagerOverviewEmpty({ onCreate }: { onCreate: () => void }) {
   return (
     <section className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card text-card-foreground shadow-sm">
       <div className="grid gap-5 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:items-center">
@@ -461,7 +551,7 @@ function ManagerOverviewEmpty() {
             Start with the public details, then shape the invitation, guest groups, and RSVP flow
             from one event workspace.
           </p>
-          <Button className="mt-5 min-h-10" render={<Link href="/events#new-event" />}>
+          <Button className="mt-5 min-h-10" onClick={onCreate}>
             Create event
           </Button>
         </div>

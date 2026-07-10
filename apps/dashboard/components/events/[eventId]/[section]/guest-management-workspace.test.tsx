@@ -80,6 +80,8 @@ describe("GuestManagementWorkspace", () => {
     );
 
     await screen.findByText("No guest groups yet");
+    await user.click(screen.getByRole("button", { name: "New guest group" }));
+    expect(await screen.findByRole("dialog", { name: "Create guest group" })).toBeTruthy();
     await user.clear(screen.getByLabelText("Max pax"));
     await user.type(screen.getByLabelText("Max pax"), "0");
     await user.click(screen.getByRole("button", { name: "Create guest group" }));
@@ -125,6 +127,8 @@ describe("GuestManagementWorkspace", () => {
     );
 
     await screen.findByText("No guest groups yet");
+    await user.click(screen.getByRole("button", { name: "New guest group" }));
+    await screen.findByRole("dialog", { name: "Create guest group" });
     await user.type(screen.getByLabelText("Group label"), "New Table");
     await user.click(screen.getByRole("button", { name: "Create guest group" }));
 
@@ -135,6 +139,58 @@ describe("GuestManagementWorkspace", () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(inviteLink));
     expect(await screen.findByText("New Table invite link copied.")).toBeTruthy();
+  });
+
+  it("edits guest capacity, names, notes, and invite status in the responsive modal", async () => {
+    const user = userEvent.setup();
+    const updatedGroup: GuestGroup = {
+      ...guestGroup,
+      contactName: "Mina, Alex, and Jamie",
+      maxPax: 5,
+      notes: "Seat near the stage.",
+      status: "opened",
+    };
+    const updateGuestGroup = vi.fn<DashboardApiClient["updateGuestGroup"]>(async () => ({
+      guestGroup: updatedGroup,
+    }));
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
+        updateGuestGroup,
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    const editTrigger = screen.getByRole("button", { name: "Edit Tan Family" });
+    await user.click(editTrigger);
+    expect(await screen.findByRole("dialog", { name: "Edit Tan Family" })).toBeTruthy();
+
+    await user.clear(screen.getByLabelText("Max pax"));
+    await user.type(screen.getByLabelText("Max pax"), "5");
+    await user.clear(screen.getByLabelText("Guest names / contact"));
+    await user.type(screen.getByLabelText("Guest names / contact"), "Mina, Alex, and Jamie");
+    await user.clear(screen.getByLabelText("Notes"));
+    await user.type(screen.getByLabelText("Notes"), "Seat near the stage.");
+    await user.click(screen.getByLabelText("Invite status"));
+    await user.click(await screen.findByRole("option", { name: "Opened" }));
+    await user.click(screen.getByRole("button", { name: "Save guest group" }));
+
+    await waitFor(() =>
+      expect(updateGuestGroup).toHaveBeenCalledWith(
+        "evt_123",
+        "guest_1",
+        expect.objectContaining({
+          contactName: "Mina, Alex, and Jamie",
+          maxPax: 5,
+          notes: "Seat near the stage.",
+          status: "opened",
+        }),
+      ),
+    );
+    expect(await screen.findByText("Tan Family updated.")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(editTrigger);
   });
 
   it("confirms before regenerating an invite link", async () => {

@@ -87,7 +87,7 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
 
         <Link
           className="shrink-0 rounded-md text-sm font-semibold text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          href="/events"
+          href="/"
         >
           <DashboardBrandLockup />
         </Link>

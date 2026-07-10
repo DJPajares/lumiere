@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../placeholder-panels";
+import { EventBasicsModal } from "../event-basics-modal";
 
 type OverviewData = {
   activity: ActivityEvent[];
@@ -36,6 +37,7 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
     isRefreshing: false,
     status: "loading",
   });
+  const [editOpen, setEditOpen] = useState(false);
 
   const loadOverview = useCallback(
     async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
@@ -150,13 +152,31 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
   }
 
   return (
-    <EventOverviewContent
-      activity={overviewData.activity}
-      event={overviewData.event}
-      isRefreshing={state.isRefreshing}
-      onRefresh={() => void loadOverview({ refreshing: true })}
-      summary={overviewData.summary}
-    />
+    <>
+      <EventOverviewContent
+        activity={overviewData.activity}
+        event={overviewData.event}
+        isRefreshing={state.isRefreshing}
+        onEdit={() => setEditOpen(true)}
+        onRefresh={() => void loadOverview({ refreshing: true })}
+        summary={overviewData.summary}
+      />
+      <EventBasicsModal
+        event={overviewData.event}
+        onOpenChange={setEditOpen}
+        onSaved={(savedEvent) =>
+          setState((current) =>
+            current.status === "ready"
+              ? {
+                  ...current,
+                  data: { ...current.data, event: savedEvent },
+                }
+              : current,
+          )
+        }
+        open={editOpen}
+      />
+    </>
   );
 }
 
@@ -164,10 +184,12 @@ function EventOverviewContent({
   activity,
   event,
   isRefreshing,
+  onEdit,
   onRefresh,
   summary,
 }: OverviewData & {
   isRefreshing: boolean;
+  onEdit: () => void;
   onRefresh: () => void;
 }) {
   const summaryCards = useMemo(() => getSummaryCards(summary, activity), [activity, summary]);
@@ -188,12 +210,13 @@ function EventOverviewContent({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
+            <button
               className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-              href={`/events/${event.id}/settings`}
+              onClick={onEdit}
+              type="button"
             >
-              Settings
-            </Link>
+              Edit event
+            </button>
             <button
               className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isRefreshing}
