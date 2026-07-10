@@ -125,7 +125,16 @@ export type ThemeDefinition = {
   accessibilityNotes: string[];
 };
 
-export const themeIds = ["lumiere-default", "premium", "kids", "noel"] as const;
+export const themeIds = [
+  "lumiere-default",
+  "premium",
+  "kids",
+  "noel",
+  "editorial-ivory",
+  "garden-light",
+  "modern-minimal",
+  "celestial-gold",
+] as const;
 export type ThemeId = (typeof themeIds)[number];
 
 const publicCoreSections: SectionType[] = [
@@ -136,6 +145,18 @@ const publicCoreSections: SectionType[] = [
   "rsvp",
   "outro",
 ];
+
+const allInviteSections: SectionType[] = [
+  ...publicCoreSections,
+  "profile",
+  "story",
+  "entourage",
+  "dress_code",
+  "gallery",
+  "custom",
+];
+
+const expansionEventTypes: EventType[] = ["wedding", "birthday", "private_event", "other"];
 
 const createRendererSlots = ({
   fallback = [],
@@ -905,6 +926,760 @@ export const themeRegistry = {
     accessibilityNotes: [
       "Red/green seasonal cues must include text labels.",
       "Dark mode should avoid low-contrast evergreen-on-black pairings.",
+    ],
+  },
+  "editorial-ivory": {
+    id: "editorial-ivory",
+    label: "Editorial Ivory",
+    description:
+      "Print-inspired invitation with quiet asymmetry for weddings, birthdays, and private celebrations.",
+    designRead:
+      "Ivory editorial spread with tall portrait crops, sharp rules, and generous negative space.",
+    supportedEventTypes: [...expansionEventTypes, "dinner"],
+    supportedModes: ["light", "dark", "toggleable"],
+    defaultMode: "toggleable",
+    supportedSections: allInviteSections,
+    requiredSections: ["introduction", "date", "location", "rsvp"],
+    recommendedSections: [
+      "introduction",
+      "profile",
+      "date",
+      "story",
+      "details",
+      "gallery",
+      "location",
+      "rsvp",
+      "outro",
+    ],
+    sectionRhythm: [
+      "introduction",
+      "profile",
+      "date",
+      "story",
+      "details",
+      "entourage",
+      "dress_code",
+      "gallery",
+      "location",
+      "rsvp",
+      "outro",
+    ],
+    tokens: {
+      light: {
+        background: "#f5f0e7",
+        foreground: "#221f1a",
+        surface: "#fbf8f1",
+        surfaceMuted: "#e7dfd2",
+        border: "#bdb3a4",
+        accent: "#8a4f38",
+        accentStrong: "#623322",
+        success: "#356b52",
+        warning: "#8c5b20",
+        error: "#9b403c",
+        focus: "#8a4f38",
+      },
+      dark: {
+        background: "#191713",
+        foreground: "#eee8dd",
+        surface: "#24211c",
+        surfaceMuted: "#312d26",
+        border: "#514a40",
+        accent: "#d2977c",
+        accentStrong: "#efbda3",
+        success: "#79b397",
+        warning: "#d4a25f",
+        error: "#db8580",
+        focus: "#d2977c",
+      },
+    },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Quiet chamber music or room ambience with explicit guest controls.",
+      },
+      backgroundTreatment:
+        "Uncoated ivory paper, hairline folio rules, and offset editorial columns.",
+      visualSystem: {
+        cardStackPolicy:
+          "Sections read as one print sequence; practical content uses rules and columns rather than floating cards.",
+        compositionMap: "ivory-editorial",
+        imageStrategy:
+          "Use tall portrait and documentary crops with restrained captions and useful text fallbacks.",
+        motionProfile: "immersive",
+        parallaxProfile: "hero-and-media",
+      },
+      hero: {
+        composition: "editorial-split",
+        fullViewport: true,
+        mediaTreatment: "Tall offset portrait with a fine border and page-number caption.",
+      },
+      rsvpDesign: "premium",
+      sectionDefaults: {
+        date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },
+        details: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        dress_code: { composition: "framed", density: "compact", motion: "card-reveal" },
+        entourage: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "spacious",
+          layout: "feature",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "spacious",
+          motion: "media-reveal",
+        },
+        outro: {
+          composition: "layered-media",
+          density: "spacious",
+          motion: "media-reveal",
+        },
+        profile: {
+          composition: "editorial-split",
+          density: "spacious",
+          layout: "offset",
+          motion: "media-reveal",
+        },
+        rsvp: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },
+        story: {
+          composition: "timeline",
+          density: "spacious",
+          layout: "folio-rail",
+          motion: "timeline-reveal",
+        },
+      },
+    },
+    radius: { sm: "0.125rem", md: "0.25rem", lg: "0.375rem" },
+    typography: {
+      display: "high-contrast editorial serif",
+      body: "neutral sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily: 'Iowan Old Style, Baskerville, "Times New Roman", ui-serif, serif',
+        eyebrowLetterSpacing: "0.24em",
+      },
+      scale: "editorial",
+    },
+    imageTreatment:
+      "Tall magazine crops, fine rules, visible captions, and reserved aspect-ratio fallbacks.",
+    rsvpTreatment: "A ruled reply chapter with formal copy and no detached transaction card.",
+    compatibility: {
+      backdropStrategy: "Uncoated ivory field with page rules and asymmetric whitespace.",
+      fontPairing: { body: "neutral sans", display: "high-contrast editorial serif" },
+      motionLevel: "immersive",
+      ornamentStrategy:
+        "Folio numbers, crop-line spacing, and typographic rules only; no ornamental flourishes.",
+      rendererSlots: createRendererSlots({ specialized: allInviteSections }),
+    },
+    dashboardPreview: {
+      swatch: "#8a4f38",
+      summary: "Ivory print editorial with offset portrait and ruled section rhythm.",
+    },
+    previewData: {
+      eventTitle: "Mara & Leon",
+      eyebrow: "Issue No. 06 · Celebration",
+      subtitle: "A late-summer gathering told as an intimate editorial.",
+      venueName: "The Reading Room",
+      heroImageAlt: "Couple standing beside tall windows in soft afternoon light",
+      sections: [
+        {
+          type: "profile",
+          title: "The hosts",
+          summary: "An offset portrait and short introduction establish the people at the center.",
+        },
+        {
+          type: "story",
+          title: "In sequence",
+          summary: "Story and schedule share one continuous ruled timeline.",
+        },
+        {
+          type: "rsvp",
+          title: "Your reply",
+          summary: "The response closes the editorial as a spacious final chapter.",
+        },
+      ],
+    },
+    accessibilityNotes: [
+      "Hairlines are decorative and never the only boundary for controls.",
+      "Serif display sizes collapse carefully to preserve readable mobile line lengths.",
+    ],
+  },
+  "garden-light": {
+    id: "garden-light",
+    label: "Garden Light",
+    description:
+      "Sunlit organic invitation for garden weddings, birthdays, and relaxed private events.",
+    designRead:
+      "Airy garden composition with dappled light, sage fields, and gently layered photography.",
+    supportedEventTypes: [...expansionEventTypes, "dinner"],
+    supportedModes: ["light", "dark", "toggleable"],
+    defaultMode: "toggleable",
+    supportedSections: allInviteSections,
+    requiredSections: ["introduction", "date", "location", "rsvp"],
+    recommendedSections: [
+      "introduction",
+      "date",
+      "profile",
+      "details",
+      "story",
+      "location",
+      "gallery",
+      "rsvp",
+      "outro",
+    ],
+    sectionRhythm: [
+      "introduction",
+      "date",
+      "profile",
+      "details",
+      "story",
+      "dress_code",
+      "entourage",
+      "location",
+      "gallery",
+      "rsvp",
+      "outro",
+    ],
+    tokens: {
+      light: {
+        background: "#f4f2e8",
+        foreground: "#253128",
+        surface: "#fbfaf3",
+        surfaceMuted: "#dfe7d8",
+        border: "#b7c5ae",
+        accent: "#b35f43",
+        accentStrong: "#7f3f2c",
+        success: "#3f7557",
+        warning: "#976922",
+        error: "#a5443f",
+        focus: "#b35f43",
+      },
+      dark: {
+        background: "#142019",
+        foreground: "#edf0e6",
+        surface: "#1e2c23",
+        surfaceMuted: "#2a3b2f",
+        border: "#46604d",
+        accent: "#e59a7d",
+        accentStrong: "#ffc3a9",
+        success: "#86c39c",
+        warning: "#dfb46c",
+        error: "#e28b85",
+        focus: "#e59a7d",
+      },
+    },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Light acoustic or garden ambience, always started by the guest.",
+      },
+      backgroundTreatment:
+        "Warm daylight canvas with soft sage fields and restrained dappled radial light.",
+      visualSystem: {
+        cardStackPolicy:
+          "Use broad organic bands and layered image moments; reserve framed panels for reply and compact facts.",
+        compositionMap: "garden-celebration",
+        imageStrategy:
+          "Lead with real outdoor or celebrant imagery, using airy crops and botanical-color fact fields when absent.",
+        motionProfile: "playful",
+        parallaxProfile: "hero-only",
+      },
+      hero: {
+        composition: "centered-media",
+        fullViewport: true,
+        mediaTreatment: "Wide sunlit image with an organic arch radius and soft edge highlight.",
+      },
+      rsvpDesign: "default",
+      sectionDefaults: {
+        date: { composition: "full-bleed", density: "balanced", motion: "section-reveal" },
+        details: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        dress_code: { composition: "framed", density: "balanced", motion: "card-reveal" },
+        entourage: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "spacious",
+          layout: "airy-feature",
+          motion: "gallery-drift",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "media-reveal",
+        },
+        outro: {
+          composition: "layered-media",
+          density: "spacious",
+          motion: "media-reveal",
+        },
+        profile: {
+          composition: "editorial-split",
+          density: "balanced",
+          layout: "organic-split",
+          motion: "media-reveal",
+        },
+        rsvp: { composition: "framed", density: "balanced", motion: "section-reveal" },
+        story: {
+          composition: "layered-media",
+          density: "spacious",
+          layout: "garden-path",
+          motion: "media-reveal",
+        },
+      },
+    },
+    radius: { sm: "0.75rem", md: "1.25rem", lg: "2rem" },
+    typography: {
+      display: "soft humanist serif",
+      body: "open humanist sans",
+      css: {
+        bodyFamily: 'Optima, Candara, "Noto Sans", ui-sans-serif, system-ui, sans-serif',
+        displayFamily: 'Charter, "Bitstream Charter", Georgia, ui-serif, serif',
+        eyebrowLetterSpacing: "0.14em",
+      },
+      scale: "playful",
+    },
+    imageTreatment:
+      "Sunlit landscape and portrait crops with organic arches, preserved subjects, and airy captions.",
+    rsvpTreatment: "Friendly garden reply panel grounded after the image-led invitation chapters.",
+    compatibility: {
+      backdropStrategy: "Dappled daylight fields, soft sage bands, and generous open space.",
+      fontPairing: { body: "open humanist sans", display: "soft humanist serif" },
+      motionLevel: "playful",
+      ornamentStrategy:
+        "Organic border arcs and leaf-like negative space only; avoids literal botanical clip art.",
+      rendererSlots: createRendererSlots({ specialized: allInviteSections }),
+    },
+    dashboardPreview: {
+      swatch: "#b35f43",
+      summary: "Sunlit garden rhythm with sage fields and softly arched photography.",
+    },
+    previewData: {
+      eventTitle: "Sunday in Bloom",
+      eyebrow: "A garden celebration",
+      subtitle: "Lunch, music, and warm light beneath the old trees.",
+      venueName: "Willow Courtyard",
+      heroImageAlt: "Long garden table beneath leafy trees in afternoon light",
+      sections: [
+        {
+          type: "details",
+          title: "The afternoon",
+          summary: "Arrival, lunch, and music sit beside a light garden image rail.",
+        },
+        {
+          type: "story",
+          title: "Along the path",
+          summary: "Softly layered photography gives the invitation an unhurried rhythm.",
+        },
+        {
+          type: "location",
+          title: "Willow Courtyard",
+          summary: "Venue and arrival guidance remain practical within the organic layout.",
+        },
+      ],
+    },
+    accessibilityNotes: [
+      "Dappled backgrounds stay behind decoration and never reduce text contrast.",
+      "Organic shapes collapse to simple rounded frames on narrow viewports.",
+    ],
+  },
+  "modern-minimal": {
+    id: "modern-minimal",
+    label: "Modern Minimal",
+    description:
+      "Strict typographic grid for contemporary weddings, birthdays, and private gatherings.",
+    designRead:
+      "Hard-edged modernist system with numbered facts, disciplined whitespace, and one cobalt signal.",
+    supportedEventTypes: [...expansionEventTypes, "launch"],
+    supportedModes: ["light", "dark", "system"],
+    defaultMode: "system",
+    supportedSections: allInviteSections,
+    requiredSections: ["introduction", "date", "location", "rsvp"],
+    recommendedSections: [
+      "introduction",
+      "date",
+      "details",
+      "profile",
+      "location",
+      "gallery",
+      "rsvp",
+      "outro",
+    ],
+    sectionRhythm: [
+      "introduction",
+      "date",
+      "details",
+      "profile",
+      "story",
+      "entourage",
+      "dress_code",
+      "location",
+      "gallery",
+      "rsvp",
+      "outro",
+    ],
+    tokens: {
+      light: {
+        background: "#f3f3ef",
+        foreground: "#171816",
+        surface: "#fafaf7",
+        surfaceMuted: "#e2e3de",
+        border: "#a7aaa3",
+        accent: "#2457d6",
+        accentStrong: "#153786",
+        success: "#277053",
+        warning: "#8c641d",
+        error: "#a33d3d",
+        focus: "#2457d6",
+      },
+      dark: {
+        background: "#141514",
+        foreground: "#eeefea",
+        surface: "#1d1f1d",
+        surfaceMuted: "#292c29",
+        border: "#50544f",
+        accent: "#7e9ff6",
+        accentStrong: "#b3c6ff",
+        success: "#75b597",
+        warning: "#d4ae68",
+        error: "#dc8585",
+        focus: "#7e9ff6",
+      },
+    },
+    composition: {
+      ambientMedia: {
+        audioSlot: "none",
+        controlStrategy: "not-supported",
+        defaultAutoplay: false,
+        mood: "Silent by design so type, spacing, and event facts carry the experience.",
+      },
+      backgroundTreatment:
+        "Flat off-white or graphite plane with strict rules and no decorative texture.",
+      visualSystem: {
+        cardStackPolicy:
+          "Use one continuous twelve-column system; borders organize information without creating a deck of cards.",
+        compositionMap: "minimal-modern",
+        imageStrategy:
+          "Use one hard-edged image plane at a time with objective captions and no decorative overlays.",
+        motionProfile: "calm",
+        parallaxProfile: "none",
+      },
+      hero: {
+        composition: "editorial-split",
+        fullViewport: true,
+        mediaTreatment: "One flush rectangular crop aligned to a strict typographic grid.",
+      },
+      rsvpDesign: "default",
+      sectionDefaults: {
+        date: { composition: "full-bleed", density: "compact", motion: "section-reveal" },
+        details: {
+          composition: "timeline",
+          density: "compact",
+          layout: "numbered-grid",
+          motion: "section-reveal",
+        },
+        dress_code: { composition: "framed", density: "compact", motion: "section-reveal" },
+        entourage: {
+          composition: "editorial-split",
+          density: "compact",
+          motion: "section-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "balanced",
+          layout: "hard-grid",
+          motion: "media-reveal",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "compact",
+          motion: "section-reveal",
+        },
+        outro: { composition: "full-bleed", density: "compact", motion: "section-reveal" },
+        profile: {
+          composition: "editorial-split",
+          density: "compact",
+          layout: "hard-grid",
+          motion: "section-reveal",
+        },
+        rsvp: {
+          composition: "editorial-split",
+          density: "compact",
+          motion: "section-reveal",
+        },
+        story: {
+          composition: "timeline",
+          density: "balanced",
+          layout: "numbered-rail",
+          motion: "timeline-reveal",
+        },
+      },
+    },
+    radius: { sm: "0", md: "0.125rem", lg: "0.25rem" },
+    typography: {
+      display: "modern grotesk sans",
+      body: "neutral system sans",
+      css: {
+        bodyFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        displayFamily: '"Helvetica Neue", Helvetica, Arial, ui-sans-serif, sans-serif',
+        eyebrowLetterSpacing: "0.2em",
+      },
+      scale: "restrained",
+    },
+    imageTreatment:
+      "Unrounded documentary crops locked to the grid with compact, objective captions.",
+    rsvpTreatment: "A direct two-column reply area using rules, labels, and one cobalt action.",
+    compatibility: {
+      backdropStrategy: "Flat off-white or graphite plane with visible grid alignment.",
+      fontPairing: { body: "neutral system sans", display: "modern grotesk sans" },
+      motionLevel: "calm",
+      ornamentStrategy:
+        "Numbered labels and structural rules only; no flourishes, texture, glow, or illustration.",
+      rendererSlots: createRendererSlots({ specialized: allInviteSections }),
+    },
+    dashboardPreview: {
+      swatch: "#2457d6",
+      summary: "Hard-edged typographic grid with numbered facts and a cobalt signal.",
+    },
+    previewData: {
+      eventTitle: "Studio 08",
+      eyebrow: "Private event · 19:30",
+      subtitle: "Dinner, conversation, and a concise sequence of details.",
+      venueName: "North Assembly",
+      heroImageAlt: "Concrete event space with a long table and clean architectural lines",
+      sections: [
+        {
+          type: "date",
+          title: "01 / Time",
+          summary: "The date becomes a full-width typographic marker in the shared grid.",
+        },
+        {
+          type: "details",
+          title: "02 / Sequence",
+          summary: "Facts read as numbered rows instead of separate utility cards.",
+        },
+        {
+          type: "rsvp",
+          title: "03 / Reply",
+          summary: "The final action stays direct, aligned, and free of decorative framing.",
+        },
+      ],
+    },
+    accessibilityNotes: [
+      "Thin rules supplement spacing and headings rather than carrying structure alone.",
+      "The cobalt action retains a visible text label and high-contrast focus outline.",
+    ],
+  },
+  "celestial-gold": {
+    id: "celestial-gold",
+    label: "Celestial Gold",
+    description:
+      "Luminous evening invitation for formal celebrations, birthdays, and private events.",
+    designRead:
+      "Midnight cinematic composition with warm gold type, orbital hairlines, and measured depth.",
+    supportedEventTypes: [...expansionEventTypes, "dinner", "holiday"],
+    supportedModes: ["light", "dark", "toggleable"],
+    defaultMode: "dark",
+    supportedSections: allInviteSections,
+    requiredSections: ["introduction", "date", "location", "rsvp"],
+    recommendedSections: [
+      "introduction",
+      "date",
+      "profile",
+      "story",
+      "details",
+      "gallery",
+      "location",
+      "rsvp",
+      "outro",
+    ],
+    sectionRhythm: [
+      "introduction",
+      "date",
+      "profile",
+      "story",
+      "details",
+      "entourage",
+      "dress_code",
+      "gallery",
+      "location",
+      "rsvp",
+      "outro",
+    ],
+    tokens: {
+      light: {
+        background: "#f2eee4",
+        foreground: "#19192a",
+        surface: "#faf7ef",
+        surfaceMuted: "#e1dacb",
+        border: "#b8ab91",
+        accent: "#9a6d24",
+        accentStrong: "#684614",
+        success: "#306d55",
+        warning: "#8e5e18",
+        error: "#9f3f42",
+        focus: "#9a6d24",
+      },
+      dark: {
+        background: "#0d1022",
+        foreground: "#f4ecd9",
+        surface: "#161a31",
+        surfaceMuted: "#232741",
+        border: "#4a4760",
+        accent: "#d6ad62",
+        accentStrong: "#f1d18e",
+        success: "#78b89c",
+        warning: "#e2b76e",
+        error: "#df858a",
+        focus: "#d6ad62",
+      },
+    },
+    composition: {
+      ambientMedia: {
+        audioSlot: "optional",
+        controlStrategy: "external-controls",
+        defaultAutoplay: false,
+        mood: "Slow atmospheric instrumental or evening ambience with explicit controls.",
+      },
+      backgroundTreatment:
+        "Deep indigo field with quiet radial light and sparse orbital hairline geometry.",
+      visualSystem: {
+        cardStackPolicy:
+          "Use cinematic dark chapters and layered media; practical fields sit within the scene rather than a stack of light cards.",
+        compositionMap: "celestial-evening",
+        imageStrategy:
+          "Use cinematic evening portraits and venue images with dark overlays that preserve faces and captions.",
+        motionProfile: "immersive",
+        parallaxProfile: "hero-and-media",
+      },
+      hero: {
+        composition: "layered-portrait",
+        fullViewport: true,
+        mediaTreatment: "Cinematic portrait within a luminous oval field and fine orbital rules.",
+      },
+      rsvpDesign: "premium",
+      sectionDefaults: {
+        date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },
+        details: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "section-reveal",
+        },
+        dress_code: { composition: "framed", density: "balanced", motion: "card-reveal" },
+        entourage: {
+          composition: "editorial-split",
+          density: "balanced",
+          motion: "media-reveal",
+        },
+        gallery: {
+          composition: "gallery-feature",
+          density: "spacious",
+          layout: "evening-feature",
+          motion: "gallery-drift",
+        },
+        location: {
+          composition: "editorial-split",
+          density: "spacious",
+          motion: "media-reveal",
+        },
+        outro: {
+          composition: "layered-media",
+          density: "spacious",
+          motion: "media-parallax",
+        },
+        profile: {
+          composition: "layered-media",
+          density: "spacious",
+          layout: "luminous-portrait",
+          motion: "media-reveal",
+        },
+        rsvp: {
+          composition: "layered-media",
+          density: "spacious",
+          motion: "section-reveal",
+        },
+        story: {
+          composition: "layered-media",
+          density: "spacious",
+          layout: "night-depth",
+          motion: "media-parallax",
+        },
+      },
+    },
+    radius: { sm: "0.25rem", md: "0.5rem", lg: "1rem" },
+    typography: {
+      display: "luminous high-contrast serif",
+      body: "clean geometric sans",
+      css: {
+        bodyFamily: "Avenir, Montserrat, ui-sans-serif, system-ui, sans-serif",
+        displayFamily: 'Didot, "Bodoni 72", Baskerville, ui-serif, serif',
+        eyebrowLetterSpacing: "0.28em",
+      },
+      scale: "editorial",
+    },
+    imageTreatment:
+      "Cinematic evening crops with indigo overlays, luminous edge light, and preserved faces.",
+    rsvpTreatment: "A luminous final chapter with formal reply copy and restrained gold focus.",
+    compatibility: {
+      backdropStrategy: "Deep indigo atmosphere with sparse radial light and night-sky depth.",
+      fontPairing: { body: "clean geometric sans", display: "luminous high-contrast serif" },
+      motionLevel: "immersive",
+      ornamentStrategy:
+        "Sparse orbital hairlines and luminous arcs; never dense star fields or novelty constellations.",
+      rendererSlots: createRendererSlots({ specialized: allInviteSections }),
+    },
+    dashboardPreview: {
+      swatch: "#d6ad62",
+      summary: "Midnight atmosphere with luminous gold type and cinematic depth.",
+    },
+    previewData: {
+      eventTitle: "Under the Evening Sky",
+      eyebrow: "An evening celebration",
+      subtitle: "A luminous gathering shaped by music, dinner, and midnight blue.",
+      venueName: "The Observatory Hall",
+      heroImageAlt: "Guests arriving at an illuminated hall beneath a deep blue evening sky",
+      sections: [
+        {
+          type: "date",
+          title: "When night falls",
+          summary: "The date opens as a luminous full-width chapter against indigo.",
+        },
+        {
+          type: "gallery",
+          title: "After dark",
+          summary: "One cinematic image leads a narrow sequence of evening moments.",
+        },
+        {
+          type: "rsvp",
+          title: "Join the gathering",
+          summary: "The reply becomes a measured final scene rather than a utility card.",
+        },
+      ],
+    },
+    accessibilityNotes: [
+      "Gold is reserved for accents and never used as the sole status indicator.",
+      "Dark overlays preserve subject visibility while maintaining readable foreground contrast.",
     ],
   },
 } satisfies Record<ThemeId, ThemeDefinition>;

@@ -58,6 +58,42 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.
 - Dashboard preview: evergreen table scene, cream surface, and restrained seasonal accent.
 
+## Editorial Ivory
+
+- Fit: weddings, birthdays, dinners, private events, and generic celebrations.
+- Mood: uncoated ivory paper, high-contrast serif display, folio rules, and tall portrait crops.
+- Motion: immersive hero-and-media depth; reduced motion preserves the asymmetric print layout.
+- Sections: offset split hero/profile, ruled timeline story, feature gallery, split venue, and full-width reply.
+- Ornament/backdrop: typographic rules and page-number details on an ivory paper field; no fashion or publication imitation.
+- Dashboard preview: real Mara & Leon, Reading Room, story, and reply samples arranged as a miniature editorial spread.
+
+## Garden Light
+
+- Fit: weddings, birthdays, dinners, private events, and generic celebrations.
+- Mood: sunlit outdoor photography, sage fields, warm clay accent, and softly humanist type.
+- Motion: playful hero-only depth and gallery drift; reduced motion keeps broad organic bands.
+- Sections: centered media hero, garden-path story, airy feature gallery, split venue, and grounded framed reply.
+- Ornament/backdrop: dappled daylight and organic border arcs without literal botanical clip art.
+- Dashboard preview: real Sunday in Bloom, Willow Courtyard, afternoon, story, and location samples.
+
+## Modern Minimal
+
+- Fit: weddings, birthdays, launches, private events, and generic celebrations.
+- Mood: architectural off-white, graphite type, numbered facts, hard rules, and one cobalt signal.
+- Motion: calm with no parallax; hierarchy relies on scale, grid, and alignment.
+- Sections: strict split hero, numbered detail/story rails, hard-edge gallery, split reply, and flat full-width outro.
+- Ornament/backdrop: structural rules and labels only; no texture, glow, gradient, or rounded card deck.
+- Dashboard preview: real Studio 08, North Assembly, Time, Sequence, and Reply samples in the shared grid.
+
+## Celestial Gold
+
+- Fit: weddings, birthdays, dinners, holidays, private events, and generic celebrations.
+- Mood: deep indigo atmosphere, luminous serif type, warm gold signal, and cinematic evening imagery.
+- Motion: immersive hero-and-media depth; reduced motion preserves layer order and nocturnal chapters.
+- Sections: layered portrait hero/profile, full-width date, night-depth story, feature gallery, and luminous layered reply.
+- Ornament/backdrop: sparse orbital hairlines and quiet radial light without stars, zodiac symbols, or glitter.
+- Dashboard preview: real Evening Sky, Observatory Hall, date, gallery, and reply samples against a night field.
+
 ## Naming And IP
 
 Theme names must stay generic unless licensing is resolved. Avoid protected characters, fashion labels, venue names, songs, films, or franchise cues. Mood references are fine; direct imitation is not.

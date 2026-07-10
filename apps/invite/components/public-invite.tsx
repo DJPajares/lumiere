@@ -331,16 +331,20 @@ function getHeroFrameClassName(theme: ThemeDefinition) {
       return "lumiere-hero--kids bg-[radial-gradient(circle_at_15%_18%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_24%),linear-gradient(180deg,var(--surface),var(--background))]";
     case "noel":
       return "lumiere-hero--noel bg-[radial-gradient(circle_at_80%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_30%),linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_54%,var(--background)))]";
+    case "editorial-ivory":
+      return "lumiere-hero--editorial-ivory bg-[linear-gradient(105deg,var(--background)_0%,var(--background)_52%,color-mix(in_srgb,var(--surface-muted)_58%,var(--background))_52%,var(--surface)_100%)]";
+    case "garden-light":
+      return "lumiere-hero--garden-light bg-[radial-gradient(circle_at_18%_14%,color-mix(in_srgb,var(--surface-muted)_82%,transparent),transparent_30%),radial-gradient(circle_at_84%_24%,color-mix(in_srgb,var(--accent)_13%,transparent),transparent_27%),var(--background)]";
+    case "modern-minimal":
+      return "lumiere-hero--modern-minimal bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_66%,var(--surface-muted)_66%,var(--surface-muted)_100%)]";
+    case "celestial-gold":
+      return "lumiere-hero--celestial-gold bg-[radial-gradient(circle_at_72%_28%,color-mix(in_srgb,var(--accent)_21%,transparent),transparent_24%),radial-gradient(circle_at_18%_80%,color-mix(in_srgb,var(--surface-muted)_64%,transparent),transparent_35%),var(--background)]";
     default:
       return "bg-[linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_42%,var(--background)))]";
   }
 }
 
 function getHeroInnerClassName(theme: ThemeDefinition, hasImage: boolean) {
-  if (!hasImage) {
-    return "mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center";
-  }
-
   switch (theme.id) {
     case "premium":
       return "mx-auto grid w-full max-w-6xl gap-9 lg:grid-cols-[0.9fr_1.1fr] lg:items-center";
@@ -348,6 +352,16 @@ function getHeroInnerClassName(theme: ThemeDefinition, hasImage: boolean) {
       return "mx-auto grid w-full max-w-4xl gap-7 text-center";
     case "noel":
       return "mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center";
+    case "editorial-ivory":
+      return "mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center";
+    case "garden-light":
+      return hasImage
+        ? "mx-auto grid w-full max-w-5xl gap-8 text-center"
+        : "mx-auto grid w-full max-w-4xl gap-8 text-center sm:grid-cols-2 sm:text-left";
+    case "modern-minimal":
+      return "mx-auto grid w-full max-w-7xl gap-0 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch";
+    case "celestial-gold":
+      return "mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-2 lg:items-center";
     default:
       return "mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center";
   }
@@ -367,6 +381,20 @@ function getHeroMediaClassName(theme: ThemeDefinition) {
       return joinClassNames(base, "mx-auto w-full max-w-[22rem] rounded-[var(--radius-lg)]");
     case "noel":
       return joinClassNames(base, "order-first rounded-[var(--radius-lg)] lg:order-none");
+    case "editorial-ivory":
+      return joinClassNames(
+        base,
+        "order-first mx-auto w-full max-w-[24rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
+      );
+    case "garden-light":
+      return joinClassNames(base, "mx-auto w-full max-w-3xl rounded-[var(--radius-lg)]");
+    case "modern-minimal":
+      return joinClassNames(base, "rounded-[var(--radius-lg)]");
+    case "celestial-gold":
+      return joinClassNames(
+        base,
+        "order-first mx-auto w-full max-w-[26rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
+      );
     default:
       return joinClassNames(base, "rounded-[var(--radius-lg)]");
   }
@@ -378,6 +406,13 @@ function getHeroImageClassName(theme: ThemeDefinition) {
       return "aspect-[4/3] w-full object-cover sm:aspect-[1/1]";
     case "noel":
       return "aspect-[4/5] w-full object-cover sm:aspect-[16/12]";
+    case "garden-light":
+      return "aspect-[4/3] w-full object-cover sm:aspect-[16/9]";
+    case "modern-minimal":
+      return "aspect-[3/4] w-full object-cover sm:aspect-[4/5] lg:h-full lg:min-h-[66dvh]";
+    case "celestial-gold":
+    case "editorial-ivory":
+      return "aspect-[4/5] w-full object-cover lg:min-h-[68dvh]";
     default:
       return "aspect-[4/5] w-full object-cover";
   }
@@ -386,7 +421,11 @@ function getHeroImageClassName(theme: ThemeDefinition) {
 function getHeroFallbackClassName(theme: ThemeDefinition) {
   return joinClassNames(
     "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_12%,transparent)]",
-    theme.id === "premium" ? "lumiere-hero-media" : undefined,
+    ["premium", "editorial-ivory", "garden-light", "modern-minimal", "celestial-gold"].includes(
+      theme.id,
+    )
+      ? "lumiere-hero-media lumiere-hero-fallback"
+      : undefined,
   );
 }
 

@@ -19,7 +19,14 @@ export type ThemeMotionProfile = "calm" | "immersive" | "playful" | "seasonal";
 
 export type ThemeParallaxProfile = "none" | "hero-only" | "hero-and-media" | "story-depth";
 
-export type InviteCompositionMapId = "birthday-feature" | "neutral-basic" | "wedding-editorial";
+export type InviteCompositionMapId =
+  | "birthday-feature"
+  | "celestial-evening"
+  | "garden-celebration"
+  | "ivory-editorial"
+  | "minimal-modern"
+  | "neutral-basic"
+  | "wedding-editorial";
 
 export type ViewportBehavior = {
   desktop: string;
@@ -327,6 +334,160 @@ export const sampleInviteCompositionMaps: Record<"birthday" | "wedding", InviteC
   },
 };
 
+export const expansionInviteCompositionMaps: Record<
+  "celestialGold" | "editorialIvory" | "gardenLight" | "modernMinimal",
+  InviteCompositionMap
+> = {
+  editorialIvory: {
+    eventTypes: ["wedding", "birthday", "private_event", "other"],
+    id: "ivory-editorial",
+    name: "Editorial Ivory Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open with quiet negative space, a tall portrait, and a newspaper-scale title.",
+        section: "introduction",
+      },
+      {
+        composition: "editorial-split",
+        motion: "media-reveal",
+        note: "Pair people or hosts with generous copy measure and an offset image column.",
+        section: "profile",
+      },
+      {
+        composition: "timeline",
+        motion: "timeline-reveal",
+        note: "Use one continuous editorial rail for story and schedule copy.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Treat imagery like a magazine feature with one lead crop and restrained captions.",
+        section: "gallery",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Close the public story with a spacious reply chapter.",
+        section: "rsvp",
+      },
+    ],
+  },
+  gardenLight: {
+    eventTypes: ["wedding", "birthday", "private_event", "other"],
+    id: "garden-celebration",
+    name: "Garden Light Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open with sunlit landscape or celebrant imagery and soft organic spacing.",
+        section: "introduction",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Let practical details sit beside a calm garden fact or image rail.",
+        section: "details",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Use lightly overlapping story media without obscuring text on smaller screens.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "gallery-drift",
+        note: "Lead with one outdoor image and follow with airy supporting moments.",
+        section: "gallery",
+      },
+      {
+        composition: "framed",
+        motion: "section-reveal",
+        note: "Keep the family reply friendly, clear, and grounded after the image-led chapters.",
+        section: "rsvp",
+      },
+    ],
+  },
+  modernMinimal: {
+    eventTypes: ["wedding", "birthday", "private_event", "other"],
+    id: "minimal-modern",
+    name: "Modern Minimal Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open with strict grid typography and one unembellished media plane.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "section-reveal",
+        note: "Organize facts and schedule items on a numbered typographic rail.",
+        section: "details",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Use people and story sections as sharp text/image grids with no ornamental layer.",
+        section: "profile",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Use hard-edged crops and disciplined alignment rather than masonry decoration.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Keep RSVP within the same clear grid rather than a floating luxury card.",
+        section: "rsvp",
+      },
+    ],
+  },
+  celestialGold: {
+    eventTypes: ["wedding", "birthday", "private_event", "other"],
+    id: "celestial-evening",
+    name: "Celestial Gold Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "media-parallax",
+        note: "Open with a deep evening field, luminous type, and one cinematic image.",
+        section: "introduction",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Make the date a nocturnal chapter with a bright typographic focal point.",
+        section: "date",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-parallax",
+        note: "Use story imagery as controlled depth against a dark field.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "gallery-drift",
+        note: "Build an evening photo sequence with a large lead image and narrow supporting rail.",
+        section: "gallery",
+      },
+      {
+        composition: "layered-media",
+        motion: "section-reveal",
+        note: "Finish with a luminous reply or farewell rather than repeated framed panels.",
+        section: "rsvp",
+      },
+    ],
+  },
+};
+
 export const inviteVisualCompositionSystem = {
   antiCardStackPrinciple:
     "Only the neutral/basic theme may rely on framed cards as the dominant rhythm; premium themes must mix full-bleed, editorial, timeline, gallery, and layered-media moments.",
@@ -337,5 +498,6 @@ export const inviteVisualCompositionSystem = {
   imageFallbackPrinciple:
     "Real event imagery is preferred; missing media should reserve intentional upload/asset slots or useful event facts, not fake screenshots or abstract decoration.",
   motionRules: inviteMotionRules,
+  expansionMaps: expansionInviteCompositionMaps,
   sampleMaps: sampleInviteCompositionMaps,
 } as const;

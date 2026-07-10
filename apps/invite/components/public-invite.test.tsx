@@ -6,6 +6,45 @@ import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } fro
 import { GuestInvitation, PublicInvitation } from "./public-invite";
 
 describe("public invite section renderers", () => {
+  it("renders a distinct public hero and composition signature for every expansion theme", () => {
+    const directions = [
+      ["editorial-ivory", "ivory-editorial", "lumiere-hero--editorial-ivory"],
+      ["garden-light", "garden-celebration", "lumiere-hero--garden-light"],
+      ["modern-minimal", "minimal-modern", "lumiere-hero--modern-minimal"],
+      ["celestial-gold", "celestial-evening", "lumiere-hero--celestial-gold"],
+    ] as const;
+    const signatures = directions.map(([themeId, compositionMap, heroClassName]) => {
+      const invite = createInvite([
+        createSection({
+          content: {
+            coverImage: {
+              alt: `${themeId} event portrait`,
+              url: `https://images.example.com/${themeId}.jpg`,
+            },
+            subtitle: "A theme compatibility sample.",
+            title: "A shared celebration",
+          },
+          sectionKey: "welcome",
+          sectionType: "introduction",
+          sortOrder: 0,
+        }),
+      ]);
+      invite.selectedThemeId = themeId;
+      invite.themeMode = themeId === "celestial-gold" ? "dark" : "light";
+
+      const html = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
+
+      expect(html).toContain(`data-theme-id="${themeId}"`);
+      expect(html).toContain(`data-composition-map="${compositionMap}"`);
+      expect(html).toContain(heroClassName);
+      expect(html).toContain(`${themeId} event portrait`);
+
+      return `${compositionMap}:${heroClassName}`;
+    });
+
+    expect(new Set(signatures).size).toBe(directions.length);
+  });
+
   it("emits composition and motion hooks for immersive section layouts", () => {
     const html = renderToStaticMarkup(
       createElement(PublicInvitation, {

@@ -42,6 +42,12 @@ describe("ThemeSelectorWorkspace", () => {
     expect(screen.getByText("Kids")).toBeTruthy();
     expect(screen.getByDisplayValue(/"spacing": "editorial"/)).toBeTruthy();
     expect(premiumOption.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("Amara & Jules")).toBeTruthy();
+    expect(screen.getByText("Emerald Gardens")).toBeTruthy();
+    expect(screen.getByText("Opening portrait")).toBeTruthy();
+    expect(screen.getByText("Full-viewport opening with portrait media.")).toBeTruthy();
+    expect(document.querySelector('[data-theme-preview-sample="premium"]')).toBeTruthy();
+    expect(document.querySelector('[data-section-type="story"]')).toBeTruthy();
   });
 
   it("selects a theme and saves supported mode plus JSON settings", async () => {
@@ -213,6 +219,11 @@ const premiumTheme: Theme = {
   eventTypes: ["wedding", "dinner", "private_event"],
   id: "premium",
   metadata: {
+    composition: {
+      visualSystem: {
+        compositionMap: "wedding-editorial",
+      },
+    },
     dashboardPreview: {
       summary: "Refined editorial theme for formal celebrations.",
       swatch: "#a36a2f",
@@ -220,6 +231,32 @@ const premiumTheme: Theme = {
     description: "Editorial, intimate design for weddings and dinners.",
     designRead: "Luminous editorial layout with formal pacing.",
     imageTreatment: "Large editorial imagery with generous whitespace.",
+    previewData: {
+      eventTitle: "Amara & Jules",
+      eyebrow: "You are invited",
+      sections: [
+        {
+          summary: "Full-viewport opening with portrait media.",
+          title: "Opening portrait",
+          type: "introduction",
+        },
+        {
+          summary: "Story and venue use an editorial rhythm.",
+          title: "The celebration",
+          type: "story",
+        },
+        {
+          summary: "The reply is part of the invitation.",
+          title: "Your reply",
+          type: "rsvp",
+        },
+      ],
+      subtitle: "An intimate garden celebration.",
+      venueName: "Emerald Gardens",
+    },
+    radius: {
+      lg: "0.875rem",
+    },
     tokens: {
       light: {
         accent: "#a36a2f",
@@ -231,6 +268,12 @@ const premiumTheme: Theme = {
         surface: "#fffdf8",
         surfaceMuted: "#efe2cf",
         warning: "#9b601b",
+      },
+    },
+    typography: {
+      css: {
+        bodyFamily: "ui-sans-serif, system-ui, sans-serif",
+        displayFamily: "ui-serif, Georgia, serif",
       },
     },
   },

@@ -4,8 +4,9 @@ import type {
   InviteCompositionMapId,
   ThemeMotionProfile,
   ThemeParallaxProfile,
+  ThemeSectionComposition,
 } from "./composition";
-import type { ThemeId } from "./themes";
+import { themeRegistry, type ThemeId } from "./themes";
 
 export type ThemeSectionTreatmentKind =
   "card-based" | "cinematic" | "editorial" | "framed" | "full-bleed" | "split-layout";
@@ -72,6 +73,120 @@ export const reverieReferenceLinks = [
   "https://github.com/DJPajares/reverie",
   "https://reverie.wndrhive.com/",
 ] as const;
+
+type ExpansionThemeSpecProfile = {
+  antiSlopConstraints: string[];
+  dashboardRequirements: string[];
+  darkGuidance: string;
+  lightGuidance: string;
+  moodBoardNotes: string[];
+  namingGuidance: string;
+  reducedMotion: string;
+  statusGuidance: string;
+};
+
+const sectionTreatmentByComposition: Record<ThemeSectionComposition, ThemeSectionTreatmentKind> = {
+  "editorial-split": "split-layout",
+  framed: "framed",
+  "full-bleed": "full-bleed",
+  "gallery-feature": "full-bleed",
+  "layered-media": "cinematic",
+  timeline: "editorial",
+};
+
+const expansionSpecSections = [
+  "details",
+  "story",
+  "profile",
+  "gallery",
+  "location",
+  "rsvp",
+  "outro",
+] as const;
+
+const createExpansionThemeTemplateSpec = (
+  themeId: "celestial-gold" | "editorial-ivory" | "garden-light" | "modern-minimal",
+  profile: ExpansionThemeSpecProfile,
+): ThemeTemplateSpec => {
+  const theme = themeRegistry[themeId];
+
+  return {
+    id: theme.id,
+    designRead: theme.designRead,
+    eventTypeFit: theme.supportedEventTypes,
+    moodBoardNotes: profile.moodBoardNotes,
+    antiSlopConstraints: profile.antiSlopConstraints,
+    modeSupport: {
+      defaultMode: theme.defaultMode,
+      guidance: `${theme.label} treats ${theme.supportedModes.join(", ")} as intentional presentation modes.`,
+      supported: theme.supportedModes,
+    },
+    tokenGuidance: {
+      accent: `${theme.tokens.light.accent} is the single light-mode accent; ${theme.tokens.dark?.accent ?? theme.tokens.light.accent} carries the equivalent dark-mode role.`,
+      dark: profile.darkGuidance,
+      light: profile.lightGuidance,
+      status: profile.statusGuidance,
+    },
+    radiusGuidance: `Use ${theme.radius.sm}, ${theme.radius.md}, and ${theme.radius.lg} as a deliberate geometry system; do not substitute generic rounded cards.`,
+    typographyGuidance: `Pair ${theme.compatibility.fontPairing.display} display type with ${theme.compatibility.fontPairing.body} body copy and ${theme.typography.css.eyebrowLetterSpacing} eyebrow tracking.`,
+    imageTreatment: theme.imageTreatment,
+    motion: {
+      compositionMap: theme.composition.visualSystem.compositionMap,
+      level: theme.composition.visualSystem.motionProfile,
+      motionProfile: theme.composition.visualSystem.motionProfile,
+      parallaxProfile: theme.composition.visualSystem.parallaxProfile,
+      reducedMotion: profile.reducedMotion,
+    },
+    sectionTreatments: [
+      {
+        guidance: `${theme.composition.hero.mediaTreatment} ${theme.composition.backgroundTreatment}`,
+        section: "hero",
+        treatment:
+          theme.composition.hero.composition === "editorial-split" ? "split-layout" : "cinematic",
+      },
+      ...expansionSpecSections.map((section) => {
+        const sectionDefault = theme.composition.sectionDefaults[section];
+
+        return {
+          guidance: sectionDefault
+            ? `Use the ${sectionDefault.composition} composition at ${sectionDefault.density} density with ${sectionDefault.motion} motion.`
+            : `Use the shared renderer with ${theme.label} typography, spacing, and backdrop rules.`,
+          section,
+          treatment: sectionDefault
+            ? sectionTreatmentByComposition[sectionDefault.composition]
+            : ("editorial" as const),
+        };
+      }),
+    ],
+    ambientMedia: {
+      controls:
+        theme.composition.ambientMedia.controlStrategy === "external-controls"
+          ? "Keep one persistent, guest-controlled play or pause control outside visual sections."
+          : "Do not render a theme-owned audio control.",
+      missingMedia: "The invitation remains compositionally complete when ambient media is absent.",
+      musicSupported: theme.composition.ambientMedia.audioSlot === "optional",
+      policy: theme.composition.ambientMedia.mood,
+    },
+    rsvp: {
+      closedState: "State that replies are closed while preserving host contact guidance.",
+      disabledState: "Explain that the guest invitation link unlocks the private reply.",
+      errorState: "Place a semantic, high-contrast error beside the failed field or action.",
+      styling: theme.rsvpTreatment,
+      successState:
+        "Confirm the attendance state and final attendee count in the same visual language.",
+    },
+    dashboardPreview: {
+      requirements: profile.dashboardRequirements,
+      samplePreviewData: {
+        eventTitle: theme.previewData.eventTitle,
+        sections: theme.previewData.sections.map((section) => section.title),
+        venueName: theme.previewData.venueName,
+      },
+      thumbnail: `${theme.dashboardPreview.summary} Use the real ${theme.previewData.eventTitle} sample, not a decorative placeholder card.`,
+    },
+    namingGuidance: profile.namingGuidance,
+  };
+};
 
 export const themeTemplateSpecs = {
   "lumiere-default": {
@@ -528,6 +643,99 @@ export const themeTemplateSpecs = {
     namingGuidance:
       "Noel is a generic seasonal name; avoid protected holiday characters, songs, or brand marks.",
   },
+  "editorial-ivory": createExpansionThemeTemplateSpec("editorial-ivory", {
+    moodBoardNotes: [
+      "Uncoated ivory paper, high-contrast serif headlines, and offset portrait columns.",
+      "Folio numbers and hairline rules create print rhythm without decorative flourishes.",
+      "Quiet formal energy suits a couple, celebrant, host, or private gathering equally well.",
+    ],
+    antiSlopConstraints: [
+      "Do not turn every section into a cream card with a brown border.",
+      "Avoid fashion-brand imitation, masthead logos, or recognizable publication layouts.",
+      "Use real event copy and portrait slots; crop marks alone are not a complete composition.",
+    ],
+    lightGuidance: "Layer warm ivory and paper-white surfaces with ink-brown foreground text.",
+    darkGuidance: "Use warm near-black paper with soft cream type and muted terracotta accents.",
+    statusGuidance: "Keep status colors semantic and pair every state with readable copy.",
+    reducedMotion:
+      "Remove portrait parallax and timeline reveal while retaining the asymmetric print layout.",
+    dashboardRequirements: [
+      "Show the Mara & Leon title, venue, and at least two ruled section samples.",
+      "Make offset print geometry visible without shrinking the preview into a fake cover card.",
+    ],
+    namingGuidance:
+      "Editorial Ivory is descriptive and generic; avoid magazine, fashion-house, and venue trademarks.",
+  }),
+  "garden-light": createExpansionThemeTemplateSpec("garden-light", {
+    moodBoardNotes: [
+      "Sunlit garden tables, pale sage fields, clay accents, and softly arched photographs.",
+      "Humanist typography and open spacing keep birthday and wedding content equally natural.",
+      "Layered outdoor imagery feels breezy without turning the invite into botanical clip art.",
+    ],
+    antiSlopConstraints: [
+      "Do not scatter literal leaves, flowers, or hand-drawn stickers around every section.",
+      "Avoid pastel recoloring of the Kids theme; keep the layout image-led and spacious.",
+      "Organic radii must preserve image subjects and must not clip interactive controls.",
+    ],
+    lightGuidance: "Use warm daylight canvas, sage surface bands, and dark green foreground copy.",
+    darkGuidance: "Shift to deep garden green with cream type and a restrained warm-clay accent.",
+    statusGuidance: "Keep state colors distinct from sage decoration and include explicit labels.",
+    reducedMotion:
+      "Stop image drift and hero depth while retaining broad organic bands and readable spacing.",
+    dashboardRequirements: [
+      "Show the Sunday in Bloom sample, Willow Courtyard, and real afternoon section copy.",
+      "Include the soft arch and sage band rhythm without decorative flower placeholders.",
+    ],
+    namingGuidance:
+      "Garden Light is a generic mood name; avoid florists, estates, character art, or branded garden references.",
+  }),
+  "modern-minimal": createExpansionThemeTemplateSpec("modern-minimal", {
+    moodBoardNotes: [
+      "Off-white architectural planes, hard rules, and a disciplined cobalt signal.",
+      "Grotesk display type, numbered facts, and compact captions create the visual identity.",
+      "One continuous grid supports formal celebrations, birthdays, and launches without ornament.",
+    ],
+    antiSlopConstraints: [
+      "Do not confuse minimal with empty; every section needs deliberate scale and alignment.",
+      "Avoid generic rounded monochrome cards, glass effects, shadows, and decorative gradients.",
+      "Do not hide hierarchy behind tiny uppercase type or low-contrast hairlines.",
+    ],
+    lightGuidance: "Use off-white and graphite planes with cobalt reserved for the primary signal.",
+    darkGuidance: "Use near-black graphite with soft white copy and the same cobalt action role.",
+    statusGuidance: "Semantic state colors and labels remain independent from the cobalt accent.",
+    reducedMotion:
+      "Render all grid rows in place; hierarchy comes from alignment and type rather than movement.",
+    dashboardRequirements: [
+      "Show Studio 08, North Assembly, and numbered Time, Sequence, and Reply samples.",
+      "Keep the preview flat, square, and aligned—never a floating card montage.",
+    ],
+    namingGuidance:
+      "Modern Minimal is a generic visual descriptor; avoid design-school, furniture, and technology brand references.",
+  }),
+  "celestial-gold": createExpansionThemeTemplateSpec("celestial-gold", {
+    moodBoardNotes: [
+      "Deep indigo evening fields, warm luminous serif type, and cinematic arrival photography.",
+      "Sparse orbital hairlines create spatial depth without novelty stars or constellation graphics.",
+      "Measured parallax supports formal nighttime celebrations while the reply remains readable.",
+    ],
+    antiSlopConstraints: [
+      "Do not use dense star fields, zodiac symbols, glitter, or fantasy-interface effects.",
+      "Gold remains a restrained accent and cannot replace readable hierarchy or status copy.",
+      "Avoid recoloring Premium; use nocturnal chapters, orbital geometry, and different section depth.",
+    ],
+    lightGuidance: "Use lunar paper, midnight foreground text, and warm brass accents.",
+    darkGuidance: "Use deep indigo, soft cream type, and luminous gold accents without pure black.",
+    statusGuidance:
+      "Status states use dedicated semantic colors and labels rather than gold alone.",
+    reducedMotion:
+      "Disable depth and drift while preserving the indigo chapters, luminous type, and layer order.",
+    dashboardRequirements: [
+      "Show Under the Evening Sky, Observatory Hall, and the real date, gallery, and reply samples.",
+      "Represent luminous night depth with quiet fields rather than fake star-card decoration.",
+    ],
+    namingGuidance:
+      "Celestial Gold is a generic mood name; avoid astrology brands, observatory trademarks, and protected motifs.",
+  }),
 } satisfies Record<ThemeId, ThemeTemplateSpec>;
 
 export const themeTemplateSpecIds = Object.keys(themeTemplateSpecs) as ThemeId[];

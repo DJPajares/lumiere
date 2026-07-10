@@ -6,6 +6,7 @@ import {
   canDisableBlueprintSection,
   eventTypeBlueprints,
   evaluateThemeCompatibility,
+  expansionInviteCompositionMaps,
   getBlueprintSectionRequirement,
   getBlueprintSectionsForEventType,
   getThemesForEventType,
@@ -22,6 +23,13 @@ import {
   validateEventTypeSections,
   validateThemeSections,
 } from ".";
+
+const expansionThemeIds = [
+  "editorial-ivory",
+  "garden-light",
+  "modern-minimal",
+  "celestial-gold",
+] as const;
 
 const baseSections = [
   {
@@ -91,10 +99,44 @@ const baseSections = [
 ] as const;
 
 describe("theme registry", () => {
-  it("exports the initial theme set", () => {
-    expect(availableThemeIds).toEqual(["lumiere-default", "premium", "kids", "noel"]);
+  it("exports the initial themes and four-direction expansion pack", () => {
+    expect(availableThemeIds).toEqual([
+      "lumiere-default",
+      "premium",
+      "kids",
+      "noel",
+      ...expansionThemeIds,
+    ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
+  });
+
+  it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {
+    const signatures = expansionThemeIds.map((themeId) => {
+      const theme = themeRegistry[themeId];
+
+      return JSON.stringify({
+        backdrop: theme.compatibility.backdropStrategy,
+        body: theme.compatibility.fontPairing.body,
+        compositionMap: theme.composition.visualSystem.compositionMap,
+        display: theme.compatibility.fontPairing.display,
+        hero: theme.composition.hero.composition,
+        motion: theme.composition.visualSystem.motionProfile,
+        ornament: theme.compatibility.ornamentStrategy,
+        parallax: theme.composition.visualSystem.parallaxProfile,
+        radius: theme.radius,
+        rsvp: theme.composition.sectionDefaults.rsvp?.composition,
+        story: theme.composition.sectionDefaults.story?.composition,
+      });
+    });
+
+    expect(new Set(signatures).size).toBe(expansionThemeIds.length);
+    expect(
+      new Set(expansionThemeIds.map((themeId) => themeRegistry[themeId].typography.display)).size,
+    ).toBe(expansionThemeIds.length);
+    expect(new Set(expansionThemeIds.map((themeId) => themeRegistry[themeId].radius.lg)).size).toBe(
+      expansionThemeIds.length,
+    );
   });
 
   it("exposes section definitions as schemas and renderer keys", () => {
@@ -305,6 +347,23 @@ describe("theme registry", () => {
     );
   });
 
+  it("renders wedding, birthday, and generic blueprints through every expansion theme", () => {
+    for (const themeId of expansionThemeIds) {
+      for (const eventType of ["wedding", "birthday", "other"] as const) {
+        const result = evaluateThemeCompatibility({
+          eventType,
+          mode: "light",
+          theme: themeRegistry[themeId],
+        });
+
+        expect(result.canApply, `${themeId} should apply to ${eventType}`).toBe(true);
+        expect(result.canRenderRequiredSections).toBe(true);
+        expect(result.missingRequiredSections).toEqual([]);
+        expect(result.rendererSlots.every((slot) => slot.coverage === "specialized")).toBe(true);
+      }
+    }
+  });
+
   it("documents the invite composition families across required public sections", () => {
     expect(inviteVisualCompositionSystem.coveredSections).toEqual(
       expect.arrayContaining([
@@ -372,6 +431,23 @@ describe("theme registry", () => {
     expect(
       sampleInviteCompositionMaps.birthday.rhythm.every((item) => item.composition === "framed"),
     ).toBe(false);
+  });
+
+  it("defines a unique non-card-stack composition map for every expansion direction", () => {
+    const maps = Object.values(expansionInviteCompositionMaps);
+
+    expect(maps).toHaveLength(expansionThemeIds.length);
+    expect(new Set(maps.map((map) => map.id)).size).toBe(expansionThemeIds.length);
+    expect(
+      maps.every(
+        (map) =>
+          map.eventTypes.includes("wedding") &&
+          map.eventTypes.includes("birthday") &&
+          map.eventTypes.includes("other") &&
+          map.rhythm.length >= 5 &&
+          !map.rhythm.every((item) => item.composition === "framed"),
+      ),
+    ).toBe(true);
   });
 
   it("sets Premium apart as a full-viewport editorial invitation theme", () => {

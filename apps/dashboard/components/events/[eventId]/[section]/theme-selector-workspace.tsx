@@ -512,44 +512,83 @@ function ThemePreview({
   }
 
   const preview = readThemePreview(theme);
+  const sample = readThemePreviewSample(theme);
+  const presentation = readThemePreviewPresentation(theme);
   const tokens = readThemeTokens(theme);
 
   return (
     <div
-      className="grid gap-4 rounded-[var(--radius-lg)] border p-4"
+      className="grid gap-4 border p-4"
+      data-composition-map={presentation.compositionMap}
+      data-theme-preview-sample={theme.id}
       style={{
         backgroundColor: tokens.background,
         borderColor: tokens.border,
+        borderRadius: presentation.radius,
         color: tokens.foreground,
+        fontFamily: presentation.bodyFamily,
       }}
     >
-      <div
-        className="rounded-[var(--radius-md)] border p-4"
-        style={{
-          backgroundColor: tokens.surface,
-          borderColor: tokens.border,
-        }}
-      >
-        <p
-          className="text-xs font-semibold uppercase tracking-[0.16em]"
-          style={{ color: tokens.accentStrong }}
-        >
-          {theme.name}
-        </p>
-        <h4 className="mt-2 text-xl font-semibold">{preview.summary}</h4>
-        <p className="mt-2 text-sm leading-6">{readMetadataString(theme, "description")}</p>
-      </div>
-      <div className="grid grid-cols-4 gap-2">
-        {[tokens.accent, tokens.surfaceMuted, tokens.success, tokens.warning].map((color) => (
-          <span
-            aria-hidden="true"
-            className="h-10 rounded-[var(--radius-sm)] border"
-            key={color}
-            style={{ backgroundColor: color, borderColor: tokens.border }}
-          />
+      <header className={presentation.headerClassName}>
+        <div>
+          <p
+            className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: tokens.accentStrong }}
+          >
+            {sample.eyebrow}
+          </p>
+          <h4
+            className="mt-3 text-[clamp(1.7rem,5vw,3.4rem)] leading-[0.95] font-semibold"
+            style={{ fontFamily: presentation.displayFamily }}
+          >
+            {sample.eventTitle}
+          </h4>
+        </div>
+        <div className="grid content-end gap-3">
+          <p className="max-w-prose text-sm leading-6">{sample.subtitle}</p>
+          <p
+            className="border-t pt-3 text-xs font-semibold uppercase tracking-[0.14em]"
+            style={{ borderColor: tokens.border, color: tokens.accentStrong }}
+          >
+            {sample.venueName}
+          </p>
+        </div>
+      </header>
+      <div className={presentation.sectionsClassName}>
+        {sample.sections.map((section, index) => (
+          <article
+            className={presentation.sectionClassName(index)}
+            data-section-type={section.type}
+            key={`${section.type}-${section.title}`}
+            style={{ borderColor: tokens.border }}
+          >
+            <p
+              className="text-[0.64rem] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: tokens.accentStrong }}
+            >
+              {String(index + 1).padStart(2, "0")} · {formatEventType(section.type)}
+            </p>
+            <h5
+              className="mt-2 text-lg leading-tight font-semibold"
+              style={{ fontFamily: presentation.displayFamily }}
+            >
+              {section.title}
+            </h5>
+            <p className="mt-2 text-xs leading-5">{section.summary}</p>
+          </article>
         ))}
       </div>
-      <p className="text-sm leading-6">{readMetadataString(theme, "imageTreatment")}</p>
+      <div
+        className="flex items-start justify-between gap-4 border-t pt-3 text-xs leading-5"
+        style={{ borderColor: tokens.border }}
+      >
+        <p>{readMetadataString(theme, "imageTreatment")}</p>
+        <span
+          aria-hidden="true"
+          className="mt-1 size-3 shrink-0 rounded-full"
+          style={{ backgroundColor: preview.swatch }}
+        />
+      </div>
       {compatibility ? (
         <div
           className="grid gap-2 rounded-[var(--radius-md)] border p-3 text-sm"
@@ -787,6 +826,143 @@ function readThemePreview(theme: Theme) {
     summary: theme.name,
     swatch: "#6f5a38",
   };
+}
+
+function readThemePreviewSample(theme: Theme) {
+  const previewData = theme.metadata.previewData;
+  const fallbackSummary = readMetadataString(theme, "description");
+
+  if (!isRecord(previewData)) {
+    return {
+      eventTitle: theme.name,
+      eyebrow: "Invitation preview",
+      sections: [
+        {
+          summary: fallbackSummary,
+          title: "Event introduction",
+          type: "introduction",
+        },
+      ],
+      subtitle: fallbackSummary,
+      venueName: "Venue sample",
+    };
+  }
+
+  const sections = Array.isArray(previewData.sections)
+    ? previewData.sections
+        .flatMap((section) =>
+          isRecord(section)
+            ? [
+                {
+                  summary: readRecordString(section, "summary", "Section treatment sample."),
+                  title: readRecordString(section, "title", "Invitation section"),
+                  type: readRecordString(section, "type", "custom"),
+                },
+              ]
+            : [],
+        )
+        .slice(0, 3)
+    : [];
+
+  return {
+    eventTitle: readRecordString(previewData, "eventTitle", theme.name),
+    eyebrow: readRecordString(previewData, "eyebrow", "Invitation preview"),
+    sections:
+      sections.length > 0
+        ? sections
+        : [
+            {
+              summary: fallbackSummary,
+              title: "Event introduction",
+              type: "introduction",
+            },
+          ],
+    subtitle: readRecordString(previewData, "subtitle", fallbackSummary),
+    venueName: readRecordString(previewData, "venueName", "Venue sample"),
+  };
+}
+
+function readThemePreviewPresentation(theme: Theme) {
+  const composition = theme.metadata.composition;
+  const visualSystem = isRecord(composition) ? composition.visualSystem : undefined;
+  const compositionMap = isRecord(visualSystem)
+    ? readRecordString(visualSystem, "compositionMap", "registry-default")
+    : "registry-default";
+  const radius = theme.metadata.radius;
+  const typography = theme.metadata.typography;
+  const css = isRecord(typography) ? typography.css : undefined;
+  const bodyFamily = isRecord(css) ? readRecordString(css, "bodyFamily", "inherit") : "inherit";
+  const displayFamily = isRecord(css)
+    ? readRecordString(css, "displayFamily", "inherit")
+    : "inherit";
+  const radiusValue = isRecord(radius) ? radius.lg : undefined;
+  const previewRadius =
+    typeof radiusValue === "string" && /^(?:0|\d+(?:\.\d+)?(?:px|rem))$/.test(radiusValue)
+      ? radiusValue
+      : "var(--radius-lg)";
+
+  switch (compositionMap) {
+    case "ivory-editorial":
+      return {
+        bodyFamily,
+        compositionMap,
+        displayFamily,
+        headerClassName:
+          "grid gap-8 border-b pb-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]",
+        radius: previewRadius,
+        sectionClassName: (index: number) =>
+          `border-t pt-4 ${index === 0 ? "sm:col-span-2 sm:pr-8" : ""}`,
+        sectionsClassName: "grid gap-5 sm:grid-cols-2",
+      };
+    case "garden-celebration":
+      return {
+        bodyFamily,
+        compositionMap,
+        displayFamily,
+        headerClassName: "mx-auto grid max-w-xl gap-5 py-5 text-center",
+        radius: previewRadius,
+        sectionClassName: (index: number) =>
+          `border-t pt-4 ${index === 0 ? "sm:col-span-2 sm:text-center" : ""}`,
+        sectionsClassName: "grid gap-5 sm:grid-cols-2",
+      };
+    case "minimal-modern":
+      return {
+        bodyFamily,
+        compositionMap,
+        displayFamily,
+        headerClassName:
+          "grid gap-6 border-b pb-6 sm:grid-cols-[minmax(0,1.35fr)_minmax(10rem,0.65fr)]",
+        radius: previewRadius,
+        sectionClassName: () => "grid gap-1 border-t py-4 sm:grid-cols-[8rem_1fr]",
+        sectionsClassName: "grid",
+      };
+    case "celestial-evening":
+      return {
+        bodyFamily,
+        compositionMap,
+        displayFamily,
+        headerClassName: "mx-auto grid max-w-xl gap-5 py-8 text-center",
+        radius: previewRadius,
+        sectionClassName: () => "border-t pt-5 text-center",
+        sectionsClassName: "grid gap-5 sm:grid-cols-3",
+      };
+    default:
+      return {
+        bodyFamily,
+        compositionMap,
+        displayFamily,
+        headerClassName: "grid gap-5 border-b pb-6",
+        radius: previewRadius,
+        sectionClassName: () => "border-t pt-4",
+        sectionsClassName: "grid gap-5 sm:grid-cols-3",
+      };
+  }
+}
+
+function readRecordString(record: Record<string, unknown>, key: string, fallback: string) {
+  const value = record[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
 function readThemeTokens(theme: Theme) {
