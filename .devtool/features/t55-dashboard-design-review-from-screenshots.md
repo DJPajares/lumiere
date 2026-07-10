@@ -6,7 +6,7 @@ assignee: null
 epic: 'quality'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['dashboard', 'visual-qa', 'uiux', 'review']
 depends_on: ['t42-dashboard-navigation-ia-reset', 't49-dashboard-component-system-and-field-overhaul', 't43-dashboard-event-edit-flow']
@@ -26,8 +26,8 @@ Run a focused visual and UX review against the current dashboard screens and con
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `high`
+- Suggested model: `GPT-5.6 Terra` (`gpt-5.6-terra`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -55,3 +55,4 @@ This is a quality gate specifically for the issues visible in the current screen
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Terra with xhigh reasoning; this focused review and remediation pass benefits from the balanced model.

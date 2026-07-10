@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['invite', 'themes', 'reverie', 'uiux']
 depends_on: ['t28-invite-section-renderers', 't36-invite-visual-composition-system', 't37-theme-template-design-specs']
@@ -26,8 +26,8 @@ Modernize Lumiere invite pages using Reverie as a quality reference: editorial t
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `extra high`
+- Suggested model: `GPT-5.6 Sol` (`gpt-5.6-sol`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -55,3 +55,4 @@ Reverie's public repo describes a typographic editorial wedding invitation with 
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Sol with xhigh reasoning; this task requires the flagship model for the broad visual and architectural modernization pass.

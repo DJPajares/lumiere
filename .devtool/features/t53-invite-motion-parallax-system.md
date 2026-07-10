@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['invite', 'motion', 'parallax', 'tasteskill']
 depends_on: ['t36-invite-visual-composition-system', 't51-reverie-inspired-invite-modernization']
@@ -26,8 +26,8 @@ Create a reusable motion system for invite pages with reveal, parallax, scroll p
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `extra high`
+- Suggested model: `GPT-5.6 Sol` (`gpt-5.6-sol`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -55,3 +55,4 @@ Apply TasteSkill: motion must communicate hierarchy, storytelling, feedback, or 
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Sol with xhigh reasoning; this task needs the flagship model for reusable, performance-safe motion architecture.

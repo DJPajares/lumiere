@@ -6,7 +6,7 @@ assignee: null
 epic: 'design-system'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['invite', 'visual-design', 'ornaments', 'backdrops']
 depends_on: ['t52-premium-theme-expansion-pack', 't53-invite-motion-parallax-system']
@@ -26,8 +26,8 @@ Build a theme-safe visual layer for premium backdrops, ornaments, texture, halos
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `high`
+- Suggested model: `GPT-5.6 Terra` (`gpt-5.6-terra`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -55,3 +55,4 @@ This supports premium atmosphere for invite pages while keeping dashboard manage
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Terra with xhigh reasoning; this bounded design-system task benefits from the balanced model.

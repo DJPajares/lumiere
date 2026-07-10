@@ -6,7 +6,7 @@ assignee: null
 epic: 'design-system'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['invite', 'themes', 'fonts', 'premium']
 depends_on: ['t46-theme-compatibility-matrix', 't51-reverie-inspired-invite-modernization']
@@ -26,8 +26,8 @@ Add more premium invite themes with distinct typography, layout rhythm, backdrop
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `extra high`
+- Suggested model: `GPT-5.6 Sol` (`gpt-5.6-sol`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -55,3 +55,4 @@ Use premium fonts and layouts as a design requirement. Do not simply change colo
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Sol with xhigh reasoning; this task needs flagship-level design judgment across multiple compatible themes.

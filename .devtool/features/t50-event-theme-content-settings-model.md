@@ -6,7 +6,7 @@ assignee: null
 epic: 'backend'
 dueDate: null
 created: '2026-07-09T00:00:00+08:00'
-modified: '2026-07-09T00:00:00+08:00'
+modified: '2026-07-10T00:00:00+08:00'
 completedAt: null
 labels: ['database', 'api', 'settings', 'sections']
 depends_on: ['t07-drizzle-database-schema', 't11-theme-and-section-api', 't14-rsvp-api', 't45-event-type-section-blueprints']
@@ -26,8 +26,8 @@ Refine the backend model so each event has a coherent settings model for theme s
 
 ## Suggested Agent
 
-- Suggested model: `GPT-5.5`
-- Reasoning level: `extra high`
+- Suggested model: `GPT-5.6 Sol` (`gpt-5.6-sol`)
+- Reasoning level: `xhigh`
 
 ## Acceptance
 
@@ -45,3 +45,4 @@ This supports manager-friendly forms while keeping public invite rendering safe 
 ## Progress Log
 
 - 2026-07-09T00:00:00+08:00: Task created from dashboard and invite UX review concerns.
+- 2026-07-10T00:00:00+08:00: Updated suggestion to GPT-5.6 Sol with xhigh reasoning; this task requires the flagship model for cross-cutting data and API design.
