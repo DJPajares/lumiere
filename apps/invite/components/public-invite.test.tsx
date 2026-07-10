@@ -140,12 +140,17 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain('data-composition-map="wedding-editorial"');
     expect(html).toContain('data-motion-profile="immersive"');
+    expect(html).toContain('data-motion-intensity="premium"');
+    expect(html).toContain('data-motion-root="invite"');
+    expect(html).toContain('data-motion-runtime-marker="premium"');
     expect(html).toContain('data-parallax-profile="hero-and-media"');
     expect(html).toContain('data-theme-hero-composition="layered-portrait"');
     expect(html).toContain('data-parallax-kind="hero-depth"');
     expect(html).toContain('data-parallax-layer="hero-image"');
     expect(html).toContain('class="lumiere-scroll-progress"');
     expect(html).toContain("lumiere-hero-title");
+    expect(html).toContain('data-motion-mask="text"');
+    expect(html).toContain('data-motion-soft-image="true"');
     expect(html).toContain("lumiere-profile-card");
     expect(html).toContain("lumiere-gallery-grid");
     expect(html).toContain('data-image-role="feature"');

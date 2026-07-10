@@ -5,6 +5,7 @@ import type { RsvpStatus, RsvpSubmissionRequest, RsvpSubmissionResponse } from "
 import type { FormEvent } from "react";
 import { useState } from "react";
 
+import { invitePressFeedbackProps } from "./invite-motion-primitives";
 import { createInviteApiClient } from "../lib/invite-api";
 
 export type RsvpQuestionType = "multi_choice" | "single_choice" | "text" | "textarea";
@@ -380,7 +381,12 @@ export function RsvpForm({
         </div>
       </details>
 
-      <button className={style.submit} disabled={isSubmitting || isLocked} type="submit">
+      <button
+        {...invitePressFeedbackProps}
+        className={style.submit}
+        disabled={isSubmitting || isLocked}
+        type="submit"
+      >
         {isSubmitting
           ? isUpdatingExistingReply
             ? copy.updatingLabel
@@ -449,6 +455,7 @@ function CounterButton({
 }) {
   return (
     <button
+      {...invitePressFeedbackProps}
       aria-label={label}
       className="grid size-12 place-items-center rounded-full text-2xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
       disabled={disabled}

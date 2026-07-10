@@ -211,7 +211,7 @@ export const inviteMotionRules: MotionRule[] = [
     implementation: "css",
     intent: "Hierarchy and pacing between invitation chapters.",
     reducedMotion: "Keep sections static and visible.",
-    rule: "Use CSS view timelines where supported or IntersectionObserver class toggles later.",
+    rule: "Use CSS view timelines where supported and IntersectionObserver state toggles as the fallback.",
   },
   {
     id: "card-reveal",
@@ -232,7 +232,7 @@ export const inviteMotionRules: MotionRule[] = [
     implementation: "css",
     intent: "Scroll depth inspired by Reverie-style immersive media.",
     reducedMotion: "Disable parallax transforms entirely.",
-    rule: "Prefer CSS scroll timelines; if JavaScript is needed later, use requestAnimationFrame and CSS variables instead of React state updates on every scroll frame.",
+    rule: "Prefer CSS scroll timelines; the fallback uses requestAnimationFrame and CSS variables instead of React state updates on every scroll frame.",
   },
   {
     id: "sticky-pin",

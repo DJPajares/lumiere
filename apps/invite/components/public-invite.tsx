@@ -16,6 +16,9 @@ import type {
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
+import { resolveInviteMotionIntensity } from "./invite-motion-config";
+import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
+import { InviteMotionRuntime } from "./invite-motion-runtime";
 import { InviteShell } from "./invite-shell";
 import { RsvpForm, type RsvpDesign, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
@@ -86,6 +89,7 @@ function InvitationFrame({
   const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
   const rsvpDesign = theme.composition.rsvpDesign;
   const visualSystem = theme.composition.visualSystem;
+  const motionIntensity = resolveInviteMotionIntensity(visualSystem.motionProfile);
   const ambientAudio = resolveAmbientAudioConfig(invite, theme);
 
   return (
@@ -99,11 +103,14 @@ function InvitationFrame({
         className="lumiere-invitation min-h-[100dvh]"
         data-composition-map={visualSystem.compositionMap}
         data-invite-modernization="editorial-v1"
+        data-motion-intensity={motionIntensity}
         data-motion-profile={visualSystem.motionProfile}
+        data-motion-root="invite"
         data-parallax-profile={visualSystem.parallaxProfile}
         data-rsvp-design={rsvpDesign}
         data-theme-design-read={theme.designRead}
       >
+        <InviteMotionRuntime intensity={motionIntensity} />
         <ScrollProgress />
         <PublicHero invite={invite} section={introduction} theme={theme} />
 
@@ -263,7 +270,7 @@ function PublicHero({
           </div>
           <div className="grid gap-4">
             <h1 className="lumiere-display lumiere-hero-title max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
-              {title}
+              <InviteMaskedText>{title}</InviteMaskedText>
             </h1>
             {subtitle ? (
               <p className="lumiere-hero-subtitle max-w-2xl text-xl leading-8 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
@@ -287,7 +294,11 @@ function PublicHero({
         </div>
 
         {coverImage ? (
-          <figure className={getHeroMediaClassName(theme)} data-parallax-layer="hero-media">
+          <figure
+            className={getHeroMediaClassName(theme)}
+            data-motion-soft-image="true"
+            data-parallax-layer="hero-media"
+          >
             <img
               alt={coverImage.alt}
               className={getHeroImageClassName(theme)}
@@ -702,6 +713,7 @@ function LocationSection({
         ) : null}
         {mapUrl ? (
           <a
+            {...invitePressFeedbackProps}
             className="inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
             href={mapUrl}
           >
@@ -1239,6 +1251,7 @@ function SectionImage({
     <figure
       className="lumiere-section-image overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]"
       data-image-role={feature ? "feature" : compact ? "compact" : "supporting"}
+      data-motion-soft-image="true"
     >
       <img
         alt={asset.alt}
