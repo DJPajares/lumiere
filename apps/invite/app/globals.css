@@ -72,7 +72,451 @@ body {
 }
 
 .lumiere-invitation {
+  position: relative;
+  isolation: isolate;
   overflow: clip;
+  --image-brightness: 1;
+  --image-contrast: 1;
+  --image-saturation: 1;
+  --texture-opacity: 0;
+}
+
+.lumiere-invitation > :where(.lumiere-section, .grid, footer) {
+  position: relative;
+  z-index: 1;
+}
+
+.lumiere-visual-layer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.lumiere-visual-layer--backdrop {
+  z-index: 0;
+}
+
+.lumiere-visual-layer--overlay {
+  z-index: 3;
+}
+
+.lumiere-visual-layer__viewport {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.lumiere-visual-layer__backdrop,
+.lumiere-visual-layer__image,
+.lumiere-visual-layer__texture,
+.lumiere-visual-layer__vignette,
+.lumiere-visual-layer__wash,
+.lumiere-ornaments {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.lumiere-visual-layer__backdrop {
+  background: var(--background);
+}
+
+[data-backdrop-type="gradient"] .lumiere-visual-layer__backdrop {
+  background:
+    radial-gradient(
+      circle at 78% 16%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 12% 82%,
+      color-mix(in srgb, var(--surface-muted) 74%, transparent),
+      transparent 42%
+    ),
+    var(--background);
+}
+
+[data-backdrop-type="texture"] .lumiere-visual-layer__backdrop {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-muted) 76%, var(--background)),
+      var(--background) 58%
+    ),
+    var(--background);
+}
+
+[data-backdrop-type="editorial-whitespace"] .lumiere-visual-layer__backdrop {
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(12.5% - 0.5px),
+      color-mix(in srgb, var(--border) 38%, transparent) 12.5%,
+      transparent calc(12.5% + 0.5px),
+      transparent calc(87.5% - 0.5px),
+      color-mix(in srgb, var(--border) 38%, transparent) 87.5%,
+      transparent calc(87.5% + 0.5px)
+    ),
+    var(--background);
+}
+
+[data-backdrop-type="image"] .lumiere-visual-layer__backdrop {
+  background:
+    radial-gradient(
+      circle at 72% 24%,
+      color-mix(in srgb, var(--accent) 24%, transparent),
+      transparent 32%
+    ),
+    var(--background);
+}
+
+[data-backdrop-type="image"] .lumiere-section--hero {
+  background: transparent !important;
+}
+
+.lumiere-visual-layer__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.24;
+  filter: blur(18px) saturate(0.82) contrast(1.04);
+  transform: scale(1.08);
+}
+
+.lumiere-visual-layer__wash {
+  background: linear-gradient(180deg, var(--background), transparent 34%, var(--background));
+}
+
+[data-backdrop-overlay="soft"] .lumiere-visual-layer__wash {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--background) 76%, transparent),
+    color-mix(in srgb, var(--background) 32%, transparent) 44%,
+    var(--background)
+  );
+}
+
+[data-backdrop-overlay="strong"] .lumiere-visual-layer__wash {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--background) 76%, transparent),
+      color-mix(in srgb, var(--background) 38%, transparent)
+    ),
+    linear-gradient(180deg, transparent 32%, var(--background));
+}
+
+[data-texture-strength="none"] {
+  --texture-opacity: 0;
+}
+
+[data-texture-strength="subtle"] {
+  --texture-opacity: 0.055;
+}
+
+[data-texture-strength="visible"] {
+  --texture-opacity: 0.11;
+}
+
+.lumiere-visual-layer__texture {
+  opacity: var(--texture-opacity);
+  mix-blend-mode: soft-light;
+}
+
+[data-texture-policy="fine-noise"] .lumiere-visual-layer__texture {
+  background-image:
+    radial-gradient(circle at 20% 20%, currentColor 0 0.6px, transparent 0.8px),
+    radial-gradient(circle at 70% 64%, currentColor 0 0.5px, transparent 0.8px);
+  background-size:
+    4px 4px,
+    5px 5px;
+  color: var(--foreground);
+}
+
+[data-texture-policy="paper-grain"] .lumiere-visual-layer__texture {
+  background-image:
+    repeating-linear-gradient(82deg, currentColor 0 0.5px, transparent 0.5px 5px),
+    repeating-linear-gradient(7deg, transparent 0 7px, currentColor 7px 7.5px);
+  color: var(--foreground);
+}
+
+[data-texture-policy="soft-speckle"] .lumiere-visual-layer__texture {
+  background-image:
+    radial-gradient(circle at 18% 24%, currentColor 0 1px, transparent 1.5px),
+    radial-gradient(circle at 78% 68%, currentColor 0 1.2px, transparent 1.7px);
+  background-size:
+    28px 28px,
+    42px 42px;
+  color: var(--accent);
+}
+
+[data-texture-policy="frost"] .lumiere-visual-layer__texture {
+  background-image:
+    linear-gradient(115deg, transparent 42%, currentColor 44%, transparent 46%),
+    radial-gradient(circle at center, currentColor 0 0.8px, transparent 1.2px);
+  background-size:
+    64px 64px,
+    16px 16px;
+  color: var(--surface);
+}
+
+.lumiere-visual-layer__vignette {
+  background: radial-gradient(
+    circle,
+    transparent 48%,
+    color-mix(in srgb, var(--background) 28%, transparent)
+  );
+}
+
+.lumiere-ornaments {
+  color: var(--accent);
+  opacity: 0.38;
+}
+
+[data-ornament-density="sparse"] .lumiere-ornaments {
+  opacity: 0.24;
+}
+
+.lumiere-ornament {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.lumiere-ornament[data-ornament-position="primary"] {
+  top: 7%;
+  right: -11vw;
+  width: min(44vw, 38rem);
+  aspect-ratio: 1;
+}
+
+.lumiere-ornament[data-ornament-position="secondary"] {
+  bottom: 8%;
+  left: -9vw;
+  width: min(34vw, 28rem);
+  aspect-ratio: 1;
+}
+
+.lumiere-ornament[data-ornament-position="tertiary"] {
+  top: 46%;
+  left: 8%;
+  width: min(16vw, 11rem);
+  aspect-ratio: 1;
+}
+
+[data-ornament-set="candlelight"] .lumiere-ornament {
+  border: 1px solid color-mix(in srgb, currentColor 42%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 80px color-mix(in srgb, currentColor 18%, transparent),
+    inset 0 0 70px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+[data-ornament-set="candlelight"] .lumiere-ornament[data-ornament-position="tertiary"] {
+  border: 0;
+  background: radial-gradient(circle, currentColor, transparent 68%);
+  filter: blur(18px);
+  opacity: 0.42;
+}
+
+[data-ornament-set="confetti"] .lumiere-ornament {
+  border-radius: 46% 54% 58% 42%;
+  background: conic-gradient(
+    from 35deg,
+    transparent 0 20%,
+    currentColor 20% 23%,
+    transparent 23% 48%,
+    color-mix(in srgb, var(--surface-muted) 74%, currentColor) 48% 52%,
+    transparent 52% 78%,
+    currentColor 78% 81%,
+    transparent 81%
+  );
+  opacity: 0.44;
+  transform: rotate(-8deg);
+}
+
+[data-ornament-set="snowfall"] .lumiere-ornament {
+  background-image:
+    radial-gradient(circle, currentColor 0 1px, transparent 1.5px),
+    radial-gradient(circle, currentColor 0 1.5px, transparent 2px);
+  background-position:
+    0 0,
+    18px 24px;
+  background-size:
+    38px 38px,
+    54px 54px;
+  opacity: 0.62;
+}
+
+[data-ornament-set="editorial-rules"] .lumiere-ornament {
+  width: 1px;
+  height: 38vh;
+  aspect-ratio: auto;
+  background: currentColor;
+  opacity: 0.34;
+}
+
+[data-ornament-set="editorial-rules"] .lumiere-ornament[data-ornament-position="primary"] {
+  top: 6%;
+  right: 5vw;
+}
+
+[data-ornament-set="editorial-rules"] .lumiere-ornament[data-ornament-position="secondary"] {
+  bottom: 7%;
+  left: 5vw;
+}
+
+[data-ornament-set="botanical"] .lumiere-ornament {
+  border: 1px solid color-mix(in srgb, currentColor 48%, transparent);
+  border-radius: 78% 22% 68% 32% / 62% 34% 66% 38%;
+  box-shadow: inset 24px -18px 0 color-mix(in srgb, currentColor 6%, transparent);
+  transform: rotate(-18deg);
+}
+
+[data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="secondary"] {
+  transform: rotate(24deg);
+}
+
+[data-ornament-set="constellation"] .lumiere-ornament {
+  border: 1px solid color-mix(in srgb, currentColor 44%, transparent);
+  border-radius: 50%;
+  background-image:
+    radial-gradient(circle at 22% 34%, currentColor 0 1.5px, transparent 2px),
+    radial-gradient(circle at 68% 18%, currentColor 0 1px, transparent 1.5px),
+    radial-gradient(circle at 78% 72%, currentColor 0 1.8px, transparent 2.2px),
+    radial-gradient(circle at 38% 82%, currentColor 0 1px, transparent 1.5px);
+  box-shadow: 0 0 54px color-mix(in srgb, currentColor 12%, transparent);
+  transform: rotate(-12deg);
+}
+
+[data-image-treatment="cinematic"] {
+  --image-brightness: 0.96;
+  --image-contrast: 1.08;
+  --image-saturation: 0.88;
+}
+
+[data-image-treatment="vibrant"] {
+  --image-brightness: 1.03;
+  --image-contrast: 1.02;
+  --image-saturation: 1.16;
+}
+
+[data-image-treatment="frosted"] {
+  --image-brightness: 1.06;
+  --image-contrast: 0.94;
+  --image-saturation: 0.78;
+}
+
+[data-image-treatment="desaturated"] {
+  --image-brightness: 1.01;
+  --image-contrast: 1.04;
+  --image-saturation: 0.72;
+}
+
+[data-image-treatment="sun-washed"] {
+  --image-brightness: 1.06;
+  --image-contrast: 0.95;
+  --image-saturation: 1.04;
+}
+
+[data-image-treatment="crisp"] {
+  --image-brightness: 1;
+  --image-contrast: 1.12;
+  --image-saturation: 0.96;
+}
+
+[data-image-treatment="nocturne"] {
+  --image-brightness: 0.84;
+  --image-contrast: 1.12;
+  --image-saturation: 0.82;
+}
+
+.lumiere-invitation :is(.lumiere-hero-media img, .lumiere-section-image img) {
+  filter: saturate(var(--image-saturation)) contrast(var(--image-contrast))
+    brightness(var(--image-brightness)) blur(var(--motion-scroll-blur, 0));
+}
+
+[data-frame-style="soft"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+[data-frame-style="double-line"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  outline: 1px solid color-mix(in srgb, var(--accent) 56%, transparent);
+  outline-offset: 0.4rem;
+}
+
+[data-frame-style="playful"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  outline-offset: 0.25rem;
+  box-shadow: 0.65rem 0.65rem 0 color-mix(in srgb, var(--surface-muted) 78%, transparent);
+}
+
+[data-frame-style="frosted"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  outline: 1px solid color-mix(in srgb, var(--surface) 66%, transparent);
+  outline-offset: -0.6rem;
+  box-shadow: 0 28px 84px color-mix(in srgb, var(--background) 48%, transparent);
+}
+
+[data-frame-style="offset"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  box-shadow:
+    0.75rem 0.75rem 0 var(--background),
+    0.8rem 0.8rem 0 color-mix(in srgb, var(--border) 78%, transparent);
+}
+
+[data-frame-style="organic"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  border-radius: 42% 58% 48% 52% / 16% 18% 82% 84%;
+  box-shadow: 0 26px 78px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+[data-frame-style="frameless"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-frame-style="gilded"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  outline: 1px solid color-mix(in srgb, var(--accent) 64%, transparent);
+  outline-offset: 0.35rem;
+  box-shadow:
+    0 0 54px color-mix(in srgb, var(--accent) 14%, transparent),
+    0 30px 90px color-mix(in srgb, var(--background) 52%, transparent);
+}
+
+.lumiere-section:not(.lumiere-section--hero)::after {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 4;
+  width: min(76vw, 52rem);
+  height: 1px;
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+[data-divider-style="hairline"] .lumiere-section:not(.lumiere-section--hero)::after {
+  background: color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+[data-divider-style="short-rule"] .lumiere-section:not(.lumiere-section--hero)::after {
+  width: min(16vw, 7rem);
+  background: var(--accent);
+}
+
+[data-divider-style="luminous"] .lumiere-section:not(.lumiere-section--hero)::after {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+[data-divider-style="dotted"] .lumiere-section:not(.lumiere-section--hero)::after {
+  height: 4px;
+  background: radial-gradient(circle, var(--accent) 0 1.5px, transparent 1.8px) center / 16px 4px
+    repeat-x;
 }
 
 .lumiere-section__kicker {
@@ -1158,7 +1602,8 @@ body {
 
   .lumiere-invitation[data-motion-driver="raf"][data-motion-intensity="premium"]
     :is([data-parallax-layer="hero-image"], .lumiere-section-image img) {
-    filter: blur(var(--motion-scroll-blur, 0));
+    filter: saturate(var(--image-saturation)) contrast(var(--image-contrast))
+      brightness(var(--image-brightness)) blur(var(--motion-scroll-blur, 0));
     will-change: transform, filter;
   }
 }
@@ -1182,6 +1627,15 @@ body {
     animation: none !important;
     transform: none !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .lumiere-visual-layer__image {
+    filter: blur(12px) saturate(0.82) contrast(1.02);
+    transform: scale(1.02);
+  }
+
+  .lumiere-ornaments {
+    opacity: 0.2;
   }
 }
 
@@ -1303,5 +1757,44 @@ body {
 
   to {
     transform: translateY(-0.35rem);
+  }
+}
+
+@media (max-width: 639px) {
+  .lumiere-visual-layer__image {
+    object-position: center;
+    opacity: 0.18;
+  }
+
+  [data-texture-strength="visible"] .lumiere-visual-layer__texture {
+    opacity: 0.075;
+  }
+
+  .lumiere-ornament[data-ornament-position="primary"] {
+    right: -32vw;
+    width: 76vw;
+  }
+
+  .lumiere-ornament[data-ornament-position="secondary"] {
+    bottom: 14%;
+    left: -28vw;
+    width: 66vw;
+  }
+
+  .lumiere-ornament[data-ornament-position="tertiary"] {
+    display: none;
+  }
+
+  [data-frame-style="double-line"] :is(.lumiere-hero-media, .lumiere-section-image),
+  [data-frame-style="gilded"] :is(.lumiere-hero-media, .lumiere-section-image) {
+    outline-offset: 0.2rem;
+  }
+
+  [data-frame-style="playful"] :is(.lumiere-hero-media, .lumiere-section-image) {
+    box-shadow: 0.35rem 0.35rem 0 color-mix(in srgb, var(--surface-muted) 78%, transparent);
+  }
+
+  .lumiere-section:not(.lumiere-section--hero)::after {
+    width: min(46vw, 11rem);
   }
 }

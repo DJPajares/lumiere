@@ -19,6 +19,7 @@ import {
   themeRegistry,
   themeTemplateSpecIds,
   themeTemplateSpecs,
+  type ThemeDefinition,
   validateThemeSection,
   validateEventTypeSections,
   validateThemeSections,
@@ -288,6 +289,46 @@ describe("theme registry", () => {
     ).toBe(true);
   });
 
+  it("defines theme-safe backdrop, texture, ornament, divider, frame, and image effects", () => {
+    const themes: ThemeDefinition[] = Object.values(themeRegistry);
+    const backdropTypes = new Set(themes.map((theme) => theme.composition.effects.backdrop.type));
+
+    expect(backdropTypes).toEqual(
+      new Set(["editorial-whitespace", "gradient", "image", "solid", "texture"]),
+    );
+    expect(
+      themes.every((theme) => {
+        const effects = theme.composition.effects;
+        const ornamentStateIsValid = effects.ornaments.enabled
+          ? effects.ornaments.set !== "none" && effects.ornaments.density !== "none"
+          : effects.ornaments.set === "none" && effects.ornaments.density === "none";
+        const textureStateIsValid =
+          effects.texture.policy === "none"
+            ? effects.texture.strength === "none"
+            : effects.texture.strength !== "none";
+        const imageStateIsValid =
+          effects.backdrop.type === "image"
+            ? effects.backdrop.imageSource === "cover"
+            : effects.backdrop.imageSource === "none";
+
+        return ornamentStateIsValid && textureStateIsValid && imageStateIsValid;
+      }),
+    ).toBe(true);
+    expect(themeRegistry["modern-minimal"].composition.effects.ornaments.enabled).toBe(false);
+    expect(themeRegistry.premium.composition.effects).toMatchObject({
+      backdrop: { type: "gradient" },
+      dividerStyle: "luminous",
+      frameStyle: "double-line",
+      imageTreatment: "cinematic",
+      ornaments: { enabled: true, set: "candlelight" },
+    });
+    expect(themeRegistry["celestial-gold"].composition.effects.backdrop).toMatchObject({
+      imageSource: "cover",
+      overlay: "strong",
+      type: "image",
+    });
+  });
+
   it("declares compatibility metadata for every theme", () => {
     expect(
       Object.values(themeRegistry).every(
@@ -495,6 +536,7 @@ describe("theme registry", () => {
           Boolean(spec.radiusGuidance) &&
           Boolean(spec.typographyGuidance) &&
           Boolean(spec.imageTreatment) &&
+          spec.effects === theme.composition.effects &&
           spec.motion.compositionMap === theme.composition.visualSystem.compositionMap &&
           spec.motion.motionProfile === theme.composition.visualSystem.motionProfile &&
           spec.motion.parallaxProfile === theme.composition.visualSystem.parallaxProfile &&

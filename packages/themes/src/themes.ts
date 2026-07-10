@@ -29,8 +29,57 @@ export type ThemeSectionDefault = {
   motion: ThemeMotionKind;
 };
 
+export type ThemeBackdropType = "editorial-whitespace" | "gradient" | "image" | "solid" | "texture";
+
+export type ThemeTexturePolicy = "fine-noise" | "frost" | "none" | "paper-grain" | "soft-speckle";
+
+export type ThemeOrnamentSet =
+  | "botanical"
+  | "candlelight"
+  | "confetti"
+  | "constellation"
+  | "editorial-rules"
+  | "none"
+  | "snowfall";
+
+export type ThemeDividerStyle = "dotted" | "hairline" | "luminous" | "none" | "short-rule";
+
+export type ThemeFrameStyle =
+  "double-line" | "frameless" | "frosted" | "gilded" | "offset" | "organic" | "playful" | "soft";
+
+export type ThemeImageTreatmentKind =
+  | "cinematic"
+  | "crisp"
+  | "desaturated"
+  | "frosted"
+  | "natural"
+  | "nocturne"
+  | "sun-washed"
+  | "vibrant";
+
+export type ThemeVisualEffects = {
+  backdrop: {
+    imageSource: "cover" | "none";
+    overlay: "none" | "soft" | "strong";
+    type: ThemeBackdropType;
+  };
+  dividerStyle: ThemeDividerStyle;
+  frameStyle: ThemeFrameStyle;
+  imageTreatment: ThemeImageTreatmentKind;
+  ornaments: {
+    density: "balanced" | "none" | "sparse";
+    enabled: boolean;
+    set: ThemeOrnamentSet;
+  };
+  texture: {
+    policy: ThemeTexturePolicy;
+    strength: "none" | "subtle" | "visible";
+  };
+};
+
 export type ThemeComposition = {
   backgroundTreatment: string;
+  effects: ThemeVisualEffects;
   visualSystem: {
     cardStackPolicy: string;
     compositionMap: InviteCompositionMapId;
@@ -136,6 +185,73 @@ export const themeIds = [
   "celestial-gold",
 ] as const;
 export type ThemeId = (typeof themeIds)[number];
+
+export const themeVisualEffects = {
+  "lumiere-default": {
+    backdrop: { imageSource: "none", overlay: "none", type: "solid" },
+    dividerStyle: "hairline",
+    frameStyle: "soft",
+    imageTreatment: "natural",
+    ornaments: { density: "none", enabled: false, set: "none" },
+    texture: { policy: "paper-grain", strength: "subtle" },
+  },
+  premium: {
+    backdrop: { imageSource: "none", overlay: "soft", type: "gradient" },
+    dividerStyle: "luminous",
+    frameStyle: "double-line",
+    imageTreatment: "cinematic",
+    ornaments: { density: "balanced", enabled: true, set: "candlelight" },
+    texture: { policy: "fine-noise", strength: "subtle" },
+  },
+  kids: {
+    backdrop: { imageSource: "none", overlay: "none", type: "texture" },
+    dividerStyle: "dotted",
+    frameStyle: "playful",
+    imageTreatment: "vibrant",
+    ornaments: { density: "balanced", enabled: true, set: "confetti" },
+    texture: { policy: "soft-speckle", strength: "visible" },
+  },
+  noel: {
+    backdrop: { imageSource: "cover", overlay: "strong", type: "image" },
+    dividerStyle: "luminous",
+    frameStyle: "frosted",
+    imageTreatment: "frosted",
+    ornaments: { density: "sparse", enabled: true, set: "snowfall" },
+    texture: { policy: "frost", strength: "subtle" },
+  },
+  "editorial-ivory": {
+    backdrop: { imageSource: "none", overlay: "none", type: "editorial-whitespace" },
+    dividerStyle: "short-rule",
+    frameStyle: "offset",
+    imageTreatment: "desaturated",
+    ornaments: { density: "sparse", enabled: true, set: "editorial-rules" },
+    texture: { policy: "paper-grain", strength: "subtle" },
+  },
+  "garden-light": {
+    backdrop: { imageSource: "none", overlay: "soft", type: "gradient" },
+    dividerStyle: "short-rule",
+    frameStyle: "organic",
+    imageTreatment: "sun-washed",
+    ornaments: { density: "balanced", enabled: true, set: "botanical" },
+    texture: { policy: "soft-speckle", strength: "subtle" },
+  },
+  "modern-minimal": {
+    backdrop: { imageSource: "none", overlay: "none", type: "solid" },
+    dividerStyle: "hairline",
+    frameStyle: "frameless",
+    imageTreatment: "crisp",
+    ornaments: { density: "none", enabled: false, set: "none" },
+    texture: { policy: "none", strength: "none" },
+  },
+  "celestial-gold": {
+    backdrop: { imageSource: "cover", overlay: "strong", type: "image" },
+    dividerStyle: "luminous",
+    frameStyle: "gilded",
+    imageTreatment: "nocturne",
+    ornaments: { density: "balanced", enabled: true, set: "constellation" },
+    texture: { policy: "fine-noise", strength: "subtle" },
+  },
+} satisfies Record<ThemeId, ThemeVisualEffects>;
 
 const publicCoreSections: SectionType[] = [
   "introduction",
@@ -244,6 +360,7 @@ export const themeRegistry = {
         mood: "Quiet room tone only; no theme-owned audio by default.",
       },
       backgroundTreatment: "Warm parchment surface with restrained section framing.",
+      effects: themeVisualEffects["lumiere-default"],
       visualSystem: {
         cardStackPolicy:
           "Framed sections may be the dominant rhythm for this neutral/basic theme, but image-led sections should still use intentional spacing and stable media slots.",
@@ -425,6 +542,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Layered ivory field with candlelit radial light, editorial whitespace, and media-led section breaks.",
+      effects: themeVisualEffects.premium,
       visualSystem: {
         cardStackPolicy:
           "Use framed panels only for compact utility details; the page rhythm must mix full-bleed, editorial, timeline, gallery, and layered-media moments.",
@@ -625,6 +743,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Sunny layered paper fields, rounded image frames, and energetic but readable spacing.",
+      effects: themeVisualEffects.kids,
       visualSystem: {
         cardStackPolicy:
           "Parent-facing details can stay framed, while hero and gallery should feel image-led and celebratory rather than like repeated cards.",
@@ -813,6 +932,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Evergreen and candlelight layers with cozy framed details, never emoji-heavy clutter.",
+      effects: themeVisualEffects.noel,
       visualSystem: {
         cardStackPolicy:
           "Use cozy framed details selectively; seasonal hero, gallery, and story moments should carry depth and atmosphere.",
@@ -1001,6 +1121,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Uncoated ivory paper, hairline folio rules, and offset editorial columns.",
+      effects: themeVisualEffects["editorial-ivory"],
       visualSystem: {
         cardStackPolicy:
           "Sections read as one print sequence; practical content uses rules and columns rather than floating cards.",
@@ -1189,6 +1310,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Warm daylight canvas with soft sage fields and restrained dappled radial light.",
+      effects: themeVisualEffects["garden-light"],
       visualSystem: {
         cardStackPolicy:
           "Use broad organic bands and layered image moments; reserve framed panels for reply and compact facts.",
@@ -1375,6 +1497,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Flat off-white or graphite plane with strict rules and no decorative texture.",
+      effects: themeVisualEffects["modern-minimal"],
       visualSystem: {
         cardStackPolicy:
           "Use one continuous twelve-column system; borders organize information without creating a deck of cards.",
@@ -1564,6 +1687,7 @@ export const themeRegistry = {
       },
       backgroundTreatment:
         "Deep indigo field with quiet radial light and sparse orbital hairline geometry.",
+      effects: themeVisualEffects["celestial-gold"],
       visualSystem: {
         cardStackPolicy:
           "Use cinematic dark chapters and layered media; practical fields sit within the scene rather than a stack of light cards.",

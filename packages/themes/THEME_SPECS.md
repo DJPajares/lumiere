@@ -12,6 +12,7 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 ## Shared Requirements
 
 - Every theme must define event fit, design read, mood notes, anti-slop constraints, mode support, token guidance, radius, typography, image treatment, motion, ambient media, RSVP states, dashboard preview requirements, and naming guidance.
+- Every theme also owns a typed visual-effects profile: backdrop type and cover-image policy, texture/noise strength, ornament set and density, divider style, frame style, and image treatment. Effects must remain decorative, optional, and readable when images are missing.
 - Card-based treatment is allowed only when the theme intentionally calls for practical or basic sections.
 - Premium, seasonal, and playful themes must mix full-bleed, split, editorial, gallery, and framed moments.
 - RSVP must feel integrated into the invitation and include success, closed, disabled, and error guidance.

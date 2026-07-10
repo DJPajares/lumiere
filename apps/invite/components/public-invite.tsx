@@ -20,6 +20,7 @@ import { resolveInviteMotionIntensity } from "./invite-motion-config";
 import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
 import { InviteMotionRuntime } from "./invite-motion-runtime";
 import { InviteShell } from "./invite-shell";
+import { InviteVisualLayer } from "./invite-visual-layer";
 import { RsvpForm, type RsvpDesign, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
 type JsonObject = Record<string, JsonValue>;
@@ -89,8 +90,10 @@ function InvitationFrame({
   const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
   const rsvpDesign = theme.composition.rsvpDesign;
   const visualSystem = theme.composition.visualSystem;
+  const visualEffects = theme.composition.effects;
   const motionIntensity = resolveInviteMotionIntensity(visualSystem.motionProfile);
   const ambientAudio = resolveAmbientAudioConfig(invite, theme);
+  const backdropImage = introduction ? readAsset(introduction.content.coverImage) : undefined;
 
   return (
     <InviteShell
@@ -102,15 +105,25 @@ function InvitationFrame({
       <article
         className="lumiere-invitation min-h-[100dvh]"
         data-composition-map={visualSystem.compositionMap}
+        data-backdrop-overlay={visualEffects.backdrop.overlay}
+        data-backdrop-type={visualEffects.backdrop.type}
+        data-divider-style={visualEffects.dividerStyle}
+        data-frame-style={visualEffects.frameStyle}
+        data-image-treatment={visualEffects.imageTreatment}
         data-invite-modernization="editorial-v1"
         data-motion-intensity={motionIntensity}
         data-motion-profile={visualSystem.motionProfile}
         data-motion-root="invite"
         data-parallax-profile={visualSystem.parallaxProfile}
+        data-ornament-density={visualEffects.ornaments.density}
+        data-ornament-set={visualEffects.ornaments.enabled ? visualEffects.ornaments.set : "none"}
         data-rsvp-design={rsvpDesign}
+        data-texture-policy={visualEffects.texture.policy}
+        data-texture-strength={visualEffects.texture.strength}
         data-theme-design-read={theme.designRead}
       >
         <InviteMotionRuntime intensity={motionIntensity} />
+        <InviteVisualLayer backdropImageUrl={backdropImage?.url} effects={visualEffects} />
         <ScrollProgress />
         <PublicHero invite={invite} section={introduction} theme={theme} />
 

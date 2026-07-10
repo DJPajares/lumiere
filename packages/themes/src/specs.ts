@@ -6,7 +6,7 @@ import type {
   ThemeParallaxProfile,
   ThemeSectionComposition,
 } from "./composition";
-import { themeRegistry, type ThemeId } from "./themes";
+import { themeRegistry, type ThemeId, type ThemeVisualEffects } from "./themes";
 
 export type ThemeSectionTreatmentKind =
   "card-based" | "cinematic" | "editorial" | "framed" | "full-bleed" | "split-layout";
@@ -31,6 +31,7 @@ export type ThemeTemplateSpec = {
   radiusGuidance: string;
   typographyGuidance: string;
   imageTreatment: string;
+  effects: ThemeVisualEffects;
   motion: {
     compositionMap: InviteCompositionMapId;
     level: "calm" | "immersive" | "playful" | "seasonal";
@@ -130,6 +131,7 @@ const createExpansionThemeTemplateSpec = (
     radiusGuidance: `Use ${theme.radius.sm}, ${theme.radius.md}, and ${theme.radius.lg} as a deliberate geometry system; do not substitute generic rounded cards.`,
     typographyGuidance: `Pair ${theme.compatibility.fontPairing.display} display type with ${theme.compatibility.fontPairing.body} body copy and ${theme.typography.css.eyebrowLetterSpacing} eyebrow tracking.`,
     imageTreatment: theme.imageTreatment,
+    effects: theme.composition.effects,
     motion: {
       compositionMap: theme.composition.visualSystem.compositionMap,
       level: theme.composition.visualSystem.motionProfile,
@@ -220,6 +222,7 @@ export const themeTemplateSpecs = {
       "Use system sans with restrained tracking; copy should feel practical and human, not luxury-generic.",
     imageTreatment:
       "Soft rectangular image slots with reserved ratios; missing images become useful event facts.",
+    effects: themeRegistry["lumiere-default"].composition.effects,
     motion: {
       compositionMap: "neutral-basic",
       level: "calm",
@@ -336,6 +339,7 @@ export const themeTemplateSpecs = {
       "Use editorial serif display for titles and clean sans for body; preserve generous line height on mobile.",
     imageTreatment:
       "Large portrait, venue, and gallery imagery with strong crops, layered depth, and graceful fact-panel fallback.",
+    effects: themeRegistry.premium.composition.effects,
     motion: {
       compositionMap: "wedding-editorial",
       level: "immersive",
@@ -454,6 +458,7 @@ export const themeTemplateSpecs = {
       "Rounded sans display is appropriate; body text stays simple and highly legible.",
     imageTreatment:
       "Use clear celebrant and party imagery with rounded frames; missing images become friendly fact panels.",
+    effects: themeRegistry.kids.composition.effects,
     motion: {
       compositionMap: "birthday-feature",
       level: "playful",
@@ -566,6 +571,7 @@ export const themeTemplateSpecs = {
       "Warm serif display is acceptable for headings; body remains humanist and readable.",
     imageTreatment:
       "Use table, venue, or gathering imagery with warm captions; missing media becomes a candlelit fact rail.",
+    effects: themeRegistry.noel.composition.effects,
     motion: {
       compositionMap: "wedding-editorial",
       level: "seasonal",
