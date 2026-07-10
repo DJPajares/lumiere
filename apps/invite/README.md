@@ -2,7 +2,17 @@
 
 Use the root `SKILL.md` for UI decisions.
 
-Design read: the invite app is the mobile-first, public event experience. It should feel luminous, emotional, and event-specific while still keeping public event details clear without a guest RSVP token.
+Design read: the invite app is a mobile-first editorial invitation, not an event landing page. It should open with a cinematic event-specific chapter, move through varied typographic and image-led compositions, and close with an RSVP or farewell that feels native to the invitation. Public URLs must remain emotionally complete without exposing private guest or RSVP context.
+
+Premium wedding direction:
+
+- Full-viewport opening with one dominant portrait or an intentional event-fact fallback.
+- Display typography carries the emotional hierarchy; sans-serif copy keeps dates, venue details, and RSVP controls legible.
+- Sections alternate full-bleed, editorial split, timeline, feature-gallery, and layered-media rhythms instead of repeating cards.
+- Scroll feedback and motion remain progressive enhancement, CSS-first, and reduced-motion safe.
+- Content continues to come from Lumiere API contracts and the shared theme registry.
+
+See [`REVERIE_REFERENCE_AUDIT.md`](./REVERIE_REFERENCE_AUDIT.md) for the quality-reference review and adaptation boundaries.
 
 Token notes:
 

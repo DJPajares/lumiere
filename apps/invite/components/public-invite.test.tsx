@@ -98,12 +98,18 @@ describe("public invite section renderers", () => {
 
     expect(html).toContain('data-ambient-audio="optional"');
     expect(html).toContain('data-ambient-audio-controls="external-controls"');
+    expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain('data-composition-map="wedding-editorial"');
     expect(html).toContain('data-motion-profile="immersive"');
     expect(html).toContain('data-parallax-profile="hero-and-media"');
     expect(html).toContain('data-theme-hero-composition="layered-portrait"');
     expect(html).toContain('data-parallax-kind="hero-depth"');
     expect(html).toContain('data-parallax-layer="hero-image"');
+    expect(html).toContain('class="lumiere-scroll-progress"');
+    expect(html).toContain("lumiere-hero-title");
+    expect(html).toContain("lumiere-profile-card");
+    expect(html).toContain("lumiere-gallery-grid");
+    expect(html).toContain('data-image-role="feature"');
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain('data-section-composition="timeline"');
     expect(html).toContain('data-section-composition="editorial-split"');
@@ -307,6 +313,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Meal choice");
     expect(html).toContain("Will you celebrate with us?");
     expect(html).toContain('data-rsvp-design="premium"');
+    expect(html).toContain('data-invite-modernization="editorial-v1"');
+    expect(html).toContain("lumiere-guest-panel");
+    expect(html).toContain("lumiere-rsvp-layout");
     expect(html).toContain("Private music");
     expect(html).toContain('src="https://audio.example.com/private-suite.mp3"');
   });

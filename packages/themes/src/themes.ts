@@ -327,7 +327,8 @@ export const themeRegistry = {
     id: "premium",
     label: "Premium",
     description: "Editorial, intimate design for weddings, dinners, and elevated private events.",
-    designRead: "Luminous editorial layout with formal pacing and restrained ceremony.",
+    designRead:
+      "Cinematic wedding editorial with portrait-led hierarchy, spacious ceremony, and an invitation-native reply.",
     supportedEventTypes: ["wedding", "dinner", "private_event"],
     supportedModes: ["light", "dark", "toggleable"],
     defaultMode: "toggleable",

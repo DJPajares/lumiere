@@ -96,13 +96,15 @@ function InvitationFrame({
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
       <article
-        className="min-h-[100dvh]"
+        className="lumiere-invitation min-h-[100dvh]"
         data-composition-map={visualSystem.compositionMap}
+        data-invite-modernization="editorial-v1"
         data-motion-profile={visualSystem.motionProfile}
         data-parallax-profile={visualSystem.parallaxProfile}
         data-rsvp-design={rsvpDesign}
         data-theme-design-read={theme.designRead}
       >
+        <ScrollProgress />
         <PublicHero invite={invite} section={introduction} theme={theme} />
 
         {guest ? <GuestContextPanel guest={guest} /> : null}
@@ -133,11 +135,19 @@ function InvitationFrame({
           </div>
         )}
 
-        <footer className="mx-auto max-w-5xl px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12">
+        <footer className="lumiere-invitation__footer mx-auto max-w-5xl px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12">
           <p>{invite.event.title} is hosted through Lumiere.</p>
         </footer>
       </article>
     </InviteShell>
+  );
+}
+
+function ScrollProgress() {
+  return (
+    <div aria-hidden="true" className="lumiere-scroll-progress">
+      <span className="lumiere-scroll-progress__bar" />
+    </div>
   );
 }
 
@@ -242,26 +252,31 @@ function PublicHero({
       id={anchorId}
     >
       <div className={getHeroInnerClassName(theme, Boolean(coverImage))}>
-        <div className="grid gap-6">
-          <p className="text-sm font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
-            {eyebrow}
-          </p>
+        <div className="lumiere-hero-copy grid gap-6">
+          <div className="lumiere-section__kicker">
+            <p className="text-sm font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
+              {eyebrow}
+            </p>
+            <span aria-hidden="true" className="lumiere-section__index">
+              01
+            </span>
+          </div>
           <div className="grid gap-4">
-            <h1 className="lumiere-display max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
+            <h1 className="lumiere-display lumiere-hero-title max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
               {title}
             </h1>
             {subtitle ? (
-              <p className="max-w-2xl text-xl leading-8 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
+              <p className="lumiere-hero-subtitle max-w-2xl text-xl leading-8 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
                 {subtitle}
               </p>
             ) : null}
             {body ? (
-              <p className="max-w-2xl text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+              <p className="lumiere-hero-body max-w-2xl text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
                 {body}
               </p>
             ) : null}
           </div>
-          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+          <dl className="lumiere-hero-facts grid gap-3 text-sm sm:grid-cols-3">
             <HeroFact
               label="When"
               value={formatEventDate(invite.event.startsAt, invite.event.timezone)}
@@ -448,9 +463,14 @@ function PublicSection({
       id={anchorId}
     >
       <div className={getSectionInnerClassName(composition, density)}>
-        <p className="lumiere-section__eyebrow text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-          {definition.label}
-        </p>
+        <div className="lumiere-section__kicker">
+          <p className="lumiere-section__eyebrow text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+            {definition.label}
+          </p>
+          <span aria-hidden="true" className="lumiere-section__index">
+            {String(index + 2).padStart(2, "0")}
+          </span>
+        </div>
         <div className="lumiere-section__body">
           <SectionBody
             composition={composition}
@@ -544,7 +564,7 @@ function DateSection({
   const showCountdown = readBoolean(settings.showCountdown, true);
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
+    <div className="lumiere-date-layout grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
       <div className="grid gap-3">
         <h2
           className="lumiere-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
@@ -558,7 +578,7 @@ function DateSection({
           </p>
         ) : null}
       </div>
-      <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
+      <div className="lumiere-date-panel rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
         <p className="text-lg leading-8">
           {displayText ?? (startsAt ? formatEventDate(startsAt, timezone) : "Date to be announced")}
         </p>
@@ -584,14 +604,17 @@ function DetailsSection({
   const columns = readInteger(settings.columns, 2, 1, 3);
 
   return (
-    <div className="grid gap-4">
+    <div className="lumiere-details-layout grid gap-4">
       <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {items.length > 0 ? (
-        <div className={getColumnGridClassName(columns)}>
+        <div className={joinClassNames("lumiere-detail-grid", getColumnGridClassName(columns))}>
           {items.map((item, index) => (
-            <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4" key={index}>
+            <div
+              className="lumiere-detail-item rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
+              key={index}
+            >
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
                 {readString(item.label) ?? "Detail"}
               </p>
@@ -627,8 +650,8 @@ function LocationSection({
   const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
-      <div className="grid gap-3">
+    <div className="lumiere-location-layout grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+      <div className="lumiere-location-copy grid gap-3">
         <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
           {venueName}
         </h2>
@@ -670,21 +693,28 @@ function StorySection({
 
   return (
     <div
-      className={
+      className={joinClassNames(
+        "lumiere-story-layout",
         image
           ? "grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start"
-          : "mx-auto grid max-w-3xl gap-4"
-      }
+          : "mx-auto grid max-w-3xl gap-4",
+      )}
     >
-      <div className="grid gap-4">
+      <div className="lumiere-story-copy grid gap-4">
         <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
           {title}
         </h2>
         <div
-          className={isTimeline ? "grid gap-4 border-l border-[var(--border)] pl-5" : "grid gap-3"}
+          className={joinClassNames(
+            "lumiere-story-rail",
+            isTimeline ? "grid gap-4 border-l border-[var(--border)] pl-5" : "grid gap-3",
+          )}
         >
           {paragraphs.map((paragraph, index) => (
-            <div className={isTimeline ? "relative" : undefined} key={index}>
+            <div
+              className={joinClassNames("lumiere-story-step", isTimeline ? "relative" : undefined)}
+              key={index}
+            >
               {isTimeline ? (
                 <span
                   aria-hidden="true"
@@ -718,23 +748,31 @@ function ProfileSection({
 
   return (
     <div
-      className={resolvedLayout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4"}
+      className={joinClassNames(
+        "lumiere-profile-layout",
+        resolvedLayout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4",
+      )}
     >
       <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
       {people.length > 0 ? (
-        <div className={resolvedLayout === "stacked" ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
+        <div
+          className={joinClassNames(
+            "lumiere-profile-grid",
+            resolvedLayout === "stacked" ? "grid gap-3" : "grid gap-3 sm:grid-cols-2",
+          )}
+        >
           {people.map((person, index) => {
             const image = readAsset(person.image);
 
             return (
               <article
-                className="grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
+                className="lumiere-profile-card grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
                 key={index}
               >
                 {image ? <SectionImage asset={image} compact /> : null}
-                <div>
+                <div className="lumiere-profile-copy">
                   <h3 className="text-xl font-semibold">{readString(person.name)}</h3>
                   {readString(person.role) ? (
                     <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">
@@ -770,7 +808,7 @@ function EntourageSection({
   const columns = readInteger(settings.columns, 2, 1, 3);
 
   return (
-    <div className="grid gap-4">
+    <div className="lumiere-gallery-layout grid gap-4">
       <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
         {title}
       </h2>
@@ -858,11 +896,12 @@ function GallerySection({
       </h2>
       {images.length > 0 ? (
         <div
-          className={
+          className={joinClassNames(
+            "lumiere-gallery-grid",
             composition === "gallery-feature" && featuredImage
               ? "grid gap-3 lg:grid-cols-[1.15fr_0.85fr]"
-              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-          }
+              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
+          )}
         >
           {composition === "gallery-feature" && featuredImage ? (
             <SectionImage asset={featuredImage} feature />
@@ -917,8 +956,8 @@ function RsvpSection({
   const submitContext = guest && guestToken ? { guest, guestToken } : null;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
-      <div className="grid gap-4">
+    <div className="lumiere-rsvp-layout grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+      <div className="lumiere-rsvp-copy grid gap-4">
         <div className="grid gap-3">
           <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
             {title}
@@ -1010,11 +1049,12 @@ function OutroSection({
 
   return (
     <div
-      className={
+      className={joinClassNames(
+        "lumiere-outro-layout",
         image && composition === "layered-media"
           ? "grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"
-          : "mx-auto grid max-w-3xl gap-4 text-center"
-      }
+          : "mx-auto grid max-w-3xl gap-4 text-center",
+      )}
     >
       <div className="grid gap-4">
         <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
@@ -1067,7 +1107,7 @@ function GenericSection({ content, titleId }: { content: JsonObject; titleId: st
 
 function HeroFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-md)] bg-[var(--surface)] p-4 shadow-sm">
+    <div className="lumiere-hero-fact rounded-[var(--radius-md)] bg-[var(--surface)] p-4 shadow-sm">
       <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
         {label}
       </dt>
@@ -1116,8 +1156,8 @@ function MapPreview({
   venueName: string;
 }) {
   return (
-    <div className="grid aspect-[4/3] min-h-64 place-items-end overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
-      <div className="w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+    <div className="lumiere-map-preview grid aspect-[4/3] min-h-64 place-items-end overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
+      <div className="lumiere-map-card w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
           Map preview
         </p>
@@ -1157,7 +1197,10 @@ function SectionImage({
       : "aspect-[3/2]";
 
   return (
-    <figure className="lumiere-section-image overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]">
+    <figure
+      className="lumiere-section-image overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]"
+      data-image-role={feature ? "feature" : compact ? "compact" : "supporting"}
+    >
       <img
         alt={asset.alt}
         className={`${aspectClassName} w-full object-cover`}

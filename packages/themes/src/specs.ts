@@ -190,7 +190,8 @@ export const themeTemplateSpecs = {
   },
   premium: {
     id: "premium",
-    designRead: "Luminous editorial layout with formal pacing and restrained ceremony.",
+    designRead:
+      "Cinematic wedding editorial with portrait-led hierarchy, spacious ceremony, and an invitation-native reply.",
     eventTypeFit: ["wedding", "dinner", "private_event"],
     moodBoardNotes: [
       "Editorial wedding magazine pacing, ivory fields, warm portrait light, and precise hairlines.",

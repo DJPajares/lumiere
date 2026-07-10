@@ -90,6 +90,8 @@ describe("invite app routes", () => {
     expect(html).toContain("Glass Hall");
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');
+    expect(html).toContain('data-invite-modernization="editorial-v1"');
+    expect(html).toContain('class="lumiere-scroll-progress"');
     expect(html).not.toContain("Private RSVP");
     expect(html).not.toContain("Guest-only shuttle");
   });
@@ -158,6 +160,8 @@ describe("invite app routes", () => {
     expect(html).toContain('data-invite-context="guest"');
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');
+    expect(html).toContain('data-invite-modernization="editorial-v1"');
+    expect(html).toContain("lumiere-rsvp-layout");
   });
 
   it("generates noindex guest metadata without leaking guest context", async () => {
