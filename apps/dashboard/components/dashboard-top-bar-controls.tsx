@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@lumiere/dashboard-ui/components/avatar";
-import { Button } from "@lumiere/dashboard-ui/components/button";
+import { Button, buttonVariants } from "@lumiere/dashboard-ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,9 +126,12 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
 
   if (status !== "authenticated") {
     return (
-      <Button className={className} render={<Link href="/login" />} size="sm" variant="outline">
+      <Link
+        className={cn(buttonVariants({ size: "sm", variant: "outline" }), className)}
+        href="/login"
+      >
         Sign in
-      </Button>
+      </Link>
     );
   }
 

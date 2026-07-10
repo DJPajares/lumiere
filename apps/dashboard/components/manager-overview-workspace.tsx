@@ -1,9 +1,10 @@
 "use client";
 
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
-import { Button } from "@lumiere/dashboard-ui/components/button";
+import { Button, buttonVariants } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@lumiere/dashboard-ui/components/tabs";
+import { cn } from "@lumiere/dashboard-ui/lib/utils";
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -299,9 +300,6 @@ function UpcomingMilestones({ milestones }: { milestones: Event[] }) {
             The next event dates across your manager account.
           </p>
         </div>
-        <Button className="min-h-10" render={<Link href="/events" />} size="sm" variant="ghost">
-          All events
-        </Button>
       </div>
 
       {milestones.length === 0 ? (
@@ -435,14 +433,12 @@ function ManagerEventRows({
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
-            <Button
-              className="min-h-10"
-              render={<Link href={`/events/${event.id}`} />}
-              size="sm"
-              variant="outline"
+            <Link
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }), "min-h-10")}
+              href={`/events/${event.id}`}
             >
               Open {event.title}
-            </Button>
+            </Link>
             <Button
               aria-label={`Edit ${event.title}`}
               className="min-h-10"
@@ -620,9 +616,6 @@ function ManagerOverviewError({ error, onRetry }: { error: string; onRetry: () =
       <div className="flex flex-wrap gap-2">
         <Button className="min-h-10" onClick={onRetry} variant="outline">
           Try again
-        </Button>
-        <Button className="min-h-10" render={<Link href="/events" />} variant="ghost">
-          Open events
         </Button>
       </div>
     </section>

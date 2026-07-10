@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-10T18:00:00+08:00'
-modified: '2026-07-11T00:53:53+08:00'
+modified: '2026-07-11T00:59:56+08:00'
 completedAt: '2026-07-11T00:53:53+08:00'
 labels: ['dashboard', 'shadcn', 'base-ui', 'dialog', 'drawer', 'forms']
 depends_on: ['t43-dashboard-event-edit-flow', 't24-dashboard-guest-management', 't56-dashboard-shadcn-foundation', 't58-dashboard-date-time-picker-overhaul']
@@ -60,3 +60,4 @@ Build one responsive composition wrapper around the selected shadcn Dialog/Drawe
 - 2026-07-10T19:15:00+08:00: Scoped shadcn/Base UI to the dashboard only and updated the suggested model to GPT-5.6 Terra with xhigh reasoning.
 - 2026-07-11T00:50:00+08:00: Started t62 with product direction to rename the manager destination to Home, remove Events from primary navigation, and move event plus guest-group create/edit flows into one responsive Dialog/Drawer composition.
 - 2026-07-11T00:53:53+08:00: Completed the shared Base UI responsive modal composition, migrated event and guest-group create/edit workflows, added dirty-close confirmation and focus restoration, updated manager navigation to Home without an Events tab, and verified 89 dashboard tests, dashboard and dashboard-ui typechecks, formatting, and a production dashboard build.
+- 2026-07-11T00:59:56+08:00: Follow-up: replaced Home navigation actions that rendered links through Base UI Button with semantic styled links, eliminating nativeButton warnings; redirected the redundant `/events` index to Home and removed its unused workspace implementation.

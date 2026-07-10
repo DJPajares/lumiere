@@ -18,7 +18,10 @@ import DashboardHome from "../app/page";
 import AccountSettingsPage from "../app/settings/page";
 import ProfileSettingsPage from "../app/settings/profile/page";
 
+const redirect = vi.hoisted(() => vi.fn());
+
 vi.mock("next/navigation", () => ({
+  redirect,
   usePathname: () => "/events",
   useRouter: () => ({
     replace: vi.fn(),
@@ -94,23 +97,10 @@ describe("dashboard routes", () => {
     expect(html).toContain("Sign in");
   });
 
-  it("renders the protected route redirect state for signed-out managers", () => {
-    const html = renderWithAuth(createElement(EventsPage), unauthenticatedAuthValue);
+  it("redirects the redundant event index to Home", () => {
+    EventsPage();
 
-    expect(html).toContain("Sign in required");
-    expect(html).toContain("Protected dashboard routes require a manager session.");
-    expect(html).toContain("Go to sign in");
-  });
-
-  it("renders the event list route for authenticated managers", () => {
-    const html = renderWithAuth(createElement(EventsPage));
-
-    expect(html).toContain("Events");
-    expect(html).toContain("Published events");
-    expect(html).toContain("Create event");
-    expect(html).toContain('aria-label="Breadcrumb"');
-    expect(html).toContain('aria-label="Dashboard navigation"');
-    expect(html).toContain('aria-label="Event workspace unavailable"');
+    expect(redirect).toHaveBeenCalledWith("/");
   });
 
   it("renders the event detail shell", async () => {
