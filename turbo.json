@@ -9,6 +9,16 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "@lumiere/api#build": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": [
+        "NODE_ENV",
+        "DATABASE_URL",
+        "SUPABASE_URL",
+        "PUBLIC_APP_BASE_URL"
+      ]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
