@@ -1,12 +1,12 @@
 import { DashboardShell } from "../components/dashboard-shell";
-import { EventListPlaceholder } from "../components/placeholder-panels";
+import { ManagerOverviewWorkspace } from "../components/manager-overview-workspace";
 import { ProtectedDashboard } from "../components/protected-dashboard";
 
 export default function DashboardHome() {
   return (
     <ProtectedDashboard>
-      <DashboardShell activePath="/events" title="Calm controls for event setup.">
-        <EventListPlaceholder />
+      <DashboardShell activePath="/" eyebrow="Across all managed events" title="Manager overview">
+        <ManagerOverviewWorkspace />
       </DashboardShell>
     </ProtectedDashboard>
   );

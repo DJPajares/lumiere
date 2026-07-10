@@ -31,7 +31,7 @@ export function DashboardShell({
           <header className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <DashboardBreadcrumb context={workspaceContext} />
+                <DashboardBreadcrumb activePath={activePath} context={workspaceContext} />
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
                 <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
                   {workspaceContext.eventId
@@ -56,7 +56,26 @@ export function DashboardShell({
   );
 }
 
-function DashboardBreadcrumb({ context }: { context: DashboardWorkspaceContext }) {
+function DashboardBreadcrumb({
+  activePath,
+  context,
+}: {
+  activePath: string;
+  context: DashboardWorkspaceContext;
+}) {
+  if (activePath.split(/[?#]/, 1)[0] === "/") {
+    return (
+      <nav
+        aria-label="Breadcrumb"
+        className="flex flex-wrap items-center gap-2 text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
+      >
+        <span aria-current="page" className="text-[var(--foreground)]">
+          Overview
+        </span>
+      </nav>
+    );
+  }
+
   return (
     <nav
       aria-label="Breadcrumb"

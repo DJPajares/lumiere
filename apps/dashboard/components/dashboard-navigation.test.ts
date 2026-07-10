@@ -13,6 +13,7 @@ describe("dashboard navigation model", () => {
     const navigation = getDashboardNavigation("/events/demo-event/guests");
 
     expect(dashboardNavigationModel.map((item) => item.id)).toEqual([
+      "manager-overview",
       "events",
       "event-overview",
       "event-content",
@@ -22,9 +23,12 @@ describe("dashboard navigation model", () => {
       "event-activity",
       "event-settings",
     ]);
-    expect(navigation.manager).toEqual([
-      expect.objectContaining({ active: true, href: "/events", id: "events" }),
-    ]);
+    expect(navigation.manager).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ active: false, href: "/", id: "manager-overview" }),
+        expect.objectContaining({ active: true, href: "/events", id: "events" }),
+      ]),
+    );
     expect(navigation.workspace.find((item) => item.id === "event-guests")).toEqual(
       expect.objectContaining({
         active: true,
@@ -49,6 +53,15 @@ describe("dashboard navigation model", () => {
     expect(getDashboardWorkspaceContext("/events/").sectionLabel).toBe("Event list");
     expect(getEventSectionDefinition("settings")?.label).toBe("Settings");
     expect(getEventSectionDefinition("unknown")).toBeUndefined();
+  });
+
+  it("marks the consolidated manager overview active at the dashboard root", () => {
+    const navigation = getDashboardNavigation("/");
+
+    expect(navigation.manager.find((item) => item.id === "manager-overview")).toEqual(
+      expect.objectContaining({ active: true, href: "/" }),
+    );
+    expect(navigation.manager.find((item) => item.id === "events")?.active).toBe(false);
   });
 });
 

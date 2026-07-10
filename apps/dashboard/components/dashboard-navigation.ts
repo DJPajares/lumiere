@@ -18,6 +18,7 @@ export type DashboardNavigationDefinition =
   ManagerNavigationDefinition | WorkspaceNavigationDefinition;
 
 export const dashboardNavigationModel = [
+  { href: "/", id: "manager-overview", label: "Dashboard", scope: "manager" },
   { href: "/events", id: "events", label: "Events", scope: "manager" },
   { id: "event-overview", label: "Overview", scope: "workspace", segment: null },
   { id: "event-content", label: "Content", scope: "workspace", segment: "content" },

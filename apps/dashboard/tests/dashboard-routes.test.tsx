@@ -80,7 +80,9 @@ describe("dashboard routes", () => {
     expect(html).toContain("Lumiere Dashboard");
     expect(html).toContain('aria-label="Notifications"');
     expect(html).toContain('aria-label="Open account menu for Lumiere manager"');
-    expect(html).toContain("Event list placeholder");
+    expect(html).toContain("Manager overview");
+    expect(html).toContain('aria-label="Loading manager overview"');
+    expect(html).not.toContain("Event list placeholder");
   });
 
   it("renders the login form for signed-out managers", () => {
