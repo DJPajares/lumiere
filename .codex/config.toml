@@ -1,6 +1,10 @@
 # Project-scoped Codex configuration for trusted local work in this repo.
 # Claude reads `.mcp.json`; Codex reads MCP servers from this TOML file.
 
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp", "--cwd", "apps/dashboard"]
+
 [mcp_servers.heroui-react]
 command = "npx"
 args = ["-y", "@heroui/react-mcp@latest"]
