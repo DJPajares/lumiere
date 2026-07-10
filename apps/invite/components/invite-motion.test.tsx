@@ -3,8 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  calculateMotionBlur,
   calculateScrollProgress,
   inviteMotionPresets,
+  resolveInviteMotionDriver,
   resolveInviteMotionIntensity,
 } from "./invite-motion-config";
 import {
@@ -26,7 +28,16 @@ describe("invite motion system", () => {
     expect(variants).toEqual(["none", "low", "premium"]);
     expect(inviteMotionPresets.none.revealDistance).toBe(0);
     expect(inviteMotionPresets.low.parallaxDistance).toBe(0);
-    expect(inviteMotionPresets.premium.parallaxDistance).toBeGreaterThan(0);
+    expect(inviteMotionPresets.premium.parallaxDistance).toBeGreaterThanOrEqual(80);
+    expect(inviteMotionPresets.premium.maxMotionBlur).toBeGreaterThan(0);
+  });
+
+  it("uses the reliable frame driver and transient blur for premium motion", () => {
+    expect(resolveInviteMotionDriver("premium", true)).toBe("raf");
+    expect(resolveInviteMotionDriver("low", true)).toBe("css");
+    expect(resolveInviteMotionDriver("low", false)).toBe("raf");
+    expect(calculateMotionBlur(0, 16, 3.2)).toBe(0);
+    expect(calculateMotionBlur(120, 16, 3.2)).toBe(3.2);
   });
 
   it("clamps element scroll progress for the animation-frame fallback", () => {

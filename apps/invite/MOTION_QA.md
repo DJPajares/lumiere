@@ -10,7 +10,7 @@ requested.
 | --- | --- | --- |
 | None | `prefers-reduced-motion: reduce` | No reveals, parallax, drift, masked translation, or scroll progress. Content is immediately visible. |
 | Low | `calm` motion profile | Short section and title reveals. Parallax is disabled. |
-| Premium | `immersive`, `playful`, or `seasonal` profile | Chapter reveals, masked hero title, theme-declared media depth, soft image movement, and restrained press feedback. |
+| Premium | `immersive`, `playful`, or `seasonal` profile | Pronounced chapter reveals, masked hero title, continuous media depth, opposing gallery drift, brief image-only velocity blur, soft image movement, and restrained press feedback. |
 
 ## Manual pre-flight
 
@@ -21,5 +21,6 @@ requested.
 5. Enable reduced motion in the operating system, reload, and confirm all content is static and visible.
 6. Test keyboard focus on the map link and RSVP controls; focus rings must remain visible during feedback.
 
-Native CSS scroll timelines drive supported browsers. Other browsers use an isolated client runtime
-that writes CSS variables from one scheduled animation frame and never updates React state on scroll.
+Calm themes may use native CSS scroll timelines. Premium themes use an isolated client runtime for
+consistent, more expressive depth and short-lived image motion blur across browsers. It writes CSS
+variables from one scheduled animation frame and never updates React state on scroll.

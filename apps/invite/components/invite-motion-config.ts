@@ -4,6 +4,7 @@ export type InviteMotionIntensity = "none" | "low" | "premium";
 
 export type InviteMotionPreset = {
   intersectionThreshold: number;
+  maxMotionBlur: number;
   parallaxDistance: number;
   parallaxScale: number;
   revealDistance: number;
@@ -13,6 +14,7 @@ export type InviteMotionPreset = {
 export const inviteMotionPresets = {
   none: {
     intersectionThreshold: 0,
+    maxMotionBlur: 0,
     parallaxDistance: 0,
     parallaxScale: 0,
     revealDistance: 0,
@@ -20,17 +22,19 @@ export const inviteMotionPresets = {
   },
   low: {
     intersectionThreshold: 0.08,
+    maxMotionBlur: 0,
     parallaxDistance: 0,
     parallaxScale: 0,
     revealDistance: 10,
     revealDuration: 560,
   },
   premium: {
-    intersectionThreshold: 0.14,
-    parallaxDistance: 26,
-    parallaxScale: 0.035,
-    revealDistance: 24,
-    revealDuration: 760,
+    intersectionThreshold: 0.12,
+    maxMotionBlur: 3.2,
+    parallaxDistance: 88,
+    parallaxScale: 0.075,
+    revealDistance: 42,
+    revealDuration: 880,
   },
 } satisfies Record<InviteMotionIntensity, InviteMotionPreset>;
 
@@ -60,6 +64,35 @@ export function calculateScrollProgress(
   }
 
   return clamp((viewportHeight - elementTop) / travel, 0, 1);
+}
+
+export function calculateMotionBlur(
+  scrollDelta: number,
+  frameDuration: number,
+  maximumBlur: number,
+) {
+  if (maximumBlur <= 0) {
+    return 0;
+  }
+
+  const velocity = Math.abs(scrollDelta) / Math.max(frameDuration, 16);
+
+  return clamp(velocity * 3.2, 0, maximumBlur);
+}
+
+export function resolveInviteMotionDriver(
+  intensity: InviteMotionIntensity,
+  supportsScrollTimeline: boolean,
+): "css" | "none" | "raf" {
+  if (intensity === "none") {
+    return "none";
+  }
+
+  if (intensity === "premium") {
+    return "raf";
+  }
+
+  return supportsScrollTimeline ? "css" : "raf";
 }
 
 function clamp(value: number, minimum: number, maximum: number) {

@@ -3,8 +3,10 @@
 import { useLayoutEffect, useRef } from "react";
 
 import {
+  calculateMotionBlur,
   calculateScrollProgress,
   inviteMotionPresets,
+  resolveInviteMotionDriver,
   type InviteMotionIntensity,
   type InviteMotionPreset,
 } from "./invite-motion-config";
@@ -73,7 +75,9 @@ function initializeMotion(root: HTMLElement, intensity: InviteMotionIntensity) {
     CSS.supports("animation-timeline: view()") &&
     CSS.supports("animation-timeline: scroll()");
 
-  if (supportsScrollTimeline) {
+  const motionDriver = resolveInviteMotionDriver(intensity, supportsScrollTimeline);
+
+  if (motionDriver === "css") {
     root.dataset.motionDriver = "css";
   } else {
     root.dataset.motionDriver = "raf";
@@ -126,26 +130,50 @@ function startAnimationFrameDriver(
   preset: InviteMotionPreset,
 ) {
   let animationFrame: number | undefined;
+  let currentBlur = 0;
+  let lastFrameTime = performance.now();
+  let lastScrollY = window.scrollY;
 
-  const render = () => {
+  const render = (frameTime: number) => {
     animationFrame = undefined;
     const documentElement = document.documentElement;
+    const currentScrollY = window.scrollY;
+    const frameDuration = frameTime - lastFrameTime;
+    const scrollDelta = currentScrollY - lastScrollY;
     const scrollRange = Math.max(documentElement.scrollHeight - window.innerHeight, 1);
-    const pageProgress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
+    const pageProgress = Math.min(Math.max(currentScrollY / scrollRange, 0), 1);
+    const blurImpulse = calculateMotionBlur(scrollDelta, frameDuration, preset.maxMotionBlur);
+
+    currentBlur = scrollDelta === 0 ? currentBlur * 0.72 : Math.max(blurImpulse, currentBlur * 0.8);
+
+    if (currentBlur < 0.02) {
+      currentBlur = 0;
+    }
 
     root.style.setProperty("--motion-page-progress", pageProgress.toFixed(4));
+    root.style.setProperty("--motion-scroll-blur", `${currentBlur.toFixed(2)}px`);
 
     parallaxScopes.forEach((scope) => {
       const rect = scope.getBoundingClientRect();
       const progress = calculateScrollProgress(rect.top, rect.height, window.innerHeight);
       const offset = (progress - 0.5) * preset.parallaxDistance;
+      const horizontalOffset = offset * 0.18;
       const scale = 1.035 + progress * preset.parallaxScale;
 
+      scope.style.setProperty("--motion-parallax-x", `${horizontalOffset.toFixed(2)}px`);
+      scope.style.setProperty("--motion-parallax-x-reverse", `${(-horizontalOffset).toFixed(2)}px`);
       scope.style.setProperty("--motion-parallax-y", `${offset.toFixed(2)}px`);
       scope.style.setProperty("--motion-parallax-y-reverse", `${(-offset).toFixed(2)}px`);
       scope.style.setProperty("--motion-story-y", `${(-offset * 0.45).toFixed(2)}px`);
       scope.style.setProperty("--motion-parallax-scale", scale.toFixed(4));
     });
+
+    lastFrameTime = frameTime;
+    lastScrollY = currentScrollY;
+
+    if (currentBlur > 0) {
+      scheduleRender();
+    }
   };
 
   const scheduleRender = () => {
@@ -174,6 +202,7 @@ function resetMotion(root: HTMLElement, sections: HTMLElement[], parallaxScopes:
   root.style.removeProperty("--motion-page-progress");
   root.style.removeProperty("--motion-reveal-distance");
   root.style.removeProperty("--motion-reveal-duration");
+  root.style.removeProperty("--motion-scroll-blur");
 
   sections.forEach((section) => {
     delete section.dataset.motionState;
@@ -181,6 +210,8 @@ function resetMotion(root: HTMLElement, sections: HTMLElement[], parallaxScopes:
 
   parallaxScopes.forEach((scope) => {
     scope.style.removeProperty("--motion-parallax-scale");
+    scope.style.removeProperty("--motion-parallax-x-reverse");
+    scope.style.removeProperty("--motion-parallax-x");
     scope.style.removeProperty("--motion-parallax-y-reverse");
     scope.style.removeProperty("--motion-parallax-y");
     scope.style.removeProperty("--motion-story-y");

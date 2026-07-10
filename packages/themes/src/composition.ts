@@ -232,7 +232,7 @@ export const inviteMotionRules: MotionRule[] = [
     implementation: "css",
     intent: "Scroll depth inspired by Reverie-style immersive media.",
     reducedMotion: "Disable parallax transforms entirely.",
-    rule: "Prefer CSS scroll timelines; the fallback uses requestAnimationFrame and CSS variables instead of React state updates on every scroll frame.",
+    rule: "Premium depth consistently uses requestAnimationFrame and CSS variables instead of React state updates on scroll; calm reveals may still use native CSS timelines.",
   },
   {
     id: "sticky-pin",

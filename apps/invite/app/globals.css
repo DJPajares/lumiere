@@ -956,10 +956,10 @@ body {
 }
 
 [data-motion-intensity="premium"] {
-  --motion-image-scale: 0.98;
-  --motion-reveal-horizontal: -12px;
-  --motion-reveal-distance: 24px;
-  --motion-reveal-duration: 760ms;
+  --motion-image-scale: 0.965;
+  --motion-reveal-horizontal: -18px;
+  --motion-reveal-distance: 42px;
+  --motion-reveal-duration: 880ms;
 }
 
 [data-motion-mask="text"] {
@@ -1131,7 +1131,7 @@ body {
     .lumiere-section-image
     img {
     transform: scale(var(--motion-parallax-scale, 1.05))
-      translate3d(0, var(--motion-parallax-y, 0), 0);
+      translate3d(var(--motion-parallax-x, 0), var(--motion-parallax-y, 0), 0);
   }
 
   .lumiere-invitation[data-motion-driver="raf"][data-motion-intensity="premium"]
@@ -1139,7 +1139,7 @@ body {
     .lumiere-section-image:nth-of-type(odd)
     img {
     transform: scale(var(--motion-parallax-scale, 1.045))
-      translate3d(0, var(--motion-parallax-y, 0), 0);
+      translate3d(var(--motion-parallax-x, 0), var(--motion-parallax-y, 0), 0);
   }
 
   .lumiere-invitation[data-motion-driver="raf"][data-motion-intensity="premium"]
@@ -1147,13 +1147,19 @@ body {
     .lumiere-section-image:nth-of-type(even)
     img {
     transform: scale(var(--motion-parallax-scale, 1.045))
-      translate3d(0, var(--motion-parallax-y-reverse, 0), 0);
+      translate3d(var(--motion-parallax-x-reverse, 0), var(--motion-parallax-y-reverse, 0), 0);
   }
 
   .lumiere-invitation[data-motion-driver="raf"][data-motion-intensity="premium"]
     .lumiere-section[data-parallax-kind="story-depth"]
     .lumiere-section__body {
     transform: translate3d(0, var(--motion-story-y, 0), 0);
+  }
+
+  .lumiere-invitation[data-motion-driver="raf"][data-motion-intensity="premium"]
+    :is([data-parallax-layer="hero-image"], .lumiere-section-image img) {
+    filter: blur(var(--motion-scroll-blur, 0));
+    will-change: transform, filter;
   }
 }
 
