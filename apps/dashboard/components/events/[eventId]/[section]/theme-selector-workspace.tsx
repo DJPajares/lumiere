@@ -1,11 +1,16 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { Badge } from "@lumiere/dashboard-ui/components/badge";
+import { Button } from "@lumiere/dashboard-ui/components/button";
+import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import {
   evaluateThemeCompatibility,
   getTheme,
   isThemeId,
   type ThemeCompatibilityResult,
+  type ThemeDefinition,
 } from "@lumiere/themes";
 import {
   eventThemeUpdateRequestSchema,
@@ -15,6 +20,8 @@ import {
   type ThemeMode,
 } from "@lumiere/types";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -24,8 +31,16 @@ import {
 } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
+import { InviteThemePreviewRenderer } from "../../../invite-preview/theme-preview-renderer";
 import { EventTabs } from "../../../placeholder-panels";
 import { DashboardSelect } from "../../../ui/dashboard-fields";
+import { ResponsiveModal } from "../../../ui/responsive-modal";
+
+const LazyThemeExpandedPreview = lazy(async () => {
+  const module = await import("../../../invite-preview/theme-expanded-preview");
+
+  return { default: module.ThemeExpandedPreview };
+});
 
 type ThemeState = {
   selectedThemeId: string | null;
@@ -34,11 +49,25 @@ type ThemeState = {
 };
 
 type FieldErrors = Partial<Record<"selectedThemeId" | "themeConfig" | "themeMode", string>>;
+type GalleryModeFilter = "any" | ThemeMode;
+type ReadinessFilter = "all" | "fully-supported";
+
+type ThemeGalleryEntry = {
+  compatibility?: ThemeCompatibilityResult;
+  fallbackReason?: string;
+  isCompatible: boolean;
+  previewDefinition: ThemeDefinition;
+  publishReady: boolean;
+  reasons: string[];
+  resolvedMode: ThemeMode;
+  theme: Theme;
+};
 
 type ThemeWorkspaceState =
   | {
       currentThemeId?: string;
       error: null;
+      eventTitle: string;
       eventType: EventType;
       fieldErrors: FieldErrors;
       formMessage: string | null;
@@ -95,6 +124,7 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
       setState({
         currentThemeId: eventThemeResponse.selectedThemeId,
         error: null,
+        eventTitle: eventResponse.event.title,
         eventType: eventResponse.event.eventType,
         fieldErrors: {},
         formMessage: null,
@@ -133,18 +163,14 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
       <div className="grid gap-5">
         <EventTabs active="theme" eventId={eventId} />
         <section
-          className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] p-5 text-[var(--error)]"
+          className="grid justify-items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-5 text-destructive"
           role="alert"
         >
           <h2 className="text-lg font-semibold">Unable to load theme settings</h2>
           <p className="text-sm">{state.error}</p>
-          <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-4 text-sm font-semibold transition hover:bg-[color-mix(in_srgb,var(--error)_12%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)]"
-            onClick={() => void loadThemes()}
-            type="button"
-          >
+          <Button onClick={() => void loadThemes()} variant="outline">
             Try again
-          </button>
+          </Button>
         </section>
       </div>
     );
@@ -169,18 +195,43 @@ function ThemeSelectorContent({
   updateState: Dispatch<SetStateAction<ThemeWorkspaceState>>;
 }) {
   const { apiClient } = useDashboardAuth();
+  const [modeFilter, setModeFilter] = useState<GalleryModeFilter>("any");
+  const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
+  const [showIncompatible, setShowIncompatible] = useState(false);
+  const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
   const selectedTheme = useMemo(
     () => state.themes.find((theme) => theme.id === state.values.selectedThemeId),
     [state.themes, state.values.selectedThemeId],
   );
-  const supportedModes = selectedTheme?.supportedModes ?? [];
-  const selectedCompatibility = useMemo(
+  const galleryEntries = useMemo(
     () =>
-      selectedTheme
-        ? getThemeCompatibility(selectedTheme, state.eventType, state.values.themeMode)
-        : undefined,
-    [selectedTheme, state.eventType, state.values.themeMode],
+      buildThemeGalleryEntries({
+        eventType: state.eventType,
+        modeFilter,
+        preferredMode: state.values.themeMode,
+        themes: state.themes,
+      }),
+    [modeFilter, state.eventType, state.themes, state.values.themeMode],
   );
+  const visibleEntries = useMemo(
+    () =>
+      galleryEntries.filter((entry) => {
+        if (!showIncompatible && !entry.isCompatible) {
+          return false;
+        }
+
+        if (readinessFilter === "fully-supported" && entry.compatibility?.status !== "compatible") {
+          return false;
+        }
+
+        return true;
+      }),
+    [galleryEntries, readinessFilter, showIncompatible],
+  );
+  const incompatibleCount = galleryEntries.filter((entry) => !entry.isCompatible).length;
+  const compatibleCount = galleryEntries.length - incompatibleCount;
+  const selectedEntry = galleryEntries.find((entry) => entry.theme.id === selectedTheme?.id);
+  const supportedModes = selectedTheme?.supportedModes ?? [];
 
   const updateValues = (values: Partial<ThemeState>) => {
     updateState((current) =>
@@ -198,19 +249,14 @@ function ThemeSelectorContent({
     );
   };
 
-  const selectTheme = (theme: Theme) => {
-    const themeMode = theme.supportedModes.includes(state.values.themeMode)
-      ? state.values.themeMode
-      : theme.defaultMode;
-    const compatibility = getThemeCompatibility(theme, state.eventType, themeMode);
-
-    if (compatibility && !compatibility.canApply) {
+  const selectTheme = (entry: ThemeGalleryEntry) => {
+    if (!entry.isCompatible) {
       return;
     }
 
     updateValues({
-      selectedThemeId: theme.id,
-      themeMode,
+      selectedThemeId: entry.theme.id,
+      themeMode: entry.resolvedMode,
     });
   };
 
@@ -293,75 +339,128 @@ function ThemeSelectorContent({
     <div className="grid gap-5">
       <EventTabs active="theme" eventId={eventId} />
 
-      <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
+      <section className="grid gap-4 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">Theme selector</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-              Choose the invitation design system
+            <Badge variant="secondary">{formatEventType(state.eventType)} themes</Badge>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+              Choose the invitation for {state.eventTitle}
             </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              Themes come from the Lumiere registry. Pick a supported mode, adjust settings as JSON,
-              then save the selection for this event.
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+              Compatible themes appear first. Every card uses the same theme tokens, composition,
+              and renderer-slot contract as the public invitation.
             </p>
           </div>
-          <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={state.isSaving}
-            onClick={() => void saveTheme()}
-            type="button"
-          >
+          <Button className="min-h-10" disabled={state.isSaving} onClick={() => void saveTheme()}>
             {state.isSaving ? "Saving theme..." : "Save theme"}
-          </button>
+          </Button>
         </div>
 
         {state.formMessage ? (
           <p
-            className={`rounded-[var(--radius-md)] border px-3 py-2 text-sm ${
+            className={
               Object.keys(state.fieldErrors).length > 0
-                ? "border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
-                : "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] text-[var(--success)]"
-            }`}
-            role="status"
+                ? "rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                : "rounded-lg border border-success/50 bg-success/10 px-3 py-2 text-sm text-success"
+            }
+            role={Object.keys(state.fieldErrors).length > 0 ? "alert" : "status"}
           >
             {state.formMessage}
           </p>
         ) : null}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
-        <div className="grid gap-3">
+      <section className="grid gap-4 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Theme gallery</h3>
+            <p className="mt-1 text-sm text-muted-foreground" role="status">
+              {compatibleCount} compatible · {incompatibleCount} unavailable for this setup
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:items-end">
+            <DashboardSelect
+              id="theme-mode-filter"
+              label="Mode support"
+              onValueChange={(value) => setModeFilter(value as GalleryModeFilter)}
+              options={[
+                { label: "Any mode", value: "any" },
+                { label: "Light", value: "light" },
+                { label: "Dark", value: "dark" },
+                { label: "System", value: "system" },
+                { label: "Toggleable", value: "toggleable" },
+              ]}
+              value={modeFilter}
+            />
+            <DashboardSelect
+              id="theme-readiness-filter"
+              label="Publish readiness"
+              onValueChange={(value) => setReadinessFilter(value as ReadinessFilter)}
+              options={[
+                { label: "Compatible with fallbacks", value: "all" },
+                { label: "Fully supported only", value: "fully-supported" },
+              ]}
+              value={readinessFilter}
+            />
+            <Button
+              aria-pressed={showIncompatible}
+              className="min-h-10"
+              onClick={() => setShowIncompatible((current) => !current)}
+              variant="outline"
+            >
+              {showIncompatible ? "Hide incompatible" : `Show incompatible (${incompatibleCount})`}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
+        <div>
           {state.themes.length === 0 ? (
-            <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-5">
-              <h3 className="text-lg font-semibold">No themes available</h3>
-              <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                The theme registry returned no selectable themes.
-              </p>
-            </div>
+            <ThemeEmptyState
+              body="The theme registry returned no selectable themes. Try again after registry data is available."
+              title="No themes available"
+            />
+          ) : visibleEntries.length === 0 ? (
+            <ThemeEmptyState
+              body="Adjust mode or readiness filters, or reveal incompatible themes to review their conflicts."
+              title="No themes match these filters"
+            />
           ) : (
-            state.themes.map((theme) => (
-              <ThemeOption
-                compatibility={getThemeCompatibility(theme, state.eventType, theme.defaultMode)}
-                eventType={state.eventType}
-                isCurrent={state.currentThemeId === theme.id}
-                isSelected={state.values.selectedThemeId === theme.id}
-                key={theme.id}
-                onSelect={() => selectTheme(theme)}
-                theme={theme}
-              />
-            ))
+            <div className="grid gap-4 md:grid-cols-2">
+              {visibleEntries.map((entry) => (
+                <ThemeGalleryCard
+                  entry={entry}
+                  eventType={state.eventType}
+                  isCurrent={state.currentThemeId === entry.theme.id}
+                  isSelected={state.values.selectedThemeId === entry.theme.id}
+                  key={entry.theme.id}
+                  onPreview={() => setPreviewEntry(entry)}
+                  onSelect={() => selectTheme(entry)}
+                />
+              ))}
+            </div>
           )}
         </div>
 
-        <aside className="grid content-start gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:sticky xl:top-4">
+        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5 shadow-sm xl:sticky xl:top-24">
           <div>
-            <h3 className="text-xl font-semibold tracking-tight">Preview and settings</h3>
-            <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-              Preview uses the selected theme metadata and registry tokens.
+            <h3 className="text-lg font-semibold">Selected theme settings</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Choose an available mode and keep optional registry settings as a JSON object.
             </p>
           </div>
 
-          <ThemePreview compatibility={selectedCompatibility} theme={selectedTheme} />
+          {selectedTheme ? (
+            <div className="flex flex-wrap gap-2">
+              <Badge>{selectedTheme.name}</Badge>
+              {selectedEntry?.compatibility?.status === "warning" ? (
+                <Badge variant="outline">Uses fallbacks</Badge>
+              ) : (
+                <Badge variant="secondary">Publish ready</Badge>
+              )}
+            </div>
+          ) : null}
 
           <DashboardSelect
             disabled={!selectedTheme}
@@ -377,248 +476,279 @@ function ThemeSelectorContent({
           />
 
           <div className="grid gap-2">
-            <label className="text-sm font-semibold" htmlFor="theme-config">
+            <label className="text-sm font-medium" htmlFor="theme-config">
               Theme settings JSON
             </label>
-            <textarea
-              className={`${inputClassName} min-h-44 resize-y font-mono`}
+            <Textarea
+              aria-invalid={Boolean(state.fieldErrors.themeConfig)}
+              className="min-h-40 resize-y font-mono"
               id="theme-config"
               onChange={(event) => updateValues({ settingsText: event.target.value })}
               spellCheck={false}
               value={state.values.settingsText}
             />
-            <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-              Keep settings as a JSON object. The registry currently accepts theme metadata here,
-              with stricter setting fields planned for section-builder work.
+            <p className="text-xs leading-5 text-muted-foreground">
+              Settings remain optional; use an empty object when the theme defaults are enough.
             </p>
             {state.fieldErrors.themeConfig ? (
-              <p className="text-sm text-[var(--error)]" role="alert">
+              <p className="text-sm text-destructive" role="alert">
                 {state.fieldErrors.themeConfig}
               </p>
             ) : null}
           </div>
 
+          {selectedEntry ? (
+            <Button
+              className="min-h-10"
+              onClick={() => setPreviewEntry(selectedEntry)}
+              variant="outline"
+            >
+              Preview selected theme
+            </Button>
+          ) : null}
+
           {state.fieldErrors.selectedThemeId ? (
-            <p className="text-sm text-[var(--error)]" role="alert">
+            <p className="text-sm text-destructive" role="alert">
               {state.fieldErrors.selectedThemeId}
             </p>
           ) : null}
         </aside>
       </section>
+
+      <ResponsiveModal
+        contentClassName="sm:max-w-6xl"
+        description="Inspect representative public invite output without leaving theme selection."
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewEntry(null);
+          }
+        }}
+        open={Boolean(previewEntry)}
+        title={previewEntry ? `${previewEntry.theme.name} invite preview` : "Invite preview"}
+      >
+        {previewEntry ? (
+          <Suspense
+            fallback={
+              <div aria-label="Loading expanded theme preview" className="grid gap-3">
+                <Skeleton className="h-10 w-full motion-reduce:animate-none" />
+                <Skeleton className="h-[32rem] w-full motion-reduce:animate-none" />
+              </div>
+            }
+          >
+            <LazyThemeExpandedPreview
+              fallbackReason={previewEntry.fallbackReason}
+              initialMode={toPreviewMode(previewEntry.resolvedMode)}
+              theme={previewEntry.previewDefinition}
+            />
+          </Suspense>
+        ) : null}
+      </ResponsiveModal>
     </div>
   );
 }
 
-function ThemeOption({
-  compatibility,
+function ThemeGalleryCard({
+  entry,
   eventType,
   isCurrent,
   isSelected,
+  onPreview,
   onSelect,
-  theme,
 }: {
-  compatibility?: ThemeCompatibilityResult;
+  entry: ThemeGalleryEntry;
   eventType: EventType;
   isCurrent: boolean;
   isSelected: boolean;
+  onPreview: () => void;
   onSelect: () => void;
-  theme: Theme;
 }) {
-  const preview = readThemePreview(theme);
-  const isBlocked = compatibility ? !compatibility.canApply : false;
-  const statusTone = isBlocked
-    ? "error"
-    : compatibility?.status === "warning"
-      ? "warning"
-      : "success";
-  const statusLabel = isBlocked
+  const statusLabel = !entry.isCompatible
     ? `Not for ${formatEventType(eventType)}`
-    : compatibility?.status === "warning"
-      ? "Fallbacks"
-      : "Compatible";
+    : entry.compatibility?.status === "warning"
+      ? "Compatible with fallbacks"
+      : "Fully compatible";
 
   return (
-    <button
-      aria-pressed={isSelected}
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 text-left transition hover:bg-[color-mix(in_srgb,var(--surface-muted)_42%,var(--surface))] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-pressed:border-[var(--accent)] aria-pressed:bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] disabled:cursor-not-allowed disabled:opacity-65"
-      disabled={isBlocked}
-      onClick={onSelect}
-      type="button"
+    <article
+      className={
+        isSelected
+          ? "grid overflow-hidden rounded-lg border border-primary bg-card shadow-sm ring-2 ring-primary/20"
+          : "grid overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+      }
+      data-theme-gallery-card={entry.theme.id}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-lg font-semibold">{theme.name}</p>
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            {preview.summary}
-          </p>
-        </div>
-        <span
-          aria-hidden="true"
-          className="size-10 rounded-[var(--radius-md)] border border-[var(--border)]"
-          style={{ backgroundColor: preview.swatch }}
+      <div className="bg-muted/40 p-3">
+        <InviteThemePreviewRenderer
+          fallbackReason={entry.fallbackReason}
+          mode={toPreviewMode(entry.resolvedMode)}
+          theme={entry.previewDefinition}
+          thumbnail
         />
       </div>
-      <div className="flex flex-wrap gap-2">
-        {isCurrent ? <Badge label="Current" tone="success" /> : null}
-        <Badge label={statusLabel} tone={statusTone} />
-        {theme.supportedModes.map((mode) => (
-          <Badge key={mode} label={formatMode(mode)} tone="neutral" />
-        ))}
+      <div className="grid gap-4 p-4">
+        <div>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h3 className="text-lg font-semibold">{entry.theme.name}</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {isCurrent ? <Badge>Current</Badge> : null}
+              {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
+            </div>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {readThemeSummary(entry.theme)}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={entry.isCompatible ? "secondary" : "destructive"}>{statusLabel}</Badge>
+          {entry.theme.supportedModes.map((mode) => (
+            <Badge key={mode} variant="outline">
+              {formatMode(mode)}
+            </Badge>
+          ))}
+        </div>
+
+        {entry.reasons.length > 0 ? (
+          <ul
+            className={
+              entry.isCompatible
+                ? "grid gap-1 rounded-lg bg-warning/10 p-3 text-xs leading-5"
+                : "grid gap-1 rounded-lg bg-destructive/10 p-3 text-xs leading-5 text-destructive"
+            }
+          >
+            {entry.reasons.slice(0, 3).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+          <Button
+            aria-label={`Use ${entry.theme.name}`}
+            className="min-h-10"
+            disabled={!entry.isCompatible || isSelected}
+            onClick={onSelect}
+            size="sm"
+          >
+            {isSelected ? "Selected" : "Use theme"}
+          </Button>
+          <Button
+            aria-label={`Preview ${entry.theme.name}`}
+            className="min-h-10"
+            onClick={onPreview}
+            size="sm"
+            variant="outline"
+          >
+            Expand preview
+          </Button>
+        </div>
       </div>
-      {compatibility ? (
-        <p
-          className={`rounded-[var(--radius-md)] px-3 py-2 text-sm leading-6 ${
-            isBlocked
-              ? "bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
-              : compatibility.status === "warning"
-                ? "bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] text-[color-mix(in_srgb,var(--foreground)_78%,transparent)]"
-                : "bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] text-[var(--success)]"
-          }`}
-        >
-          {isBlocked ? compatibility.issues[0]?.message : compatibility.summary}
-        </p>
-      ) : null}
-      <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <MetadataItem label="Event fit" value={theme.eventTypes.map(formatEventType).join(", ")} />
-        <MetadataItem label="Design read" value={readMetadataString(theme, "designRead")} />
-      </dl>
-    </button>
+    </article>
   );
 }
 
-function ThemePreview({
-  compatibility,
-  theme,
-}: {
-  compatibility?: ThemeCompatibilityResult;
-  theme?: Theme;
-}) {
-  if (!theme) {
-    return (
-      <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-4 text-sm">
-        Select a theme to preview its registry details.
-      </div>
-    );
-  }
-
-  const preview = readThemePreview(theme);
-  const sample = readThemePreviewSample(theme);
-  const presentation = readThemePreviewPresentation(theme);
-  const tokens = readThemeTokens(theme);
-
+function ThemeEmptyState({ body, title }: { body: string; title: string }) {
   return (
-    <div
-      className="grid gap-4 border p-4"
-      data-composition-map={presentation.compositionMap}
-      data-theme-preview-sample={theme.id}
-      style={{
-        backgroundColor: tokens.background,
-        borderColor: tokens.border,
-        borderRadius: presentation.radius,
-        color: tokens.foreground,
-        fontFamily: presentation.bodyFamily,
-      }}
-    >
-      <header className={presentation.headerClassName}>
-        <div>
-          <p
-            className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]"
-            style={{ color: tokens.accentStrong }}
-          >
-            {sample.eyebrow}
-          </p>
-          <h4
-            className="mt-3 text-[clamp(1.7rem,5vw,3.4rem)] leading-[0.95] font-semibold"
-            style={{ fontFamily: presentation.displayFamily }}
-          >
-            {sample.eventTitle}
-          </h4>
-        </div>
-        <div className="grid content-end gap-3">
-          <p className="max-w-prose text-sm leading-6">{sample.subtitle}</p>
-          <p
-            className="border-t pt-3 text-xs font-semibold uppercase tracking-[0.14em]"
-            style={{ borderColor: tokens.border, color: tokens.accentStrong }}
-          >
-            {sample.venueName}
-          </p>
-        </div>
-      </header>
-      <div className={presentation.sectionsClassName}>
-        {sample.sections.map((section, index) => (
-          <article
-            className={presentation.sectionClassName(index)}
-            data-section-type={section.type}
-            key={`${section.type}-${section.title}`}
-            style={{ borderColor: tokens.border }}
-          >
-            <p
-              className="text-[0.64rem] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: tokens.accentStrong }}
-            >
-              {String(index + 1).padStart(2, "0")} · {formatEventType(section.type)}
-            </p>
-            <h5
-              className="mt-2 text-lg leading-tight font-semibold"
-              style={{ fontFamily: presentation.displayFamily }}
-            >
-              {section.title}
-            </h5>
-            <p className="mt-2 text-xs leading-5">{section.summary}</p>
-          </article>
-        ))}
-      </div>
-      <div
-        className="flex items-start justify-between gap-4 border-t pt-3 text-xs leading-5"
-        style={{ borderColor: tokens.border }}
-      >
-        <p>{readMetadataString(theme, "imageTreatment")}</p>
-        <span
-          aria-hidden="true"
-          className="mt-1 size-3 shrink-0 rounded-full"
-          style={{ backgroundColor: preview.swatch }}
-        />
-      </div>
-      {compatibility ? (
-        <div
-          className="grid gap-2 rounded-[var(--radius-md)] border p-3 text-sm"
-          style={{ borderColor: tokens.border }}
-        >
-          <p className="font-semibold">Compatibility</p>
-          <p className="leading-6">{compatibility.summary}</p>
-          <dl className="grid gap-2 sm:grid-cols-2">
-            <MetadataItem
-              label="Renderer slots"
-              value={`${compatibility.rendererSlots.length} checked`}
-            />
-            <MetadataItem
-              label="Fallback slots"
-              value={`${compatibility.warnings.filter((issue) => issue.code === "fallback_renderer_slot").length}`}
-            />
-          </dl>
-        </div>
-      ) : null}
+    <div className="rounded-lg border border-dashed border-border bg-card p-5">
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
     </div>
   );
 }
 
 function ThemeLoading() {
   return (
-    <div className="grid gap-5" aria-label="Loading theme settings" aria-live="polite">
-      <div className="h-32 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]" />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
-        <div className="grid gap-3">
-          {[0, 1, 2].map((item) => (
-            <div
-              className="h-40 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]"
-              key={item}
-            />
-          ))}
-        </div>
-        <div className="h-96 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]" />
+    <div aria-label="Loading theme settings" aria-live="polite" className="grid gap-5">
+      <Skeleton className="h-36 rounded-lg motion-reduce:animate-none" />
+      <Skeleton className="h-24 rounded-lg motion-reduce:animate-none" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
+        {[0, 1, 2].map((item) => (
+          <Skeleton className="h-96 rounded-lg motion-reduce:animate-none" key={item} />
+        ))}
       </div>
     </div>
   );
+}
+
+export function buildThemeGalleryEntries({
+  eventType,
+  modeFilter,
+  preferredMode,
+  themes,
+}: {
+  eventType: EventType;
+  modeFilter: GalleryModeFilter;
+  preferredMode: ThemeMode;
+  themes: Theme[];
+}): ThemeGalleryEntry[] {
+  const defaultTheme = getTheme("lumiere-default");
+
+  if (!defaultTheme) {
+    return [];
+  }
+
+  return themes
+    .map((theme): ThemeGalleryEntry => {
+      const definition = isThemeId(theme.id) ? getTheme(theme.id) : undefined;
+      const resolvedMode =
+        modeFilter !== "any"
+          ? modeFilter
+          : theme.supportedModes.includes(preferredMode)
+            ? preferredMode
+            : theme.defaultMode;
+      const compatibility = definition
+        ? evaluateThemeCompatibility({ eventType, mode: resolvedMode, theme: definition })
+        : undefined;
+      const reasons = [
+        ...(theme.eventTypes.includes(eventType)
+          ? []
+          : [`${theme.name} does not support ${eventType} events.`]),
+        ...(theme.supportedModes.includes(resolvedMode)
+          ? []
+          : [`${theme.name} does not support ${resolvedMode} mode.`]),
+        ...(compatibility?.issues.map((issue) => `${issue.message}.`) ?? []),
+      ];
+      const fallbackReason = definition
+        ? undefined
+        : "This registry theme module is unavailable, so Lumiere Default is shown.";
+
+      if (fallbackReason) {
+        reasons.push(fallbackReason);
+      }
+
+      const isCompatible = Boolean(
+        definition &&
+        theme.eventTypes.includes(eventType) &&
+        theme.supportedModes.includes(resolvedMode) &&
+        compatibility?.canApply,
+      );
+
+      return {
+        compatibility,
+        fallbackReason,
+        isCompatible,
+        previewDefinition: definition ?? defaultTheme,
+        publishReady: Boolean(isCompatible && compatibility?.canRenderRequiredSections),
+        reasons: uniqueStrings(
+          isCompatible && compatibility?.warnings.length
+            ? [...reasons, ...compatibility.warnings.map((warning) => warning.message)]
+            : reasons,
+        ),
+        resolvedMode,
+        theme,
+      };
+    })
+    .sort((first, second) => {
+      const compatibilityOrder = Number(second.isCompatible) - Number(first.isCompatible);
+
+      if (compatibilityOrder !== 0) {
+        return compatibilityOrder;
+      }
+
+      const readinessOrder = Number(second.publishReady) - Number(first.publishReady);
+
+      return readinessOrder || first.theme.name.localeCompare(second.theme.name);
+    });
 }
 
 export function parseThemeForm(
@@ -761,39 +891,6 @@ function issuesToFieldErrors(issues: Array<{ message: string; path: readonly unk
   return fieldErrors;
 }
 
-function MetadataItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-3">
-      <dt className="text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">{label}</dt>
-      <dd className="mt-1 font-semibold">{value}</dd>
-    </div>
-  );
-}
-
-function Badge({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "error" | "neutral" | "success" | "warning";
-}) {
-  return (
-    <span
-      className={`inline-flex rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
-        tone === "error"
-          ? "bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
-          : tone === "success"
-            ? "bg-[color-mix(in_srgb,var(--success)_14%,var(--surface))] text-[var(--success)]"
-            : tone === "warning"
-              ? "bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface))] text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]"
-              : "bg-[var(--surface-muted)] text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
-
 function formatSettingsText(value: unknown) {
   return JSON.stringify(
     value && typeof value === "object" && !Array.isArray(value) ? value : {},
@@ -802,205 +899,14 @@ function formatSettingsText(value: unknown) {
   );
 }
 
-function readThemePreview(theme: Theme) {
+function readThemeSummary(theme: Theme) {
   const dashboardPreview = theme.metadata.dashboardPreview;
 
-  if (isRecord(dashboardPreview)) {
-    return {
-      summary: typeof dashboardPreview.summary === "string" ? dashboardPreview.summary : theme.name,
-      swatch: typeof dashboardPreview.swatch === "string" ? dashboardPreview.swatch : "#6f5a38",
-    };
+  if (isRecord(dashboardPreview) && typeof dashboardPreview.summary === "string") {
+    return dashboardPreview.summary;
   }
 
-  return {
-    summary: theme.name,
-    swatch: "#6f5a38",
-  };
-}
-
-function readThemePreviewSample(theme: Theme) {
-  const previewData = theme.metadata.previewData;
-  const fallbackSummary = readMetadataString(theme, "description");
-
-  if (!isRecord(previewData)) {
-    return {
-      eventTitle: theme.name,
-      eyebrow: "Invitation preview",
-      sections: [
-        {
-          summary: fallbackSummary,
-          title: "Event introduction",
-          type: "introduction",
-        },
-      ],
-      subtitle: fallbackSummary,
-      venueName: "Venue sample",
-    };
-  }
-
-  const sections = Array.isArray(previewData.sections)
-    ? previewData.sections
-        .flatMap((section) =>
-          isRecord(section)
-            ? [
-                {
-                  summary: readRecordString(section, "summary", "Section treatment sample."),
-                  title: readRecordString(section, "title", "Invitation section"),
-                  type: readRecordString(section, "type", "custom"),
-                },
-              ]
-            : [],
-        )
-        .slice(0, 3)
-    : [];
-
-  return {
-    eventTitle: readRecordString(previewData, "eventTitle", theme.name),
-    eyebrow: readRecordString(previewData, "eyebrow", "Invitation preview"),
-    sections:
-      sections.length > 0
-        ? sections
-        : [
-            {
-              summary: fallbackSummary,
-              title: "Event introduction",
-              type: "introduction",
-            },
-          ],
-    subtitle: readRecordString(previewData, "subtitle", fallbackSummary),
-    venueName: readRecordString(previewData, "venueName", "Venue sample"),
-  };
-}
-
-function readThemePreviewPresentation(theme: Theme) {
-  const composition = theme.metadata.composition;
-  const visualSystem = isRecord(composition) ? composition.visualSystem : undefined;
-  const compositionMap = isRecord(visualSystem)
-    ? readRecordString(visualSystem, "compositionMap", "registry-default")
-    : "registry-default";
-  const radius = theme.metadata.radius;
-  const typography = theme.metadata.typography;
-  const css = isRecord(typography) ? typography.css : undefined;
-  const bodyFamily = isRecord(css) ? readRecordString(css, "bodyFamily", "inherit") : "inherit";
-  const displayFamily = isRecord(css)
-    ? readRecordString(css, "displayFamily", "inherit")
-    : "inherit";
-  const radiusValue = isRecord(radius) ? radius.lg : undefined;
-  const previewRadius =
-    typeof radiusValue === "string" && /^(?:0|\d+(?:\.\d+)?(?:px|rem))$/.test(radiusValue)
-      ? radiusValue
-      : "var(--radius-lg)";
-
-  switch (compositionMap) {
-    case "ivory-editorial":
-      return {
-        bodyFamily,
-        compositionMap,
-        displayFamily,
-        headerClassName:
-          "grid gap-8 border-b pb-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]",
-        radius: previewRadius,
-        sectionClassName: (index: number) =>
-          `border-t pt-4 ${index === 0 ? "sm:col-span-2 sm:pr-8" : ""}`,
-        sectionsClassName: "grid gap-5 sm:grid-cols-2",
-      };
-    case "garden-celebration":
-      return {
-        bodyFamily,
-        compositionMap,
-        displayFamily,
-        headerClassName: "mx-auto grid max-w-xl gap-5 py-5 text-center",
-        radius: previewRadius,
-        sectionClassName: (index: number) =>
-          `border-t pt-4 ${index === 0 ? "sm:col-span-2 sm:text-center" : ""}`,
-        sectionsClassName: "grid gap-5 sm:grid-cols-2",
-      };
-    case "minimal-modern":
-      return {
-        bodyFamily,
-        compositionMap,
-        displayFamily,
-        headerClassName:
-          "grid gap-6 border-b pb-6 sm:grid-cols-[minmax(0,1.35fr)_minmax(10rem,0.65fr)]",
-        radius: previewRadius,
-        sectionClassName: () => "grid gap-1 border-t py-4 sm:grid-cols-[8rem_1fr]",
-        sectionsClassName: "grid",
-      };
-    case "celestial-evening":
-      return {
-        bodyFamily,
-        compositionMap,
-        displayFamily,
-        headerClassName: "mx-auto grid max-w-xl gap-5 py-8 text-center",
-        radius: previewRadius,
-        sectionClassName: () => "border-t pt-5 text-center",
-        sectionsClassName: "grid gap-5 sm:grid-cols-3",
-      };
-    default:
-      return {
-        bodyFamily,
-        compositionMap,
-        displayFamily,
-        headerClassName: "grid gap-5 border-b pb-6",
-        radius: previewRadius,
-        sectionClassName: () => "border-t pt-4",
-        sectionsClassName: "grid gap-5 sm:grid-cols-3",
-      };
-  }
-}
-
-function readRecordString(record: Record<string, unknown>, key: string, fallback: string) {
-  const value = record[key];
-
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
-}
-
-function readThemeTokens(theme: Theme) {
-  const tokens = theme.metadata.tokens;
-
-  if (!isRecord(tokens)) {
-    return defaultPreviewTokens;
-  }
-
-  const light = tokens.light;
-
-  if (!isRecord(light)) {
-    return defaultPreviewTokens;
-  }
-
-  return {
-    accent: readColor(light.accent, defaultPreviewTokens.accent),
-    accentStrong: readColor(light.accentStrong, defaultPreviewTokens.accentStrong),
-    background: readColor(light.background, defaultPreviewTokens.background),
-    border: readColor(light.border, defaultPreviewTokens.border),
-    foreground: readColor(light.foreground, defaultPreviewTokens.foreground),
-    success: readColor(light.success, defaultPreviewTokens.success),
-    surface: readColor(light.surface, defaultPreviewTokens.surface),
-    surfaceMuted: readColor(light.surfaceMuted, defaultPreviewTokens.surfaceMuted),
-    warning: readColor(light.warning, defaultPreviewTokens.warning),
-  };
-}
-
-function readMetadataString(theme: Theme, key: string) {
-  const value = theme.metadata[key];
-
-  return typeof value === "string" && value.trim() ? value.trim() : "Not specified";
-}
-
-function readColor(value: unknown, fallback: string) {
-  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function formatEventType(value: string) {
-  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function formatMode(value: ThemeMode) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return typeof theme.metadata.description === "string" ? theme.metadata.description : theme.name;
 }
 
 function getThemeCompatibility(theme: Theme, eventType: EventType, mode: ThemeMode) {
@@ -1015,6 +921,26 @@ function getThemeCompatibility(theme: Theme, eventType: EventType, mode: ThemeMo
     : undefined;
 }
 
+function toPreviewMode(mode: ThemeMode) {
+  return mode === "dark" ? "dark" : "light";
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values)];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function formatEventType(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatMode(value: ThemeMode) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function toFriendlyApiMessage(error: unknown) {
   if (error instanceof ApiClientError) {
     return error.apiError.error.message;
@@ -1026,18 +952,3 @@ function toFriendlyApiMessage(error: unknown) {
 
   return "Unable to complete the dashboard request.";
 }
-
-const defaultPreviewTokens = {
-  accent: "#6f5a38",
-  accentStrong: "#3f3422",
-  background: "#f7f5f0",
-  border: "#d8d1c5",
-  foreground: "#1f2528",
-  success: "#28724f",
-  surface: "#fffefd",
-  surfaceMuted: "#ebe7df",
-  warning: "#9b651c",
-};
-
-const inputClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60";

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
+import { getTheme, resolveThemeRendererSlot } from "@lumiere/themes";
 import type { Event, Theme } from "@lumiere/types";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,7 +11,7 @@ import {
   type DashboardApiClient,
   type DashboardAuthContextValue,
 } from "../../../../auth/dashboard-auth-provider";
-import { ThemeSelectorWorkspace } from "./theme-selector-workspace";
+import { buildThemeGalleryEntries, ThemeSelectorWorkspace } from "./theme-selector-workspace";
 
 describe("ThemeSelectorWorkspace", () => {
   afterEach(() => {
@@ -18,6 +19,7 @@ describe("ThemeSelectorWorkspace", () => {
   });
 
   it("loads themes and current event theme state", async () => {
+    const user = userEvent.setup();
     const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
       selectedThemeId: "premium",
       theme: premiumTheme,
@@ -36,18 +38,38 @@ describe("ThemeSelectorWorkspace", () => {
     });
 
     expect(screen.getByLabelText("Loading theme settings")).toBeTruthy();
-    const premiumOption = await screen.findByRole("button", { name: /Premium/ });
+    await screen.findByRole("heading", { name: "Premium" });
 
-    expect(premiumOption).toBeTruthy();
-    expect(screen.getByText("Kids")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Kids" })).toBeNull();
+    expect(screen.getByText("1 compatible · 1 unavailable for this setup")).toBeTruthy();
     expect(screen.getByDisplayValue(/"spacing": "editorial"/)).toBeTruthy();
-    expect(premiumOption.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      (screen.getByRole("button", { name: "Use Premium" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.getByText("Amara & Jules")).toBeTruthy();
-    expect(screen.getByText("Emerald Gardens")).toBeTruthy();
     expect(screen.getByText("Opening portrait")).toBeTruthy();
-    expect(screen.getByText("Full-viewport opening with portrait media.")).toBeTruthy();
-    expect(document.querySelector('[data-theme-preview-sample="premium"]')).toBeTruthy();
-    expect(document.querySelector('[data-section-type="story"]')).toBeTruthy();
+    const boundary = document.querySelector<HTMLElement>(
+      '[data-invite-preview-boundary="isolated"]',
+    )!;
+    const introductionRenderer = resolveThemeRendererSlot(getTheme("premium")!, "introduction");
+
+    expect(boundary.style.all).toBe("initial");
+    expect(boundary.style.contain).toContain("style");
+    expect(document.querySelector('[data-preview-theme="premium"]')).toBeTruthy();
+    expect(
+      document.querySelector(`[data-renderer-key="${introductionRenderer.rendererKey}"]`),
+    ).toBeTruthy();
+    expect(document.querySelectorAll("[data-expanded-theme-preview]")).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Preview Premium" }));
+    const dialog = await screen.findByRole("dialog", { name: "Premium invite preview" });
+
+    await waitFor(() => expect(within(dialog).getByText("Invite renderer")).toBeTruthy());
+    expect(document.querySelectorAll("[data-expanded-theme-preview]")).toHaveLength(1);
+    await user.click(within(dialog).getByRole("tab", { name: "Mobile" }));
+    expect(document.querySelector('[data-preview-viewport="mobile"]')).toBeTruthy();
+    await user.click(within(dialog).getByRole("tab", { name: "Dark" }));
+    expect(document.querySelector('[data-preview-mode="dark"]')).toBeTruthy();
   });
 
   it("selects a theme and saves supported mode plus JSON settings", async () => {
@@ -83,8 +105,8 @@ describe("ThemeSelectorWorkspace", () => {
       updateEventTheme,
     });
 
-    await screen.findByRole("button", { name: /Premium/ });
-    await user.click(screen.getByRole("button", { name: /Kids/ }));
+    await screen.findByRole("heading", { name: "Kids" });
+    await user.click(screen.getByRole("button", { name: "Use Kids" }));
     fireEvent.change(screen.getByLabelText("Theme settings JSON"), {
       target: {
         value: '{"headlineTone":"playful"}',
@@ -122,7 +144,7 @@ describe("ThemeSelectorWorkspace", () => {
       updateEventTheme,
     });
 
-    await screen.findByRole("button", { name: /Premium/ });
+    await screen.findByRole("heading", { name: "Premium" });
     fireEvent.change(screen.getByLabelText("Theme settings JSON"), {
       target: {
         value: "[invalid",
@@ -154,10 +176,42 @@ describe("ThemeSelectorWorkspace", () => {
       listThemes,
     });
 
-    await screen.findByRole("button", { name: /Premium/ });
+    await screen.findByRole("heading", { name: "Premium" });
 
-    expect(screen.getByText("Kids does not support wedding events")).toBeTruthy();
-    expect((screen.getByRole("button", { name: /Kids/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("heading", { name: "Kids" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Show incompatible (1)" }));
+
+    expect(screen.getByRole("heading", { name: "Kids" })).toBeTruthy();
+    expect(screen.getByText("Kids does not support wedding events.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Use Kids" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    const entries = buildThemeGalleryEntries({
+      eventType: "wedding",
+      modeFilter: "any",
+      preferredMode: "light",
+      themes: [legacyTheme, kidsTheme, premiumTheme],
+    });
+
+    expect(entries.map((entry) => entry.theme.id)).toEqual(["premium", "kids", "legacy"]);
+    expect(entries[0]).toMatchObject({ isCompatible: true, publishReady: true });
+    expect(entries[1]?.reasons).toContain("Kids does not support wedding events.");
+    expect(entries[2]).toMatchObject({
+      fallbackReason: expect.stringContaining("Lumiere Default"),
+      isCompatible: false,
+      previewDefinition: expect.objectContaining({ id: "lumiere-default" }),
+    });
+
+    const darkEntries = buildThemeGalleryEntries({
+      eventType: "birthday",
+      modeFilter: "dark",
+      preferredMode: "light",
+      themes: [kidsTheme],
+    });
+
+    expect(darkEntries[0]).toMatchObject({ isCompatible: false, resolvedMode: "dark" });
+    expect(darkEntries[0]?.reasons).toContain("Kids does not support dark mode.");
   });
 });
 
@@ -312,4 +366,10 @@ const kidsTheme: Theme = {
   name: "Kids",
   supportedModes: ["light"],
   version: "0.0.0",
+};
+
+const legacyTheme: Theme = {
+  ...premiumTheme,
+  id: "legacy",
+  name: "Legacy",
 };
