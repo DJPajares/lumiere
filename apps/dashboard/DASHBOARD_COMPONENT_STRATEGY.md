@@ -2,42 +2,28 @@
 
 ## Decision
 
-Use improved project-owned dashboard primitives for this pass. Do not adopt HeroUI yet.
+Use project-owned shadcn/ui `base-nova` components backed by Base UI for the dashboard. Reusable
+primitives, hooks, utilities, and semantic styles live in `@lumiere/dashboard-ui`; event forms,
+navigation, gallery controls, and workflow compositions remain in `apps/dashboard`.
 
-HeroUI v3 is attractive for common controls, but the current documented package is still beta,
-requires React 19 and Tailwind CSS v4, and adds a global `@heroui/styles` import. Lumiere already
-meets the React/Tailwind requirements, but the dashboard problems in this task are mostly consistency,
-spacing, state treatment, and timezone clarity. Those are safer to solve with small local primitives
-before taking on a beta component dependency.
+This supersedes the earlier local-only primitive decision from t49. The public invite app and theme
+renderers remain custom and cannot import shadcn, Base UI, or `@lumiere/dashboard-ui`.
 
-Revisit HeroUI or another component library when the dashboard needs richer calendar pickers,
-command menus, complex comboboxes, or modal focus management that would be expensive to maintain
-locally.
+## Workflow
 
-## Current Primitives
+- Run shadcn through `pnpm dlx shadcn@latest` from `apps/dashboard`.
+- Review `add` operations with `--dry-run`, `--view`, or `--diff` before changing existing files.
+- Use Base UI registry output only. Do not introduce Radix-specific dependencies or APIs.
+- Keep the two `components.json` files aligned on style, base color, icons, RSC, and CSS variables.
+- Import app styles through `@lumiere/dashboard-ui/globals.css`; keep feature CSS out of globals.
 
-The shared controls live in `apps/dashboard/components/ui/dashboard-fields.tsx`.
+## Migration Boundary
 
-- `DashboardTextInput`, `DashboardTextArea`, `DashboardSelect`, and `DashboardDateTimeInput`
-  standardize labels, helper text, errors, focus rings, disabled states, and radius.
-- `DashboardDateTimeInput` keeps native `datetime-local` behavior and surfaces the event timezone
-  beside the control so managers know how guest-facing times will be interpreted.
-- `DashboardCheckbox` and `DashboardSwitch` cover boolean settings with larger hit areas.
-- `DashboardButton` centralizes primary and secondary button treatments.
-- `DashboardNotice` covers alert/status messaging.
-- `DashboardPopover`, `DashboardDialog`, `DashboardDrawer`, and `DashboardTabs` provide local
-  building blocks for the next dashboard surfaces without changing `globals.css`.
+The t49 controls in `components/ui/dashboard-fields.tsx` remain compatibility wrappers while feature
+flows migrate in t57 and t58. New dashboard work starts with `@lumiere/dashboard-ui` components.
+The explicit boundary check is `pnpm check:dashboard-ui-boundary`.
 
-## Applied Surfaces
+## Showcase
 
-- Event create/edit basics now use the shared field primitives.
-- Section builder content, settings, asset, visibility, JSON, checkbox, select, number, and date-time
-  fields now use the shared field primitives.
-
-## Guardrails
-
-- Keep `globals.css` limited to design tokens, base document styles, and reduced-motion behavior.
-- Prefer native browser behavior until a control truly needs library-level keyboard/focus logic.
-- New dashboard forms should start from the shared primitives before adding page-local control chrome.
-- If a library is adopted later, wrap it behind these primitives first so event basics, guests, RSVP,
-  theme settings, and content sections do not drift apart.
+Use `/ui-showcase` in the dashboard app to review light/dark tokens, common field states, loading,
+overlay focus behavior, destructive confirmation, and toast feedback.

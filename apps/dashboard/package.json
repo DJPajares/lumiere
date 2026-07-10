@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lumiere/api-client": "workspace:*",
+    "@lumiere/dashboard-ui": "workspace:*",
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",
     "@supabase/supabase-js": "^2.110.1",

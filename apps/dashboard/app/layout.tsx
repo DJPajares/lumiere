@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { DashboardUiProvider } from "@lumiere/dashboard-ui/components/dashboard-ui-provider";
+import { Toaster } from "@lumiere/dashboard-ui/components/sonner";
 
 import { DashboardAuthProvider } from "../auth/dashboard-auth-provider";
 import "./globals.css";
@@ -45,9 +47,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <DashboardAuthProvider>{children}</DashboardAuthProvider>
+        <DashboardUiProvider>
+          <DashboardAuthProvider>{children}</DashboardAuthProvider>
+          <Toaster closeButton position="top-right" />
+        </DashboardUiProvider>
       </body>
     </html>
   );

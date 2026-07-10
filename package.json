@@ -14,6 +14,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:watch": "turbo test:watch",
+    "check:dashboard-ui-boundary": "node scripts/check-dashboard-ui-boundary.mjs",
     "db:generate": "pnpm --filter @lumiere/db db:generate",
     "db:migrate": "pnpm --filter @lumiere/db db:migrate",
     "db:seed": "pnpm --filter @lumiere/api exec node --import tsx ../../packages/db/src/seed.ts",
