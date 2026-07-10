@@ -6,7 +6,7 @@ assignee: null
 epic: 'frontend'
 dueDate: null
 created: '2026-07-10T18:00:00+08:00'
-modified: '2026-07-10T22:53:00+08:00'
+modified: '2026-07-10T23:01:00+08:00'
 completedAt: '2026-07-10T22:53:00+08:00'
 labels: ['dashboard', 'shadcn', 'base-ui', 'forms', 'select', 'combobox']
 depends_on: ['t56-dashboard-shadcn-foundation', 't47-schema-driven-content-field-forms']
@@ -60,3 +60,4 @@ Use the component APIs generated for the selected Base UI preset. Do not copy ex
 - 2026-07-10T19:15:00+08:00: Scoped shadcn/Base UI to the dashboard only and updated the suggested model to GPT-5.6 Terra with xhigh reasoning.
 - 2026-07-10T22:40:00+08:00: Started implementation; inventoried dashboard dropdown patterns and the shared Base UI component foundation.
 - 2026-07-10T22:53:00+08:00: Completed the dropdown migration with Base UI-backed Select fields, a searchable IANA timezone Combobox, consistent states and popup behavior, a documented pattern inventory, and interaction coverage for mouse, keyboard, Escape, focus, empty results, validation, disabled/loading states, positioning, and dialog state persistence. Verified both package/app typechecks, 48 dashboard tests, formatting, the dashboard UI boundary, and a production build. The in-app visual pre-flight could not attach because this session exposed no browser backend.
+- 2026-07-10T23:01:00+08:00: Corrected the dashboard Tailwind source registration for `@lumiere/dashboard-ui` and added explicit Next workspace-package transpilation after confirming the development CSS bundle omitted shared popup utility classes. Reverified typechecks, 48 dashboard tests, and the production build.

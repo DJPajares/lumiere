@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@source "../../../apps/dashboard";
 @source "../components";
 @source "../hooks";
 @source "../lib";
