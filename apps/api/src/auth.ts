@@ -239,7 +239,7 @@ export const parseBearerToken = (authorizationHeader: string | undefined) => {
 
 export const verifySupabaseJwt = (
   token: string,
-  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL">,
+  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL" | "SUPABASE_JWKS">,
   now = Date.now(),
 ): Promise<SupabaseJwtPayload> => {
   return verifySupabaseJwtWithConfig(token, config, now);
@@ -247,7 +247,7 @@ export const verifySupabaseJwt = (
 
 const verifySupabaseJwtWithConfig = async (
   token: string,
-  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL">,
+  config: Pick<ApiEnv, "SUPABASE_JWT_SECRET" | "SUPABASE_URL" | "SUPABASE_JWKS">,
   now: number,
 ): Promise<SupabaseJwtPayload> => {
   const tokenParts = token.split(".");
@@ -276,6 +276,7 @@ const verifySupabaseJwtWithConfig = async (
       encodedSignature,
       header,
       signedContent,
+      serializedJwks: config.SUPABASE_JWKS,
       supabaseUrl: config.SUPABASE_URL,
     });
   } else {
@@ -318,18 +319,22 @@ const verifyJwksJwtSignature = async ({
   encodedSignature,
   header,
   signedContent,
+  serializedJwks,
   supabaseUrl,
 }: {
   encodedSignature: string;
   header: SupabaseJwtHeader;
   signedContent: string;
+  serializedJwks: string | undefined;
   supabaseUrl: string;
 }) => {
   if (!header.kid) {
     throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
   }
 
-  const jwks = await getSupabaseJwks(supabaseUrl);
+  const jwks = serializedJwks
+    ? parseSupabaseJwks(serializedJwks)
+    : await getSupabaseJwks(supabaseUrl);
   const jwk = jwks.find((key) => key.kid === header.kid);
 
   if (!jwk) {
@@ -358,6 +363,20 @@ const verifyJwksJwtSignature = async ({
 
   if (!verified) {
     throw new ApiHttpError("UNAUTHORIZED", "Invalid bearer token");
+  }
+};
+
+const parseSupabaseJwks = (serializedJwks: string): SupabaseJwksKey[] => {
+  try {
+    const body = JSON.parse(serializedJwks) as SupabaseJwksResponse;
+
+    if (!Array.isArray(body.keys)) {
+      throw new Error("The JWKS value must contain a keys array");
+    }
+
+    return body.keys;
+  } catch {
+    throw new ApiHttpError("INTERNAL_ERROR", "Invalid SUPABASE_JWKS configuration");
   }
 };
 

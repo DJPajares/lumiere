@@ -85,6 +85,9 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lumiere
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_JWT_SECRET=
+# Optional: JSON from /auth/v1/.well-known/jwks.json for local JWKS verification
+# Run: curl -fsS https://your-project.supabase.co/auth/v1/.well-known/jwks.json
+SUPABASE_JWKS=
 INVITE_TOKEN_SECRET=
 PUBLIC_APP_BASE_URL=http://localhost:3000
 DASHBOARD_APP_BASE_URL=http://localhost:3001
@@ -153,6 +156,14 @@ Supabase projects that use JWT Signing Keys may issue dashboard access tokens
 with `alg: "ES256"`. The API supports those by fetching the project's JWKS from
 `<SUPABASE_URL>/auth/v1/.well-known/jwks.json`. Legacy `alg: "HS256"` tokens
 are verified with `SUPABASE_JWT_SECRET`.
+
+If local Node.js HTTPS requests cannot trust the certificate chain, set the
+optional `SUPABASE_JWKS` API variable to the JSON returned by that JWKS endpoint.
+This verifies ES256 tokens locally without fetching the endpoint during API
+authentication. Refresh the value when Supabase signing keys rotate.
+
+Run: curl -fsS <https://your-project.supabase.co>/auth/v1/.well-known/jwks.json
+Copy the result and paste it in `SUPABASE_JWKS`
 
 #### Invite App: `apps/invite/.env.local`
 

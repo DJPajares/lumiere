@@ -4,6 +4,11 @@ export type EnvSource = Record<string, string | undefined>;
 
 const nonEmptyString = z.string().trim().min(1, "Required");
 
+const optionalNonEmptyString = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  nonEmptyString.optional(),
+);
+
 const appUrl = nonEmptyString.url("Must be a valid URL");
 
 const apiEnvSchema = z.object({
@@ -13,6 +18,7 @@ const apiEnvSchema = z.object({
   SUPABASE_URL: appUrl,
   SUPABASE_SERVICE_ROLE_KEY: nonEmptyString,
   SUPABASE_JWT_SECRET: nonEmptyString,
+  SUPABASE_JWKS: optionalNonEmptyString,
   INVITE_TOKEN_SECRET: nonEmptyString,
   PUBLIC_APP_BASE_URL: appUrl,
   DASHBOARD_APP_BASE_URL: appUrl,
