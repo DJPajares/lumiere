@@ -1,9 +1,19 @@
 import type { Database } from "@lumiere/db";
-import { eventPublications, events, guestGroups, rsvpResponses } from "@lumiere/db";
+import {
+  eventSectionContents,
+  eventSections,
+  eventRsvpSettings,
+  eventThemeSettings,
+  eventPublications,
+  events,
+  guestGroups,
+  rsvpResponses,
+} from "@lumiere/db";
 import type { Event, EventSection, PublicEventSummary, PublicGuestContext } from "@lumiere/types";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, getTableColumns } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
+import { toApiEventSection } from "./theme-sections";
 
 type PublicEventRow = {
   event: typeof events.$inferSelect;
@@ -102,14 +112,38 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
   const [event] = await db
     .select({
       event: events,
-      publication: eventPublications,
+      rsvpSettings: eventRsvpSettings,
+      themeSettings: eventThemeSettings,
     })
     .from(events)
-    .innerJoin(eventPublications, eq(eventPublications.eventId, events.id))
+    .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
+    .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
     .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
     .limit(1);
 
-  return event ? toPublicEventRecord(event) : null;
+  if (!event) {
+    return null;
+  }
+
+  const sectionRows = await db
+    .select({
+      ...getTableColumns(eventSections),
+      contentJson: eventSectionContents.contentJson,
+    })
+    .from(eventSections)
+    .leftJoin(eventSectionContents, eq(eventSectionContents.eventSectionId, eventSections.id))
+    .where(eq(eventSections.eventId, event.event.id))
+    .orderBy(asc(eventSections.sortOrder), asc(eventSections.createdAt));
+
+  return toLivePublicEventRecord({
+    ...event,
+    sections: sectionRows.map((section) =>
+      toApiEventSection({
+        ...section,
+        contentJson: (section.contentJson ?? {}) as EventSection["content"],
+      }),
+    ),
+  });
 };
 
 const listPublicSections = (sections: EventSection[]) =>
@@ -139,4 +173,31 @@ export const toPublicEventRecord = (event: PublicEventRow): PublicEventRecord =>
   themeConfig: event.publication.themeConfigJson as Event["themeConfig"],
   themeMode: event.publication.themeMode,
   sections: event.publication.sectionsJson,
+});
+
+type LivePublicEventRow = {
+  event: typeof events.$inferSelect;
+  rsvpSettings: typeof eventRsvpSettings.$inferSelect | null;
+  sections: EventSection[];
+  themeSettings: typeof eventThemeSettings.$inferSelect | null;
+};
+
+const toLivePublicEventRecord = (event: LivePublicEventRow): PublicEventRecord => ({
+  event: {
+    endsAt: event.event.endsAt ? toIsoDateTime(event.event.endsAt) : undefined,
+    eventType: event.event.eventType,
+    id: event.event.id,
+    publicSettings: event.event.publicSettingsJson as Event["publicSettings"],
+    slug: event.event.publicSlug,
+    startsAt: toIsoDateTime(event.event.startsAt),
+    status: event.event.status,
+    timezone: event.event.timezone,
+    title: event.event.title,
+    venueAddress: event.event.venueAddress ?? undefined,
+    venueName: event.event.venueName ?? undefined,
+  },
+  selectedThemeId: event.themeSettings?.selectedThemeId ?? undefined,
+  sections: event.sections,
+  themeConfig: (event.themeSettings?.configJson ?? {}) as Event["themeConfig"],
+  themeMode: event.themeSettings?.themeMode ?? "system",
 });
