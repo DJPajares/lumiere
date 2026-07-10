@@ -10,6 +10,7 @@ import {
   sectionTypeSchema,
   sectionVisibilitySchema,
   themeModeSchema,
+  type EventSection,
   type RsvpAnswer,
 } from "@lumiere/types";
 import { relations, sql } from "drizzle-orm";
@@ -123,17 +124,7 @@ export const events = pgTable(
     endsAt: timestamp("ends_at", { mode: "string", withTimezone: true }),
     venueName: varchar("venue_name", { length: 160 }),
     venueAddress: varchar("venue_address", { length: 500 }),
-    selectedThemeId: varchar("selected_theme_id", { length: 120 }),
-    themeMode: themeModeEnum("theme_mode").notNull().default("system"),
-    themeConfigJson: jsonb("theme_config_json")
-      .$type<JsonObject>()
-      .notNull()
-      .default(jsonObjectDefault),
     publicSettingsJson: jsonb("public_settings_json")
-      .$type<JsonObject>()
-      .notNull()
-      .default(jsonObjectDefault),
-    rsvpSettingsJson: jsonb("rsvp_settings_json")
       .$type<JsonObject>()
       .notNull()
       .default(jsonObjectDefault),
@@ -146,6 +137,24 @@ export const events = pgTable(
     index(schemaIndexNames.eventsStatusStartsAt).on(table.status, table.startsAt),
   ],
 );
+
+export const eventThemeSettings = pgTable("event_theme_settings", {
+  eventId: uuid("event_id")
+    .primaryKey()
+    .references(() => events.id, { onDelete: "cascade" }),
+  selectedThemeId: varchar("selected_theme_id", { length: 120 }),
+  themeMode: themeModeEnum("theme_mode").notNull().default("system"),
+  configJson: jsonb("config_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
+  updatedAt: updatedAtColumn(),
+});
+
+export const eventRsvpSettings = pgTable("event_rsvp_settings", {
+  eventId: uuid("event_id")
+    .primaryKey()
+    .references(() => events.id, { onDelete: "cascade" }),
+  settingsJson: jsonb("settings_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
+  updatedAt: updatedAtColumn(),
+});
 
 export const eventManagers = pgTable(
   "event_managers",
@@ -179,7 +188,6 @@ export const eventSections = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     visibility: sectionVisibilityEnum("visibility").notNull().default("public"),
     enabled: boolean("enabled").notNull().default(true),
-    contentJson: jsonb("content_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
     settingsJson: jsonb("settings_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
     createdAt: createdAtColumn(),
     updatedAt: updatedAtColumn(),
@@ -189,6 +197,38 @@ export const eventSections = pgTable(
     index(schemaIndexNames.eventSectionsEventSort).on(table.eventId, table.sortOrder),
   ],
 );
+
+export const eventSectionContents = pgTable("event_section_contents", {
+  eventSectionId: uuid("event_section_id")
+    .primaryKey()
+    .references(() => eventSections.id, { onDelete: "cascade" }),
+  contentJson: jsonb("content_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
+  updatedAt: updatedAtColumn(),
+});
+
+export const eventPublications = pgTable("event_publications", {
+  eventId: uuid("event_id")
+    .primaryKey()
+    .references(() => events.id, { onDelete: "cascade" }),
+  selectedThemeId: varchar("selected_theme_id", { length: 120 }).notNull(),
+  themeMode: themeModeEnum("theme_mode").notNull(),
+  themeConfigJson: jsonb("theme_config_json")
+    .$type<JsonObject>()
+    .notNull()
+    .default(jsonObjectDefault),
+  publicSettingsJson: jsonb("public_settings_json")
+    .$type<JsonObject>()
+    .notNull()
+    .default(jsonObjectDefault),
+  rsvpSettingsJson: jsonb("rsvp_settings_json")
+    .$type<JsonObject>()
+    .notNull()
+    .default(jsonObjectDefault),
+  sectionsJson: jsonb("sections_json").$type<EventSection[]>().notNull().default(jsonArrayDefault),
+  publishedAt: timestamp("published_at", { mode: "string", withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 export const eventAssets = pgTable(
   "event_assets",
@@ -338,6 +378,30 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   activityEvents: many(activityEvents),
   notifications: many(notifications),
   themeRegistrySnapshots: many(themeRegistrySnapshots),
+  themeSettings: one(eventThemeSettings),
+  rsvpSettings: one(eventRsvpSettings),
+  publication: one(eventPublications),
+}));
+
+export const eventThemeSettingsRelations = relations(eventThemeSettings, ({ one }) => ({
+  event: one(events, {
+    fields: [eventThemeSettings.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const eventRsvpSettingsRelations = relations(eventRsvpSettings, ({ one }) => ({
+  event: one(events, {
+    fields: [eventRsvpSettings.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const eventPublicationsRelations = relations(eventPublications, ({ one }) => ({
+  event: one(events, {
+    fields: [eventPublications.eventId],
+    references: [events.id],
+  }),
 }));
 
 export const eventManagersRelations = relations(eventManagers, ({ one }) => ({
@@ -355,6 +419,14 @@ export const eventSectionsRelations = relations(eventSections, ({ one }) => ({
   event: one(events, {
     fields: [eventSections.eventId],
     references: [events.id],
+  }),
+  content: one(eventSectionContents),
+}));
+
+export const eventSectionContentsRelations = relations(eventSectionContents, ({ one }) => ({
+  section: one(eventSections, {
+    fields: [eventSectionContents.eventSectionId],
+    references: [eventSections.id],
   }),
 }));
 
@@ -418,11 +490,19 @@ export const schema = {
   eventAssetsRelations,
   eventManagers,
   eventManagersRelations,
+  eventPublications,
+  eventPublicationsRelations,
+  eventRsvpSettings,
+  eventRsvpSettingsRelations,
+  eventSectionContents,
+  eventSectionContentsRelations,
   events,
   eventsRelations,
   eventSections,
   eventSectionsRelations,
   eventStatusEnum,
+  eventThemeSettings,
+  eventThemeSettingsRelations,
   eventTypeEnum,
   guestGroups,
   guestGroupsRelations,

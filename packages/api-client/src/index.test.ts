@@ -108,6 +108,35 @@ describe("API client", () => {
     );
   });
 
+  it("returns manager publishing readiness diagnostics", async () => {
+    const fetch = createFetchMock({
+      readiness: {
+        issues: [
+          {
+            message: "Select a valid theme before publishing",
+            path: ["selectedThemeId"],
+          },
+        ],
+        ready: false,
+      },
+    });
+    const client = createApiClient({
+      authToken: "manager-token",
+      baseUrl: "https://api.example.test",
+      fetch,
+    });
+
+    await expect(
+      client.getEventPublishingReadiness("00000000-0000-4000-8000-000000000101"),
+    ).resolves.toMatchObject({
+      readiness: { ready: false },
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.example.test/events/00000000-0000-4000-8000-000000000101/publish-readiness",
+      expect.anything(),
+    );
+  });
+
   it("normalizes API errors to the shared error shape", async () => {
     const apiError: ApiError = {
       error: {

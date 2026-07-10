@@ -2,6 +2,7 @@ import {
   activityEventsResponseSchema,
   apiErrorSchema,
   eventResponseSchema,
+  eventPublishingReadinessResponseSchema,
   eventSectionsResponseSchema,
   eventSlugSuggestionResponseSchema,
   eventSummaryResponseSchema,
@@ -20,6 +21,7 @@ import {
   type ApiError,
   type EventCreateRequest,
   type EventResponse,
+  type EventPublishingReadinessResponse,
   type EventSectionsResponse,
   type EventSectionsUpdateRequest,
   type EventSlugSuggestionRequest,
@@ -163,6 +165,11 @@ export const createApiClient = ({
       ),
     getEvent: (eventId: string): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema),
+    getEventPublishingReadiness: (eventId: string): Promise<EventPublishingReadinessResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/publish-readiness`,
+        eventPublishingReadinessResponseSchema,
+      ),
     getEventSummary: (eventId: string): Promise<EventSummaryResponse> =>
       request(`/events/${encodePathSegment(eventId)}/summary`, eventSummaryResponseSchema),
     getEventTheme: (eventId: string): Promise<EventThemeResponse> =>

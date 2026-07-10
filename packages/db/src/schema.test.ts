@@ -20,10 +20,14 @@ import {
   activityTypeEnum,
   eventAssets,
   eventManagers,
+  eventPublications,
+  eventRsvpSettings,
+  eventSectionContents,
   events,
   eventSections,
   eventStatusEnum,
   eventTypeEnum,
+  eventThemeSettings,
   guestGroups,
   guestGroupStatusEnum,
   managerRoleEnum,
@@ -46,7 +50,11 @@ describe("database schema", () => {
         users,
         events,
         eventManagers,
+        eventThemeSettings,
+        eventRsvpSettings,
         eventSections,
+        eventSectionContents,
+        eventPublications,
         eventAssets,
         guestGroups,
         rsvpResponses,
@@ -58,7 +66,11 @@ describe("database schema", () => {
       "users",
       "events",
       "event_managers",
+      "event_theme_settings",
+      "event_rsvp_settings",
       "event_sections",
+      "event_section_contents",
+      "event_publications",
       "event_assets",
       "guest_groups",
       "rsvp_responses",
@@ -66,6 +78,31 @@ describe("database schema", () => {
       "notifications",
       "theme_registry_snapshots",
     ]);
+  });
+
+  it("separates manager-editable settings and content from event basics", () => {
+    const eventColumns = getTableColumns(events);
+    const themeColumns = getTableColumns(eventThemeSettings);
+    const rsvpColumns = getTableColumns(eventRsvpSettings);
+    const sectionColumns = getTableColumns(eventSections);
+    const contentColumns = getTableColumns(eventSectionContents);
+    const guestGroupColumns = getTableColumns(guestGroups);
+
+    expect(eventColumns).not.toHaveProperty("selectedThemeId");
+    expect(eventColumns).not.toHaveProperty("rsvpSettingsJson");
+    expect(themeColumns).toHaveProperty("selectedThemeId");
+    expect(rsvpColumns).toHaveProperty("settingsJson");
+    expect(sectionColumns).toMatchObject({
+      enabled: expect.anything(),
+      visibility: expect.anything(),
+    });
+    expect(sectionColumns).not.toHaveProperty("contentJson");
+    expect(contentColumns).toHaveProperty("contentJson");
+    expect(guestGroupColumns).toMatchObject({
+      maxPax: expect.anything(),
+      status: expect.anything(),
+    });
+    expect(getTableColumns(eventPublications)).toHaveProperty("sectionsJson");
   });
 
   it("keeps Drizzle enums aligned with shared domain contracts", () => {

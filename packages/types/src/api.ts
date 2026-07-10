@@ -77,6 +77,19 @@ export const eventsListResponseSchema = z.object({
 });
 export type EventsListResponse = z.infer<typeof eventsListResponseSchema>;
 
+export const eventPublishingReadinessSchema = z.object({
+  issues: z.array(apiFieldErrorSchema),
+  ready: z.boolean(),
+});
+export type EventPublishingReadiness = z.infer<typeof eventPublishingReadinessSchema>;
+
+export const eventPublishingReadinessResponseSchema = z.object({
+  readiness: eventPublishingReadinessSchema,
+});
+export type EventPublishingReadinessResponse = z.infer<
+  typeof eventPublishingReadinessResponseSchema
+>;
+
 export const eventSectionsUpdateRequestSchema = eventSectionsUpdateSchema;
 export type EventSectionsUpdateRequest = z.input<typeof eventSectionsUpdateRequestSchema>;
 

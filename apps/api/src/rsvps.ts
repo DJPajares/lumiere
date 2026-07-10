@@ -2,6 +2,7 @@ import type { Database } from "@lumiere/db";
 import {
   activityEvents,
   eventManagers,
+  eventPublications,
   events,
   guestGroups,
   notifications,
@@ -43,11 +44,12 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       .select({
         id: events.id,
         ownerUserId: events.ownerUserId,
-        rsvpSettingsJson: events.rsvpSettingsJson,
+        rsvpSettingsJson: eventPublications.rsvpSettingsJson,
         status: events.status,
         title: events.title,
       })
       .from(events)
+      .innerJoin(eventPublications, eq(eventPublications.eventId, events.id))
       .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
       .limit(1);
 

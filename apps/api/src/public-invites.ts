@@ -1,28 +1,14 @@
 import type { Database } from "@lumiere/db";
-import { eventSections, events, guestGroups, rsvpResponses } from "@lumiere/db";
+import { eventPublications, events, guestGroups, rsvpResponses } from "@lumiere/db";
 import type { Event, EventSection, PublicEventSummary, PublicGuestContext } from "@lumiere/types";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
-import { toApiEventSection } from "./theme-sections";
 
-type PublicEventRow = Pick<
-  typeof events.$inferSelect,
-  | "endsAt"
-  | "eventType"
-  | "id"
-  | "publicSettingsJson"
-  | "publicSlug"
-  | "selectedThemeId"
-  | "startsAt"
-  | "status"
-  | "themeConfigJson"
-  | "themeMode"
-  | "timezone"
-  | "title"
-  | "venueAddress"
-  | "venueName"
->;
+type PublicEventRow = {
+  event: typeof events.$inferSelect;
+  publication: typeof eventPublications.$inferSelect;
+};
 
 export type PublicEventRecord = {
   event: PublicEventSummary;
@@ -54,7 +40,7 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
 
     return {
       ...publicEvent,
-      sections: await listPublicSections(db, publicEvent.event.id),
+      sections: listPublicSections(publicEvent.sections),
     };
   },
 
@@ -107,7 +93,7 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
         },
         responseStatus: rsvpResponse?.responseStatus ?? null,
       },
-      sections: await listGuestSections(db, publicEvent.event.id),
+      sections: listGuestSections(publicEvent.sections),
     };
   },
 });
@@ -115,74 +101,42 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
 const getPublishedEvent = async (db: Database, eventSlug: string) => {
   const [event] = await db
     .select({
-      endsAt: events.endsAt,
-      eventType: events.eventType,
-      id: events.id,
-      publicSettingsJson: events.publicSettingsJson,
-      selectedThemeId: events.selectedThemeId,
-      publicSlug: events.publicSlug,
-      startsAt: events.startsAt,
-      status: events.status,
-      themeConfigJson: events.themeConfigJson,
-      themeMode: events.themeMode,
-      timezone: events.timezone,
-      title: events.title,
-      venueAddress: events.venueAddress,
-      venueName: events.venueName,
+      event: events,
+      publication: eventPublications,
     })
     .from(events)
+    .innerJoin(eventPublications, eq(eventPublications.eventId, events.id))
     .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
     .limit(1);
 
   return event ? toPublicEventRecord(event) : null;
 };
 
-const listPublicSections = async (db: Database, eventId: string) => {
-  const sections = await listEnabledSections(db, eventId, ["public"]);
+const listPublicSections = (sections: EventSection[]) =>
+  sections.filter((section) => section.enabled && section.visibility === "public");
 
-  return sections.map(toApiEventSection);
-};
+const listGuestSections = (sections: EventSection[]) =>
+  sections.filter(
+    (section) =>
+      section.enabled && (section.visibility === "public" || section.visibility === "guest_only"),
+  );
 
-const listGuestSections = async (db: Database, eventId: string) => {
-  const sections = await listEnabledSections(db, eventId, ["public", "guest_only"]);
-
-  return sections.map(toApiEventSection);
-};
-
-const listEnabledSections = (
-  db: Database,
-  eventId: string,
-  visibility: EventSection["visibility"][],
-) =>
-  db
-    .select()
-    .from(eventSections)
-    .where(
-      and(
-        eq(eventSections.eventId, eventId),
-        eq(eventSections.enabled, true),
-        inArray(eventSections.visibility, visibility),
-      ),
-    )
-    .orderBy(asc(eventSections.sortOrder), asc(eventSections.createdAt));
-
-export const toPublicEventRecord = (
-  event: PublicEventRow,
-): Omit<PublicEventRecord, "sections"> => ({
+export const toPublicEventRecord = (event: PublicEventRow): PublicEventRecord => ({
   event: {
-    endsAt: event.endsAt ? toIsoDateTime(event.endsAt) : undefined,
-    eventType: event.eventType,
-    id: event.id,
-    publicSettings: event.publicSettingsJson as Event["publicSettings"],
-    slug: event.publicSlug,
-    startsAt: toIsoDateTime(event.startsAt),
-    status: event.status,
-    timezone: event.timezone,
-    title: event.title,
-    venueAddress: event.venueAddress ?? undefined,
-    venueName: event.venueName ?? undefined,
+    endsAt: event.event.endsAt ? toIsoDateTime(event.event.endsAt) : undefined,
+    eventType: event.event.eventType,
+    id: event.event.id,
+    publicSettings: event.publication.publicSettingsJson as Event["publicSettings"],
+    slug: event.event.publicSlug,
+    startsAt: toIsoDateTime(event.event.startsAt),
+    status: event.event.status,
+    timezone: event.event.timezone,
+    title: event.event.title,
+    venueAddress: event.event.venueAddress ?? undefined,
+    venueName: event.event.venueName ?? undefined,
   },
-  selectedThemeId: event.selectedThemeId ?? undefined,
-  themeConfig: event.themeConfigJson as Event["themeConfig"],
-  themeMode: event.themeMode,
+  selectedThemeId: event.publication.selectedThemeId,
+  themeConfig: event.publication.themeConfigJson as Event["themeConfig"],
+  themeMode: event.publication.themeMode,
+  sections: event.publication.sectionsJson,
 });

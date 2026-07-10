@@ -31,7 +31,7 @@ import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } 
 import { createApp } from "./app";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
-import type { EventStore } from "./events";
+import type { EventStore, PublishingReadiness } from "./events";
 import { toApiEvent } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
@@ -877,6 +877,36 @@ describe("API app", () => {
     expect(getEventSummary).toHaveBeenCalledWith(eventId);
   });
 
+  it("returns publishing readiness from the same manager settings source", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const publishingReadiness: PublishingReadiness = {
+      issues: [
+        {
+          message: "Select a valid theme before publishing",
+          path: ["selectedThemeId"],
+        },
+      ],
+      ready: false,
+    };
+    const { eventStore, getPublishingReadiness } = createTestEventStore({
+      publishingReadiness,
+    });
+    const app = createApp({ authStore, config: loadTestConfig(), eventStore });
+    const response = await app.request(`/events/${eventId}/publish-readiness`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      readiness: publishingReadiness,
+    });
+    expect(response.status).toBe(200);
+    expect(getPublishingReadiness).toHaveBeenCalledWith(eventId);
+  });
+
   it("rejects non-UUID manager event IDs before querying stores", async () => {
     const { authStore, findEventAccess } = createTestAuthStore({
       access: roleAccess("viewer"),
@@ -1412,7 +1442,7 @@ describe("API app", () => {
     ]);
   });
 
-  it("rejects published events that are missing required blueprint sections", async () => {
+  it("allows incomplete section drafts without changing the published snapshot", async () => {
     const { authStore } = createTestAuthStore({
       access: roleAccess("editor"),
     });
@@ -1448,33 +1478,23 @@ describe("API app", () => {
       headers: {
         authorization: `Bearer ${createSupabaseToken()}`,
         "content-type": "application/json",
-        "x-request-id": "missing-required-section-request-id",
       },
       method: "PUT",
     });
-    const body = await response.json();
 
-    expect(response.status).toBe(422);
-    expect(body).toMatchObject({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Invalid event sections",
-        requestId: "missing-required-section-request-id",
+    await expect(response.json()).resolves.toEqual({ sections: [baseSection] });
+    expect(response.status).toBe(200);
+    expect(replaceSections).toHaveBeenCalledWith(eventId, [
+      {
+        content: { title: "Launch Night" },
+        enabled: true,
+        sectionKey: "welcome",
+        sectionType: "introduction",
+        settings: {},
+        sortOrder: 0,
+        visibility: "public",
       },
-    });
-    expect(body.error.fields).toEqual(
-      expect.arrayContaining([
-        {
-          message: "Date and Time is required before publishing Launch events",
-          path: ["sections"],
-        },
-        {
-          message: "Details is required before publishing Launch events",
-          path: ["sections"],
-        },
-      ]),
-    );
-    expect(replaceSections).not.toHaveBeenCalled();
+    ]);
   });
 
   it("rejects sections unsupported by the event type blueprint", async () => {
@@ -2784,12 +2804,14 @@ function createTestEventStore({
   createError,
   createdEvent = baseEvent,
   events = [baseEvent],
+  publishingReadiness = { issues: [], ready: true },
   updatedEvent = baseEvent,
 }: {
   archivedEvent?: Event | null;
   createError?: Error;
   createdEvent?: Event;
   events?: Event[];
+  publishingReadiness?: PublishingReadiness | null;
   updatedEvent?: Event | null;
 } = {}) {
   const archiveEvent = vi.fn(async () => archivedEvent);
@@ -2807,6 +2829,7 @@ function createTestEventStore({
   const getEventBySlug = vi.fn(
     async (requestedSlug: string) => events.find((event) => event.slug === requestedSlug) ?? null,
   );
+  const getPublishingReadiness = vi.fn(async () => publishingReadiness);
   const isEventSlugAvailable = vi.fn(
     async (requestedSlug: string, options: { exceptEventId?: string } = {}) => {
       const event = events.find((event) => event.slug === requestedSlug);
@@ -2821,6 +2844,7 @@ function createTestEventStore({
     createEvent,
     getEvent,
     getEventBySlug,
+    getPublishingReadiness,
     isEventSlugAvailable,
     listManagedEvents,
     updateEvent,
@@ -2832,6 +2856,7 @@ function createTestEventStore({
     eventStore,
     getEvent,
     getEventBySlug,
+    getPublishingReadiness,
     isEventSlugAvailable,
     listManagedEvents,
     updateEvent,
@@ -3035,6 +3060,9 @@ function createIntegrationSmokeStores() {
     ),
     getEventBySlug: vi.fn(async (requestedSlug) =>
       event && event.slug === requestedSlug ? event : null,
+    ),
+    getPublishingReadiness: vi.fn(async (requestedEventId) =>
+      event && event.id === requestedEventId ? { issues: [], ready: true } : null,
     ),
     isEventSlugAvailable: vi.fn(async (requestedSlug, options = {}) => {
       if (!event || event.slug !== requestedSlug) {

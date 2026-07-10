@@ -226,15 +226,18 @@ class FakeRsvpDb {
   }
 
   select() {
+    const builder = {
+      innerJoin: () => builder,
+      where: () => {
+        const result = this.selectResults.shift() ?? [];
+        return Object.assign(Promise.resolve(result), {
+          limit: async () => result,
+        });
+      },
+    };
+
     return {
-      from: () => ({
-        where: () => {
-          const result = this.selectResults.shift() ?? [];
-          return Object.assign(Promise.resolve(result), {
-            limit: async () => result,
-          });
-        },
-      }),
+      from: () => builder,
     };
   }
 

@@ -15,6 +15,13 @@
       "when": 1783602476517,
       "tag": "0001_outstanding_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783649632741,
+      "tag": "0002_event-settings-model",
+      "breakpoints": true
     }
   ]
 }

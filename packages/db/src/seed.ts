@@ -2,14 +2,19 @@ import { createHmac } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import type { JsonValue } from "@lumiere/types";
 import { and, eq, or } from "drizzle-orm";
 
 import { createDatabase, createPostgresClient } from "./client";
 import {
   activityEvents,
   eventManagers,
+  eventPublications,
+  eventRsvpSettings,
+  eventSectionContents,
   events,
   eventSections,
+  eventThemeSettings,
   guestGroups,
   notifications,
   rsvpResponses,
@@ -17,7 +22,7 @@ import {
   users,
 } from "./schema";
 
-type JsonObject = Record<string, unknown>;
+type JsonObject = Record<string, JsonValue>;
 
 loadApiEnv();
 
@@ -103,20 +108,9 @@ async function main() {
           publicSettingsJson: {
             shareTitle: "Amara & Theo",
           },
-          rsvpSettingsJson: {
-            allowMaybe: true,
-            allowUpdates: true,
-            enabled: true,
-          },
-          selectedThemeId: "premium",
           publicSlug: seedEventSlug,
           startsAt: eventStartsAt,
           status: "published",
-          themeConfigJson: {
-            accentName: "Candlelit gold",
-            welcomeTone: "formal",
-          },
-          themeMode: "toggleable",
           timezone: "Asia/Singapore",
           title: "Amara & Theo",
           venueAddress: "18 Marina Gardens Drive, Singapore 018953",
@@ -134,7 +128,59 @@ async function main() {
         userId: manager.id,
       });
 
-      await tx.insert(eventSections).values(buildSections(event.id));
+      const themeConfig = {
+        accentName: "Candlelit gold",
+        welcomeTone: "formal",
+      };
+      const rsvpSettings = {
+        allowMaybe: true,
+        allowUpdates: true,
+        enabled: true,
+      };
+      const sectionDrafts = buildSections(event.id);
+
+      await tx.insert(eventThemeSettings).values({
+        configJson: themeConfig,
+        eventId: event.id,
+        selectedThemeId: "premium",
+        themeMode: "toggleable",
+      });
+      await tx.insert(eventRsvpSettings).values({
+        eventId: event.id,
+        settingsJson: rsvpSettings,
+      });
+      await tx
+        .insert(eventSections)
+        .values(
+          sectionDrafts.map(({ contentJson: _contentJson, ...sectionDraft }) => sectionDraft),
+        );
+      await tx.insert(eventSectionContents).values(
+        sectionDrafts.map((sectionDraft) => ({
+          contentJson: sectionDraft.contentJson,
+          eventSectionId: sectionDraft.id,
+        })),
+      );
+      await tx.insert(eventPublications).values({
+        eventId: event.id,
+        publicSettingsJson: event.publicSettingsJson,
+        rsvpSettingsJson: rsvpSettings,
+        sectionsJson: sectionDrafts.map((sectionDraft) => ({
+          content: sectionDraft.contentJson,
+          createdAt: seededAt,
+          enabled: sectionDraft.enabled,
+          eventId: sectionDraft.eventId,
+          id: sectionDraft.id,
+          sectionKey: sectionDraft.sectionKey,
+          sectionType: sectionDraft.sectionType,
+          settings: sectionDraft.settingsJson,
+          sortOrder: sectionDraft.sortOrder,
+          updatedAt: seededAt,
+          visibility: sectionDraft.visibility,
+        })),
+        selectedThemeId: "premium",
+        themeConfigJson: themeConfig,
+        themeMode: "toggleable",
+      });
       await tx.insert(themeRegistrySnapshots).values({
         eventId: event.id,
         metadataJson: {

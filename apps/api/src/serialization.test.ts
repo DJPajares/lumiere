@@ -137,21 +137,26 @@ describe("API serialization", () => {
 
   it("serializes public event timestamps as shared API datetimes", () => {
     const publicEvent = toPublicEventRecord({
-      endsAt: "2026-08-23 15:30:00+00",
-      eventType: "wedding",
-      id: eventId,
-      publicSettingsJson: {},
-      publicSlug: "lumiere-demo",
-      selectedThemeId: "premium",
-      startsAt: "2026-08-23 09:00:00+00",
-      status: "published",
-      themeConfigJson: {},
-      themeMode: "toggleable",
-      timezone: "Asia/Singapore",
-      title: "Amara & Theo",
-      venueAddress: "18 Marina Gardens Drive, Singapore 018953",
-      venueName: "Emerald Gardens",
-    } as Parameters<typeof toPublicEventRecord>[0]);
+      event: {
+        endsAt: "2026-08-23 15:30:00+00",
+        eventType: "wedding",
+        id: eventId,
+        publicSlug: "lumiere-demo",
+        startsAt: "2026-08-23 09:00:00+00",
+        status: "published",
+        timezone: "Asia/Singapore",
+        title: "Amara & Theo",
+        venueAddress: "18 Marina Gardens Drive, Singapore 018953",
+        venueName: "Emerald Gardens",
+      },
+      publication: {
+        publicSettingsJson: {},
+        sectionsJson: [],
+        selectedThemeId: "premium",
+        themeConfigJson: {},
+        themeMode: "toggleable",
+      },
+    } as unknown as Parameters<typeof toPublicEventRecord>[0]);
 
     expect(
       publicEventResponseSchema.parse({

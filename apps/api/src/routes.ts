@@ -276,6 +276,27 @@ export const createRoutes = ({
   });
 
   routes.get(
+    "/events/:eventId/publish-readiness",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerStores({ authStore, eventStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const readiness = await stores.eventStore.getPublishingReadiness(eventId);
+
+      if (!readiness) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      return context.json({ readiness });
+    },
+  );
+
+  routes.get(
     "/events/:eventId/summary",
     requireManagerAuth({ authStore, config }),
     async (context) => {
@@ -509,7 +530,11 @@ export const createRoutes = ({
         themeMode: state.themeMode,
       });
 
-      const validationResults = validateThemeSections(state.selectedThemeId, input.sections);
+      const validationResults = input.sections.map((section) =>
+        section.enabled === false
+          ? { ok: true as const, section }
+          : validateThemeSections(theme.id, [section])[0]!,
+      );
       const invalidSectionFields = validationResults.flatMap((result, index) =>
         result.ok
           ? []
@@ -519,7 +544,7 @@ export const createRoutes = ({
             })),
       );
       const invalidBlueprintFields = validateEventTypeSections({
-        eventStatus: state.eventStatus,
+        eventStatus: "draft",
         eventType: state.eventType,
         sections: input.sections,
       }).map((issue) => ({
