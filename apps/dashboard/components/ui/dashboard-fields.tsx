@@ -189,6 +189,7 @@ export type DashboardSelectOption = {
 };
 
 type DashboardSelectProps = BaseFieldProps & {
+  alignItemWithTrigger?: boolean;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean | "false" | "true";
   "aria-label"?: string;
@@ -204,6 +205,7 @@ type DashboardSelectProps = BaseFieldProps & {
 };
 
 export function DashboardSelect({
+  alignItemWithTrigger = false,
   "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
@@ -261,7 +263,7 @@ export function DashboardSelect({
         >
           <SelectValue placeholder={loading ? "Loading options..." : placeholder} />
         </SelectTrigger>
-        <SelectContent align="start" alignItemWithTrigger={false} sideOffset={6}>
+        <SelectContent align="start" alignItemWithTrigger={alignItemWithTrigger} sideOffset={6}>
           {options.map((option) => (
             <SelectItem disabled={option.disabled} key={option.value} value={option.value}>
               {option.label}

@@ -553,9 +553,10 @@ function ThemeGalleryCard({
 
         <div className="grid gap-3 border-t border-border pt-3">
           <DashboardSelect
+            alignItemWithTrigger
             disabled={isSaving}
             id={`theme-mode-${entry.theme.id}`}
-            label={`Theme mode for ${entry.theme.name}`}
+            label="Theme mode"
             onValueChange={(value) => setThemeMode(value as ThemeMode)}
             options={entry.theme.supportedModes.map((mode) => ({
               label: formatMode(mode),
