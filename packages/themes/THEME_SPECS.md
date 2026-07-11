@@ -103,4 +103,4 @@ Theme names must stay generic unless licensing is resolved. Avoid protected char
 
 - Enforceable specs live in `src/specs.ts`.
 - Composition and motion families live in `COMPOSITION.md` and `src/composition.ts`.
-- Registry metadata lives in `src/themes.ts`.
+- Registry metadata lives in isolated `src/themes/<theme-id>/` modules; `src/themes/index.ts` only assembles the typed registry.

@@ -110,6 +110,11 @@ describe("theme registry", () => {
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
+    expect(new Set(availableThemeIds).size).toBe(availableThemeIds.length);
+    expect(Object.keys(themeRegistry)).toEqual(availableThemeIds);
+    expect(
+      Object.entries(themeRegistry).every(([registryId, theme]) => registryId === theme.id),
+    ).toBe(true);
   });
 
   it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {
@@ -275,8 +280,10 @@ describe("theme registry", () => {
   });
 
   it("defines visual composition, RSVP treatment, and preview data for every initial theme", () => {
+    const themes: ThemeDefinition[] = Object.values(themeRegistry);
+
     expect(
-      Object.values(themeRegistry).every(
+      themes.every(
         (theme) =>
           theme.composition.rsvpDesign &&
           theme.composition.hero.composition &&
@@ -284,7 +291,10 @@ describe("theme registry", () => {
           theme.composition.visualSystem.motionProfile &&
           theme.composition.visualSystem.parallaxProfile &&
           theme.composition.sectionDefaults.rsvp &&
-          theme.previewData.sections.length > 0,
+          theme.previewData.sections.length > 0 &&
+          theme.supportedModes.length > 0 &&
+          theme.supportedModes.includes(theme.defaultMode) &&
+          (!theme.supportedModes.includes("dark") || Boolean(theme.tokens.dark)),
       ),
     ).toBe(true);
   });
@@ -338,7 +348,10 @@ describe("theme registry", () => {
           theme.compatibility.fontPairing.display &&
           theme.compatibility.motionLevel === theme.composition.visualSystem.motionProfile &&
           theme.compatibility.ornamentStrategy &&
-          Object.keys(theme.compatibility.rendererSlots).length > 0,
+          Object.keys(theme.compatibility.rendererSlots).length > 0 &&
+          Object.keys(theme.compatibility.rendererSlots).every(
+            (sectionType) => sectionType in sectionDefinitions,
+          ),
       ),
     ).toBe(true);
   });

@@ -6,7 +6,8 @@ Theme registry, section contracts, visual composition rules, and design specs fo
 
 - `THEME_SPECS.md` defines the design intent, motion/media/RSVP guidance, dashboard preview requirements, and anti-slop constraints for each shipped theme.
 - `COMPOSITION.md` defines reusable section composition families, scroll-depth rules, image fallbacks, and sample wedding/birthday rhythms.
-- `src/themes.ts` contains the runtime theme registry.
+- `src/themes/` contains isolated directory-per-theme modules and the typed runtime registry.
+- `src/themes/README.md` documents the module shape, asset convention, and add-theme workflow.
 - `src/specs.ts` contains the typed, test-covered theme template specs.
 - `src/composition.ts` contains the typed, test-covered composition and motion system.
 
