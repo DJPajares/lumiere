@@ -2,7 +2,7 @@
 
 import { getTheme, resolveThemeRendererSlot } from "@lumiere/themes";
 import type { Event, Theme } from "@lumiere/types";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -42,7 +42,6 @@ describe("ThemeSelectorWorkspace", () => {
 
     expect(screen.queryByRole("heading", { name: "Kids" })).toBeNull();
     expect(screen.getByText("1 compatible · 1 unavailable for this setup")).toBeTruthy();
-    expect(screen.getByDisplayValue(/"spacing": "editorial"/)).toBeTruthy();
     expect(
       (screen.getByRole("button", { name: "Use Premium" }) as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -72,7 +71,7 @@ describe("ThemeSelectorWorkspace", () => {
     expect(document.querySelector('[data-preview-mode="dark"]')).toBeTruthy();
   });
 
-  it("selects a theme and saves supported mode plus JSON settings", async () => {
+  it("applies a theme immediately with the mode selected on its card", async () => {
     const user = userEvent.setup();
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
       event: {
@@ -107,27 +106,24 @@ describe("ThemeSelectorWorkspace", () => {
 
     await screen.findByRole("heading", { name: "Kids" });
     await user.click(screen.getByRole("button", { name: "Use Kids" }));
-    fireEvent.change(screen.getByLabelText("Theme settings JSON"), {
-      target: {
-        value: '{"headlineTone":"playful"}',
-      },
-    });
-    await user.click(screen.getByRole("button", { name: "Save theme" }));
 
     await waitFor(() => expect(updateEventTheme).toHaveBeenCalledTimes(1));
     expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
       selectedThemeId: "kids",
-      themeConfig: {
-        headlineTone: "playful",
-      },
+      themeConfig: {},
       themeMode: "light",
     });
-    expect(await screen.findByText("Theme settings saved.")).toBeTruthy();
+    expect(await screen.findByText("Kids is now active.")).toBeTruthy();
   });
 
-  it("shows validation near invalid theme settings", async () => {
+  it("keeps the gallery usable when an automatic theme save fails", async () => {
     const user = userEvent.setup();
-    const updateEventTheme = vi.fn();
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      event: {
+        ...dashboardEvent,
+        eventType: "birthday",
+      },
+    }));
     const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
       selectedThemeId: "premium",
       theme: premiumTheme,
@@ -137,23 +133,27 @@ describe("ThemeSelectorWorkspace", () => {
     const listThemes = vi.fn<DashboardApiClient["listThemes"]>(async () => ({
       themes: [premiumTheme, kidsTheme],
     }));
+    const updateEventTheme = vi.fn<DashboardApiClient["updateEventTheme"]>(async () => {
+      throw new Error("Theme service is unavailable.");
+    });
 
     renderWithAuth({
+      getEvent,
       getEventTheme,
       listThemes,
       updateEventTheme,
     });
 
-    await screen.findByRole("heading", { name: "Premium" });
-    fireEvent.change(screen.getByLabelText("Theme settings JSON"), {
-      target: {
-        value: "[invalid",
-      },
-    });
-    await user.click(screen.getByRole("button", { name: "Save theme" }));
+    await screen.findByRole("heading", { name: "Kids" });
+    await user.click(screen.getByRole("button", { name: "Use Kids" }));
 
-    expect(await screen.findByText("Theme settings must be valid JSON.")).toBeTruthy();
-    expect(updateEventTheme).not.toHaveBeenCalled();
+    expect(await screen.findByText("Theme service is unavailable.")).toBeTruthy();
+    expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
+      selectedThemeId: "kids",
+      themeConfig: {},
+      themeMode: "light",
+    });
+    expect(screen.getByRole("button", { name: "Use Kids" })).toBeTruthy();
   });
 
   it("prevents selecting themes that do not support the event type", async () => {

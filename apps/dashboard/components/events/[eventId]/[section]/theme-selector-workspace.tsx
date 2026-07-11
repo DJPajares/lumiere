@@ -4,7 +4,6 @@ import { ApiClientError } from "@lumiere/api-client";
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
-import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import {
   evaluateThemeCompatibility,
   getTheme,
@@ -44,11 +43,10 @@ const LazyThemeExpandedPreview = lazy(async () => {
 
 type ThemeState = {
   selectedThemeId: string | null;
-  settingsText: string;
   themeMode: ThemeMode;
 };
 
-type FieldErrors = Partial<Record<"selectedThemeId" | "themeConfig" | "themeMode", string>>;
+type FieldErrors = Partial<Record<"selectedThemeId" | "themeMode", string>>;
 type GalleryModeFilter = "any" | ThemeMode;
 type ReadinessFilter = "all" | "fully-supported";
 
@@ -66,12 +64,14 @@ type ThemeGalleryEntry = {
 type ThemeWorkspaceState =
   | {
       currentThemeId?: string;
+      currentThemeConfig: EventThemeUpdateRequest["themeConfig"];
       error: null;
       eventTitle: string;
       eventType: EventType;
       fieldErrors: FieldErrors;
       formMessage: string | null;
       isSaving: boolean;
+      savingThemeId: string | null;
       status: "ready";
       themes: Theme[];
       values: ThemeState;
@@ -80,8 +80,6 @@ type ThemeWorkspaceState =
       error: string | null;
       status: "error" | "loading";
     };
-
-const defaultSettingsText = "{}";
 
 export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
   const { apiClient } = useDashboardAuth();
@@ -123,17 +121,18 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
 
       setState({
         currentThemeId: eventThemeResponse.selectedThemeId,
+        currentThemeConfig: eventThemeResponse.themeConfig,
         error: null,
         eventTitle: eventResponse.event.title,
         eventType: eventResponse.event.eventType,
         fieldErrors: {},
         formMessage: null,
         isSaving: false,
+        savingThemeId: null,
         status: "ready",
         themes: themesResponse.themes,
         values: {
           selectedThemeId,
-          settingsText: formatSettingsText(eventThemeResponse.themeConfig),
           themeMode,
         },
       });
@@ -199,10 +198,6 @@ function ThemeSelectorContent({
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
   const [showIncompatible, setShowIncompatible] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
-  const selectedTheme = useMemo(
-    () => state.themes.find((theme) => theme.id === state.values.selectedThemeId),
-    [state.themes, state.values.selectedThemeId],
-  );
   const galleryEntries = useMemo(
     () =>
       buildThemeGalleryEntries({
@@ -230,37 +225,12 @@ function ThemeSelectorContent({
   );
   const incompatibleCount = galleryEntries.filter((entry) => !entry.isCompatible).length;
   const compatibleCount = galleryEntries.length - incompatibleCount;
-  const selectedEntry = galleryEntries.find((entry) => entry.theme.id === selectedTheme?.id);
-  const supportedModes = selectedTheme?.supportedModes ?? [];
 
-  const updateValues = (values: Partial<ThemeState>) => {
-    updateState((current) =>
-      current.status === "ready"
-        ? {
-            ...current,
-            fieldErrors: {},
-            formMessage: null,
-            values: {
-              ...current.values,
-              ...values,
-            },
-          }
-        : current,
-    );
-  };
-
-  const selectTheme = (entry: ThemeGalleryEntry) => {
-    if (!entry.isCompatible) {
+  const applyTheme = async (entry: ThemeGalleryEntry) => {
+    if (!entry.isCompatible || state.isSaving) {
       return;
     }
 
-    updateValues({
-      selectedThemeId: entry.theme.id,
-      themeMode: entry.resolvedMode,
-    });
-  };
-
-  const saveTheme = async () => {
     if (!apiClient) {
       updateState((current) =>
         current.status === "ready"
@@ -274,7 +244,12 @@ function ThemeSelectorContent({
       return;
     }
 
-    const parsed = parseThemeForm(state.values, selectedTheme, state.eventType);
+    const parsed = createThemeUpdateInput(
+      entry.theme,
+      entry.resolvedMode,
+      state.eventType,
+      entry.theme.id === state.currentThemeId ? state.currentThemeConfig : {},
+    );
 
     if (!parsed.ok) {
       updateState((current) =>
@@ -296,6 +271,7 @@ function ThemeSelectorContent({
             fieldErrors: {},
             formMessage: null,
             isSaving: true,
+            savingThemeId: entry.theme.id,
           }
         : current,
     );
@@ -308,12 +284,13 @@ function ThemeSelectorContent({
           ? {
               ...current,
               currentThemeId: response.selectedThemeId,
+              currentThemeConfig: response.themeConfig,
               fieldErrors: {},
-              formMessage: "Theme settings saved.",
+              formMessage: `${entry.theme.name} is now active.`,
               isSaving: false,
+              savingThemeId: null,
               values: {
                 selectedThemeId: response.selectedThemeId ?? parsed.input.selectedThemeId,
-                settingsText: formatSettingsText(response.themeConfig),
                 themeMode: response.themeMode,
               },
             }
@@ -329,6 +306,7 @@ function ThemeSelectorContent({
               fieldErrors: formError.fieldErrors,
               formMessage: formError.formMessage,
               isSaving: false,
+              savingThemeId: null,
             }
           : current,
       );
@@ -340,20 +318,15 @@ function ThemeSelectorContent({
       <EventTabs active="theme" eventId={eventId} />
 
       <section className="grid gap-4 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <Badge variant="secondary">{formatEventType(state.eventType)} themes</Badge>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-              Choose the invitation for {state.eventTitle}
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Compatible themes appear first. Every card uses the same theme tokens, composition,
-              and renderer-slot contract as the public invitation.
-            </p>
-          </div>
-          <Button className="min-h-10" disabled={state.isSaving} onClick={() => void saveTheme()}>
-            {state.isSaving ? "Saving theme..." : "Save theme"}
-          </Button>
+        <div>
+          <Badge variant="secondary">{formatEventType(state.eventType)} themes</Badge>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+            Choose the invitation for {state.eventTitle}
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+            Compatible themes appear first. Select a mode on a theme card, then use it to apply that
+            invitation immediately.
+          </p>
         </div>
 
         {state.formMessage ? (
@@ -414,105 +387,35 @@ function ThemeSelectorContent({
         </div>
       </section>
 
-      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
-        <div>
-          {state.themes.length === 0 ? (
-            <ThemeEmptyState
-              body="The theme registry returned no selectable themes. Try again after registry data is available."
-              title="No themes available"
-            />
-          ) : visibleEntries.length === 0 ? (
-            <ThemeEmptyState
-              body="Adjust mode or readiness filters, or reveal incompatible themes to review their conflicts."
-              title="No themes match these filters"
-            />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {visibleEntries.map((entry) => (
-                <ThemeGalleryCard
-                  entry={entry}
-                  eventType={state.eventType}
-                  isCurrent={state.currentThemeId === entry.theme.id}
-                  isSelected={state.values.selectedThemeId === entry.theme.id}
-                  key={entry.theme.id}
-                  onPreview={() => setPreviewEntry(entry)}
-                  onSelect={() => selectTheme(entry)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5 shadow-sm xl:sticky xl:top-24">
-          <div>
-            <h3 className="text-lg font-semibold">Selected theme settings</h3>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Choose an available mode and keep optional registry settings as a JSON object.
-            </p>
-          </div>
-
-          {selectedTheme ? (
-            <div className="flex flex-wrap gap-2">
-              <Badge>{selectedTheme.name}</Badge>
-              {selectedEntry?.compatibility?.status === "warning" ? (
-                <Badge variant="outline">Uses fallbacks</Badge>
-              ) : (
-                <Badge variant="secondary">Publish ready</Badge>
-              )}
-            </div>
-          ) : null}
-
-          <DashboardSelect
-            disabled={!selectedTheme}
-            error={state.fieldErrors.themeMode}
-            id="theme-mode"
-            label="Theme mode"
-            onValueChange={(value) => updateValues({ themeMode: value as ThemeMode })}
-            options={supportedModes.map((mode) => ({
-              label: formatMode(mode),
-              value: mode,
-            }))}
-            value={state.values.themeMode}
+      <section>
+        {state.themes.length === 0 ? (
+          <ThemeEmptyState
+            body="The theme registry returned no selectable themes. Try again after registry data is available."
+            title="No themes available"
           />
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="theme-config">
-              Theme settings JSON
-            </label>
-            <Textarea
-              aria-invalid={Boolean(state.fieldErrors.themeConfig)}
-              className="min-h-40 resize-y font-mono"
-              id="theme-config"
-              onChange={(event) => updateValues({ settingsText: event.target.value })}
-              spellCheck={false}
-              value={state.values.settingsText}
-            />
-            <p className="text-xs leading-5 text-muted-foreground">
-              Settings remain optional; use an empty object when the theme defaults are enough.
-            </p>
-            {state.fieldErrors.themeConfig ? (
-              <p className="text-sm text-destructive" role="alert">
-                {state.fieldErrors.themeConfig}
-              </p>
-            ) : null}
+        ) : visibleEntries.length === 0 ? (
+          <ThemeEmptyState
+            body="Adjust mode or readiness filters, or reveal incompatible themes to review their conflicts."
+            title="No themes match these filters"
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {visibleEntries.map((entry) => (
+              <ThemeGalleryCard
+                entry={entry}
+                eventType={state.eventType}
+                isCurrent={state.currentThemeId === entry.theme.id}
+                isSelected={state.values.selectedThemeId === entry.theme.id}
+                isSaving={state.isSaving}
+                key={entry.theme.id}
+                onPreview={setPreviewEntry}
+                onUse={applyTheme}
+                savingThemeId={state.savingThemeId}
+                selectedMode={state.values.themeMode}
+              />
+            ))}
           </div>
-
-          {selectedEntry ? (
-            <Button
-              className="min-h-10"
-              onClick={() => setPreviewEntry(selectedEntry)}
-              variant="outline"
-            >
-              Preview selected theme
-            </Button>
-          ) : null}
-
-          {state.fieldErrors.selectedThemeId ? (
-            <p className="text-sm text-destructive" role="alert">
-              {state.fieldErrors.selectedThemeId}
-            </p>
-          ) : null}
-        </aside>
+        )}
       </section>
 
       <ResponsiveModal
@@ -552,19 +455,43 @@ function ThemeGalleryCard({
   eventType,
   isCurrent,
   isSelected,
+  isSaving,
   onPreview,
-  onSelect,
+  onUse,
+  savingThemeId,
+  selectedMode,
 }: {
   entry: ThemeGalleryEntry;
   eventType: EventType;
   isCurrent: boolean;
   isSelected: boolean;
-  onPreview: () => void;
-  onSelect: () => void;
+  isSaving: boolean;
+  onPreview: (entry: ThemeGalleryEntry) => void;
+  onUse: (entry: ThemeGalleryEntry) => void;
+  savingThemeId: string | null;
+  selectedMode: ThemeMode;
 }) {
-  const statusLabel = !entry.isCompatible
+  const [themeMode, setThemeMode] = useState<ThemeMode>(entry.resolvedMode);
+  const modeEntry = useMemo(
+    () =>
+      buildThemeGalleryEntries({
+        eventType,
+        modeFilter: themeMode,
+        preferredMode: themeMode,
+        themes: [entry.theme],
+      })[0] ?? entry,
+    [entry, eventType, themeMode],
+  );
+
+  useEffect(() => {
+    setThemeMode(entry.resolvedMode);
+  }, [entry.resolvedMode]);
+
+  const isActive = isSelected && themeMode === selectedMode;
+
+  const statusLabel = !modeEntry.isCompatible
     ? `Not for ${formatEventType(eventType)}`
-    : entry.compatibility?.status === "warning"
+    : modeEntry.compatibility?.status === "warning"
       ? "Compatible with fallbacks"
       : "Fully compatible";
 
@@ -575,13 +502,13 @@ function ThemeGalleryCard({
           ? "grid overflow-hidden rounded-lg border border-primary bg-card shadow-sm ring-2 ring-primary/20"
           : "grid overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
       }
-      data-theme-gallery-card={entry.theme.id}
+      data-theme-gallery-card={modeEntry.theme.id}
     >
       <div className="bg-muted/40 p-3">
         <InviteThemePreviewRenderer
-          fallbackReason={entry.fallbackReason}
-          mode={toPreviewMode(entry.resolvedMode)}
-          theme={entry.previewDefinition}
+          fallbackReason={modeEntry.fallbackReason}
+          mode={toPreviewMode(modeEntry.resolvedMode)}
+          theme={modeEntry.previewDefinition}
           thumbnail
         />
       </div>
@@ -600,7 +527,9 @@ function ThemeGalleryCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant={entry.isCompatible ? "secondary" : "destructive"}>{statusLabel}</Badge>
+          <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
+            {statusLabel}
+          </Badge>
           {entry.theme.supportedModes.map((mode) => (
             <Badge key={mode} variant="outline">
               {formatMode(mode)}
@@ -608,39 +537,57 @@ function ThemeGalleryCard({
           ))}
         </div>
 
-        {entry.reasons.length > 0 ? (
+        {modeEntry.reasons.length > 0 ? (
           <ul
             className={
-              entry.isCompatible
+              modeEntry.isCompatible
                 ? "grid gap-1 rounded-lg bg-warning/10 p-3 text-xs leading-5"
                 : "grid gap-1 rounded-lg bg-destructive/10 p-3 text-xs leading-5 text-destructive"
             }
           >
-            {entry.reasons.slice(0, 3).map((reason) => (
+            {modeEntry.reasons.slice(0, 3).map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
           </ul>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-          <Button
-            aria-label={`Use ${entry.theme.name}`}
-            className="min-h-10"
-            disabled={!entry.isCompatible || isSelected}
-            onClick={onSelect}
-            size="sm"
-          >
-            {isSelected ? "Selected" : "Use theme"}
-          </Button>
-          <Button
-            aria-label={`Preview ${entry.theme.name}`}
-            className="min-h-10"
-            onClick={onPreview}
-            size="sm"
-            variant="outline"
-          >
-            Expand preview
-          </Button>
+        <div className="grid gap-3 border-t border-border pt-3">
+          <DashboardSelect
+            disabled={isSaving}
+            id={`theme-mode-${entry.theme.id}`}
+            label={`Theme mode for ${entry.theme.name}`}
+            onValueChange={(value) => setThemeMode(value as ThemeMode)}
+            options={entry.theme.supportedModes.map((mode) => ({
+              label: formatMode(mode),
+              value: mode,
+            }))}
+            value={themeMode}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              aria-label={`Use ${entry.theme.name}`}
+              className="min-h-10"
+              disabled={!modeEntry.isCompatible || isSaving || isActive}
+              onClick={() => void onUse(modeEntry)}
+              size="sm"
+            >
+              {savingThemeId === entry.theme.id
+                ? "Applying..."
+                : isActive
+                  ? "Current"
+                  : "Use theme"}
+            </Button>
+            <Button
+              aria-label={`Preview ${entry.theme.name}`}
+              className="min-h-10"
+              disabled={isSaving}
+              onClick={() => onPreview(modeEntry)}
+              size="sm"
+              variant="outline"
+            >
+              Expand preview
+            </Button>
+          </div>
         </div>
       </div>
     </article>
@@ -751,10 +698,11 @@ export function buildThemeGalleryEntries({
     });
 }
 
-export function parseThemeForm(
-  values: ThemeState,
-  selectedTheme?: Theme,
-  eventType?: EventType,
+function createThemeUpdateInput(
+  theme: Theme,
+  themeMode: ThemeMode,
+  eventType: EventType,
+  themeConfig: EventThemeUpdateRequest["themeConfig"],
 ):
   | {
       input: EventThemeUpdateRequest;
@@ -765,41 +713,17 @@ export function parseThemeForm(
       formMessage: string;
       ok: false;
     } {
-  if (!selectedTheme || !values.selectedThemeId) {
+  if (!theme.supportedModes.includes(themeMode)) {
     return {
       fieldErrors: {
-        selectedThemeId: "Select a theme before saving.",
+        themeMode: `${theme.name} does not support ${formatMode(themeMode)} mode.`,
       },
       formMessage: "Check the highlighted theme fields before saving.",
       ok: false,
     };
   }
 
-  const parsedSettings = parseJsonObject(values.settingsText);
-
-  if (!parsedSettings.ok) {
-    return {
-      fieldErrors: {
-        themeConfig: parsedSettings.message,
-      },
-      formMessage: "Check the highlighted theme fields before saving.",
-      ok: false,
-    };
-  }
-
-  if (!selectedTheme.supportedModes.includes(values.themeMode)) {
-    return {
-      fieldErrors: {
-        themeMode: `${selectedTheme.name} does not support ${formatMode(values.themeMode)} mode.`,
-      },
-      formMessage: "Check the highlighted theme fields before saving.",
-      ok: false,
-    };
-  }
-
-  const compatibility = eventType
-    ? getThemeCompatibility(selectedTheme, eventType, values.themeMode)
-    : undefined;
+  const compatibility = getThemeCompatibility(theme, eventType, themeMode);
 
   if (compatibility && !compatibility.canApply) {
     return {
@@ -810,9 +734,9 @@ export function parseThemeForm(
   }
 
   const parsedRequest = eventThemeUpdateRequestSchema.safeParse({
-    selectedThemeId: values.selectedThemeId,
-    themeConfig: parsedSettings.value,
-    themeMode: values.themeMode,
+    selectedThemeId: theme.id,
+    themeConfig,
+    themeMode,
   });
 
   if (parsedRequest.success) {
@@ -827,37 +751,6 @@ export function parseThemeForm(
     formMessage: "Check the highlighted theme fields before saving.",
     ok: false,
   };
-}
-
-function parseJsonObject(value: string):
-  | {
-      ok: true;
-      value: Record<string, unknown>;
-    }
-  | {
-      message: string;
-      ok: false;
-    } {
-  try {
-    const parsed = JSON.parse(value || defaultSettingsText) as unknown;
-
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {
-        message: "Theme settings must be a JSON object.",
-        ok: false,
-      };
-    }
-
-    return {
-      ok: true,
-      value: parsed as Record<string, unknown>,
-    };
-  } catch {
-    return {
-      message: "Theme settings must be valid JSON.",
-      ok: false,
-    };
-  }
 }
 
 function toThemeFormError(error: unknown) {
@@ -880,23 +773,12 @@ function issuesToFieldErrors(issues: Array<{ message: string; path: readonly unk
   for (const issue of issues) {
     const field = issue.path[0];
 
-    if (
-      (field === "selectedThemeId" || field === "themeConfig" || field === "themeMode") &&
-      !fieldErrors[field]
-    ) {
+    if ((field === "selectedThemeId" || field === "themeMode") && !fieldErrors[field]) {
       fieldErrors[field] = issue.message;
     }
   }
 
   return fieldErrors;
-}
-
-function formatSettingsText(value: unknown) {
-  return JSON.stringify(
-    value && typeof value === "object" && !Array.isArray(value) ? value : {},
-    null,
-    2,
-  );
 }
 
 function readThemeSummary(theme: Theme) {

@@ -83,7 +83,7 @@ export function ResponsiveModal({
   };
   const content = typeof children === "function" ? children({ requestClose }) : children;
   const modalHeader = (
-    <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
       <div className="min-w-0">
         {isDesktop ? (
           <DialogHeader>
@@ -121,7 +121,7 @@ export function ResponsiveModal({
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogContent
             className={cn(
-              "max-h-[min(90dvh,56rem)] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl",
+              "flex max-h-[min(90dvh,56rem)] min-h-0 max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl",
               contentClassName,
             )}
             showCloseButton={false}
