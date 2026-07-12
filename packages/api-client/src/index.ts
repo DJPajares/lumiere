@@ -174,9 +174,10 @@ export const createApiClient = ({
       request(`/events/${encodePathSegment(eventId)}/summary`, eventSummaryResponseSchema),
     getEventTheme: (eventId: string): Promise<EventThemeResponse> =>
       request(`/events/${encodePathSegment(eventId)}/theme`, eventThemeResponseSchema),
-    getPublicEvent: (eventSlug: string): Promise<PublicEventResponse> =>
+    getPublicEvent: (eventSlug: string, accessCode?: string): Promise<PublicEventResponse> =>
       request(`/public/events/${encodePathSegment(eventSlug)}`, publicEventResponseSchema, {
         auth: false,
+        query: { accessCode },
       }),
     getPublicGuestInvite: (
       eventSlug: string,

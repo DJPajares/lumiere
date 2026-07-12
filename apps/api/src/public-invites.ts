@@ -5,12 +5,13 @@ import {
   eventRsvpSettings,
   eventThemeSettings,
   eventPublications,
+  eventSlugAliases,
   events,
   guestGroups,
   rsvpResponses,
 } from "@lumiere/db";
 import type { Event, EventSection, PublicEventSummary, PublicGuestContext } from "@lumiere/types";
-import { and, asc, eq, getTableColumns } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, or } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
 import { toApiEventSection } from "./theme-sections";
@@ -21,7 +22,7 @@ type PublicEventRow = {
 };
 
 export type PublicEventRecord = {
-  event: PublicEventSummary;
+  event: PublicEventSummary & { id: string };
   selectedThemeId?: string;
   sections: EventSection[];
   themeConfig: Event["themeConfig"];
@@ -33,7 +34,10 @@ export type PublicGuestInviteRecord = PublicEventRecord & {
 };
 
 export type PublicInviteStore = {
-  getPublicEventBySlug(eventSlug: string): Promise<PublicEventRecord | null>;
+  getPublicEventBySlug(input: {
+    eventSlug: string;
+    publicAccessCodeHash?: string;
+  }): Promise<PublicEventRecord | "access_required" | null>;
   getPublicGuestInvite(input: {
     eventSlug: string;
     inviteTokenHash: string;
@@ -41,15 +45,23 @@ export type PublicInviteStore = {
 };
 
 export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore => ({
-  async getPublicEventBySlug(eventSlug) {
+  async getPublicEventBySlug({ eventSlug, publicAccessCodeHash }) {
     const publicEvent = await getPublishedEvent(db, eventSlug);
 
     if (!publicEvent) {
       return null;
     }
 
+    if (
+      publicEvent.publicAccessCodeHash &&
+      publicEvent.publicAccessCodeHash !== publicAccessCodeHash
+    ) {
+      return "access_required";
+    }
+
     return {
       ...publicEvent,
+      publicAccessCodeHash: undefined,
       sections: listPublicSections(publicEvent.sections),
     };
   },
@@ -116,9 +128,15 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
       themeSettings: eventThemeSettings,
     })
     .from(events)
+    .leftJoin(eventSlugAliases, eq(eventSlugAliases.eventId, events.id))
     .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
     .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
-    .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
+    .where(
+      and(
+        or(eq(events.publicSlug, eventSlug), eq(eventSlugAliases.slug, eventSlug)),
+        eq(events.status, "published"),
+      ),
+    )
     .limit(1);
 
   if (!event) {
@@ -182,7 +200,9 @@ type LivePublicEventRow = {
   themeSettings: typeof eventThemeSettings.$inferSelect | null;
 };
 
-const toLivePublicEventRecord = (event: LivePublicEventRow): PublicEventRecord => ({
+const toLivePublicEventRecord = (
+  event: LivePublicEventRow,
+): PublicEventRecord & { publicAccessCodeHash: string | null } => ({
   event: {
     endsAt: event.event.endsAt ? toIsoDateTime(event.event.endsAt) : undefined,
     eventType: event.event.eventType,
@@ -200,4 +220,5 @@ const toLivePublicEventRecord = (event: LivePublicEventRow): PublicEventRecord =
   sections: event.sections,
   themeConfig: (event.themeSettings?.configJson ?? {}) as Event["themeConfig"],
   themeMode: event.themeSettings?.themeMode ?? "system",
+  publicAccessCodeHash: event.event.publicAccessCodeHash,
 });

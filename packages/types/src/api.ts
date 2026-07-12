@@ -204,7 +204,6 @@ export const guestInviteParamsSchema = publicEventParamsSchema.extend({
 export type GuestInviteParams = z.infer<typeof guestInviteParamsSchema>;
 
 export const publicEventSummarySchema = z.object({
-  id: eventSchema.shape.id,
   slug: eventSchema.shape.slug,
   title: eventSchema.shape.title,
   eventType: eventSchema.shape.eventType,

@@ -11,6 +11,7 @@ const event: Event = {
   createdAt: "2026-07-10T00:00:00.000Z",
   eventType: "launch",
   id: "00000000-0000-4000-8000-000000000100",
+  hasPublicAccessCode: false,
   ownerUserId: "00000000-0000-4000-8000-000000000101",
   publicSettings: {},
   rsvpSettings: { enabled: true },

@@ -5,7 +5,6 @@ import { ApiClientError, createApiClient } from "./index";
 
 const publicEventResponse: PublicEventResponse = {
   event: {
-    id: "00000000-0000-4000-8000-000000000101",
     slug: "launch-night",
     title: "Launch Night",
     eventType: "launch",

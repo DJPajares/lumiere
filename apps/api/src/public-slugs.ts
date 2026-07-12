@@ -14,7 +14,7 @@ export const publicSlugPolicyNotes = {
   privacy:
     "Event slugs are stable public identifiers for readable URLs. They are not secrets or access tokens.",
   privateUrls:
-    "If unlisted event URLs need stronger privacy later, add an optional random public key or unguessable slug mode while keeping normal readable slugs for standard public events.",
+    "Private or unlisted public pages may require an additional random access code while keeping normal readable slugs for standard public events.",
   tokens:
     "Guest-specific RSVP access must continue to use high-entropy random tokens and store only protected token hashes.",
 } as const;

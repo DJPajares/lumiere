@@ -70,6 +70,8 @@ export const schemaIndexNames = {
   usersSupabaseUserId: "users_supabase_user_id_unique",
   usersEmail: "users_email_idx",
   eventsPublicSlug: "events_public_slug_unique",
+  eventSlugAliasesSlug: "event_slug_aliases_slug_unique",
+  eventSlugAliasesEventId: "event_slug_aliases_event_id_idx",
   eventsOwnerUserId: "events_owner_user_id_idx",
   eventsStatusStartsAt: "events_status_starts_at_idx",
   eventManagersEventUser: "event_managers_event_user_unique",
@@ -116,6 +118,7 @@ export const events = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     publicSlug: varchar("public_slug", { length: 80 }).notNull(),
+    publicAccessCodeHash: text("public_access_code_hash"),
     title: varchar("title", { length: 160 }).notNull(),
     eventType: eventTypeEnum("event_type").notNull(),
     status: eventStatusEnum("status").notNull().default("draft"),
@@ -135,6 +138,22 @@ export const events = pgTable(
     uniqueIndex(schemaIndexNames.eventsPublicSlug).on(table.publicSlug),
     index(schemaIndexNames.eventsOwnerUserId).on(table.ownerUserId),
     index(schemaIndexNames.eventsStatusStartsAt).on(table.status, table.startsAt),
+  ],
+);
+
+export const eventSlugAliases = pgTable(
+  "event_slug_aliases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    createdAt: createdAtColumn(),
+  },
+  (table) => [
+    uniqueIndex(schemaIndexNames.eventSlugAliasesSlug).on(table.slug),
+    index(schemaIndexNames.eventSlugAliasesEventId).on(table.eventId),
   ],
 );
 
@@ -382,6 +401,14 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   themeSettings: one(eventThemeSettings),
   rsvpSettings: one(eventRsvpSettings),
   publication: one(eventPublications),
+  slugAliases: many(eventSlugAliases),
+}));
+
+export const eventSlugAliasesRelations = relations(eventSlugAliases, ({ one }) => ({
+  event: one(events, {
+    fields: [eventSlugAliases.eventId],
+    references: [events.id],
+  }),
 }));
 
 export const eventThemeSettingsRelations = relations(eventThemeSettings, ({ one }) => ({
@@ -501,6 +528,8 @@ export const schema = {
   eventsRelations,
   eventSections,
   eventSectionsRelations,
+  eventSlugAliases,
+  eventSlugAliasesRelations,
   eventStatusEnum,
   eventThemeSettings,
   eventThemeSettingsRelations,

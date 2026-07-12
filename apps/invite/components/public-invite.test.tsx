@@ -376,7 +376,6 @@ function createInvite(sections: EventSection[]): PublicEventResponse {
   return {
     event: {
       eventType: "wedding",
-      id: "evt_renderer",
       publicSettings: {},
       slug: "garden-evening",
       startsAt: "2030-06-01T10:30:00.000Z",

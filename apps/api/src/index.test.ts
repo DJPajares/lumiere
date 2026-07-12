@@ -69,6 +69,7 @@ const localUser: LocalUser = {
 const eventId = "00000000-0000-4000-8000-000000000101";
 
 const baseEvent: Event = {
+  hasPublicAccessCode: false,
   id: eventId,
   ownerUserId: localUser.id,
   slug: "launch-night",
@@ -675,6 +676,7 @@ describe("API app", () => {
       eventType: "launch",
       id: eventId,
       ownerUserId: localUser.id,
+      publicAccessCodeHash: null,
       publicSettingsJson: {},
       publicSlug: "new-launch",
       rsvpSettingsJson: {},
@@ -1956,8 +1958,9 @@ describe("API app", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    const { id: _internalEventId, ...publicEvent } = publicEventRecord.event;
     expect(body).toEqual({
-      event: publicEventRecord.event,
+      event: publicEvent,
       selectedThemeId: "lumiere-default",
       theme: toApiTheme(getTheme("lumiere-default")!),
       themeConfig: {},
@@ -1968,7 +1971,10 @@ describe("API app", () => {
     expect(JSON.stringify(body)).not.toContain(baseGuestGroup.label);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("pragma")).toBe("no-cache");
-    expect(getPublicEventBySlug).toHaveBeenCalledWith(baseEvent.slug);
+    expect(getPublicEventBySlug).toHaveBeenCalledWith({
+      eventSlug: baseEvent.slug,
+      publicAccessCodeHash: undefined,
+    });
   });
 
   it("returns 404 for unpublished or archived public events", async () => {
@@ -2031,9 +2037,10 @@ describe("API app", () => {
       publicInviteStore,
     });
     const response = await app.request(`/public/events/${baseEvent.slug}/guest/${guestToken}`);
+    const { id: _internalEventId, ...guestPublicEvent } = publicGuestInviteRecord.event;
 
     await expect(response.json()).resolves.toEqual({
-      event: publicGuestInviteRecord.event,
+      event: JSON.parse(JSON.stringify(guestPublicEvent)),
       selectedThemeId: "lumiere-default",
       theme: toApiTheme(getTheme("lumiere-default")!),
       themeConfig: {},
@@ -3037,6 +3044,7 @@ function createIntegrationSmokeStores() {
         endsAt: input.endsAt,
         eventType: input.eventType,
         id: eventId,
+        hasPublicAccessCode: Boolean(input.publicAccessCodeHash),
         ownerUserId,
         publicSettings: input.publicSettings,
         rsvpSettings: input.rsvpSettings,
@@ -3053,7 +3061,7 @@ function createIntegrationSmokeStores() {
         venueName: input.venueName,
       };
 
-      return event;
+      return event!;
     }),
     getEvent: vi.fn(async (requestedEventId) =>
       event && requestedEventId === event.id ? event : null,
@@ -3222,7 +3230,7 @@ function createIntegrationSmokeStores() {
   };
 
   const publicInviteStore: PublicInviteStore = {
-    getPublicEventBySlug: vi.fn(async (eventSlug) => {
+    getPublicEventBySlug: vi.fn(async ({ eventSlug }) => {
       const publicEvent = toSmokePublicEventRecord(event, sections);
 
       return publicEvent && publicEvent.event.slug === eventSlug ? publicEvent : null;

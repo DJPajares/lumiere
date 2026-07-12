@@ -136,10 +136,20 @@ export const createRoutes = ({
   routes.get("/public/events/:eventSlug", async (context) => {
     const store = requirePublicInviteStore(publicInviteStore);
     const { eventSlug } = parsePublicEventParams(context.req.param("eventSlug"));
-    const publicEvent = await store.getPublicEventBySlug(eventSlug);
+    const publicAccessCode = context.req.query("accessCode");
+    const publicEvent = await store.getPublicEventBySlug({
+      eventSlug,
+      publicAccessCodeHash: publicAccessCode
+        ? hashPublicAccessCode(publicAccessCode, config.INVITE_TOKEN_SECRET)
+        : undefined,
+    });
 
     if (!publicEvent) {
       throw new ApiHttpError("NOT_FOUND", "Public event not found");
+    }
+
+    if (publicEvent === "access_required") {
+      throw new ApiHttpError("FORBIDDEN", "Public event access code is required");
     }
 
     return context.json(toPublicEventResponse(publicEvent));
@@ -247,7 +257,18 @@ export const createRoutes = ({
     const manager = context.get("manager");
     const input = await parseJsonBody(context, eventCreateRequestSchema);
     await assertEventSlugAvailable(store, input.slug);
-    const event = await store.createEvent(manager.user.id, input);
+    const { publicAccessCode, ...eventInput } = input;
+    const event = await store.createEvent(manager.user.id, {
+      ...eventInput,
+      ...(publicAccessCode
+        ? {
+            publicAccessCodeHash: hashPublicAccessCode(
+              publicAccessCode,
+              config.INVITE_TOKEN_SECRET,
+            ),
+          }
+        : {}),
+    });
 
     return context.json(
       {
@@ -371,7 +392,17 @@ export const createRoutes = ({
     if (input.slug) {
       await assertEventSlugAvailable(stores.eventStore, input.slug, { exceptEventId: eventId });
     }
-    const event = await stores.eventStore.updateEvent(eventId, input);
+    const { publicAccessCode, ...eventInput } = input;
+    const event = await stores.eventStore.updateEvent(eventId, {
+      ...eventInput,
+      ...(publicAccessCode !== undefined
+        ? {
+            publicAccessCodeHash: publicAccessCode
+              ? hashPublicAccessCode(publicAccessCode, config.INVITE_TOKEN_SECRET)
+              : null,
+          }
+        : {}),
+    });
 
     if (!event) {
       throw new ApiHttpError("NOT_FOUND", "Event not found");
@@ -848,6 +879,9 @@ const createRsvpRateLimitKey = (context: Context<ApiBindings>, secret: string) =
     .digest("hex");
 };
 
+const hashPublicAccessCode = (accessCode: string, secret: string) =>
+  createHmac("sha256", secret).update(`public-event-access:${accessCode}`).digest("hex");
+
 const pruneExpiredRateLimitEntries = (attempts: Map<string, RateLimitEntry>, now: number) => {
   for (const [key, entry] of attempts) {
     if (entry.resetAt <= now) {
@@ -1253,9 +1287,10 @@ const toInviteTokenRecord = ({
 
 const toPublicEventResponse = (publicEvent: PublicEventRecord) => {
   const theme = publicEvent.selectedThemeId ? getTheme(publicEvent.selectedThemeId) : undefined;
+  const { id: _internalEventId, ...event } = publicEvent.event;
 
   return {
-    event: publicEvent.event,
+    event,
     selectedThemeId: publicEvent.selectedThemeId,
     theme: theme ? toApiTheme(theme) : undefined,
     themeConfig: publicEvent.themeConfig,

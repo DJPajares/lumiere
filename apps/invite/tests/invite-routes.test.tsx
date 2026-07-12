@@ -251,7 +251,6 @@ function mockApiError(status: number, message: string) {
 const publicEventResponse: PublicEventResponse = {
   event: {
     eventType: "dinner",
-    id: "evt_123",
     publicSettings: {},
     slug: "launch-night",
     startsAt: "2030-06-01T10:30:00.000Z",

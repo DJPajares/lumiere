@@ -11,11 +11,18 @@ type PublicEventPageProps = {
   params: Promise<{
     eventSlug: string;
   }>;
+  searchParams?: Promise<{
+    accessCode?: string;
+  }>;
 };
 
-export async function generateMetadata({ params }: PublicEventPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PublicEventPageProps): Promise<Metadata> {
   const { eventSlug } = await params;
-  const result = await loadPublicEvent(eventSlug);
+  const accessCode = (await searchParams)?.accessCode;
+  const result = await loadPublicEvent(eventSlug, accessCode);
 
   if (result.status === "ready") {
     const title = result.invite.event.title;
@@ -41,9 +48,10 @@ export async function generateMetadata({ params }: PublicEventPageProps): Promis
   };
 }
 
-export default async function PublicEventPage({ params }: PublicEventPageProps) {
+export default async function PublicEventPage({ params, searchParams }: PublicEventPageProps) {
   const { eventSlug } = await params;
-  const result = await loadPublicEvent(eventSlug);
+  const accessCode = (await searchParams)?.accessCode;
+  const result = await loadPublicEvent(eventSlug, accessCode);
 
   if (result.status === "ready") {
     return <PublicInvitation invite={result.invite} />;
@@ -52,16 +60,16 @@ export default async function PublicEventPage({ params }: PublicEventPageProps) 
   return <PublicInvitationUnavailable eventSlug={eventSlug} message={result.message} />;
 }
 
-async function loadPublicEvent(eventSlug: string) {
+async function loadPublicEvent(eventSlug: string, accessCode?: string) {
   try {
-    const invite = await createInviteApiClient().getPublicEvent(eventSlug);
+    const invite = await createInviteApiClient().getPublicEvent(eventSlug, accessCode);
 
     return {
       invite,
       status: "ready" as const,
     };
   } catch (error) {
-    if (error instanceof ApiClientError && error.status === 404) {
+    if (error instanceof ApiClientError && (error.status === 403 || error.status === 404)) {
       return {
         message: "This invitation was not found, is not published, or is no longer available.",
         status: "unavailable" as const,

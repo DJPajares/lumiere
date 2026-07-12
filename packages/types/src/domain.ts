@@ -41,6 +41,7 @@ export const eventSchema = z.object({
   themeMode: themeModeSchema,
   themeConfig: metadataSchema,
   publicSettings: metadataSchema,
+  hasPublicAccessCode: z.boolean().optional(),
   rsvpSettings: metadataSchema,
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -60,6 +61,7 @@ export const eventCreateSchema = z
     selectedThemeId: z.string().trim().max(120).optional(),
     themeMode: themeModeSchema.default("system"),
     publicSettings: metadataSchema,
+    publicAccessCode: z.string().trim().min(16).max(256).optional(),
     rsvpSettings: metadataSchema,
   })
   .superRefine((value, context) => {
@@ -103,6 +105,7 @@ export const eventUpdateSchema = z
       .transform((value) => (value === "" ? undefined : value)),
     themeMode: themeModeSchema.optional(),
     publicSettings: jsonObjectSchema.optional(),
+    publicAccessCode: z.string().trim().min(16).max(256).nullable().optional(),
     rsvpSettings: jsonObjectSchema.optional(),
   })
   .strict()

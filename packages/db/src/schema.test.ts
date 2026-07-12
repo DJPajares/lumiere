@@ -25,6 +25,7 @@ import {
   eventSectionContents,
   events,
   eventSections,
+  eventSlugAliases,
   eventStatusEnum,
   eventTypeEnum,
   eventThemeSettings,
@@ -54,6 +55,7 @@ describe("database schema", () => {
         eventRsvpSettings,
         eventSections,
         eventSectionContents,
+        eventSlugAliases,
         eventPublications,
         eventAssets,
         guestGroups,
@@ -70,6 +72,7 @@ describe("database schema", () => {
       "event_rsvp_settings",
       "event_sections",
       "event_section_contents",
+      "event_slug_aliases",
       "event_publications",
       "event_assets",
       "guest_groups",
@@ -129,6 +132,7 @@ describe("database schema", () => {
   it("documents critical query indexes used by API lookups", () => {
     expect(schemaIndexNames).toMatchObject({
       eventsPublicSlug: "events_public_slug_unique",
+      eventSlugAliasesSlug: "event_slug_aliases_slug_unique",
       eventsOwnerUserId: "events_owner_user_id_idx",
       guestGroupsInviteTokenHash: "guest_groups_invite_token_hash_unique",
       rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",

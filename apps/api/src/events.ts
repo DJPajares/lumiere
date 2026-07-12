@@ -7,6 +7,7 @@ import {
   eventSections,
   events,
   eventThemeSettings,
+  eventSlugAliases,
 } from "@lumiere/db";
 import {
   evaluateThemeCompatibility,
@@ -24,7 +25,7 @@ import type {
   EventSectionMutation,
   EventUpdate,
 } from "@lumiere/types";
-import { asc, desc, eq, getTableColumns, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, ne, sql } from "drizzle-orm";
 
 import { ApiHttpError } from "./errors";
 import { toIsoDateTime } from "./serialization";
@@ -48,13 +49,21 @@ export type PublishingReadiness = {
 
 export type EventStore = {
   archiveEvent(eventId: string): Promise<Event | null>;
-  createEvent(ownerUserId: string, input: EventCreate): Promise<Event>;
+  createEvent(ownerUserId: string, input: EventCreatePersistence): Promise<Event>;
   getEvent(eventId: string): Promise<Event | null>;
   getEventBySlug(slug: string): Promise<Event | null>;
   getPublishingReadiness(eventId: string): Promise<PublishingReadiness | null>;
   isEventSlugAvailable(slug: string, options?: { exceptEventId?: string }): Promise<boolean>;
   listManagedEvents(userId: string): Promise<Event[]>;
-  updateEvent(eventId: string, input: EventUpdate): Promise<Event | null>;
+  updateEvent(eventId: string, input: EventUpdatePersistence): Promise<Event | null>;
+};
+
+export type EventCreatePersistence = Omit<EventCreate, "publicAccessCode"> & {
+  publicAccessCodeHash?: string;
+};
+
+export type EventUpdatePersistence = Omit<EventUpdate, "publicAccessCode"> & {
+  publicAccessCodeHash?: string | null;
 };
 
 export const createDrizzleEventStore = (db: Database): EventStore => ({
@@ -80,6 +89,7 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
   async createEvent(ownerUserId, input) {
     return withDuplicateSlugHandling(async () =>
       db.transaction(async (tx) => {
+        await assertSlugNotClaimed(tx as unknown as StoreDatabase, input.slug);
         const [event] = await tx
           .insert(events)
           .values({
@@ -87,6 +97,7 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
             eventType: input.eventType,
             ownerUserId,
             publicSettingsJson: input.publicSettings,
+            publicAccessCodeHash: input.publicAccessCodeHash,
             publicSlug: input.slug,
             startsAt: input.startsAt,
             timezone: input.timezone,
@@ -160,9 +171,23 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
   },
 
   async isEventSlugAvailable(slug, options = {}) {
-    const [event] = await db.select().from(events).where(eq(events.publicSlug, slug)).limit(1);
+    const [event] = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(
+        options.exceptEventId
+          ? and(eq(events.publicSlug, slug), ne(events.id, options.exceptEventId))
+          : eq(events.publicSlug, slug),
+      )
+      .limit(1);
 
-    return !event || event.id === options.exceptEventId;
+    const [alias] = await db
+      .select({ eventId: eventSlugAliases.eventId })
+      .from(eventSlugAliases)
+      .where(eq(eventSlugAliases.slug, slug))
+      .limit(1);
+
+    return !event && (!alias || alias.eventId === options.exceptEventId);
   },
 
   async listManagedEvents(userId) {
@@ -197,6 +222,17 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
 
         if (!current) {
           return null;
+        }
+
+        if (input.slug && input.slug !== current.event.publicSlug) {
+          await assertSlugNotClaimed(database, input.slug, eventId);
+          await tx
+            .insert(eventSlugAliases)
+            .values({
+              eventId,
+              slug: current.event.publicSlug,
+            })
+            .onConflictDoNothing();
         }
 
         const [event] = await tx
@@ -420,6 +456,7 @@ export const toApiEvent = (
   id: event.id,
   ownerUserId: event.ownerUserId,
   publicSettings: event.publicSettingsJson as Event["publicSettings"],
+  hasPublicAccessCode: event.publicAccessCodeHash !== null,
   rsvpSettings: (rsvpSettings?.settingsJson ?? {}) as Event["rsvpSettings"],
   selectedThemeId: themeSettings?.selectedThemeId ?? undefined,
   slug: event.publicSlug,
@@ -576,7 +613,7 @@ const updateRsvpSettings = async (
   return settings ?? current;
 };
 
-const toEventUpdateSet = (input: EventUpdate) => ({
+const toEventUpdateSet = (input: EventUpdatePersistence) => ({
   ...(input.slug !== undefined ? { publicSlug: input.slug } : {}),
   ...(input.title !== undefined ? { title: input.title } : {}),
   ...(input.eventType !== undefined ? { eventType: input.eventType } : {}),
@@ -587,6 +624,9 @@ const toEventUpdateSet = (input: EventUpdate) => ({
   ...(input.venueName !== undefined ? { venueName: input.venueName } : {}),
   ...(input.venueAddress !== undefined ? { venueAddress: input.venueAddress } : {}),
   ...(input.publicSettings !== undefined ? { publicSettingsJson: input.publicSettings } : {}),
+  ...(input.publicAccessCodeHash !== undefined
+    ? { publicAccessCodeHash: input.publicAccessCodeHash }
+    : {}),
 });
 
 const withDuplicateSlugHandling = async <TValue>(operation: () => Promise<TValue>) => {
@@ -598,6 +638,29 @@ const withDuplicateSlugHandling = async <TValue>(operation: () => Promise<TValue
     }
 
     throw error;
+  }
+};
+
+const assertSlugNotClaimed = async (db: StoreDatabase, slug: string, eventId?: string) => {
+  await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`event-public-slug:${slug}`}))`);
+
+  const [current] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(
+      eventId
+        ? and(eq(events.publicSlug, slug), ne(events.id, eventId))
+        : eq(events.publicSlug, slug),
+    )
+    .limit(1);
+  const [alias] = await db
+    .select({ eventId: eventSlugAliases.eventId })
+    .from(eventSlugAliases)
+    .where(eq(eventSlugAliases.slug, slug))
+    .limit(1);
+
+  if (current || (alias && alias.eventId !== eventId)) {
+    throw new ApiHttpError("CONFLICT", "Event slug is already in use");
   }
 };
 
