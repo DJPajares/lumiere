@@ -28,6 +28,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -52,6 +53,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -160,11 +162,15 @@ export function DashboardUiShowcase() {
                   <span aria-hidden="true">•••</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Event actions</DropdownMenuLabel>
-                  <DropdownMenuItem>Duplicate draft</DropdownMenuItem>
-                  <DropdownMenuItem>Copy invitation link</DropdownMenuItem>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Event actions</DropdownMenuLabel>
+                    <DropdownMenuItem>Duplicate draft</DropdownMenuItem>
+                    <DropdownMenuItem>Copy invitation link</DropdownMenuItem>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive">Archive event</DropdownMenuItem>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem variant="destructive">Archive event</DropdownMenuItem>
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -265,9 +271,11 @@ function ThemeFieldPanel({ mode }: { mode: "light" | "dark" }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="dinner">Private dinner</SelectItem>
-              <SelectItem value="wedding">Wedding</SelectItem>
-              <SelectItem value="launch">Launch event</SelectItem>
+              <SelectGroup>
+                <SelectItem value="dinner">Private dinner</SelectItem>
+                <SelectItem value="wedding">Wedding</SelectItem>
+                <SelectItem value="launch">Launch event</SelectItem>
+              </SelectGroup>
             </SelectContent>
           </Select>
         </Field>

@@ -47,8 +47,6 @@ type NotificationState =
   | { status: "loading"; notifications: Notification[] }
   | { status: "ready"; notifications: Notification[] };
 
-const iconClassName = "size-4";
-
 export function DashboardTopBarControls({ className, eventId }: DashboardTopBarControlsProps) {
   const { apiClient, signOut, status, user } = useDashboardAuth();
   const router = useRouter();
@@ -194,24 +192,28 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem render={<Link href="/settings/profile" />}>
-            <EditProfileIcon />
-            Edit profile
-          </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/settings" />}>
-            <SettingsIcon />
-            Account settings
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem render={<Link href="/settings/profile" />}>
+              <EditProfileIcon />
+              Edit profile
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              <SettingsIcon />
+              Account settings
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            closeOnClick={false}
-            disabled={isSigningOut}
-            onClick={handleSignOut}
-            variant="destructive"
-          >
-            <SignOutIcon />
-            {isSigningOut ? "Signing out…" : "Sign out"}
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              closeOnClick={false}
+              disabled={isSigningOut}
+              onClick={handleSignOut}
+              variant="destructive"
+            >
+              <SignOutIcon />
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           {signOutError ? (
             <p
               aria-live="polite"
@@ -466,14 +468,7 @@ function toNotificationError(error: unknown) {
 
 function BellIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      className={iconClassName}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path
         d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"
         strokeLinecap="round"
@@ -485,14 +480,7 @@ function BellIcon() {
 
 function EditProfileIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      className={iconClassName}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path
         d="M15 4.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM4.5 20a7.5 7.5 0 0 1 10.8-6.75M16 19l4.5-4.5M18.5 12.5l3 3"
         strokeLinecap="round"
@@ -504,14 +492,7 @@ function EditProfileIcon() {
 
 function SettingsIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      className={iconClassName}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <circle cx="12" cy="12" r="3" />
       <path
         d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.13.37.34.7.6 1 .3.27.69.42 1.1.4h.09v4h-.09a1.7 1.7 0 0 0-1.7.6Z"
@@ -524,14 +505,7 @@ function SettingsIcon() {
 
 function SignOutIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      className={iconClassName}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path
         d="M10 17l5-5-5-5M15 12H3M14 3h4a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-4"
         strokeLinecap="round"

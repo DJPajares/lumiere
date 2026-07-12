@@ -11,6 +11,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -38,6 +39,7 @@ type DashboardFieldChromeProps = {
   children: ReactNode;
   className?: string;
   description?: ReactNode;
+  descriptionClassName?: string;
   error?: string;
   errorId?: string;
   id: string;
@@ -49,6 +51,7 @@ export function DashboardField({
   children,
   className,
   description,
+  descriptionClassName,
   error,
   errorId,
   id,
@@ -72,7 +75,10 @@ export function DashboardField({
       </div>
       {description ? (
         <p
-          className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
+          className={cx(
+            "text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]",
+            descriptionClassName,
+          )}
           id={descriptionId}
         >
           {description}
@@ -194,6 +200,7 @@ type DashboardSelectProps = BaseFieldProps & {
   "aria-invalid"?: boolean | "false" | "true";
   "aria-label"?: string;
   disabled?: boolean;
+  descriptionClassName?: string;
   loading?: boolean;
   name?: string;
   onValueChange: (value: string) => void;
@@ -210,6 +217,7 @@ export function DashboardSelect({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   description,
+  descriptionClassName,
   disabled = false,
   error,
   id,
@@ -234,6 +242,7 @@ export function DashboardSelect({
   return (
     <DashboardField
       description={description}
+      descriptionClassName={descriptionClassName}
       error={error}
       id={inputId}
       label={label}
@@ -264,11 +273,13 @@ export function DashboardSelect({
           <SelectValue placeholder={loading ? "Loading options..." : placeholder} />
         </SelectTrigger>
         <SelectContent align="start" alignItemWithTrigger={alignItemWithTrigger} sideOffset={6}>
-          {options.map((option) => (
-            <SelectItem disabled={option.disabled} key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem disabled={option.disabled} key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </DashboardField>

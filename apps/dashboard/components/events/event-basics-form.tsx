@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { cn } from "@lumiere/dashboard-ui/utils";
 import {
   eventCreateRequestSchema,
   eventUpdateRequestSchema,
@@ -137,8 +138,10 @@ export function EventBasicsForm({
         value={values.title}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={cn("grid gap-4", mode === "edit" && "md:grid-cols-2")}>
         <DashboardSelect
+          description="Used to organize the event and invitation."
+          descriptionClassName={mode === "edit" ? "md:min-h-10" : undefined}
           disabled={disabled}
           error={formState.fieldErrors.eventType}
           id={`${formId}-event-type`}
@@ -152,6 +155,7 @@ export function EventBasicsForm({
         {mode === "edit" ? (
           <DashboardSelect
             description={eventStatuses.find((status) => status.value === values.status)?.help}
+            descriptionClassName="md:min-h-10"
             disabled={disabled}
             error={formState.fieldErrors.status}
             id={`${formId}-status`}

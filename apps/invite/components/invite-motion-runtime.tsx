@@ -70,12 +70,7 @@ function initializeMotion(root: HTMLElement, intensity: InviteMotionIntensity) {
     cleanupCallbacks.push(() => intersectionObserver.disconnect());
   }
 
-  const supportsScrollTimeline =
-    typeof CSS !== "undefined" &&
-    CSS.supports("animation-timeline: view()") &&
-    CSS.supports("animation-timeline: scroll()");
-
-  const motionDriver = resolveInviteMotionDriver(intensity, supportsScrollTimeline);
+  const motionDriver = resolveInviteMotionDriver(intensity);
 
   if (motionDriver === "css") {
     root.dataset.motionDriver = "css";
@@ -105,18 +100,21 @@ function createRevealObserver(sections: HTMLElement[], threshold: number) {
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
+        const section = entry.target as HTMLElement;
+
         if (!entry.isIntersecting) {
+          section.dataset.motionState = "pending";
           return;
         }
 
-        const section = entry.target as HTMLElement;
-        section.dataset.motionState = "visible";
-        observer.unobserve(section);
+        if (entry.intersectionRatio >= threshold) {
+          section.dataset.motionState = "visible";
+        }
       });
     },
     {
       rootMargin: "0px 0px -8% 0px",
-      threshold,
+      threshold: [0, threshold],
     },
   );
 

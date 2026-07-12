@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { Button } from "@lumiere/dashboard-ui/components/button";
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -210,21 +211,18 @@ function EventOverviewContent({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-              onClick={onEdit}
-              type="button"
-            >
+            <Button onClick={onEdit} size="lg" type="button">
               Edit event
-            </button>
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+            </Button>
+            <Button
               disabled={isRefreshing}
               onClick={onRefresh}
+              size="lg"
               type="button"
+              variant="outline"
             >
               {isRefreshing ? "Refreshing..." : "Refresh data"}
-            </button>
+            </Button>
           </div>
         </div>
 

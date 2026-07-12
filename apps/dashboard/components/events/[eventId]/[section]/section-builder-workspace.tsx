@@ -41,6 +41,7 @@ import { EventTabs } from "../../../placeholder-panels";
 import {
   DashboardCheckbox,
   DashboardSelect,
+  DashboardSwitch,
   DashboardTextArea,
   DashboardTextInput,
   dashboardButtonClassName,
@@ -1556,6 +1557,24 @@ function ProfileFields({ controller }: { controller: SectionFieldController }) {
 
 function RsvpFields({ controller }: { controller: SectionFieldController }) {
   const questions = readRecordArray(controller.content.questions);
+  const dietaryQuestionEnabled = questions.some(
+    (question) => question.key === rsvpQuestionPresets.dietary.key,
+  );
+  const songQuestionEnabled = questions.some(
+    (question) => question.key === rsvpQuestionPresets.song.key,
+  );
+  const updatePresetQuestion = (
+    preset: (typeof rsvpQuestionPresets)[keyof typeof rsvpQuestionPresets],
+    enabled: boolean,
+  ) => {
+    const nextQuestions = enabled
+      ? questions.some((question) => question.key === preset.key)
+        ? questions
+        : [...questions, { ...preset }]
+      : questions.filter((question) => question.key !== preset.key);
+
+    controller.updateContentValue(["questions"], nextQuestions);
+  };
 
   return (
     <div className="grid gap-5">
@@ -1573,6 +1592,44 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
         path={["submitLabel"]}
         scope="content"
       />
+      <section
+        className="grid gap-3"
+        aria-labelledby={`${controller.section.sectionKey}-quick-questions`}
+      >
+        <div>
+          <h3
+            className="text-sm font-semibold"
+            id={`${controller.section.sectionKey}-quick-questions`}
+          >
+            Guest detail sections
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+            Show these common optional questions inside the guest RSVP details panel.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <DashboardSwitch
+            checked={dietaryQuestionEnabled}
+            description="Let attending guests share allergies, dietary requirements, or meal notes."
+            disabled={controller.disabled}
+            id={`${controller.section.sectionKey}-rsvp-dietary-question`}
+            label="Dietary requirements"
+            onChange={(event) =>
+              updatePresetQuestion(rsvpQuestionPresets.dietary, event.target.checked)
+            }
+          />
+          <DashboardSwitch
+            checked={songQuestionEnabled}
+            description="Invite attending guests to suggest one song for the celebration."
+            disabled={controller.disabled}
+            id={`${controller.section.sectionKey}-rsvp-song-question`}
+            label="Song request"
+            onChange={(event) =>
+              updatePresetQuestion(rsvpQuestionPresets.song, event.target.checked)
+            }
+          />
+        </div>
+      </section>
       <RepeaterField
         addLabel="Add RSVP question"
         controller={controller}
@@ -1646,6 +1703,21 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
     </div>
   );
 }
+
+const rsvpQuestionPresets = {
+  dietary: {
+    key: "dietary-notes",
+    label: "Any dietary requirements we should know?",
+    required: false,
+    type: "textarea",
+  },
+  song: {
+    key: "song-request",
+    label: "What song gets you on the dance floor?",
+    required: false,
+    type: "text",
+  },
+} as const;
 
 function StoryFields({ controller }: { controller: SectionFieldController }) {
   const paragraphs = readStringArray(controller.content.paragraphs);

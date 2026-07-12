@@ -2,12 +2,12 @@
 
 import {
   Button,
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from "@lumiere/dashboard-ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -25,21 +25,21 @@ type DashboardTopNavigationProps = {
 
 export function DashboardTopNavigation({ activePath }: DashboardTopNavigationProps) {
   const navigation = getDashboardNavigation(activePath);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isVisible, prefersReducedMotion } = useTopBarVisibility(drawerOpen);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const { isVisible, prefersReducedMotion } = useTopBarVisibility(mobileNavigationOpen);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia(DASHBOARD_DESKTOP_QUERY);
-    const closeDrawerAtDesktop = () => {
+    const closeMobileNavigationAtDesktop = () => {
       if (desktopQuery.matches) {
-        setDrawerOpen(false);
+        setMobileNavigationOpen(false);
       }
     };
 
-    closeDrawerAtDesktop();
-    desktopQuery.addEventListener("change", closeDrawerAtDesktop);
+    closeMobileNavigationAtDesktop();
+    desktopQuery.addEventListener("change", closeMobileNavigationAtDesktop);
 
-    return () => desktopQuery.removeEventListener("change", closeDrawerAtDesktop);
+    return () => desktopQuery.removeEventListener("change", closeMobileNavigationAtDesktop);
   }, []);
 
   return (
@@ -54,8 +54,8 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
       data-top-bar-state={isVisible ? "visible" : "hidden"}
     >
       <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} swipeDirection="left">
-          <DrawerTrigger
+        <Sheet open={mobileNavigationOpen} onOpenChange={setMobileNavigationOpen}>
+          <SheetTrigger
             render={
               <Button
                 aria-label="Open dashboard navigation"
@@ -67,23 +67,27 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
             }
           >
             <MenuIcon />
-          </DrawerTrigger>
-          <DrawerContent className="[--drawer-content-width:min(22rem,calc(100vw-3rem))]">
-            <DrawerHeader className="border-b border-border px-5 pt-5 pb-4 text-left">
-              <DrawerTitle>Dashboard navigation</DrawerTitle>
-              <DrawerDescription>
+          </SheetTrigger>
+          <SheetContent
+            className="w-[min(22rem,calc(100vw-3rem))] max-w-none gap-0 duration-300 ease-out data-[side=left]:data-ending-style:-translate-x-full data-[side=left]:data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-none"
+            showCloseButton={false}
+            side="left"
+          >
+            <SheetHeader className="border-b border-border px-5 pt-5 pb-4 text-left">
+              <SheetTitle>Dashboard navigation</SheetTitle>
+              <SheetDescription>
                 {navigation.context.eventId
-                  ? `Managing event ${navigation.context.eventId}`
+                  ? "Managing the selected event."
                   : "Choose an event to open its workspace."}
-              </DrawerDescription>
-            </DrawerHeader>
+              </SheetDescription>
+            </SheetHeader>
             <MobileNavigation
               managerItems={navigation.manager}
-              onNavigate={() => setDrawerOpen(false)}
+              onNavigate={() => setMobileNavigationOpen(false)}
               workspaceItems={navigation.workspace}
             />
-          </DrawerContent>
-        </Drawer>
+          </SheetContent>
+        </Sheet>
 
         <Link
           className="shrink-0 rounded-md text-sm font-semibold text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

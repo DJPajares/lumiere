@@ -82,17 +82,12 @@ export function calculateMotionBlur(
 
 export function resolveInviteMotionDriver(
   intensity: InviteMotionIntensity,
-  supportsScrollTimeline: boolean,
 ): "css" | "none" | "raf" {
   if (intensity === "none") {
     return "none";
   }
 
-  if (intensity === "premium") {
-    return "raf";
-  }
-
-  return supportsScrollTimeline ? "css" : "raf";
+  return "raf";
 }
 
 function clamp(value: number, minimum: number, maximum: number) {

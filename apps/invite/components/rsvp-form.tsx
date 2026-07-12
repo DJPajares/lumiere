@@ -282,18 +282,18 @@ export function RsvpForm({
       )}
 
       <details
-        className="group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] p-4"
+        className="group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
         onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
         open={detailsOpen}
       >
-        <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]">
-          {copy.detailsLabel}
-          <span className="float-right text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-[var(--radius-md)] text-sm font-semibold text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]">
+          <span>{copy.detailsLabel}</span>
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
             {detailsOpen ? "Close" : "Open"}
           </span>
         </summary>
 
-        <div className="mt-4 grid gap-5">
+        <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
           {isResponding ? (
             <div className="grid gap-3">
               <p className={style.fieldLabel}>Names for the guest list</p>
@@ -534,7 +534,7 @@ function getRsvpDesignCopy(design: RsvpDesign) {
 
 function getRsvpDesignStyle(design: RsvpDesign) {
   const base = {
-    card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.6)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-6 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] backdrop-blur sm:p-7",
+    card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.6)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] backdrop-blur sm:p-7",
     counterValue: "text-2xl font-semibold leading-none",
     eyebrow: "text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)]",
     fieldLabel:
@@ -542,7 +542,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
     input:
       "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
     submit:
-      "min-h-12 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+      "min-h-12 w-full rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
     title: "text-3xl font-light tracking-tight",
   };
 
@@ -567,7 +567,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
   if (design === "noel") {
     return {
       ...base,
-      card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.3)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-6 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-7",
+      card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.3)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-7",
       title: "font-serif text-3xl font-light tracking-tight sm:text-4xl",
     };
   }

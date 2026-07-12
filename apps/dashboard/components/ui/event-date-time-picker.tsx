@@ -23,6 +23,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -206,16 +207,18 @@ export function EventTimePicker({
         className="max-h-72 motion-reduce:animate-none"
         sideOffset={6}
       >
-        {options.map((option) => (
-          <SelectItem
-            className="min-h-10"
-            disabled={Boolean(minimum && option.value <= minimum)}
-            key={option.value}
-            value={option.value}
-          >
-            {option.label}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          {options.map((option) => (
+            <SelectItem
+              className="min-h-10"
+              disabled={Boolean(minimum && option.value <= minimum)}
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );
@@ -232,6 +235,7 @@ type EventDateTimeRangeProps = {
   onEndValueChange: (value: string) => void;
   onStartValueChange: (value: string) => void;
   startError?: string;
+  startDescription?: string;
   startId: string;
   startName?: string;
   startValue: string;
@@ -249,6 +253,7 @@ export function EventDateTimeRange({
   onEndValueChange,
   onStartValueChange,
   startError,
+  startDescription = "Required date and time.",
   startId,
   startName,
   startValue,
@@ -266,8 +271,9 @@ export function EventDateTimeRange({
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2">
       <EventDateTimeField
+        description={startDescription}
         disabled={disabled}
         error={startError}
         id={startId}
@@ -354,7 +360,7 @@ export function EventDateTimeField({
       required={required}
     >
       {name ? <input name={name} type="hidden" value={value} /> : null}
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(7.75rem,0.68fr)] gap-2">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(7.75rem,0.68fr)]">
         <div className="grid gap-1.5">
           <span className="text-xs font-medium text-muted-foreground" id={`${id}-date-label`}>
             Date
@@ -669,7 +675,7 @@ function TimePickerIcon() {
 
 function ClearPickerIcon() {
   return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
       <path
         d="m7 7 10 10M17 7 7 17"
         stroke="currentColor"

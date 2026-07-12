@@ -32,10 +32,10 @@ describe("invite motion system", () => {
     expect(inviteMotionPresets.premium.maxMotionBlur).toBeGreaterThan(0);
   });
 
-  it("uses the reliable frame driver and transient blur for premium motion", () => {
-    expect(resolveInviteMotionDriver("premium", true)).toBe("raf");
-    expect(resolveInviteMotionDriver("low", true)).toBe("css");
-    expect(resolveInviteMotionDriver("low", false)).toBe("raf");
+  it("uses the reliable frame driver for replayable reveals and transient blur", () => {
+    expect(resolveInviteMotionDriver("premium")).toBe("raf");
+    expect(resolveInviteMotionDriver("low")).toBe("raf");
+    expect(resolveInviteMotionDriver("none")).toBe("none");
     expect(calculateMotionBlur(0, 16, 3.2)).toBe(0);
     expect(calculateMotionBlur(120, 16, 3.2)).toBe(3.2);
   });

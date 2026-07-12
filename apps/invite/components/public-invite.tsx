@@ -1037,7 +1037,11 @@ function RsvpSection({
         </div>
 
         {questions.length > 0 ? (
-          <div className="grid gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4">
+          <div
+            className={`gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4 ${
+              submitContext ? "hidden lg:grid" : "grid"
+            }`}
+          >
             <p className="text-sm font-semibold text-[var(--accent-strong)]">
               RSVP questions prepared by the host
             </p>

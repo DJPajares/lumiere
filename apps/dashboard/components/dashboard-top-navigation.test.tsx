@@ -44,7 +44,7 @@ describe("DashboardTopNavigation", () => {
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 
-  it("opens the mobile drawer, supports Escape, and restores trigger focus", async () => {
+  it("opens the animated mobile navigation, supports Escape, and restores trigger focus", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event/guests" />);
     const trigger = screen.getByRole("button", { name: "Open dashboard navigation" });
@@ -60,7 +60,7 @@ describe("DashboardTopNavigation", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("closes the mobile drawer after route navigation", async () => {
+  it("closes the mobile navigation after route navigation", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event/guests" />);
 
@@ -70,14 +70,14 @@ describe("DashboardTopNavigation", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
-  it("closes the mobile drawer after backdrop interaction", async () => {
+  it("closes the mobile navigation after backdrop interaction", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event" />);
 
     await user.click(screen.getByRole("button", { name: "Open dashboard navigation" }));
     expect(await screen.findByRole("dialog")).toBeTruthy();
 
-    const backdrop = document.querySelector<HTMLElement>('[data-slot="drawer-overlay"]');
+    const backdrop = document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]');
 
     expect(backdrop).toBeTruthy();
     await user.click(backdrop as HTMLElement);
@@ -92,7 +92,7 @@ describe("DashboardTopNavigation", () => {
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 
-  it("closes an open drawer when the viewport crosses into tablet width", async () => {
+  it("closes open mobile navigation when the viewport crosses into tablet width", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event" />);
 
