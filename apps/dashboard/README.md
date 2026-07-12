@@ -10,3 +10,5 @@ Token notes:
 - Tighter radius and denser spacing than the public invite.
 - Management states should be scannable and never rely on color alone.
 - Event theme styling belongs in previews, not in core controls.
+
+Agent-assisted shadcn operations are documented in [SHADCN_AGENT_WORKFLOW.md](./SHADCN_AGENT_WORKFLOW.md).

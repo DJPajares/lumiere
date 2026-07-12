@@ -51,6 +51,14 @@ Use only `backlog`, `todo`, `in-progress`, `done`, and `blocked`.
 - Use Tailwind CSS as styling foundation with semantic tokens (be aware of lint suggestCanonicalClasses).
 - Keep `globals.css` simple.
 - Keep secrets server-side.
+
+## shadcn Agent Boundary
+
+- shadcn MCP, CLI, registry, and installed skill operations are permitted only for `apps/dashboard` and `packages/dashboard-ui`.
+- Run project-aware shadcn commands with `--cwd apps/dashboard`; shared primitives must resolve through the aliases in both `components.json` files.
+- Never add shadcn, Base UI, or dashboard UI imports to `apps/invite`, `packages/themes`, or invitation theme modules.
+- Inspect installed components first and use `--dry-run` plus `--diff` before updating a wrapper. Never use `--overwrite` without explicit user approval.
+- Follow `apps/dashboard/SHADCN_AGENT_WORKFLOW.md` for editor setup, validation prompts, and troubleshooting.
 - Stop creating new tests but make sure existing tests work
 
 ## Verification

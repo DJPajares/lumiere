@@ -2,8 +2,8 @@
 # Claude reads `.mcp.json`; Codex reads MCP servers from this TOML file.
 
 [mcp_servers.shadcn]
-command = "npx"
-args = ["shadcn@latest", "mcp", "--cwd", "apps/dashboard"]
+command = "pnpm"
+args = ["dlx", "shadcn@latest", "mcp", "--cwd", "apps/dashboard"]
 
 [mcp_servers.heroui-react]
 command = "npx"
