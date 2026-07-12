@@ -286,9 +286,9 @@ export function RsvpForm({
         onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
         open={detailsOpen}
       >
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-[var(--radius-md)] text-sm font-semibold text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none">
           <span>{copy.detailsLabel}</span>
-          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {detailsOpen ? "Close" : "Open"}
           </span>
         </summary>
@@ -457,7 +457,7 @@ function CounterButton({
     <button
       {...invitePressFeedbackProps}
       aria-label={label}
-      className="grid size-12 place-items-center rounded-full text-2xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
+      className="grid size-12 place-items-center rounded-full text-2xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35 cursor-pointer"
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -549,7 +549,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
   if (design === "premium") {
     return {
       ...base,
-      card: `${base.card} lg:-mt-8`,
+      card: `${base.card}`,
       title:
         "font-serif text-3xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-4xl",
     };

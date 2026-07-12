@@ -155,7 +155,7 @@ function InvitationFrame({
           </div>
         )}
 
-        <footer className="lumiere-invitation__footer mx-auto max-w-5xl px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12">
+        <footer className="lumiere-invitation__footer px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12">
           <p>{invite.event.title} is hosted through Lumiere.</p>
         </footer>
       </article>
@@ -1062,7 +1062,7 @@ function RsvpSection({
         ) : null}
       </div>
 
-      {submitContext ? (
+      {submitContext && (
         <RsvpForm
           design={rsvpDesign}
           eventSlug={eventSlug}
@@ -1072,31 +1072,6 @@ function RsvpSection({
           questions={questions}
           submitLabel={submitLabel}
         />
-      ) : (
-        <aside className="grid gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
-              Your invitation
-            </p>
-            <h3 className="mt-2 text-xl font-semibold">
-              {guest?.guestGroup.label ?? "Guest group"}
-            </h3>
-          </div>
-          <dl className="grid gap-3">
-            <GuestFact label="Group size" value={`Max ${guest?.guestGroup.maxPax ?? 1} pax`} />
-            <GuestFact
-              label="Current response"
-              value={formatResponseStatus(guest?.responseStatus)}
-            />
-            <GuestFact
-              label="Invite status"
-              value={formatGuestGroupStatus(guest?.guestGroup.status)}
-            />
-          </dl>
-          <p className="rounded-[var(--radius-md)] bg-[var(--surface)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            Open this event from a valid guest invite link to submit an RSVP.
-          </p>
-        </aside>
       )}
     </div>
   );

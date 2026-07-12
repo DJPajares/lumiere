@@ -377,7 +377,6 @@ function ThemeSelectorContent({
             />
             <Button
               aria-pressed={showIncompatible}
-              className="min-h-10"
               onClick={() => setShowIncompatible((current) => !current)}
               variant="outline"
             >
@@ -434,7 +433,7 @@ function ThemeSelectorContent({
             fallback={
               <div aria-label="Loading expanded theme preview" className="grid gap-3">
                 <Skeleton className="h-10 w-full motion-reduce:animate-none" />
-                <Skeleton className="h-[32rem] w-full motion-reduce:animate-none" />
+                <Skeleton className="h-128 w-full motion-reduce:animate-none" />
               </div>
             }
           >

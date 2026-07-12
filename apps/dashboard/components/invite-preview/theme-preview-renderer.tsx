@@ -25,7 +25,6 @@ export function InviteThemePreviewRenderer({
   const tokens = mode === "dark" && theme.tokens.dark ? theme.tokens.dark : theme.tokens.light;
   const sections = theme.previewData.sections.slice(0, thumbnail ? 1 : 3);
   const effects = theme.composition.effects;
-  const canvasWidth = viewport === "mobile" ? 390 : 960;
 
   return (
     <div
@@ -39,7 +38,6 @@ export function InviteThemePreviewRenderer({
         isolation: "isolate",
         margin: "0 auto",
         maxWidth: "100%",
-        width: `${canvasWidth}px`,
       }}
     >
       <article
