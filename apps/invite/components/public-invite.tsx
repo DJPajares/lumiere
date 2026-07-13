@@ -103,6 +103,7 @@ function InvitationFrame({
     <InviteShell
       ambientAudio={ambientAudio}
       context={context}
+      eventKey={invite.event.slug}
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >

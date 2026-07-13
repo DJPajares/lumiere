@@ -15,6 +15,12 @@ export const noelTheme = {
   supportedEventTypes: ["holiday", "dinner", "private_event"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  modeToggle: {
+    defaultPreference: "system",
+    labels: { control: "Invitation appearance", dark: "Candlelight", light: "Snowlight" },
+    placement: "top-start",
+    style: "seasonal",
+  },
   supportedSections: [...publicCoreSections, "story", "details", "dress_code", "gallery", "custom"],
   requiredSections: ["introduction", "date", "location"],
   recommendedSections: [

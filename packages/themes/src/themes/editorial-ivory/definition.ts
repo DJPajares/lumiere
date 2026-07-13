@@ -17,6 +17,12 @@ export const editorialIvoryTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  modeToggle: {
+    defaultPreference: "system",
+    labels: { control: "Invitation appearance", dark: "Ink", light: "Paper" },
+    placement: "top-start",
+    style: "editorial",
+  },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [

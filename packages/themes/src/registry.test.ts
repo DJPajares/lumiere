@@ -294,7 +294,16 @@ describe("theme registry", () => {
           theme.previewData.sections.length > 0 &&
           theme.supportedModes.length > 0 &&
           theme.supportedModes.includes(theme.defaultMode) &&
-          (!theme.supportedModes.includes("dark") || Boolean(theme.tokens.dark)),
+          (!theme.supportedModes.includes("dark") || Boolean(theme.tokens.dark)) &&
+          (theme.supportedModes.includes("toggleable")
+            ? Boolean(
+                theme.modeToggle &&
+                theme.tokens.dark &&
+                theme.modeToggle.labels.control &&
+                theme.modeToggle.labels.dark &&
+                theme.modeToggle.labels.light,
+              )
+            : theme.modeToggle === undefined),
       ),
     ).toBe(true);
   });

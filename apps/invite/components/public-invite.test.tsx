@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
+import { resolveBrowserMode } from "./invite-theme-mode-control";
 import { GuestInvitation, PublicInvitation } from "./public-invite";
 
 describe("public invite section renderers", () => {
@@ -58,6 +59,69 @@ describe("public invite section renderers", () => {
     });
 
     expect(new Set(signatures).size).toBe(directions.length);
+
+    const toggleableInvite = createInvite([]);
+    toggleableInvite.selectedThemeId = "premium";
+    toggleableInvite.themeMode = "toggleable";
+    const toggleableHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: toggleableInvite }),
+    );
+
+    expect(toggleableHtml).toContain('data-theme-mode="toggleable"');
+    expect(toggleableHtml).toContain('data-theme-mode-control="soft-pill"');
+    expect(toggleableHtml).toContain('data-theme-mode-initializer="true"');
+    expect(toggleableHtml).toContain("lumiere:theme-mode:garden-evening");
+    expect(toggleableHtml).toContain("localStorage.getItem");
+    expect(toggleableHtml.indexOf("data-theme-mode-initializer")).toBeLessThan(
+      toggleableHtml.indexOf("lumiere-invitation"),
+    );
+    expect(toggleableHtml).toContain("Invitation appearance: switch to");
+
+    const systemInvite = createInvite([]);
+    systemInvite.selectedThemeId = "modern-minimal";
+    systemInvite.themeMode = "system";
+    const systemHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: systemInvite }),
+    );
+
+    expect(systemHtml).toContain('data-theme-mode-initializer="true"');
+    expect(systemHtml).not.toContain("data-theme-mode-control=");
+    expect(systemHtml).toContain("prefers-color-scheme: dark");
+
+    const unsupportedInvite = createInvite([]);
+    unsupportedInvite.selectedThemeId = "kids";
+    unsupportedInvite.themeMode = "toggleable";
+    const unsupportedHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: unsupportedInvite }),
+    );
+
+    expect(unsupportedHtml).toContain('data-theme-resolved-mode="light"');
+    expect(unsupportedHtml).not.toContain('data-theme-mode-initializer="true"');
+    expect(
+      resolveBrowserMode({
+        configuredMode: "toggleable",
+        defaultPreference: "system",
+        hasDarkTokens: true,
+        prefersDark: false,
+        savedMode: "dark",
+      }),
+    ).toBe("dark");
+    expect(
+      resolveBrowserMode({
+        configuredMode: "system",
+        hasDarkTokens: true,
+        prefersDark: true,
+        savedMode: "light",
+      }),
+    ).toBe("dark");
+    expect(
+      resolveBrowserMode({
+        configuredMode: "dark",
+        hasDarkTokens: false,
+        prefersDark: true,
+        savedMode: "dark",
+      }),
+    ).toBe("light");
   });
 
   it("emits composition and motion hooks for immersive section layouts", () => {
@@ -277,6 +341,7 @@ describe("public invite section renderers", () => {
 
   it("renders theme-aware ambient audio controls when audio metadata is configured", () => {
     const invite = createInvite([]);
+    invite.themeMode = "toggleable";
     invite.themeConfig = {
       ambientAudio: {
         autoplay: true,
@@ -296,6 +361,7 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Evening music");
     expect(html).toContain("Play Garden strings");
     expect(html).toContain("Tap to begin");
+    expect(html).toContain("top-20 sm:top-4");
   });
 
   it("omits ambient audio controls when audio is missing or disabled", () => {

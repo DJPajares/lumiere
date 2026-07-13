@@ -17,6 +17,12 @@ export const celestialGoldTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner", "holiday"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "dark",
+  modeToggle: {
+    defaultPreference: "dark",
+    labels: { control: "Invitation appearance", dark: "Midnight", light: "Moonlight" },
+    placement: "top-start",
+    style: "celestial",
+  },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [

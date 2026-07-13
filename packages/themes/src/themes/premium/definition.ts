@@ -16,6 +16,12 @@ export const premiumTheme = {
   supportedEventTypes: ["wedding", "dinner", "private_event"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  modeToggle: {
+    defaultPreference: "system",
+    labels: { control: "Invitation appearance", dark: "Candlelight", light: "Daylight" },
+    placement: "top-start",
+    style: "soft-pill",
+  },
   supportedSections: [
     ...publicCoreSections,
     "profile",

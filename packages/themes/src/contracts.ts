@@ -136,6 +136,17 @@ export type ThemeCompatibilityProfile = {
   rendererSlots: Partial<Record<SectionType, ThemeRendererSlotDeclaration>>;
 };
 
+export type ThemeModeTogglePresentation = {
+  defaultPreference: "dark" | "light" | "system";
+  labels: {
+    control: string;
+    dark: string;
+    light: string;
+  };
+  placement: "top-end" | "top-start";
+  style: "celestial" | "editorial" | "organic" | "seasonal" | "soft-pill";
+};
+
 export type ThemeDefinition = {
   id: ThemeId;
   label: string;
@@ -144,6 +155,7 @@ export type ThemeDefinition = {
   supportedEventTypes: EventType[];
   supportedModes: ThemeMode[];
   defaultMode: ThemeMode;
+  modeToggle?: ThemeModeTogglePresentation;
   supportedSections: SectionType[];
   requiredSections: SectionType[];
   recommendedSections: SectionType[];

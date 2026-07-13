@@ -17,6 +17,12 @@ export const gardenLightTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  modeToggle: {
+    defaultPreference: "system",
+    labels: { control: "Invitation appearance", dark: "Evening", light: "Daylight" },
+    placement: "top-start",
+    style: "organic",
+  },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [
