@@ -12,6 +12,8 @@ Every shipped invitation theme owns one directory under `src/themes/<theme-id>/`
 
 Theme modules may import only the neutral contracts in `src/contracts.ts`, the serializable helpers in `src/theme-shared.ts`, and files inside their own directory. Themes must not import other themes, dashboard UI, shadcn, or Base UI.
 
+`pnpm check:theme-boundaries` enforces those import boundaries, rejects concrete theme-ID comparisons and theme-keyed maps in production invite code, and prevents dashboard previews from reaching into private theme files. Tests and fixtures may name concrete themes to prove coverage; production behavior must resolve metadata through the public package API.
+
 The custom public invitation renderer and shared section components remain in `apps/invite/components/`. That shared shell owns event state, guest/public access, enabled sections, RSVP availability, validation, recovery, accessibility, and theme-neutral rendering behavior. Theme modules own visual class names, RSVP treatment, hero/media layout, theme selectors, tokens, composition, motion, effects, copy, and renderer declarations. Theme section variants are declared through `presentation`, `composition.sectionDefaults`, and `compatibility.rendererSlots`; database content never supplies executable renderer code.
 
 Application components consume the resolved `ThemeDefinition` and must not compare concrete theme IDs or names. Invalid or missing IDs are resolved through the package-level common fallback. Dashboard previews consume the same serializable theme definitions and never import invitation implementation logic.
@@ -32,6 +34,6 @@ If a future asset is imported at build time instead of served publicly, colocate
 4. Define the theme's typed presentation and visual effects in `visual.ts`, optional selectors in `styles.css`, and asset namespace in `assets.ts`.
 5. Add the module imports to `src/themes/index.ts`, then include it in `themeRegistry` and `themeVisualEffects`.
 6. Add or update the design guidance in `THEME_SPECS.md`.
-7. Run the existing themes tests, typecheck, formatting check, and dashboard UI boundary check.
+7. Run the existing themes tests, typecheck, formatting check, and `pnpm check:theme-boundaries`.
 
 Existing theme IDs are persistence contracts. Rename one only with an explicit data migration and compatibility alias.

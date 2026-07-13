@@ -59,6 +59,12 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Check theme ownership boundaries
+        run: pnpm check:theme-boundaries
+
+      - name: Check theme registry contracts
+        run: pnpm check:theme-contracts
+
       - name: Lint
         run: pnpm lint
 

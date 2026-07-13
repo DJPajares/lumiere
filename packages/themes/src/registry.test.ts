@@ -18,9 +18,11 @@ import {
   reverieReferenceLinks,
   resolveTheme,
   resolveThemeRsvpCopy,
+  resolveThemeRendererSlot,
   sectionDefinitions,
   sampleInviteCompositionMaps,
   themeRegistry,
+  themeModuleRegistry,
   themeTemplateSpecIds,
   themeTemplateSpecs,
   type ThemeDefinition,
@@ -157,6 +159,57 @@ describe("theme registry", () => {
       eyebrow: defaultRsvpCopy.eyebrow,
       submitLabel: defaultRsvpCopy.submitLabel,
     });
+  });
+
+  it("keeps every registered module compliant with the public theme contract", () => {
+    expect(Object.keys(themeModuleRegistry)).toEqual(availableThemeIds);
+
+    for (const themeId of availableThemeIds) {
+      const module = themeModuleRegistry[themeId];
+      const theme = module.definition;
+      const copy = resolveThemeRsvpCopy(theme);
+      const rendererSlots = theme.supportedSections.map((sectionType) =>
+        resolveThemeRendererSlot(theme, sectionType),
+      );
+
+      expect(theme, `${themeId} must be the public registry definition`).toBe(
+        themeRegistry[themeId],
+      );
+      expect(module.effects, `${themeId} must export its declared effects`).toBe(
+        theme.composition.effects,
+      );
+      expect(theme.id).toBe(themeId);
+      expect(theme.label.trim()).not.toBe("");
+      expect(theme.description.trim()).not.toBe("");
+      expect(theme.designRead.trim()).not.toBe("");
+      expect(theme.supportedEventTypes.length).toBeGreaterThan(0);
+      expect(theme.supportedModes).toContain(theme.defaultMode);
+      expect(theme.supportedSections.length).toBeGreaterThan(0);
+      expect(
+        theme.requiredSections.every((section) => theme.supportedSections.includes(section)),
+      ).toBe(true);
+      expect(
+        theme.recommendedSections.every((section) => theme.supportedSections.includes(section)),
+      ).toBe(true);
+      expect(
+        theme.sectionRhythm.every((section) => theme.supportedSections.includes(section)),
+      ).toBe(true);
+      expect(["common", "editorial-ledger"]).toContain(theme.presentation.rsvp.rendererId);
+      expect(
+        rendererSlots.every((slot) => slot.rendererKey === `section.${slot.sectionType}`),
+      ).toBe(true);
+      expect(rendererSlots.every((slot) => slot.notes.trim().length > 0)).toBe(true);
+      expect(Object.keys(copy)).toEqual(Object.keys(defaultRsvpCopy));
+      expect(Object.values(copy).every((value) => value.trim().length > 0)).toBe(true);
+      expect(module.assets.publicBasePath).toBe(`/themes/${themeId}`);
+      expect(new Set(module.assets.slots).size).toBe(module.assets.slots.length);
+      expect(module.assets.slots).toEqual(
+        expect.arrayContaining(["backdrop", "cover", "gallery", "ornament"]),
+      );
+      expect(theme.previewData.sections.length).toBeGreaterThan(0);
+      expect(theme.dashboardPreview.summary.trim()).not.toBe("");
+      expect(theme.accessibilityNotes.length).toBeGreaterThan(0);
+    }
   });
 
   it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {

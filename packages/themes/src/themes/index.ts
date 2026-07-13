@@ -1,4 +1,4 @@
-import type { ThemeDefinition, ThemeId, ThemeVisualEffects } from "../contracts";
+import type { ThemeDefinition, ThemeId, ThemeModule, ThemeVisualEffects } from "../contracts";
 import { themeIds } from "../contracts";
 import { celestialGoldThemeModule } from "./celestial-gold";
 import { editorialIvoryThemeModule } from "./editorial-ivory";
@@ -19,27 +19,24 @@ export * from "./modern-minimal";
 export * from "./noel";
 export * from "./premium";
 
-export const themeVisualEffects = {
-  "lumiere-default": lumiereDefaultThemeModule.effects,
-  premium: premiumThemeModule.effects,
-  kids: kidsThemeModule.effects,
-  noel: noelThemeModule.effects,
-  "editorial-ivory": editorialIvoryThemeModule.effects,
-  "garden-light": gardenLightThemeModule.effects,
-  "modern-minimal": modernMinimalThemeModule.effects,
-  "celestial-gold": celestialGoldThemeModule.effects,
-} satisfies Record<ThemeId, ThemeVisualEffects>;
+export const themeModuleRegistry = {
+  "lumiere-default": lumiereDefaultThemeModule,
+  premium: premiumThemeModule,
+  kids: kidsThemeModule,
+  noel: noelThemeModule,
+  "editorial-ivory": editorialIvoryThemeModule,
+  "garden-light": gardenLightThemeModule,
+  "modern-minimal": modernMinimalThemeModule,
+  "celestial-gold": celestialGoldThemeModule,
+} satisfies Record<ThemeId, ThemeModule>;
 
-export const themeRegistry = {
-  "lumiere-default": lumiereDefaultThemeModule.definition,
-  premium: premiumThemeModule.definition,
-  kids: kidsThemeModule.definition,
-  noel: noelThemeModule.definition,
-  "editorial-ivory": editorialIvoryThemeModule.definition,
-  "garden-light": gardenLightThemeModule.definition,
-  "modern-minimal": modernMinimalThemeModule.definition,
-  "celestial-gold": celestialGoldThemeModule.definition,
-} satisfies Record<ThemeId, ThemeDefinition>;
+export const themeVisualEffects = Object.fromEntries(
+  themeIds.map((themeId) => [themeId, themeModuleRegistry[themeId].effects]),
+) as Record<ThemeId, ThemeVisualEffects>;
+
+export const themeRegistry = Object.fromEntries(
+  themeIds.map((themeId) => [themeId, themeModuleRegistry[themeId].definition]),
+) as Record<ThemeId, ThemeDefinition>;
 
 export const availableThemeIds = themeIds;
 export const availableThemes: ThemeDefinition[] = Object.values(themeRegistry);

@@ -21,7 +21,8 @@ renderers remain custom and cannot import shadcn, Base UI, or `@lumiere/dashboar
 
 The t49 controls in `components/ui/dashboard-fields.tsx` remain compatibility wrappers while feature
 flows migrate in t57 and t58. New dashboard work starts with `@lumiere/dashboard-ui` components.
-The explicit boundary check is `pnpm check:dashboard-ui-boundary`.
+The comprehensive ownership check is `pnpm check:theme-boundaries`. The legacy
+`pnpm check:dashboard-ui-boundary` alias remains available for compatibility.
 
 ## Showcase
 
