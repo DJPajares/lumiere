@@ -19,6 +19,7 @@ export const defaultRsvpPresentation = {
     "text-xs font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
   inputClassName:
     "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
+  rendererId: "common",
   submitClassName:
     "min-h-12 w-full rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
   titleClassName: "text-3xl font-light tracking-tight",
@@ -28,6 +29,14 @@ export const editorialRsvpPresentation = {
   ...defaultRsvpPresentation,
   titleClassName:
     "font-serif text-3xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-4xl",
+} satisfies ThemeRsvpPresentation;
+
+export const editorialLedgerRsvpPresentation = {
+  ...editorialRsvpPresentation,
+  cardClassName:
+    "grid overflow-hidden rounded-none border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] shadow-[0_32px_100px_color-mix(in_srgb,var(--accent)_18%,transparent)]",
+  rendererId: "editorial-ledger",
+  submitClassName: `${editorialRsvpPresentation.submitClassName} rounded-none`,
 } satisfies ThemeRsvpPresentation;
 
 export const playfulRsvpPresentation = {

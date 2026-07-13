@@ -16,6 +16,8 @@ The custom public invitation renderer and shared section components remain in `a
 
 Application components consume the resolved `ThemeDefinition` and must not compare concrete theme IDs or names. Invalid or missing IDs are resolved through the package-level common fallback. Dashboard previews consume the same serializable theme definitions and never import invitation implementation logic.
 
+RSVP presentation declares a serializable `rendererId`. The invite app resolves that capability to a renderer receiving one typed controller contract; theme modules never duplicate form state, validation, API submission, disabled-state, accessibility, or recovery behavior. The `common` renderer is the safe fallback, while specialized renderers may rearrange the same fields and actions into a meaningfully different composition.
+
 ## Asset convention
 
 Theme-owned public assets use `/themes/<theme-id>/<slot>/<filename>` and live in `apps/invite/public/themes/<theme-id>/`. The theme's `assets.ts` exports that base path and the supported `backdrop`, `cover`, `gallery`, and `ornament` slots. Keep alt text in event or preview data rather than encoding it in filenames.

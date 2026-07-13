@@ -74,12 +74,15 @@ export type ThemeHeroPresentation = {
   mediaClassName: string;
 };
 
+export type ThemeRsvpRendererId = "common" | "editorial-ledger";
+
 export type ThemeRsvpPresentation = {
   cardClassName: string;
   counterValueClassName: string;
   eyebrowClassName: string;
   fieldLabelClassName: string;
   inputClassName: string;
+  rendererId: ThemeRsvpRendererId;
   submitClassName: string;
   titleClassName: string;
 };

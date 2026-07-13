@@ -17,7 +17,7 @@ import {
 import type { FormEvent } from "react";
 import { useState } from "react";
 
-import { invitePressFeedbackProps } from "./invite-motion-primitives";
+import { resolveRsvpRenderer, type RsvpRendererContract } from "./rsvp-renderers";
 import { createInviteApiClient } from "../lib/invite-api";
 
 export type RsvpQuestionType = "multi_choice" | "single_choice" | "text" | "textarea";
@@ -66,7 +66,7 @@ export type RsvpFormSubmitResult =
       ok: true;
     };
 
-type RsvpFormProps = {
+export type RsvpFormProps = {
   copy?: ThemeRsvpCopy;
   eventSlug: string;
   guestGroup: {
@@ -80,7 +80,14 @@ type RsvpFormProps = {
   rsvpFields?: RsvpResponseFields;
 };
 
-export function RsvpForm({
+export function RsvpForm(props: RsvpFormProps) {
+  const contract = useRsvpFormController(props);
+  const Renderer = resolveRsvpRenderer(contract.presentation.rendererId);
+
+  return <Renderer {...contract} />;
+}
+
+export function useRsvpFormController({
   copy = defaultRsvpCopy,
   eventSlug,
   guestGroup,
@@ -89,7 +96,7 @@ export function RsvpForm({
   presentation = defaultRsvpPresentation,
   questions,
   rsvpFields = defaultRsvpResponseFields,
-}: RsvpFormProps) {
+}: RsvpFormProps): RsvpRendererContract {
   const [state, setState] = useState(() =>
     createInitialRsvpFormState(guestGroup.maxPax, initialResponseStatus, rsvpFields),
   );
@@ -166,520 +173,84 @@ export function RsvpForm({
     setIsSubmitting(false);
   };
 
-  const reservedSeatsCopy = `${copy.reservedSeatsIntro} ${guestGroup.maxPax} ${
-    guestGroup.maxPax === 1 ? "seat" : "seats"
-  } for your party.`;
-
-  return (
-    <form
-      className={presentation.cardClassName}
-      data-rsvp-state={statusTone}
-      onSubmit={handleSubmit}
-    >
-      <div className="grid gap-2">
-        <p className={presentation.eyebrowClassName}>{copy.eyebrow}</p>
-        <h3 className={presentation.titleClassName}>
-          <span className="opacity-80">{copy.greetingPrefix} </span>
-          {guestGroup.label}
-        </h3>
-        <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-          {reservedSeatsCopy}
-        </p>
-      </div>
-
-      {submittedResponse ? (
-        <div
-          className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-5 text-center"
-          role="status"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--success)]">
-            {copy.successTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            {copy.successDescription}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            {formatRsvpStatus(submittedResponse.responseStatus)}
-            {submittedResponse.attendeeCount > 0
-              ? `, ${submittedResponse.attendeeCount} ${
-                  submittedResponse.attendeeCount === 1
-                    ? copy.guestLabelSingular.toLowerCase()
-                    : copy.guestLabelPlural.toLowerCase()
-                }`
-              : ""}
-            .
-          </p>
-        </div>
-      ) : null}
-
-      {recoveryState ? <RecoveryNotice state={recoveryState} /> : null}
-
-      {errors.form ? (
-        <p
-          className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--error)_44%,var(--border))] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm leading-6 text-[var(--error)]"
-          role="alert"
-        >
-          {errors.form}
-        </p>
-      ) : null}
-
-      {isUpdatingExistingReply ? (
-        <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          {copy.updateNotice}
-        </p>
-      ) : null}
-
-      <fieldset className="grid gap-3" disabled={isLocked || isSubmitting}>
-        <legend className={presentation.fieldLabelClassName}>{copy.attendancePrompt}</legend>
-        <div className="grid grid-cols-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
-          <RsvpStatusOption
-            checked={state.responseStatus === "attending"}
-            label={copy.acceptLabel}
-            name="responseStatus"
-            onChange={() =>
-              setState((current) =>
-                withResponseStatus(
-                  current,
-                  "attending",
-                  guestGroup.maxPax,
-                  rsvpFields.collectGuestNames,
-                ),
-              )
-            }
-            value="attending"
-          />
-          <RsvpStatusOption
-            checked={state.responseStatus === "not_attending"}
-            label={copy.declineLabel}
-            name="responseStatus"
-            onChange={() =>
-              setState((current) =>
-                withResponseStatus(
-                  current,
-                  "not_attending",
-                  guestGroup.maxPax,
-                  rsvpFields.collectGuestNames,
-                ),
-              )
-            }
-            value="not_attending"
-          />
-        </div>
-        <FieldError id="responseStatus-error" message={errors.responseStatus} />
-      </fieldset>
-
-      {isResponding && (
-        <div className="grid gap-2">
-          <p className={presentation.fieldLabelClassName}>{copy.countPrompt}</p>
-          <div
-            aria-describedby={errors.attendeeCount ? "attendeeCount-error" : undefined}
-            className="grid grid-cols-[3.5rem_1fr_3.5rem] items-center rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
-          >
-            <CounterButton
-              disabled={isLocked || isSubmitting || state.attendeeCount <= 1}
-              label="Remove one guest"
-              onClick={() =>
-                setState((current) =>
-                  withAttendeeCount(
-                    current,
-                    Math.max(1, current.attendeeCount - 1),
-                    rsvpFields.collectGuestNames,
-                  ),
-                )
-              }
-            >
-              -
-            </CounterButton>
-            <div className="grid place-items-center px-3 py-2 text-center">
-              <span className={presentation.counterValueClassName}>{state.attendeeCount}</span>
-              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
-                {state.attendeeCount === 1 ? copy.guestLabelSingular : copy.guestLabelPlural}
-              </span>
-            </div>
-            <CounterButton
-              disabled={isLocked || isSubmitting || state.attendeeCount >= guestGroup.maxPax}
-              label="Add one guest"
-              onClick={() =>
-                setState((current) =>
-                  withAttendeeCount(
-                    current,
-                    Math.min(guestGroup.maxPax, current.attendeeCount + 1),
-                    rsvpFields.collectGuestNames,
-                  ),
-                )
-              }
-            >
-              +
-            </CounterButton>
-          </div>
-          <FieldError id="attendeeCount-error" message={errors.attendeeCount} />
-        </div>
-      )}
-
-      {hasDetails ? (
-        <details
-          className="group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
-          onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
-          open={detailsOpen}
-        >
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none">
-            <span>{detailsLabel}</span>
-            <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              {detailsOpen ? copy.detailsCloseLabel : copy.detailsOpenLabel}
-            </span>
-          </summary>
-
-          <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
-            {isResponding && rsvpFields.collectGuestNames ? (
-              <div className="grid gap-3">
-                <p className={presentation.fieldLabelClassName}>{copy.guestNamesLabel}</p>
-                {state.guestNames.map((name, index) => (
-                  <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                      {copy.guestNameLabel} {index + 1}
-                    </span>
-                    <input
-                      aria-describedby={
-                        errors[`guestNames.${index}`] ? `guestName-${index}-error` : undefined
-                      }
-                      aria-invalid={Boolean(errors[`guestNames.${index}`])}
-                      className={presentation.inputClassName}
-                      disabled={isLocked || isSubmitting}
-                      id={`guestName-${index}`}
-                      onChange={(event) => {
-                        const value = event.currentTarget.value;
-                        setState((current) => ({
-                          ...current,
-                          guestNames: current.guestNames.map((item, itemIndex) =>
-                            itemIndex === index ? value : item,
-                          ),
-                        }));
-                      }}
-                      value={name}
-                    />
-                    <FieldError
-                      id={`guestName-${index}-error`}
-                      message={errors[`guestNames.${index}`]}
-                    />
-                  </label>
-                ))}
-                <FieldError id="guestNames-error" message={errors.guestNames} />
-              </div>
-            ) : null}
-
-            {questions.length > 0 ? (
-              <div className="grid gap-4">
-                <div>
-                  <p className={presentation.fieldLabelClassName}>{copy.questionGroupTitle}</p>
-                  <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                    {copy.questionGroupDescription}
-                  </p>
-                </div>
-                {questions.map((question) => (
-                  <QuestionField
-                    error={errors[`answers.${question.key}`]}
-                    isDisabled={isLocked || isSubmitting}
-                    inputClassName={presentation.inputClassName}
-                    key={question.key}
-                    onChange={(value) =>
-                      setState((current) => ({
-                        ...current,
-                        answers: {
-                          ...current.answers,
-                          [question.key]: value,
-                        },
-                      }))
-                    }
-                    question={question}
-                    value={
-                      state.answers[question.key] ?? (question.type === "multi_choice" ? [] : "")
-                    }
-                  />
-                ))}
-              </div>
-            ) : null}
-
-            {rsvpFields.collectGuestMessage ? (
-              <label className="grid gap-2" htmlFor="rsvp-message">
-                <span className={presentation.fieldLabelClassName}>{copy.messageLabel}</span>
-                <textarea
-                  aria-describedby={errors.message ? "rsvp-message-error" : undefined}
-                  aria-invalid={Boolean(errors.message)}
-                  className={`${presentation.inputClassName} min-h-24 py-3 leading-6`}
-                  disabled={isLocked || isSubmitting}
-                  id="rsvp-message"
-                  onChange={(event) =>
-                    setState((current) => ({
-                      ...current,
-                      message: event.currentTarget.value,
-                    }))
-                  }
-                  placeholder={copy.messagePlaceholder}
-                  value={state.message}
-                />
-                <FieldError id="rsvp-message-error" message={errors.message} />
-              </label>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
-
-      <button
-        {...invitePressFeedbackProps}
-        className={presentation.submitClassName}
-        disabled={isSubmitting || isLocked}
-        type="submit"
-      >
-        {isSubmitting
-          ? isUpdatingExistingReply
-            ? copy.updatingLabel
-            : copy.submittingLabel
-          : isUpdatingExistingReply
-            ? copy.updateLabel
-            : copy.submitLabel}
-      </button>
-
-      <ReplyStatusPanel copy={statusCopy} tone={statusTone} />
-    </form>
-  );
-}
-
-function ReplyStatusPanel({
-  copy,
-  tone,
-}: {
-  copy: {
-    body: string;
-    meta: string;
-    title: string;
+  return {
+    actions: {
+      addAttendee: () =>
+        setState((current) =>
+          withAttendeeCount(
+            current,
+            Math.min(guestGroup.maxPax, current.attendeeCount + 1),
+            rsvpFields.collectGuestNames,
+          ),
+        ),
+      removeAttendee: () =>
+        setState((current) =>
+          withAttendeeCount(
+            current,
+            Math.max(1, current.attendeeCount - 1),
+            rsvpFields.collectGuestNames,
+          ),
+        ),
+      setAnswer: (questionKey, value) =>
+        setState((current) => ({
+          ...current,
+          answers: {
+            ...current.answers,
+            [questionKey]: value,
+          },
+        })),
+      setDetailsOpen,
+      setGuestName: (index, value) =>
+        setState((current) => ({
+          ...current,
+          guestNames: current.guestNames.map((item, itemIndex) =>
+            itemIndex === index ? value : item,
+          ),
+        })),
+      setMessage: (message) => setState((current) => ({ ...current, message })),
+      setResponseStatus: (responseStatus) =>
+        setState((current) =>
+          withResponseStatus(
+            current,
+            responseStatus,
+            guestGroup.maxPax,
+            rsvpFields.collectGuestNames,
+          ),
+        ),
+      submit: handleSubmit,
+    },
+    context: {
+      eventSlug,
+      guestGroup,
+    },
+    copy,
+    details: {
+      isOpen: detailsOpen,
+      label: detailsLabel,
+    },
+    enabledFields: rsvpFields,
+    errors,
+    flags: {
+      canRetry: !isLocked,
+      hasDetails,
+      isLocked,
+      isResponding,
+      isSubmitting,
+      isUpdatingExistingReply,
+    },
+    formState: state,
+    presentation,
+    questions,
+    recoveryState,
+    reservedSeatsCopy: `${copy.reservedSeatsIntro} ${guestGroup.maxPax} ${
+      guestGroup.maxPax === 1 ? "seat" : "seats"
+    } for your party.`,
+    status: {
+      copy: statusCopy,
+      tone: statusTone,
+    },
+    submittedResponse,
   };
-  tone: ReplyTone;
-}) {
-  return (
-    <section className={replyStatusClassName(tone)} aria-live="polite">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] opacity-70">{copy.meta}</p>
-        <p className="mt-2 text-xl font-semibold">{copy.title}</p>
-        <p className="mt-1 text-sm leading-6 opacity-75">{copy.body}</p>
-      </div>
-      <span
-        aria-hidden="true"
-        className="hidden h-px flex-1 bg-[color-mix(in_srgb,currentColor_28%,transparent)] sm:block"
-      />
-    </section>
-  );
-}
-
-function RecoveryNotice({ state }: { state: RsvpRecoveryState }) {
-  return (
-    <section
-      className="grid gap-2 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--warning)_42%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_84%,transparent)]"
-      role="alert"
-    >
-      <p className="font-semibold">{state.title}</p>
-      <p className="text-sm leading-6">{state.body}</p>
-      {!isRsvpLocked(state) ? (
-        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-          Your answers are still here. Review the highlighted fields, then try again.
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function CounterButton({
-  children,
-  disabled,
-  label,
-  onClick,
-}: {
-  children: string;
-  disabled: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      {...invitePressFeedbackProps}
-      aria-label={label}
-      className="grid size-12 place-items-center rounded-full text-2xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35 cursor-pointer"
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
-function RsvpStatusOption({
-  checked,
-  label,
-  name,
-  onChange,
-  value,
-}: {
-  checked: boolean;
-  label: string;
-  name: string;
-  onChange: () => void;
-  value: RsvpStatus;
-}) {
-  return (
-    <label
-      className={
-        checked
-          ? "grid min-h-11 cursor-pointer place-items-center rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition"
-          : "grid min-h-11 cursor-pointer place-items-center rounded-full px-4 py-3 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
-      }
-    >
-      <input
-        checked={checked}
-        className="sr-only"
-        name={name}
-        onChange={onChange}
-        type="radio"
-        value={value}
-      />
-      {label}
-    </label>
-  );
-}
-
-function QuestionField({
-  error,
-  isDisabled,
-  inputClassName,
-  onChange,
-  question,
-  value,
-}: {
-  error?: string;
-  isDisabled: boolean;
-  inputClassName: string;
-  onChange: (value: string | string[]) => void;
-  question: RsvpQuestion;
-  value: string | string[];
-}) {
-  const inputId = `answer-${question.key}`;
-  const describedBy = error ? `${inputId}-error` : undefined;
-
-  if (question.type === "textarea") {
-    return (
-      <label className="grid gap-2" htmlFor={inputId}>
-        <QuestionLabel question={question} />
-        <textarea
-          aria-describedby={describedBy}
-          aria-invalid={Boolean(error)}
-          className={`${inputClassName} min-h-24 py-3 leading-6`}
-          disabled={isDisabled}
-          id={inputId}
-          onChange={(event) => onChange(event.currentTarget.value)}
-          value={typeof value === "string" ? value : ""}
-        />
-        <FieldError id={`${inputId}-error`} message={error} />
-      </label>
-    );
-  }
-
-  if (question.type === "single_choice" && question.options.length > 0) {
-    return (
-      <label className="grid gap-2" htmlFor={inputId}>
-        <QuestionLabel question={question} />
-        <select
-          aria-describedby={describedBy}
-          aria-invalid={Boolean(error)}
-          className={inputClassName}
-          disabled={isDisabled}
-          id={inputId}
-          onChange={(event) => onChange(event.currentTarget.value)}
-          value={typeof value === "string" ? value : ""}
-        >
-          <option value="">Choose one</option>
-          {question.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <FieldError id={`${inputId}-error`} message={error} />
-      </label>
-    );
-  }
-
-  if (question.type === "multi_choice" && question.options.length > 0) {
-    const values = Array.isArray(value) ? value : [];
-
-    return (
-      <fieldset className="grid gap-2">
-        <legend>
-          <QuestionLabel question={question} />
-        </legend>
-        <div className="grid gap-2">
-          {question.options.map((option) => (
-            <label
-              className="flex min-h-10 items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-              key={option}
-            >
-              <input
-                checked={values.includes(option)}
-                className="size-4 accent-[var(--accent)]"
-                disabled={isDisabled}
-                onChange={(event) => {
-                  onChange(
-                    event.currentTarget.checked
-                      ? [...values, option]
-                      : values.filter((item) => item !== option),
-                  );
-                }}
-                type="checkbox"
-                value={option}
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-        <FieldError id={`${inputId}-error`} message={error} />
-      </fieldset>
-    );
-  }
-
-  return (
-    <label className="grid gap-2" htmlFor={inputId}>
-      <QuestionLabel question={question} />
-      <input
-        aria-describedby={describedBy}
-        aria-invalid={Boolean(error)}
-        className={inputClassName}
-        disabled={isDisabled}
-        id={inputId}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        value={typeof value === "string" ? value : ""}
-      />
-      <FieldError id={`${inputId}-error`} message={error} />
-    </label>
-  );
-}
-
-function QuestionLabel({ question }: { question: RsvpQuestion }) {
-  return (
-    <span className="text-sm font-semibold">
-      {question.label}
-      {question.required ? (
-        <span className="ml-1 text-[var(--accent-strong)]" aria-label="required">
-          *
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-function FieldError({ id, message }: { id: string; message?: string }) {
-  return message ? (
-    <p className="text-sm leading-6 text-[var(--error)]" id={id}>
-      {message}
-    </p>
-  ) : null;
 }
 
 export function createInitialRsvpFormState(
@@ -940,26 +511,6 @@ function getReplyTone({
   }
 
   return "draft";
-}
-
-function replyStatusClassName(tone: ReplyTone) {
-  const base =
-    "flex flex-col gap-3 rounded-[var(--radius-lg)] border px-4 py-4 text-[var(--foreground)] sm:flex-row sm:items-center";
-
-  switch (tone) {
-    case "accepted":
-      return `${base} border-[color-mix(in_srgb,var(--success)_34%,var(--border))] bg-[color-mix(in_srgb,var(--success)_8%,var(--surface))]`;
-    case "blocked":
-      return `${base} border-[color-mix(in_srgb,var(--warning)_38%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))]`;
-    case "declined":
-      return `${base} border-[color-mix(in_srgb,var(--foreground)_22%,var(--border))] bg-[var(--surface-muted)]`;
-    case "sent":
-      return `${base} border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))]`;
-    case "updating":
-      return `${base} border-[color-mix(in_srgb,var(--accent)_34%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))]`;
-    default:
-      return `${base} border-[var(--border)] bg-[var(--surface-muted)]`;
-  }
 }
 
 function isRsvpLocked(recoveryState: RsvpRecoveryState | null) {

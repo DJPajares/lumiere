@@ -125,7 +125,10 @@ describe("theme registry", () => {
     expect(resolveTheme("unavailable-theme").id).toBe("lumiere-default");
     expect(resolveTheme(undefined)).toBe(themeRegistry["lumiere-default"]);
     expect(themeRegistry.kids.presentation.hero.frameClassName).toContain("lumiere-hero--kids");
+    expect(themeRegistry.kids.presentation.rsvp.rendererId).toBe("common");
+    expect(themeRegistry["lumiere-default"].presentation.rsvp.rendererId).toBe("common");
     expect(themeRegistry.premium.presentation.rsvp.titleClassName).toContain("font-serif");
+    expect(themeRegistry.premium.presentation.rsvp.rendererId).toBe("editorial-ledger");
 
     expect(resolveThemeRsvpCopy(themeRegistry["lumiere-default"])).toEqual(defaultRsvpCopy);
     expect(resolveThemeRsvpCopy(themeRegistry.kids)).toMatchObject({

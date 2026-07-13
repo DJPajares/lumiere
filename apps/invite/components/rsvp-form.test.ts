@@ -14,9 +14,12 @@ import {
   type RsvpFormState,
   type RsvpQuestion,
 } from "./rsvp-form";
+import { resolveRsvpRenderer, type RsvpRendererContract } from "./rsvp-renderers";
 
 describe("RSVP form flow helpers", () => {
   it("renders an awaiting-reply state with the guest group and max pax", () => {
+    expect(resolveRsvpRenderer("missing-renderer")).toBe(resolveRsvpRenderer("common"));
+
     const html = renderToStaticMarkup(
       createElement(RsvpForm, {
         eventSlug: "garden-evening",
@@ -28,6 +31,7 @@ describe("RSVP form flow helpers", () => {
     );
 
     expect(html).toContain('data-rsvp-state="draft"');
+    expect(html).toContain('data-rsvp-renderer="common"');
     expect(html).toContain("Tan Family");
     expect(html).toContain("4 seats");
     expect(html).toContain("Awaiting reply");
@@ -50,6 +54,31 @@ describe("RSVP form flow helpers", () => {
     expect(playfulHtml).toContain("Can you join the party?");
     expect(playfulHtml).toContain("Your party reply");
     expect(playfulHtml).toContain("border-2");
+    expect(playfulHtml).toContain('data-rsvp-renderer="common"');
+
+    const editorialHtml = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        copy: resolveThemeRsvpCopy(themeRegistry.premium),
+        eventSlug: "formal-evening",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: null,
+        presentation: themeRegistry.premium.presentation.rsvp,
+        questions,
+      }),
+    );
+
+    expect(editorialHtml).toContain('data-rsvp-renderer="editorial-ledger"');
+    expect(editorialHtml).toContain('data-rsvp-layout="editorial-ledger"');
+    expect(editorialHtml).toContain('aria-label="Attendance"');
+    expect(editorialHtml).toContain('aria-label="Guest details"');
+    expect(editorialHtml).toContain('type="radio"');
+    expect(editorialHtml).toContain('aria-live="polite"');
+    expect(editorialHtml).toContain('aria-label="Remove one guest"');
+    expect(editorialHtml).toContain('aria-label="Add one guest"');
+    expect(editorialHtml).toContain("4 guests");
+    expect(editorialHtml).toContain('id="guestName-0"');
+    expect(editorialHtml).toContain('id="rsvp-message"');
   });
 
   it("renders an already-submitted reply as an update flow", () => {
@@ -104,6 +133,56 @@ describe("RSVP form flow helpers", () => {
     expect(namesOnlyHtml).not.toContain('id="rsvp-message"');
     expect(messageOnlyHtml).not.toContain("Names for the guest list");
     expect(messageOnlyHtml).toContain('id="rsvp-message"');
+  });
+
+  it("renders loading, recovery, and success states through the premium renderer contract", () => {
+    const Renderer = resolveRsvpRenderer("editorial-ledger");
+    const noOptionalFieldsContract = createRendererContract();
+    noOptionalFieldsContract.enabledFields = {
+      collectGuestMessage: false,
+      collectGuestNames: false,
+    };
+    noOptionalFieldsContract.flags.hasDetails = false;
+    noOptionalFieldsContract.questions = [];
+    const noOptionalFieldsHtml = renderToStaticMarkup(
+      createElement(Renderer, noOptionalFieldsContract),
+    );
+    const loadingHtml = renderToStaticMarkup(
+      createElement(Renderer, createRendererContract({ isSubmitting: true })),
+    );
+    const recoveryHtml = renderToStaticMarkup(
+      createElement(
+        Renderer,
+        createRendererContract({
+          isLocked: true,
+          recoveryState: {
+            body: "RSVP is closed for this event.",
+            kind: "closed",
+            title: "RSVP is closed.",
+          },
+        }),
+      ),
+    );
+    const successHtml = renderToStaticMarkup(
+      createElement(
+        Renderer,
+        createRendererContract({
+          submittedResponse: createResponse("attending").response,
+        }),
+      ),
+    );
+
+    expect(loadingHtml).toContain("Sending reply...");
+    expect(loadingHtml).toContain("disabled");
+    expect(recoveryHtml).toContain('role="alert"');
+    expect(recoveryHtml).toContain("RSVP is closed.");
+    expect(recoveryHtml).not.toContain("Your answers are still here");
+    expect(successHtml).toContain('role="status"');
+    expect(successHtml).toContain("Reply received");
+    expect(successHtml).toContain("2 guests");
+    expect(noOptionalFieldsHtml).not.toContain('aria-label="Guest details"');
+    expect(noOptionalFieldsHtml).not.toContain('id="guestName-0"');
+    expect(noOptionalFieldsHtml).not.toContain('id="rsvp-message"');
   });
 
   it("submits an attending RSVP with guest names and custom answers", async () => {
@@ -353,6 +432,79 @@ const guestGroup = {
   label: "Tan Family",
   maxPax: 4,
 };
+
+function createRendererContract({
+  isLocked = false,
+  isSubmitting = false,
+  recoveryState = null,
+  submittedResponse = null,
+}: {
+  isLocked?: boolean;
+  isSubmitting?: boolean;
+  recoveryState?: RsvpRendererContract["recoveryState"];
+  submittedResponse?: RsvpRendererContract["submittedResponse"];
+} = {}): RsvpRendererContract {
+  const copy = resolveThemeRsvpCopy(themeRegistry.premium);
+
+  return {
+    actions: {
+      addAttendee: vi.fn(),
+      removeAttendee: vi.fn(),
+      setAnswer: vi.fn(),
+      setDetailsOpen: vi.fn(),
+      setGuestName: vi.fn(),
+      setMessage: vi.fn(),
+      setResponseStatus: vi.fn(),
+      submit: vi.fn(),
+    },
+    context: {
+      eventSlug: "formal-evening",
+      guestGroup,
+    },
+    copy,
+    details: {
+      isOpen: true,
+      label: copy.detailsLabel,
+    },
+    enabledFields: {
+      collectGuestMessage: true,
+      collectGuestNames: true,
+    },
+    errors: {},
+    flags: {
+      canRetry: !isLocked,
+      hasDetails: true,
+      isLocked,
+      isResponding: true,
+      isSubmitting,
+      isUpdatingExistingReply: false,
+    },
+    formState: {
+      answers: {},
+      attendeeCount: 2,
+      guestNames: ["Ari Tan", "Bea Tan"],
+      message: "Looking forward to it.",
+      responseStatus: "attending",
+    },
+    presentation: themeRegistry.premium.presentation.rsvp,
+    questions,
+    recoveryState,
+    reservedSeatsCopy: "We've saved 4 seats for your party.",
+    status: {
+      copy: {
+        body: submittedResponse
+          ? "Attending for Tan Family. 2 of 4 seats confirmed."
+          : "2 of 4 reserved seats selected for Tan Family.",
+        meta: submittedResponse ? "Saved reply" : "Draft reply",
+        title: submittedResponse
+          ? "The host has your latest response."
+          : "We will tell the host you plan to attend.",
+      },
+      tone: recoveryState ? "blocked" : submittedResponse ? "sent" : "accepted",
+    },
+    submittedResponse,
+  };
+}
 
 function createResponse(
   responseStatus: RsvpSubmissionResponse["response"]["responseStatus"],

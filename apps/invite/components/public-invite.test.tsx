@@ -494,6 +494,7 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Send private reply");
     expect(html).toContain("Will you celebrate with us?");
     expect(html).toContain('data-rsvp-design="editorial"');
+    expect(html).toContain('data-rsvp-renderer="editorial-ledger"');
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain("lumiere-guest-panel");
     expect(html).toContain("lumiere-rsvp-layout");
