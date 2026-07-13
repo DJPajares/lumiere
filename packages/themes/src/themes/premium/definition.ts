@@ -110,6 +110,7 @@ export const premiumTheme = {
       mediaTreatment:
         "Tall portrait media with offset frame, depth shadow, and subtle parallax hooks.",
     },
+    map: { aspect: "wide", frame: "editorial", overlay: "soft-vignette" },
     rsvpDesign: "premium",
     sectionDefaults: {
       date: {

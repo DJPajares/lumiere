@@ -96,6 +96,7 @@ export const noelTheme = {
       fullViewport: true,
       mediaTreatment: "Warm table or gathering image with evergreen framing and soft light.",
     },
+    map: { aspect: "landscape", frame: "seasonal", overlay: "accent-wash" },
     rsvpDesign: "noel",
     sectionDefaults: {
       date: {

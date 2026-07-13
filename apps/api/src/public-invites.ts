@@ -9,6 +9,7 @@ import {
   guestGroups,
   rsvpResponses,
 } from "@lumiere/db";
+import { sanitizePublicLocationContent } from "@lumiere/themes";
 import {
   rsvpResponseFieldsSchema,
   type Event,
@@ -199,7 +200,7 @@ export const toPublicEventRecord = (event: PublicEventRow): PublicEventRecord =>
   selectedThemeId: event.publication.selectedThemeId,
   themeConfig: event.publication.themeConfigJson as Event["themeConfig"],
   themeMode: event.publication.themeMode,
-  sections: event.publication.sectionsJson,
+  sections: normalizePublicLocationSections(event.publication.sectionsJson),
 });
 
 type LivePublicEventRow = {
@@ -227,8 +228,18 @@ const toLivePublicEventRecord = (
   },
   rsvpFields: rsvpResponseFieldsSchema.parse(event.publication.rsvpSettingsJson),
   selectedThemeId: event.themeSettings?.selectedThemeId ?? undefined,
-  sections: event.sections,
+  sections: normalizePublicLocationSections(event.sections),
   themeConfig: (event.themeSettings?.configJson ?? {}) as Event["themeConfig"],
   themeMode: event.themeSettings?.themeMode ?? "system",
   publicAccessCodeHash: event.event.publicAccessCodeHash,
 });
+
+const normalizePublicLocationSections = (sections: EventSection[]) =>
+  sections.map((section) =>
+    section.sectionType === "location"
+      ? {
+          ...section,
+          content: sanitizePublicLocationContent(section.content) as EventSection["content"],
+        }
+      : section,
+  );

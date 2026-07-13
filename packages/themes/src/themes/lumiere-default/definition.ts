@@ -79,6 +79,7 @@ export const lumiereDefaultTheme = {
       fullViewport: false,
       mediaTreatment: "Soft rectangular cover image beside practical event facts.",
     },
+    map: { aspect: "landscape", frame: "soft", overlay: "accent-wash" },
     rsvpDesign: "default",
     sectionDefaults: {
       date: {

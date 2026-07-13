@@ -13,6 +13,7 @@ import {
   inviteCompositionFamilies,
   inviteMotionRules,
   inviteVisualCompositionSystem,
+  normalizeLocationContent,
   reverieReferenceLinks,
   sectionDefinitions,
   sampleInviteCompositionMaps,
@@ -70,7 +71,10 @@ const baseSections = [
     content: {
       venueName: "The Glasshouse",
       address: "12 Orchard Road, Singapore",
-      mapUrl: "https://maps.example.com/the-glasshouse",
+      latitude: 1.3048,
+      longitude: 103.8318,
+      mapUrl:
+        "https://www.google.com/maps/dir/?api=1&destination=12%20Orchard%20Road%2C%20Singapore",
     },
     settings: {
       showMapPreview: true,
@@ -290,6 +294,9 @@ describe("theme registry", () => {
           theme.composition.visualSystem.compositionMap &&
           theme.composition.visualSystem.motionProfile &&
           theme.composition.visualSystem.parallaxProfile &&
+          theme.composition.map.aspect &&
+          theme.composition.map.frame &&
+          theme.composition.map.overlay &&
           theme.composition.sectionDefaults.rsvp &&
           theme.previewData.sections.length > 0 &&
           theme.supportedModes.length > 0 &&
@@ -723,6 +730,34 @@ describe("theme registry", () => {
     if (!result.ok) {
       expect(result.issues.join(" ")).toContain("Use HTTP or HTTPS URLs");
     }
+    const unapprovedProvider = validateThemeSection("premium", {
+      ...baseSections[2],
+      content: {
+        venueName: "The Glasshouse",
+        address: "12 Orchard Road, Singapore",
+        directionsUrl: "https://maps.example.com/the-glasshouse",
+      },
+    });
+    const incompleteCoordinates = validateThemeSection("premium", {
+      ...baseSections[2],
+      content: {
+        venueName: "The Glasshouse",
+        address: "12 Orchard Road, Singapore",
+        latitude: 1.3048,
+      },
+    });
+
+    expect(unapprovedProvider.ok).toBe(false);
+    expect(incompleteCoordinates.ok).toBe(false);
+    expect(
+      normalizeLocationContent({
+        venueName: "The Glasshouse",
+        address: "12 Orchard Road, Singapore",
+        directionsUrl: "javascript:alert(1)",
+      }),
+    ).toMatchObject({
+      directionsUrl: expect.stringContaining("https://www.google.com/maps/dir/"),
+    });
   });
 
   it("rejects unsupported theme sections", () => {

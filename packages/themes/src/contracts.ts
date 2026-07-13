@@ -97,6 +97,11 @@ export type ThemeComposition = {
     fullViewport: boolean;
     mediaTreatment: string;
   };
+  map: {
+    aspect: "landscape" | "portrait" | "wide";
+    frame: "celestial" | "editorial" | "minimal" | "organic" | "playful" | "seasonal" | "soft";
+    overlay: "accent-wash" | "none" | "soft-vignette";
+  };
   sectionDefaults: Partial<Record<SectionType, ThemeSectionDefault>>;
   rsvpDesign: "default" | "kids" | "noel" | "premium";
   ambientMedia: {

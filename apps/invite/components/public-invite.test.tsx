@@ -184,7 +184,8 @@ describe("public invite section renderers", () => {
           createSection({
             content: {
               address: "18 Marina Gardens Drive, Singapore 018953",
-              mapUrl: "https://maps.example.com/emerald-gardens",
+              latitude: 1.2816,
+              longitude: 103.8636,
               notes: "Please use the Garden East entrance.",
               venueName: "Emerald Gardens",
             },
@@ -251,11 +252,39 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-motion-kind="gallery-drift"');
     expect(html).toContain('data-motion-kind="media-reveal"');
     expect(html).toContain('data-section-renderer="section.gallery"');
-    expect(html).toContain("Map preview");
+    expect(html).toContain('data-map-state="embedded"');
+    expect(html).toContain('data-map-frame="editorial"');
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('title="Map showing Emerald Gardens"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain("Open directions");
+    expect(html).toContain("openstreetmap.org/export/embed.html");
     expect(html).toContain("Garden portrait at golden hour");
     expect(html).toContain("Garden aisle at dusk");
     expect(html).toContain("First the quiet hello.");
     expect(html).toContain("Then a life gathered around one table.");
+
+    const gardenInvite = createInvite([
+      createSection({
+        content: {
+          address: "18 Marina Gardens Drive, Singapore 018953",
+          latitude: 1.2816,
+          longitude: 103.8636,
+          venueName: "Emerald Gardens",
+        },
+        sectionKey: "garden-location",
+        sectionType: "location",
+        sortOrder: 0,
+      }),
+    ]);
+    gardenInvite.selectedThemeId = "garden-light";
+    const gardenHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: gardenInvite }),
+    );
+
+    expect(gardenHtml).toContain('data-map-frame="organic"');
+    expect(gardenHtml).toContain('data-map-aspect="landscape"');
   });
 
   it("respects section settings for columns, density, variants, and swatches", () => {

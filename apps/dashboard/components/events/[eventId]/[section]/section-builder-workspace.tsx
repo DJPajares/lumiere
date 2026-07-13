@@ -9,6 +9,7 @@ import {
   getSectionDefinition,
   getTheme,
   isThemeId,
+  normalizeLocationContent,
   normalizeStoryParagraphs,
   validateEventTypeSections,
   type SectionBlueprintRequirement,
@@ -1545,7 +1546,44 @@ function LocationFields({ controller }: { controller: SectionFieldController }) 
         required
         scope="content"
       />
-      <TextField controller={controller} label="Map URL" path={["mapUrl"]} scope="content" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <NumberField
+          controller={controller}
+          label="Latitude"
+          max={90}
+          min={-90}
+          path={["latitude"]}
+          scope="content"
+        />
+        <NumberField
+          controller={controller}
+          label="Longitude"
+          max={180}
+          min={-180}
+          path={["longitude"]}
+          scope="content"
+        />
+      </div>
+      <TextField
+        controller={controller}
+        label="Google place ID"
+        path={["placeId"]}
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Approved map embed URL"
+        path={["embedUrl"]}
+        scope="content"
+        type="url"
+      />
+      <TextField
+        controller={controller}
+        label="Approved directions URL"
+        path={["directionsUrl"]}
+        scope="content"
+        type="url"
+      />
       <TextField controller={controller} label="Notes" multiline path={["notes"]} scope="content" />
     </div>
   );
@@ -2111,14 +2149,16 @@ function NumberField({
 }) {
   const id = fieldId(controller.section, scope, path);
   const value = getJsonNumber(scope === "content" ? controller.content : controller.settings, path);
+  const error = controller.fieldError(scope, path);
   const update = (nextValue: string) =>
     scope === "content"
-      ? controller.updateContentValue(path, Number(nextValue))
-      : controller.updateSettingsValue(path, Number(nextValue));
+      ? controller.updateContentValue(path, nextValue === "" ? undefined : Number(nextValue))
+      : controller.updateSettingsValue(path, nextValue === "" ? undefined : Number(nextValue));
 
   return (
     <DashboardTextInput
       disabled={controller.disabled}
+      error={error}
       id={id}
       label={label}
       max={max}
@@ -2678,7 +2718,9 @@ function PreviewGallery({ content }: { content: JsonObject }) {
 function PreviewLocation({ content, settings }: { content: JsonObject; settings: JsonObject }) {
   const venueName = readString(content.venueName) ?? "Venue";
   const address = readString(content.address);
-  const mapUrl = readString(content.mapUrl);
+  const location = normalizeLocationContent(content);
+  const directionsUrl = location?.directionsUrl;
+  const embedUrl = location?.embedUrl;
   const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
@@ -2691,14 +2733,17 @@ function PreviewLocation({ content, settings }: { content: JsonObject; settings:
             {readString(content.notes)}
           </p>
         ) : null}
-        {mapUrl ? (
+        {directionsUrl ? (
           <span className="inline-flex min-h-10 w-fit items-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)]">
-            Open map
+            Open directions
           </span>
         ) : null}
       </div>
       {showMapPreview ? (
-        <div className="grid min-h-40 place-items-end rounded-[var(--radius-md)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-3">
+        <div
+          className="grid min-h-40 place-items-end rounded-[var(--radius-md)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-3"
+          data-map-state={embedUrl ? "embedded" : "fallback"}
+        >
           <div className="w-full rounded-[var(--radius-sm)] bg-[var(--surface)] p-3 text-sm">
             <p className="font-semibold">{venueName}</p>
             <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">

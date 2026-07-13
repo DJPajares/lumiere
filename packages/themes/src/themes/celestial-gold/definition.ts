@@ -101,6 +101,7 @@ export const celestialGoldTheme = {
       fullViewport: true,
       mediaTreatment: "Cinematic portrait within a luminous oval field and fine orbital rules.",
     },
+    map: { aspect: "wide", frame: "celestial", overlay: "soft-vignette" },
     rsvpDesign: "premium",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },

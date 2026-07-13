@@ -91,6 +91,10 @@ describe("invite app routes", () => {
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');
     expect(html).not.toContain("data-theme-mode-control=");
+    expect(html).toContain('data-map-state="fallback"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain("Open directions");
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain('class="lumiere-scroll-progress"');
     expect(html).not.toContain("Private RSVP");

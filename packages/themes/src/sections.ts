@@ -26,6 +26,38 @@ const publicUrlSchema = z
     },
   );
 
+const secureMapUrlSchema = publicUrlSchema.refine((value) => new URL(value).protocol === "https:", {
+  message: "Map URLs must use HTTPS",
+});
+
+const mapEmbedUrlSchema = secureMapUrlSchema.refine(isAllowedMapEmbedUrl, {
+  message: "Use an approved OpenStreetMap embed URL",
+});
+
+const mapDirectionsUrlSchema = secureMapUrlSchema.refine(isAllowedMapDirectionsUrl, {
+  message: "Use an approved Google Maps, Apple Maps, or OpenStreetMap directions URL",
+});
+
+const mapPlaceIdSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(255)
+  .regex(/^[A-Za-z0-9_-]+$/, "Use a valid provider place identifier");
+
+const optionalMapEmbedUrlSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  mapEmbedUrlSchema.optional(),
+);
+const optionalMapDirectionsUrlSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  mapDirectionsUrlSchema.optional(),
+);
+const optionalMapPlaceIdSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  mapPlaceIdSchema.optional(),
+);
+
 const assetSchema = z.object({
   url: publicUrlSchema,
   alt: z.string().trim().min(1).max(180),
@@ -167,12 +199,166 @@ export const dressCodeContentSchema = z.object({
     .default([]),
 });
 
-export const locationContentSchema = z.object({
+const locationBaseContentSchema = z.object({
   venueName: nonEmptyString.max(180),
   address: nonEmptyString.max(500),
-  mapUrl: publicUrlSchema.optional(),
   notes: z.string().trim().max(800).optional(),
 });
+
+export const locationContentSchema = locationBaseContentSchema
+  .extend({
+    latitude: z.number().finite().min(-90).max(90).optional(),
+    longitude: z.number().finite().min(-180).max(180).optional(),
+    placeId: optionalMapPlaceIdSchema,
+    embedUrl: optionalMapEmbedUrlSchema,
+    directionsUrl: optionalMapDirectionsUrlSchema,
+    mapUrl: optionalMapDirectionsUrlSchema,
+  })
+  .superRefine((value, context) => {
+    if ((value.latitude === undefined) !== (value.longitude === undefined)) {
+      context.addIssue({
+        code: "custom",
+        message: "Latitude and longitude must be provided together",
+        path: value.latitude === undefined ? ["latitude"] : ["longitude"],
+      });
+    }
+  });
+
+export type NormalizedLocationContent = z.infer<typeof locationContentSchema> & {
+  directionsUrl: string;
+};
+
+export function normalizeLocationContent(
+  content: Record<string, unknown>,
+): NormalizedLocationContent | null {
+  const base = locationBaseContentSchema.safeParse(content);
+
+  if (!base.success) {
+    return null;
+  }
+
+  const coordinates = z
+    .object({
+      latitude: z.number().finite().min(-90).max(90),
+      longitude: z.number().finite().min(-180).max(180),
+    })
+    .safeParse(content);
+  const placeId = mapPlaceIdSchema.safeParse(content.placeId);
+  const embedUrl = mapEmbedUrlSchema.safeParse(content.embedUrl);
+  const directionsUrl = mapDirectionsUrlSchema.safeParse(content.directionsUrl);
+  const legacyMapUrl = mapDirectionsUrlSchema.safeParse(content.mapUrl);
+  const latitude = coordinates.success ? coordinates.data.latitude : undefined;
+  const longitude = coordinates.success ? coordinates.data.longitude : undefined;
+  const safePlaceId = placeId.success ? placeId.data : undefined;
+
+  const resolvedEmbedUrl =
+    embedUrl.success && embedUrl.data
+      ? embedUrl.data
+      : latitude !== undefined && longitude !== undefined
+        ? buildOpenStreetMapEmbedUrl(latitude, longitude)
+        : undefined;
+
+  return {
+    ...base.data,
+    ...(latitude !== undefined && longitude !== undefined ? { latitude, longitude } : {}),
+    ...(safePlaceId ? { placeId: safePlaceId } : {}),
+    ...(resolvedEmbedUrl ? { embedUrl: resolvedEmbedUrl } : {}),
+    directionsUrl:
+      (directionsUrl.success ? directionsUrl.data : undefined) ??
+      (legacyMapUrl.success ? legacyMapUrl.data : undefined) ??
+      buildGoogleMapsDirectionsUrl({
+        address: base.data.address,
+        latitude,
+        longitude,
+        placeId: safePlaceId,
+      }),
+  };
+}
+
+export function sanitizePublicLocationContent(content: Record<string, unknown>) {
+  const {
+    directionsUrl: _directionsUrl,
+    embedUrl: _embedUrl,
+    latitude: _latitude,
+    longitude: _longitude,
+    mapUrl: _mapUrl,
+    placeId: _placeId,
+    ...rest
+  } = content;
+  const normalized = normalizeLocationContent(content);
+
+  return normalized ? { ...rest, ...normalized } : rest;
+}
+
+export function buildGoogleMapsDirectionsUrl({
+  address,
+  latitude,
+  longitude,
+  placeId,
+}: {
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  placeId?: string;
+}) {
+  const url = new URL("https://www.google.com/maps/dir/");
+  const destination =
+    latitude !== undefined && longitude !== undefined ? `${latitude},${longitude}` : address;
+
+  url.searchParams.set("api", "1");
+  url.searchParams.set("destination", destination);
+  if (placeId) {
+    url.searchParams.set("destination_place_id", placeId);
+  }
+
+  return url.toString();
+}
+
+export function buildOpenStreetMapEmbedUrl(latitude: number, longitude: number) {
+  const longitudeDelta = 0.006;
+  const latitudeDelta = 0.0045;
+  const url = new URL("https://www.openstreetmap.org/export/embed.html");
+
+  url.searchParams.set(
+    "bbox",
+    [
+      longitude - longitudeDelta,
+      latitude - latitudeDelta,
+      longitude + longitudeDelta,
+      latitude + latitudeDelta,
+    ].join(","),
+  );
+  url.searchParams.set("layer", "mapnik");
+  url.searchParams.set("marker", `${latitude},${longitude}`);
+
+  return url.toString();
+}
+
+function isAllowedMapEmbedUrl(value: string) {
+  const url = new URL(value);
+
+  return (
+    isSafeMapUrlBase(url) &&
+    url.hostname === "www.openstreetmap.org" &&
+    url.pathname === "/export/embed.html"
+  );
+}
+
+function isAllowedMapDirectionsUrl(value: string) {
+  const url = new URL(value);
+
+  return (
+    isSafeMapUrlBase(url) &&
+    (((url.hostname === "www.google.com" || url.hostname === "maps.google.com") &&
+      url.pathname.startsWith("/maps/")) ||
+      (url.hostname === "maps.apple.com" && url.pathname === "/") ||
+      (url.hostname === "www.openstreetmap.org" && url.pathname.startsWith("/directions")))
+  );
+}
+
+function isSafeMapUrlBase(url: URL) {
+  return url.protocol === "https:" && url.username === "" && url.password === "" && url.port === "";
+}
 
 export const galleryContentSchema = z.object({
   title: z.string().trim().max(160).optional(),

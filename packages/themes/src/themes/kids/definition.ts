@@ -76,6 +76,7 @@ export const kidsTheme = {
       fullViewport: true,
       mediaTreatment: "Bright celebrant image with large rounded corners and simple caption space.",
     },
+    map: { aspect: "landscape", frame: "playful", overlay: "none" },
     rsvpDesign: "kids",
     sectionDefaults: {
       date: {

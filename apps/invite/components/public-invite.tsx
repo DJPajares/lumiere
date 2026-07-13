@@ -2,6 +2,7 @@ import {
   getSectionDefinition,
   getTheme,
   isThemeId,
+  normalizeLocationContent,
   normalizeStoryParagraphs,
   resolveThemeRendererSlot,
   type StoryParagraph,
@@ -553,6 +554,7 @@ function PublicSection({
             layout={layout}
             rsvpDesign={rsvpDesign}
             rsvpFields={rsvpFields}
+            theme={theme}
             titleId={titleId}
           />
         </div>
@@ -570,6 +572,7 @@ function SectionBody({
   layout,
   rsvpDesign,
   rsvpFields,
+  theme,
   titleId,
 }: {
   composition: SectionComposition;
@@ -580,6 +583,7 @@ function SectionBody({
   layout: string;
   rsvpDesign: RsvpDesign;
   rsvpFields?: RsvpResponseFields;
+  theme: ThemeDefinition;
   titleId: string;
 }) {
   const { content, section, settings } = item;
@@ -596,7 +600,14 @@ function SectionBody({
     case "gallery":
       return <GallerySection composition={composition} content={content} titleId={titleId} />;
     case "location":
-      return <LocationSection content={content} settings={settings} titleId={titleId} />;
+      return (
+        <LocationSection
+          content={content}
+          mapPresentation={theme.composition.map}
+          settings={settings}
+          titleId={titleId}
+        />
+      );
     case "outro":
       return <OutroSection composition={composition} content={content} titleId={titleId} />;
     case "profile":
@@ -712,17 +723,21 @@ function DetailsSection({
 
 function LocationSection({
   content,
+  mapPresentation,
   settings,
   titleId,
 }: {
   content: JsonObject;
+  mapPresentation: ThemeDefinition["composition"]["map"];
   settings: JsonObject;
   titleId: string;
 }) {
-  const venueName = readString(content.venueName) ?? "Venue";
-  const address = readString(content.address);
-  const mapUrl = readString(content.mapUrl);
-  const notes = readString(content.notes);
+  const location = normalizeLocationContent(content);
+  const venueName = location?.venueName ?? readString(content.venueName) ?? "Venue";
+  const address = location?.address ?? readString(content.address);
+  const directionsUrl = location?.directionsUrl;
+  const embedUrl = location?.embedUrl;
+  const notes = location?.notes ?? readString(content.notes);
   const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
@@ -737,18 +752,26 @@ function LocationSection({
             {notes}
           </p>
         ) : null}
-        {mapUrl ? (
+        {directionsUrl ? (
           <a
             {...invitePressFeedbackProps}
             className="inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
-            href={mapUrl}
+            href={directionsUrl}
+            rel="noopener noreferrer"
+            target="_blank"
           >
-            Open map
+            Open directions
           </a>
         ) : null}
       </div>
       {showMapPreview ? (
-        <MapPreview address={address} mapUrl={mapUrl} venueName={venueName} />
+        <MapPreview
+          address={address}
+          directionsUrl={directionsUrl}
+          embedUrl={embedUrl}
+          presentation={mapPresentation}
+          venueName={venueName}
+        />
       ) : null}
     </div>
   );
@@ -1219,18 +1242,87 @@ function EmptySectionMessage({ message }: { message: string }) {
 
 function MapPreview({
   address,
-  mapUrl,
+  directionsUrl,
+  embedUrl,
+  presentation,
   venueName,
 }: {
   address: string | undefined;
-  mapUrl: string | undefined;
+  directionsUrl: string | undefined;
+  embedUrl: string | undefined;
+  presentation: ThemeDefinition["composition"]["map"];
   venueName: string;
 }) {
+  const aspectClassName = {
+    landscape: "aspect-[4/3]",
+    portrait: "aspect-[4/5] sm:aspect-[4/3] lg:aspect-[4/5]",
+    wide: "aspect-[4/3] sm:aspect-[16/10]",
+  }[presentation.aspect];
+  const frameClassName = {
+    celestial:
+      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_48%,var(--border))]",
+    editorial: "rounded-none border-[var(--foreground)]",
+    minimal: "rounded-none border-[var(--foreground)] shadow-none",
+    organic:
+      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_32%,var(--border))]",
+    playful: "rounded-[calc(var(--radius-lg)*1.35)] border-[var(--accent)]",
+    seasonal:
+      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_42%,var(--border))]",
+    soft: "rounded-[var(--radius-lg)] border-[var(--border)]",
+  }[presentation.frame];
+
+  if (embedUrl) {
+    return (
+      <figure
+        className={`lumiere-map-preview relative grid min-h-64 overflow-hidden border bg-[var(--surface-muted)] shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] ${aspectClassName} ${frameClassName}`}
+        data-map-aspect={presentation.aspect}
+        data-map-frame={presentation.frame}
+        data-map-overlay={presentation.overlay}
+        data-map-state="embedded"
+      >
+        <iframe
+          className="absolute inset-0 size-full border-0"
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={embedUrl}
+          title={`Map showing ${venueName}`}
+        />
+        {presentation.overlay !== "none" ? (
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 ${
+              presentation.overlay === "soft-vignette"
+                ? "bg-[radial-gradient(circle_at_center,transparent_48%,color-mix(in_srgb,var(--background)_38%,transparent))]"
+                : "bg-[color-mix(in_srgb,var(--accent)_7%,transparent)] mix-blend-multiply"
+            }`}
+          />
+        ) : null}
+        <figcaption className="absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-xs text-[var(--foreground)] shadow-sm backdrop-blur">
+          <span className="font-semibold">{venueName}</span>
+          <a
+            className="underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
+            href="https://www.openstreetmap.org/copyright"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            © OpenStreetMap contributors
+          </a>
+        </figcaption>
+      </figure>
+    );
+  }
+
   return (
-    <div className="lumiere-map-preview grid aspect-[4/3] min-h-64 place-items-end overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
+    <div
+      className={`lumiere-map-preview grid min-h-64 place-items-end overflow-hidden border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] ${aspectClassName} ${frameClassName}`}
+      data-map-aspect={presentation.aspect}
+      data-map-frame={presentation.frame}
+      data-map-overlay={presentation.overlay}
+      data-map-state="fallback"
+    >
       <div className="lumiere-map-card w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
-          Map preview
+          Location
         </p>
         <p className="mt-2 font-semibold">{venueName}</p>
         {address ? (
@@ -1242,9 +1334,9 @@ function MapPreview({
             Address to be announced.
           </p>
         )}
-        {mapUrl ? (
+        {directionsUrl ? (
           <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
-            Opens in your map app.
+            Directions open in your preferred map experience.
           </p>
         ) : null}
       </div>

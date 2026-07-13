@@ -101,6 +101,7 @@ export const editorialIvoryTheme = {
       fullViewport: true,
       mediaTreatment: "Tall offset portrait with a fine border and page-number caption.",
     },
+    map: { aspect: "portrait", frame: "editorial", overlay: "none" },
     rsvpDesign: "premium",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },

@@ -152,13 +152,28 @@ describe("API serialization", () => {
       publication: {
         publicSettingsJson: {},
         rsvpSettingsJson: {},
-        sectionsJson: [],
+        sectionsJson: [
+          {
+            content: {
+              address: "18 Marina Gardens Drive, Singapore 018953",
+              directionsUrl: "https://malicious.example.com/redirect",
+              embedUrl: "https://malicious.example.com/embed",
+              venueName: "Emerald Gardens",
+            },
+            sectionType: "location",
+          },
+        ],
         selectedThemeId: "premium",
         themeConfigJson: {},
         themeMode: "toggleable",
       },
     } as unknown as Parameters<typeof toPublicEventRecord>[0]);
     const { rsvpFields: _guestOnlyRsvpFields, ...publicEventPayload } = publicEvent;
+
+    expect(publicEvent.sections[0]?.content).toMatchObject({
+      directionsUrl: expect.stringContaining("https://www.google.com/maps/dir/"),
+    });
+    expect(publicEvent.sections[0]?.content).not.toHaveProperty("embedUrl");
 
     expect(
       publicEventResponseSchema.parse({

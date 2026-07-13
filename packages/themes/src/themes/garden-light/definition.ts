@@ -101,6 +101,7 @@ export const gardenLightTheme = {
       fullViewport: true,
       mediaTreatment: "Wide sunlit image with an organic arch radius and soft edge highlight.",
     },
+    map: { aspect: "landscape", frame: "organic", overlay: "accent-wash" },
     rsvpDesign: "default",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "balanced", motion: "section-reveal" },

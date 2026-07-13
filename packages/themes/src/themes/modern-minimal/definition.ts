@@ -94,6 +94,7 @@ export const modernMinimalTheme = {
       fullViewport: true,
       mediaTreatment: "One flush rectangular crop aligned to a strict typographic grid.",
     },
+    map: { aspect: "wide", frame: "minimal", overlay: "none" },
     rsvpDesign: "default",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "compact", motion: "section-reveal" },
