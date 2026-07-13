@@ -17,7 +17,7 @@
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.28"
+    "hono": "^4.12.29"
   },
   "devDependencies": {
     "tsx": "^4.23.0"

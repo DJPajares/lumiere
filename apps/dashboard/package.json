@@ -15,7 +15,7 @@
     "@lumiere/dashboard-ui": "workspace:*",
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",
-    "@supabase/supabase-js": "^2.110.1",
+    "@supabase/supabase-js": "^2.110.2",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
@@ -24,6 +24,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^6.0.3",
-    "jsdom": "^29.1.1"
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2"
   }
 }
