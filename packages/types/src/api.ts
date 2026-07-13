@@ -183,6 +183,23 @@ export const notificationsResponseSchema = z.object({
 });
 export type NotificationsResponse = z.infer<typeof notificationsResponseSchema>;
 
+export const notificationResponseSchema = z.object({
+  notification: notificationSchema,
+});
+export type NotificationResponse = z.infer<typeof notificationResponseSchema>;
+
+export const notificationDismissResponseSchema = z.object({
+  dismissed: z.literal(true),
+});
+export type NotificationDismissResponse = z.infer<typeof notificationDismissResponseSchema>;
+
+export const notificationsMarkAllReadResponseSchema = z.object({
+  updatedCount: z.number().int().min(0),
+});
+export type NotificationsMarkAllReadResponse = z.infer<
+  typeof notificationsMarkAllReadResponseSchema
+>;
+
 export const byEventIdParamsSchema = z.object({
   eventId: idSchema,
 });
@@ -192,6 +209,11 @@ export const byEventAndGuestGroupIdParamsSchema = byEventIdParamsSchema.extend({
   groupId: idSchema,
 });
 export type ByEventAndGuestGroupIdParams = z.infer<typeof byEventAndGuestGroupIdParamsSchema>;
+
+export const byEventAndNotificationIdParamsSchema = byEventIdParamsSchema.extend({
+  notificationId: idSchema,
+});
+export type ByEventAndNotificationIdParams = z.infer<typeof byEventAndNotificationIdParamsSchema>;
 
 export const publicEventParamsSchema = z.object({
   eventSlug: publicSlugSchema,

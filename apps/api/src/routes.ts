@@ -9,6 +9,7 @@ import {
 } from "@lumiere/themes";
 import {
   byEventAndGuestGroupIdParamsSchema,
+  byEventAndNotificationIdParamsSchema,
   byEventIdParamsSchema,
   eventCreateRequestSchema,
   eventSectionsUpdateRequestSchema,
@@ -376,6 +377,85 @@ export const createRoutes = ({
       return context.json({
         notifications,
       });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/notifications/read-all",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+      });
+      const updatedCount = await stores.dashboardDataStore.markAllNotificationsRead(
+        eventId,
+        manager.user.id,
+      );
+
+      return context.json({ updatedCount });
+    },
+  );
+
+  routes.patch(
+    "/events/:eventId/notifications/:notificationId/read",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const { eventId, notificationId } = parseEventAndNotificationIdParams({
+        eventId: context.req.param("eventId"),
+        notificationId: context.req.param("notificationId"),
+      });
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+      });
+      const notification = await stores.dashboardDataStore.markNotificationRead(
+        eventId,
+        notificationId,
+        manager.user.id,
+      );
+
+      if (!notification) {
+        throw new ApiHttpError("NOT_FOUND", "Notification not found");
+      }
+
+      return context.json({ notification });
+    },
+  );
+
+  routes.delete(
+    "/events/:eventId/notifications/:notificationId",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const { eventId, notificationId } = parseEventAndNotificationIdParams({
+        eventId: context.req.param("eventId"),
+        notificationId: context.req.param("notificationId"),
+      });
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+      });
+      const dismissed = await stores.dashboardDataStore.dismissNotification(
+        eventId,
+        notificationId,
+        manager.user.id,
+      );
+
+      if (!dismissed) {
+        throw new ApiHttpError("NOT_FOUND", "Notification not found");
+      }
+
+      return context.json({ dismissed: true as const });
     },
   );
 
@@ -1063,6 +1143,46 @@ const parseEventAndGuestGroupIdParams = ({
                   {
                     message: "Must be a valid UUID",
                     path: ["groupId"],
+                  },
+                ]),
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const parseEventAndNotificationIdParams = ({
+  eventId,
+  notificationId,
+}: {
+  eventId: string | undefined;
+  notificationId: string | undefined;
+}) => {
+  const result = byEventAndNotificationIdParamsSchema.safeParse({
+    eventId,
+    notificationId,
+  });
+
+  if (!result.success || !isUuid(result.data.eventId) || !isUuid(result.data.notificationId)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid notification ID", {
+      fields: result.success
+        ? [
+            ...(isUuid(result.data.eventId)
+              ? []
+              : [
+                  {
+                    message: "Must be a valid UUID",
+                    path: ["eventId"],
+                  },
+                ]),
+            ...(isUuid(result.data.notificationId)
+              ? []
+              : [
+                  {
+                    message: "Must be a valid UUID",
+                    path: ["notificationId"],
                   },
                 ]),
           ]

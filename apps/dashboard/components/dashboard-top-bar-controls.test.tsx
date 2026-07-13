@@ -12,7 +12,8 @@ import {
 } from "../auth/dashboard-auth-provider";
 import { DashboardTopBarControls, getManagerIdentity } from "./dashboard-top-bar-controls";
 
-const { routerRefresh, routerReplace, toastError, toastSuccess } = vi.hoisted(() => ({
+const { routerPush, routerRefresh, routerReplace, toastError, toastSuccess } = vi.hoisted(() => ({
+  routerPush: vi.fn(),
   routerRefresh: vi.fn(),
   routerReplace: vi.fn(),
   toastError: vi.fn(),
@@ -21,6 +22,7 @@ const { routerRefresh, routerReplace, toastError, toastSuccess } = vi.hoisted(()
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
+    push: routerPush,
     refresh: routerRefresh,
     replace: routerReplace,
   }),
@@ -130,6 +132,65 @@ describe("DashboardTopBarControls", () => {
     expect(document.activeElement).toBe(notificationTrigger);
   });
 
+  it("marks an unread notification read before navigating to its safe destination", async () => {
+    const userEventController = userEvent.setup();
+    const markEventNotificationRead = vi.fn<DashboardApiClient["markEventNotificationRead"]>(
+      async () => ({
+        notification: {
+          ...unreadNotification,
+          readAt: "2026-07-10T09:31:00.000Z",
+        },
+      }),
+    );
+
+    renderControls({ eventId: "event-42", markEventNotificationRead });
+    await userEventController.click(screen.getByRole("button", { name: "Notifications" }));
+    await userEventController.click(
+      screen.getByRole("button", { name: "Open notification: New RSVP received" }),
+    );
+
+    expect(markEventNotificationRead).toHaveBeenCalledWith("event-42", "notification-1");
+    expect(routerPush).toHaveBeenCalledWith(
+      "/events/event-42/responses?guestGroupId=guest-group-1&responseId=response-1",
+    );
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+  });
+
+  it("restores a dismissed notification when the mutation fails", async () => {
+    const userEventController = userEvent.setup();
+    const dismissEventNotification = vi
+      .fn<DashboardApiClient["dismissEventNotification"]>()
+      .mockRejectedValue(new Error("Notification service timed out."));
+    const listEventNotifications = vi.fn<DashboardApiClient["listEventNotifications"]>(
+      async () => ({
+        notifications: [unreadNotification],
+      }),
+    );
+
+    renderControls({ dismissEventNotification, eventId: "event-42", listEventNotifications });
+    await userEventController.click(screen.getByRole("button", { name: "Notifications" }));
+    await userEventController.click(
+      screen.getByRole("button", { name: "Dismiss notification: New RSVP received" }),
+    );
+
+    expect(await screen.findByText("New RSVP received")).toBeTruthy();
+    expect(toastError.mock.calls[0]?.[0]).toBe("Notification service timed out.");
+  });
+
+  it("marks all visible unread notifications read and updates the bell count", async () => {
+    const userEventController = userEvent.setup();
+    const markAllEventNotificationsRead = vi.fn<
+      DashboardApiClient["markAllEventNotificationsRead"]
+    >(async () => ({ updatedCount: 1 }));
+
+    renderControls({ eventId: "event-42", markAllEventNotificationsRead });
+    await userEventController.click(screen.getByRole("button", { name: "Notifications" }));
+    await userEventController.click(screen.getByRole("button", { name: "Mark all read" }));
+
+    expect(markAllEventNotificationsRead).toHaveBeenCalledWith("event-42");
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+  });
+
   it("shows notification failure and retries into the empty state", async () => {
     const userEventController = userEvent.setup();
     const listEventNotifications = vi
@@ -215,17 +276,28 @@ async function openAccountMenu() {
 }
 
 function renderControls({
+  dismissEventNotification = vi.fn(async () => ({ dismissed: true as const })),
   eventId,
-  listEventNotifications = vi.fn(async () => ({ notifications: [] })),
+  markAllEventNotificationsRead = vi.fn(async () => ({ updatedCount: 0 })),
+  markEventNotificationRead = vi.fn(async () => ({ notification: unreadNotification })),
+  listEventNotifications = vi.fn(async () => ({
+    notifications: eventId ? [unreadNotification, readNotification] : [],
+  })),
   signOut = vi.fn(async () => ({ ok: true as const })),
   user = createUser(),
 }: {
+  dismissEventNotification?: DashboardApiClient["dismissEventNotification"];
   eventId?: string;
+  markAllEventNotificationsRead?: DashboardApiClient["markAllEventNotificationsRead"];
+  markEventNotificationRead?: DashboardApiClient["markEventNotificationRead"];
   listEventNotifications?: DashboardApiClient["listEventNotifications"];
   signOut?: DashboardAuthContextValue["signOut"];
   user?: NonNullable<DashboardAuthContextValue["user"]>;
 } = {}) {
   const apiClient = {
+    dismissEventNotification,
+    markAllEventNotificationsRead,
+    markEventNotificationRead,
     listEventNotifications,
   } as DashboardApiClient;
   const value: DashboardAuthContextValue = {
@@ -284,7 +356,10 @@ const unreadNotification: Notification = {
   eventId: "event-42",
   id: "notification-1",
   message: "The Tan family is attending with three guests.",
-  metadata: {},
+  metadata: {
+    guestGroupId: "guest-group-1",
+    responseId: "response-1",
+  },
   notificationType: "rsvp_submitted",
   title: "New RSVP received",
   userId: "manager-1",

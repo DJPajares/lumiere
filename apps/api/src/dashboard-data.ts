@@ -1,7 +1,7 @@
 import type { Database } from "@lumiere/db";
 import { activityEvents, guestGroups, notifications, rsvpResponses } from "@lumiere/db";
 import type { ActivityEvent, EventSummary, Notification } from "@lumiere/types";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
 
@@ -14,12 +14,34 @@ type ActivityEventRow = typeof activityEvents.$inferSelect;
 type NotificationRow = typeof notifications.$inferSelect;
 
 export type DashboardDataStore = {
+  dismissNotification(eventId: string, notificationId: string, userId: string): Promise<boolean>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   listActivity(eventId: string): Promise<ActivityEvent[]>;
   listNotifications(eventId: string, userId: string): Promise<Notification[]>;
+  markAllNotificationsRead(eventId: string, userId: string): Promise<number>;
+  markNotificationRead(
+    eventId: string,
+    notificationId: string,
+    userId: string,
+  ): Promise<Notification | null>;
 };
 
 export const createDrizzleDashboardDataStore = (db: Database): DashboardDataStore => ({
+  async dismissNotification(eventId, notificationId, userId) {
+    const dismissed = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.eventId, eventId),
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, userId),
+        ),
+      )
+      .returning({ id: notifications.id });
+
+    return dismissed.length > 0;
+  },
+
   async getEventSummary(eventId) {
     const [groups, responses] = await Promise.all([
       db
@@ -63,6 +85,55 @@ export const createDrizzleDashboardDataStore = (db: Database): DashboardDataStor
       .limit(20);
 
     return rows.map(toApiNotification);
+  },
+
+  async markAllNotificationsRead(eventId, userId) {
+    const updated = await db
+      .update(notifications)
+      .set({ readAt: sql`now()` })
+      .where(
+        and(
+          eq(notifications.eventId, eventId),
+          eq(notifications.userId, userId),
+          isNull(notifications.readAt),
+        ),
+      )
+      .returning({ id: notifications.id });
+
+    return updated.length;
+  },
+
+  async markNotificationRead(eventId, notificationId, userId) {
+    const [updated] = await db
+      .update(notifications)
+      .set({ readAt: sql`now()` })
+      .where(
+        and(
+          eq(notifications.eventId, eventId),
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, userId),
+          isNull(notifications.readAt),
+        ),
+      )
+      .returning();
+
+    if (updated) {
+      return toApiNotification(updated);
+    }
+
+    const [existing] = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.eventId, eventId),
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    return existing ? toApiNotification(existing) : null;
   },
 });
 

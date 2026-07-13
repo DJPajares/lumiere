@@ -11,6 +11,9 @@ import {
   guestGroupInviteResponseSchema,
   guestGroupResponseSchema,
   guestGroupsResponseSchema,
+  notificationDismissResponseSchema,
+  notificationResponseSchema,
+  notificationsMarkAllReadResponseSchema,
   notificationsResponseSchema,
   publicEventResponseSchema,
   publicGuestInviteResponseSchema,
@@ -35,6 +38,9 @@ import {
   type GuestGroupMutationRequest,
   type GuestGroupResponse,
   type GuestGroupsResponse,
+  type NotificationDismissResponse,
+  type NotificationResponse,
+  type NotificationsMarkAllReadResponse,
   type NotificationsResponse,
   type PublicEventResponse,
   type PublicGuestInviteResponse,
@@ -205,6 +211,25 @@ export const createApiClient = ({
       request(`/events/${encodePathSegment(eventId)}/notifications`, notificationsResponseSchema, {
         query,
       }),
+    markAllEventNotificationsRead: (eventId: string): Promise<NotificationsMarkAllReadResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/notifications/read-all`,
+        notificationsMarkAllReadResponseSchema,
+        {
+          method: "POST",
+        },
+      ),
+    markEventNotificationRead: (
+      eventId: string,
+      notificationId: string,
+    ): Promise<NotificationResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/notifications/${encodePathSegment(notificationId)}/read`,
+        notificationResponseSchema,
+        {
+          method: "PATCH",
+        },
+      ),
     listEventSections: (eventId: string): Promise<EventSectionsResponse> =>
       request(`/events/${encodePathSegment(eventId)}/sections`, eventSectionsResponseSchema),
     listEvents: (): Promise<EventsListResponse> => request("/events", eventsListResponseSchema),
@@ -214,6 +239,17 @@ export const createApiClient = ({
       request("/themes", themesResponseSchema, {
         auth: false,
       }),
+    dismissEventNotification: (
+      eventId: string,
+      notificationId: string,
+    ): Promise<NotificationDismissResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/notifications/${encodePathSegment(notificationId)}`,
+        notificationDismissResponseSchema,
+        {
+          method: "DELETE",
+        },
+      ),
     regenerateGuestGroupInvite: (
       eventId: string,
       groupId: string,

@@ -994,6 +994,99 @@ describe("API app", () => {
     expect(listNotifications).toHaveBeenCalledWith(eventId, localUser.id);
   });
 
+  it("marks an owned notification as read", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const readNotification = {
+      ...notification,
+      readAt: "2026-07-08T06:02:00.000Z",
+    };
+    const { dashboardDataStore, markNotificationRead } = createTestDashboardDataStore();
+    markNotificationRead.mockResolvedValue(readNotification);
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/notifications/${notification.id}/read`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "PATCH",
+    });
+
+    await expect(response.json()).resolves.toEqual({ notification: readNotification });
+    expect(response.status).toBe(200);
+    expect(markNotificationRead).toHaveBeenCalledWith(eventId, notification.id, localUser.id);
+  });
+
+  it("dismisses an owned notification without deleting activity data", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, dismissNotification } = createTestDashboardDataStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/notifications/${notification.id}`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "DELETE",
+    });
+
+    await expect(response.json()).resolves.toEqual({ dismissed: true });
+    expect(response.status).toBe(200);
+    expect(dismissNotification).toHaveBeenCalledWith(eventId, notification.id, localUser.id);
+  });
+
+  it("marks all owned notifications as read", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, markAllNotificationsRead } = createTestDashboardDataStore();
+    markAllNotificationsRead.mockResolvedValue(3);
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/notifications/read-all`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "POST",
+    });
+
+    await expect(response.json()).resolves.toEqual({ updatedCount: 3 });
+    expect(response.status).toBe(200);
+    expect(markAllNotificationsRead).toHaveBeenCalledWith(eventId, localUser.id);
+  });
+
+  it("rejects notification mutations for managers without event access", async () => {
+    const { authStore } = createTestAuthStore({
+      access: { access: null, eventFound: true },
+    });
+    const { dashboardDataStore, dismissNotification } = createTestDashboardDataStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/notifications/${notification.id}`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "DELETE",
+    });
+
+    expect(response.status).toBe(403);
+    expect(dismissNotification).not.toHaveBeenCalled();
+  });
+
   it("requires manager auth before returning event summary", async () => {
     const { dashboardDataStore, getEventSummary } = createTestDashboardDataStore();
     const app = createApp({
@@ -2789,17 +2882,28 @@ function createTestDashboardDataStore({
   const getEventSummary = vi.fn(async () => summary);
   const listActivity = vi.fn(async () => activity);
   const listNotifications = vi.fn(async () => notifications);
+  const dismissNotification = vi.fn(async () => true);
+  const markAllNotificationsRead = vi.fn(
+    async () => notifications.filter((item) => !item.readAt).length,
+  );
+  const markNotificationRead = vi.fn(async () => notifications[0] ?? null);
   const dashboardDataStore: DashboardDataStore = {
+    dismissNotification,
     getEventSummary,
     listActivity,
     listNotifications,
+    markAllNotificationsRead,
+    markNotificationRead,
   };
 
   return {
     dashboardDataStore,
+    dismissNotification,
     getEventSummary,
     listActivity,
     listNotifications,
+    markAllNotificationsRead,
+    markNotificationRead,
   };
 }
 
@@ -3357,9 +3461,14 @@ function createIntegrationSmokeStores() {
   };
 
   const dashboardDataStore: DashboardDataStore = {
+    dismissNotification: vi.fn(async () => true),
     getEventSummary: vi.fn(async () => buildSmokeSummary(guestGroupRecord, responseRecord)),
     listActivity: vi.fn(async () => activity),
     listNotifications: vi.fn(async () => notifications),
+    markAllNotificationsRead: vi.fn(
+      async () => notifications.filter((item) => !item.readAt).length,
+    ),
+    markNotificationRead: vi.fn(async () => notifications[0] ?? null),
   };
 
   return {

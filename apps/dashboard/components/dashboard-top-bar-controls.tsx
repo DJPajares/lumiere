@@ -1,7 +1,9 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@lumiere/dashboard-ui/components/avatar";
+import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button, buttonVariants } from "@lumiere/dashboard-ui/components/button";
+import { XIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,8 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@lumiere/dashboard-ui/components/popover";
+import { ScrollArea } from "@lumiere/dashboard-ui/components/scroll-area";
+import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { cn } from "@lumiere/dashboard-ui/utils";
 import type { Notification } from "@lumiere/types";
@@ -28,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../auth/dashboard-auth-provider";
+import { getNotificationDestination } from "../lib/notification-destinations";
 
 type DashboardTopBarControlsProps = {
   className?: string;
@@ -47,10 +52,14 @@ type NotificationState =
   | { status: "loading"; notifications: Notification[] }
   | { status: "ready"; notifications: Notification[] };
 
+type NotificationAction =
+  { id: string; type: "dismiss" | "read" } | { type: "mark-all-read" } | null;
+
 export function DashboardTopBarControls({ className, eventId }: DashboardTopBarControlsProps) {
   const { apiClient, signOut, status, user } = useDashboardAuth();
   const router = useRouter();
   const [notificationRevision, setNotificationRevision] = useState(0);
+  const [notificationAction, setNotificationAction] = useState<NotificationAction>(null);
   const [notificationState, setNotificationState] = useState<NotificationState>(() =>
     eventId ? { notifications: [], status: "loading" } : { notifications: [], status: "empty" },
   );
@@ -137,6 +146,114 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
     (notification) => !notification.readAt,
   ).length;
 
+  const handleNotificationOpen = async (notification: Notification) => {
+    const destination = getNotificationDestination(notification);
+
+    if (!notification.readAt) {
+      if (!eventId || !apiClient) {
+        toast.error("Notifications are unavailable until the dashboard connection is restored.");
+        return;
+      }
+
+      const previousNotifications = notificationState.notifications;
+      const optimisticReadAt = new Date().toISOString();
+
+      setNotificationAction({ id: notification.id, type: "read" });
+      setNotificationState({
+        notifications: previousNotifications.map((item) =>
+          item.id === notification.id ? { ...item, readAt: optimisticReadAt } : item,
+        ),
+        status: "ready",
+      });
+
+      try {
+        await apiClient.markEventNotificationRead(eventId, notification.id);
+      } catch (error: unknown) {
+        setNotificationState({
+          notifications: previousNotifications,
+          status: previousNotifications.length > 0 ? "ready" : "empty",
+        });
+        toast.error(toNotificationMutationError(error, "mark notification as read"), {
+          action: {
+            label: "Retry",
+            onClick: () => void handleNotificationOpen(notification),
+          },
+        });
+        setNotificationAction(null);
+        return;
+      }
+
+      setNotificationAction(null);
+    }
+
+    router.push(destination.href);
+  };
+
+  const handleNotificationDismiss = async (notification: Notification) => {
+    if (!eventId || !apiClient) {
+      toast.error("Notifications are unavailable until the dashboard connection is restored.");
+      return;
+    }
+
+    const previousNotifications = notificationState.notifications;
+
+    setNotificationAction({ id: notification.id, type: "dismiss" });
+    setNotificationState({
+      notifications: previousNotifications.filter((item) => item.id !== notification.id),
+      status: previousNotifications.length > 1 ? "ready" : "empty",
+    });
+
+    try {
+      await apiClient.dismissEventNotification(eventId, notification.id);
+    } catch (error: unknown) {
+      setNotificationState({
+        notifications: previousNotifications,
+        status: previousNotifications.length > 0 ? "ready" : "empty",
+      });
+      toast.error(toNotificationMutationError(error, "dismiss notification"), {
+        action: {
+          label: "Retry",
+          onClick: () => void handleNotificationDismiss(notification),
+        },
+      });
+    } finally {
+      setNotificationAction(null);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    if (!eventId || !apiClient || unreadCount === 0) {
+      return;
+    }
+
+    const previousNotifications = notificationState.notifications;
+
+    setNotificationAction({ type: "mark-all-read" });
+    setNotificationState({
+      notifications: previousNotifications.map((notification) =>
+        notification.readAt ? notification : { ...notification, readAt: new Date().toISOString() },
+      ),
+      status: "ready",
+    });
+
+    try {
+      await apiClient.markAllEventNotificationsRead(eventId);
+    } catch (error: unknown) {
+      setNotificationState({
+        notifications: previousNotifications,
+        status: previousNotifications.length > 0 ? "ready" : "empty",
+      });
+      toast.error(toNotificationMutationError(error, "mark all notifications as read"), {
+        action: {
+          label: "Retry",
+          onClick: () => void handleMarkAllNotificationsRead(),
+        },
+      });
+    } finally {
+      setNotificationAction(null);
+    }
+  };
+
   const handleSignOut = async () => {
     if (isSigningOut) {
       return;
@@ -162,7 +279,14 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
     <div className={cn("flex items-center gap-1", className)}>
       <NotificationControl
         eventId={eventId}
+        isMarkingAllRead={notificationAction?.type === "mark-all-read"}
+        onDismiss={handleNotificationDismiss}
+        onMarkAllRead={handleMarkAllNotificationsRead}
+        onOpen={handleNotificationOpen}
         onRetry={() => setNotificationRevision((revision) => revision + 1)}
+        pendingNotificationId={
+          notificationAction && "id" in notificationAction ? notificationAction.id : undefined
+        }
         state={notificationState}
         unreadCount={unreadCount}
       />
@@ -231,12 +355,22 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
 
 function NotificationControl({
   eventId,
+  isMarkingAllRead,
+  onDismiss,
+  onMarkAllRead,
+  onOpen,
   onRetry,
+  pendingNotificationId,
   state,
   unreadCount,
 }: {
   eventId?: string;
+  isMarkingAllRead?: boolean;
+  onDismiss: (notification: Notification) => void;
+  onMarkAllRead: () => void;
+  onOpen: (notification: Notification) => void;
   onRetry: () => void;
+  pendingNotificationId?: string;
   state: NotificationState;
   unreadCount: number;
 }) {
@@ -256,12 +390,13 @@ function NotificationControl({
       >
         <BellIcon />
         {unreadCount > 0 ? (
-          <span
+          <Badge
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.625rem] leading-4 font-semibold text-background ring-2 ring-background"
+            className="absolute -top-0.5 -right-0.5 min-w-4 px-1 text-[0.625rem] leading-4 ring-2 ring-background"
+            variant="destructive"
           >
             {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+          </Badge>
         ) : null}
       </PopoverTrigger>
       <PopoverContent
@@ -274,14 +409,31 @@ function NotificationControl({
           <div className="flex items-center justify-between gap-3">
             <PopoverTitle className="font-semibold">Notifications</PopoverTitle>
             {unreadCount > 0 ? (
-              <span className="text-xs font-medium text-primary">{unreadLabel}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{unreadLabel}</Badge>
+                <Button
+                  disabled={isMarkingAllRead}
+                  onClick={onMarkAllRead}
+                  size="xs"
+                  variant="ghost"
+                >
+                  {isMarkingAllRead ? "Marking…" : "Mark all read"}
+                </Button>
+              </div>
             ) : null}
           </div>
           <PopoverDescription>
             {eventId ? "Recent updates for this event." : "Open an event to see its updates."}
           </PopoverDescription>
         </PopoverHeader>
-        <NotificationContent eventId={eventId} onRetry={onRetry} state={state} />
+        <NotificationContent
+          eventId={eventId}
+          onDismiss={onDismiss}
+          onOpen={onOpen}
+          onRetry={onRetry}
+          pendingNotificationId={pendingNotificationId}
+          state={state}
+        />
       </PopoverContent>
     </Popover>
   );
@@ -289,20 +441,26 @@ function NotificationControl({
 
 function NotificationContent({
   eventId,
+  onDismiss,
+  onOpen,
   onRetry,
+  pendingNotificationId,
   state,
 }: {
   eventId?: string;
+  onDismiss: (notification: Notification) => void;
+  onOpen: (notification: Notification) => void;
   onRetry: () => void;
+  pendingNotificationId?: string;
   state: NotificationState;
 }) {
   if (state.status === "loading") {
     return (
       <div aria-label="Loading notifications" aria-live="polite" className="grid gap-3 p-4">
         {[0, 1, 2].map((item) => (
-          <div className="grid animate-pulse gap-2 motion-reduce:animate-none" key={item}>
-            <span className="h-3 w-2/5 rounded bg-muted" />
-            <span className="h-3 w-full rounded bg-muted" />
+          <div className="grid gap-2" key={item}>
+            <Skeleton className="h-3 w-2/5" />
+            <Skeleton className="h-3 w-full" />
           </div>
         ))}
       </div>
@@ -345,35 +503,68 @@ function NotificationContent({
   }
 
   return (
-    <ul className="max-h-80 overflow-y-auto overscroll-contain" aria-label="Notification list">
-      {state.notifications.map((notification) => (
-        <li
-          className={cn(
-            "relative grid gap-1 border-b border-border px-4 py-3 last:border-b-0",
-            !notification.readAt && "bg-primary/5 pl-6",
-          )}
-          key={notification.id}
-        >
-          {!notification.readAt ? (
-            <span
-              aria-label="Unread"
-              className="absolute top-4 left-2.5 size-1.5 rounded-full bg-primary"
-              role="img"
-            />
-          ) : null}
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-semibold leading-5">{notification.title}</p>
-            <time
-              className="shrink-0 text-[0.6875rem] leading-5 text-muted-foreground"
-              dateTime={notification.createdAt}
+    <ScrollArea className="max-h-80" data-slot="notification-scroll-area">
+      <ul aria-label="Notification list">
+        {state.notifications.map((notification) => {
+          const isPending = pendingNotificationId === notification.id;
+
+          return (
+            <li
+              className={cn(
+                "border-b border-border px-4 py-3 last:border-b-0",
+                !notification.readAt && "bg-primary/5",
+              )}
+              key={notification.id}
             >
-              {formatNotificationDate(notification.createdAt)}
-            </time>
-          </div>
-          <p className="text-xs leading-5 text-muted-foreground">{notification.message}</p>
-        </li>
-      ))}
-    </ul>
+              <div className="flex items-start gap-2">
+                <span
+                  aria-label={notification.readAt ? undefined : "Unread"}
+                  aria-hidden={notification.readAt ? "true" : undefined}
+                  className={cn(
+                    "mt-2 size-1.5 shrink-0 rounded-full",
+                    notification.readAt ? "bg-transparent" : "bg-primary",
+                  )}
+                  role={notification.readAt ? undefined : "img"}
+                />
+                <Button
+                  aria-label={`Open notification: ${notification.title}`}
+                  className="min-w-0 flex-1 justify-start rounded-md px-1 py-0.5 text-left whitespace-normal"
+                  disabled={isPending}
+                  onClick={() => onOpen(notification)}
+                  variant="ghost"
+                >
+                  <span className="grid min-w-0 flex-1 gap-1">
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="truncate text-sm font-semibold leading-5">
+                        {notification.title}
+                      </span>
+                      <time
+                        className="shrink-0 text-[0.6875rem] leading-5 text-muted-foreground"
+                        dateTime={notification.createdAt}
+                      >
+                        {formatNotificationDate(notification.createdAt)}
+                      </time>
+                    </span>
+                    <span className="text-xs leading-5 text-muted-foreground">
+                      {notification.message}
+                    </span>
+                  </span>
+                </Button>
+                <Button
+                  aria-label={`Dismiss notification: ${notification.title}`}
+                  disabled={isPending}
+                  onClick={() => onDismiss(notification)}
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  <XIcon />
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </ScrollArea>
   );
 }
 
@@ -464,6 +655,12 @@ function toNotificationError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
   return message || "The event notification feed could not be loaded.";
+}
+
+function toNotificationMutationError(error: unknown, action: string) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return message || `Could not ${action}. Try again.`;
 }
 
 function BellIcon() {
