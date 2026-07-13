@@ -186,8 +186,6 @@ export function RsvpForm({
         </p>
       </div>
 
-      <ReplyStatusPanel copy={statusCopy} tone={statusTone} />
-
       {submittedResponse ? (
         <div
           className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-5 text-center"
@@ -267,7 +265,7 @@ export function RsvpForm({
         <FieldError id="responseStatus-error" message={errors.responseStatus} />
       </fieldset>
 
-      {isResponding ? (
+      {isResponding && (
         <div className="grid gap-2">
           <p className={style.fieldLabel}>{copy.countPrompt}</p>
           <div
@@ -313,10 +311,6 @@ export function RsvpForm({
           </div>
           <FieldError id="attendeeCount-error" message={errors.attendeeCount} />
         </div>
-      ) : (
-        <p className="rounded-[var(--radius-lg)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          {copy.declineNote}
-        </p>
       )}
 
       {hasDetails ? (
@@ -441,6 +435,8 @@ export function RsvpForm({
             ? copy.updateLabel
             : submitLabel}
       </button>
+
+      <ReplyStatusPanel copy={statusCopy} tone={statusTone} />
     </form>
   );
 }
@@ -638,8 +634,8 @@ function RsvpStatusOption({
     <label
       className={
         checked
-          ? "grid min-h-11 cursor-pointer place-items-center rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition focus-within:ring-2 focus-within:ring-[var(--focus)] focus-within:ring-offset-2 focus-within:ring-offset-[var(--surface)]"
-          : "grid min-h-11 cursor-pointer place-items-center rounded-full px-4 py-3 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)] focus-within:ring-2 focus-within:ring-[var(--focus)] focus-within:ring-offset-2 focus-within:ring-offset-[var(--surface)]"
+          ? "grid min-h-11 cursor-pointer place-items-center rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition"
+          : "grid min-h-11 cursor-pointer place-items-center rounded-full px-4 py-3 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
       }
     >
       <input

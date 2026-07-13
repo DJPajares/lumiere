@@ -158,7 +158,7 @@ function InvitationFrame({
           </div>
         )}
 
-        <footer className="lumiere-invitation__footer px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12">
+        <footer className="lumiere-invitation__footer px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12 text-center">
           <p>{invite.event.title} is hosted through Lumiere.</p>
         </footer>
       </article>
