@@ -1,7 +1,6 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
-import { cn } from "@lumiere/dashboard-ui/utils";
 import {
   eventCreateRequestSchema,
   eventUpdateRequestSchema,
@@ -35,7 +34,6 @@ export type EventFormField =
   | "eventType"
   | "slug"
   | "startsAt"
-  | "status"
   | "timezone"
   | "title"
   | "venueAddress"
@@ -88,16 +86,6 @@ export const eventTypes: Array<{ label: string; value: EventType }> = [
   { label: "Other", value: "other" },
 ];
 
-const eventStatuses: Array<{ help: string; label: string; value: EventStatus }> = [
-  { help: "Hidden from guests while setup is in progress.", label: "Draft", value: "draft" },
-  { help: "Visible on public invite routes.", label: "Published", value: "published" },
-  {
-    help: "Kept for records and removed from public access.",
-    label: "Archived",
-    value: "archived",
-  },
-];
-
 export function EventBasicsForm({
   dirty = false,
   formId,
@@ -138,7 +126,7 @@ export function EventBasicsForm({
         value={values.title}
       />
 
-      <div className={cn("grid gap-4", mode === "edit" && "md:grid-cols-2")}>
+      <div className="grid gap-4">
         <DashboardSelect
           description="Used to organize the event and invitation."
           descriptionClassName={mode === "edit" ? "md:min-h-10" : undefined}
@@ -151,21 +139,6 @@ export function EventBasicsForm({
           options={eventTypes}
           value={values.eventType}
         />
-
-        {mode === "edit" ? (
-          <DashboardSelect
-            description={eventStatuses.find((status) => status.value === values.status)?.help}
-            descriptionClassName="md:min-h-10"
-            disabled={disabled}
-            error={formState.fieldErrors.status}
-            id={`${formId}-status`}
-            label="Publish status"
-            name="status"
-            onValueChange={(value) => onFieldChange("status", value)}
-            options={eventStatuses}
-            value={values.status}
-          />
-        ) : null}
       </div>
 
       <DashboardTextInput
@@ -387,7 +360,6 @@ export function parseEventUpdateValues(values: EventBasicsFormValues):
     eventType: values.eventType,
     slug: values.slug,
     startsAt: normalizedDateTimes.startsAt,
-    status: values.status,
     timezone: values.timezone,
     title: values.title,
     venueAddress: values.venueAddress,
@@ -578,10 +550,6 @@ function toFriendlyFieldMessage(field: EventFormField, message: string) {
     return "Enter the event timezone.";
   }
 
-  if (field === "status") {
-    return "Choose whether this event is draft, published, or archived.";
-  }
-
   return message;
 }
 
@@ -591,7 +559,6 @@ function isEventFormField(value: string): value is EventFormField {
     "eventType",
     "slug",
     "startsAt",
-    "status",
     "timezone",
     "title",
     "venueAddress",

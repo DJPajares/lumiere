@@ -99,7 +99,30 @@ describe("event settings model", () => {
     }));
     const ready = evaluatePublishingReadiness({ event, sections: requiredEnabled });
 
-    expect(ready).toEqual({ issues: [], ready: true });
+    expect(ready).toMatchObject({
+      blockers: [],
+      issues: [],
+      ready: true,
+      rsvpStatus: "open",
+      updatePolicy: "immediate",
+      warnings: [],
+    });
+
+    const closedRsvp = evaluatePublishingReadiness({
+      event: {
+        ...event,
+        rsvpSettings: { ...event.rsvpSettings, enabled: false },
+      },
+      sections: requiredEnabled,
+    });
+
+    expect(closedRsvp.ready).toBe(true);
+    expect(closedRsvp.warnings).toContainEqual({
+      code: "rsvp.closed",
+      destination: "rsvp",
+      message: "The RSVP section is included, but guest responses are currently closed",
+      path: ["rsvpSettings"],
+    });
 
     const missingContent = requiredEnabled.map((section) =>
       section.sectionType === "introduction" ? { ...section, content: {} } : section,

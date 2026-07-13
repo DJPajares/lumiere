@@ -22,7 +22,6 @@ describe("EventSettingsWorkspace", () => {
     const updatedEvent: Event = {
       ...settingsEvent,
       eventType: "dinner",
-      status: "published",
       title: "Summer Dinner",
       updatedAt: "2030-01-01T01:00:00.000Z",
     };
@@ -45,9 +44,7 @@ describe("EventSettingsWorkspace", () => {
     screen.getByLabelText("Event type").focus();
     await user.keyboard("{ArrowDown}");
     await user.click(screen.getByRole("option", { name: "Dinner" }));
-    screen.getByLabelText("Publish status").focus();
-    await user.keyboard("{ArrowDown}");
-    await user.click(screen.getByRole("option", { name: "Published" }));
+    expect(screen.queryByLabelText("Publish status")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Save event" }));
 
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
@@ -55,10 +52,10 @@ describe("EventSettingsWorkspace", () => {
       "evt_123",
       expect.objectContaining({
         eventType: "dinner",
-        status: "published",
         title: "Summer Dinner",
       }),
     );
+    expect(updateEvent.mock.calls[0]?.[1]).not.toHaveProperty("status");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
 

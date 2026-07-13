@@ -24,6 +24,8 @@ import {
   type ApiFieldError,
   type Event,
   type EventCreate,
+  type EventPublishingDiagnostic,
+  type EventPublishingReadiness,
   type EventSection,
   type EventSectionMutation,
   type EventUpdate,
@@ -45,9 +47,8 @@ type ManagerEventRecord = {
   themeSettings: ThemeSettingsRow | null;
 };
 
-export type PublishingReadiness = {
-  issues: ApiFieldError[];
-  ready: boolean;
+export type PublishingReadiness = Omit<EventPublishingReadiness, "publicUrl"> & {
+  publicPath: string;
 };
 
 export type EventStore = {
@@ -74,6 +75,7 @@ export type EventCreatePersistence = Omit<EventCreate, "publicAccessCode"> & {
 };
 
 export type EventUpdatePersistence = Omit<EventUpdate, "publicAccessCode"> & {
+  actorUserId?: string;
   publicAccessCodeHash?: string | null;
 };
 
@@ -362,6 +364,16 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
           return null;
         }
 
+        if (
+          input.expectedUpdatedAt &&
+          Date.parse(input.expectedUpdatedAt) !== Date.parse(toIsoDateTime(current.event.updatedAt))
+        ) {
+          throw new ApiHttpError(
+            "CONFLICT",
+            "Event changed since publishing readiness was checked",
+          );
+        }
+
         if (input.slug && input.slug !== current.event.publicSlug) {
           await assertSlugNotClaimed(database, input.slug, eventId);
           await tx
@@ -385,10 +397,25 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
               : {}),
             updatedAt: sql`now()`,
           })
-          .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+          .where(
+            and(
+              eq(events.id, eventId),
+              isNull(events.deletedAt),
+              input.expectedUpdatedAt
+                ? sql`date_trunc('milliseconds', ${events.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`
+                : undefined,
+            ),
+          )
           .returning();
 
         if (!event) {
+          if (input.expectedUpdatedAt) {
+            throw new ApiHttpError(
+              "CONFLICT",
+              "Event changed since publishing readiness was checked",
+            );
+          }
+
           return null;
         }
 
@@ -480,6 +507,18 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
                 themeMode: managerEvent.themeMode,
               },
             });
+
+          if (input.actorUserId) {
+            await tx.insert(activityEvents).values({
+              actorId: input.actorUserId,
+              actorType: "manager",
+              activityType: "event_published",
+              eventId,
+              metadataJson: {
+                previousStatus: current.event.status,
+              },
+            });
+          }
         }
 
         return managerEvent;
@@ -529,66 +568,149 @@ export const evaluatePublishingReadiness = ({
   event: Event;
   sections: EventSection[];
 }): PublishingReadiness => {
-  const issues: ApiFieldError[] = [];
+  const blockers: EventPublishingDiagnostic[] = [];
+  const warnings: EventPublishingDiagnostic[] = [];
+  let selectedTheme: PublishingReadiness["theme"];
+
+  const addBlocker = (
+    code: string,
+    message: string,
+    path: ApiFieldError["path"],
+    destination: EventPublishingDiagnostic["destination"],
+  ) => blockers.push({ code, destination, message, path });
+
+  const addWarning = (
+    code: string,
+    message: string,
+    path: ApiFieldError["path"],
+    destination: EventPublishingDiagnostic["destination"],
+  ) => warnings.push({ code, destination, message, path });
+
+  if (!event.title.trim()) {
+    addBlocker("event.title", "Add an event title before publishing", ["title"], "details");
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.slug)) {
+    addBlocker("event.slug", "Choose a valid public URL slug", ["slug"], "details");
+  }
+
+  const startsAt = Date.parse(event.startsAt);
+
+  if (Number.isNaN(startsAt)) {
+    addBlocker("event.starts_at", "Choose a valid event start time", ["startsAt"], "details");
+  }
+
+  if (event.endsAt && !Number.isNaN(startsAt) && Date.parse(event.endsAt) <= startsAt) {
+    addBlocker(
+      "event.ends_at",
+      "Event end time must be after the start time",
+      ["endsAt"],
+      "details",
+    );
+  }
+
+  if (!event.timezone.trim()) {
+    addBlocker("event.timezone", "Choose an event timezone", ["timezone"], "details");
+  }
+
+  if (!event.venueName || !event.venueAddress) {
+    addWarning(
+      "event.venue",
+      "Add a venue name and address so guests know where to go",
+      ["venueName"],
+      "details",
+    );
+  }
 
   if (!event.selectedThemeId || !isThemeId(event.selectedThemeId)) {
-    issues.push({
-      message: "Select a valid theme before publishing",
-      path: ["selectedThemeId"],
-    });
+    addBlocker(
+      "theme.selection",
+      "Select a valid theme before publishing",
+      ["selectedThemeId"],
+      "theme",
+    );
   } else {
     const theme = getTheme(event.selectedThemeId);
 
     if (!theme) {
-      issues.push({
-        message: "Select a valid theme before publishing",
-        path: ["selectedThemeId"],
-      });
+      addBlocker(
+        "theme.selection",
+        "Select a valid theme before publishing",
+        ["selectedThemeId"],
+        "theme",
+      );
     } else {
+      selectedTheme = {
+        id: theme.id,
+        mode: event.themeMode,
+        name: theme.label,
+      };
       const compatibility = evaluateThemeCompatibility({
         eventType: event.eventType,
         mode: event.themeMode,
         theme,
       });
-      issues.push(
-        ...compatibility.issues.map((issue) => ({
-          message: issue.message,
-          path: issue.path,
-        })),
+      compatibility.issues.forEach((issue) =>
+        addBlocker("theme.compatibility", issue.message, [...issue.path], "theme"),
       );
-      issues.push(
-        ...sections.flatMap((section, index) => {
-          if (!section.enabled) {
-            return [];
-          }
+      sections.forEach((section, index) => {
+        if (!section.enabled) {
+          return;
+        }
 
-          const result = validateThemeSections(theme.id, [section])[0]!;
+        const result = validateThemeSections(theme.id, [section])[0]!;
 
-          return result.ok
-            ? []
-            : result.issues.map((message) => ({
-                message,
-                path: ["sections", index],
-              }));
-        }),
-      );
+        if (!result.ok) {
+          result.issues.forEach((message) =>
+            addBlocker("section.validation", message, ["sections", index], "sections"),
+          );
+        }
+      });
     }
   }
 
-  issues.push(
-    ...validateEventTypeSections({
-      eventStatus: "published",
-      eventType: event.eventType,
-      sections,
-    }).map((issue) => ({
-      message: issue.message,
-      path: issue.path,
-    })),
+  validateEventTypeSections({
+    eventStatus: "published",
+    eventType: event.eventType,
+    sections,
+  }).forEach((issue) => addBlocker("section.required", issue.message, [...issue.path], "sections"));
+
+  const rsvpSection = sections.find(
+    (section) =>
+      section.enabled && section.sectionType === "rsvp" && section.visibility !== "hidden",
   );
+  const rsvpEnabled = event.rsvpSettings.enabled === true;
+  const rsvpClosed = event.rsvpSettings.closed === true;
+  const closesAt =
+    typeof event.rsvpSettings.closesAt === "string"
+      ? Date.parse(event.rsvpSettings.closesAt)
+      : Number.NaN;
+  const rsvpStatus: PublishingReadiness["rsvpStatus"] = !rsvpSection
+    ? "not_included"
+    : rsvpEnabled && !rsvpClosed && (Number.isNaN(closesAt) || closesAt > Date.now())
+      ? "open"
+      : "closed";
+
+  if (rsvpSection && rsvpStatus === "closed") {
+    addWarning(
+      "rsvp.closed",
+      "The RSVP section is included, but guest responses are currently closed",
+      ["rsvpSettings"],
+      "rsvp",
+    );
+  }
 
   return {
-    issues,
-    ready: issues.length === 0,
+    blockers,
+    eventUpdatedAt: event.updatedAt,
+    issues: blockers.map(({ message, path }) => ({ message, path })),
+    publicPath: `/e/${event.slug}`,
+    ready: blockers.length === 0,
+    rsvpStatus,
+    status: event.status,
+    theme: selectedTheme,
+    updatePolicy: "immediate",
+    warnings,
   };
 };
 

@@ -198,6 +198,11 @@ export const createApiClient = ({
           auth: false,
         },
       ),
+    publishEvent: (eventId: string, expectedUpdatedAt: string): Promise<EventResponse> =>
+      request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
+        body: { expectedUpdatedAt, status: "published" },
+        method: "PATCH",
+      }),
     getTheme: (themeId: string): Promise<ThemeResponse> =>
       request(`/themes/${encodePathSegment(themeId)}`, themeResponseSchema, {
         auth: false,
@@ -286,6 +291,11 @@ export const createApiClient = ({
     suggestEventSlug: (input: EventSlugSuggestionRequest): Promise<EventSlugSuggestionResponse> =>
       request("/events/slug-suggestion", eventSlugSuggestionResponseSchema, {
         query: input,
+      }),
+    unpublishEvent: (eventId: string, expectedUpdatedAt: string): Promise<EventResponse> =>
+      request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
+        body: { expectedUpdatedAt, status: "draft" },
+        method: "PATCH",
       }),
     updateEvent: (eventId: string, input: EventUpdateRequest): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {

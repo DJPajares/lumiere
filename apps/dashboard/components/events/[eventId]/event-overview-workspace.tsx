@@ -1,8 +1,35 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@lumiere/dashboard-ui/components/alert-dialog";
+import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
-import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@lumiere/dashboard-ui/components/dialog";
+import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
+import type {
+  ActivityEvent,
+  Event,
+  EventPublishingDestination,
+  EventPublishingReadiness,
+  EventSummary,
+} from "@lumiere/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -13,6 +40,7 @@ import { EventBasicsModal } from "../event-basics-modal";
 type OverviewData = {
   activity: ActivityEvent[];
   event: Event;
+  readiness: EventPublishingReadiness;
   summary: EventSummary;
 };
 
@@ -39,6 +67,12 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
     status: "loading",
   });
   const [editOpen, setEditOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [unpublishOpen, setUnpublishOpen] = useState(false);
+  const [publicationError, setPublicationError] = useState<string | null>(null);
+  const [publicationPending, setPublicationPending] = useState<"publish" | "unpublish" | null>(
+    null,
+  );
 
   const loadOverview = useCallback(
     async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
@@ -67,16 +101,19 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
       );
 
       try {
-        const [eventResponse, summaryResponse, activityResponse] = await Promise.all([
-          apiClient.getEvent(eventId),
-          apiClient.getEventSummary(eventId),
-          apiClient.listEventActivity(eventId),
-        ]);
+        const [eventResponse, summaryResponse, activityResponse, readinessResponse] =
+          await Promise.all([
+            apiClient.getEvent(eventId),
+            apiClient.getEventSummary(eventId),
+            apiClient.listEventActivity(eventId),
+            apiClient.getEventPublishingReadiness(eventId),
+          ]);
 
         setState({
           data: {
             activity: activityResponse.activity,
             event: eventResponse.event,
+            readiness: readinessResponse.readiness,
             summary: summaryResponse.summary,
           },
           error: null,
@@ -152,6 +189,68 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
     return null;
   }
 
+  const updatePublicationState = (event: Event) => {
+    setState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            data: {
+              ...current.data,
+              event,
+              readiness: {
+                ...current.data.readiness,
+                eventUpdatedAt: event.updatedAt,
+                status: event.status,
+              },
+            },
+          }
+        : current,
+    );
+  };
+
+  const publishEvent = async () => {
+    if (!apiClient || !overviewData.readiness.ready) {
+      return;
+    }
+
+    setPublicationError(null);
+    setPublicationPending("publish");
+
+    try {
+      const response = await apiClient.publishEvent(eventId, overviewData.readiness.eventUpdatedAt);
+      updatePublicationState(response.event);
+      setPublishOpen(false);
+      toast.success("Invitation published.");
+    } catch (error) {
+      setPublicationError(toPublicationError(error));
+    } finally {
+      setPublicationPending(null);
+    }
+  };
+
+  const unpublishEvent = async () => {
+    if (!apiClient) {
+      return;
+    }
+
+    setPublicationError(null);
+    setPublicationPending("unpublish");
+
+    try {
+      const response = await apiClient.unpublishEvent(
+        eventId,
+        overviewData.readiness.eventUpdatedAt,
+      );
+      updatePublicationState(response.event);
+      setUnpublishOpen(false);
+      toast.success("Invitation unpublished and returned to draft.");
+    } catch (error) {
+      setPublicationError(toPublicationError(error));
+    } finally {
+      setPublicationPending(null);
+    }
+  };
+
   return (
     <>
       <EventOverviewContent
@@ -159,7 +258,16 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
         event={overviewData.event}
         isRefreshing={state.isRefreshing}
         onEdit={() => setEditOpen(true)}
+        onPublish={() => {
+          setPublicationError(null);
+          setPublishOpen(true);
+        }}
         onRefresh={() => void loadOverview({ refreshing: true })}
+        onUnpublish={() => {
+          setPublicationError(null);
+          setUnpublishOpen(true);
+        }}
+        readiness={overviewData.readiness}
         summary={overviewData.summary}
       />
       <EventBasicsModal
@@ -177,6 +285,21 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
         }
         open={editOpen}
       />
+      <PublishConfirmation
+        error={publicationError}
+        isPublishing={publicationPending === "publish"}
+        onConfirm={() => void publishEvent()}
+        onOpenChange={setPublishOpen}
+        open={publishOpen}
+        readiness={overviewData.readiness}
+      />
+      <UnpublishConfirmation
+        error={publicationError}
+        isUnpublishing={publicationPending === "unpublish"}
+        onConfirm={() => void unpublishEvent()}
+        onOpenChange={setUnpublishOpen}
+        open={unpublishOpen}
+      />
     </>
   );
 }
@@ -186,12 +309,17 @@ function EventOverviewContent({
   event,
   isRefreshing,
   onEdit,
+  onPublish,
   onRefresh,
+  onUnpublish,
+  readiness,
   summary,
 }: OverviewData & {
   isRefreshing: boolean;
   onEdit: () => void;
+  onPublish: () => void;
   onRefresh: () => void;
+  onUnpublish: () => void;
 }) {
   const summaryCards = useMemo(() => getSummaryCards(summary, activity), [activity, summary]);
 
@@ -202,16 +330,39 @@ function EventOverviewContent({
       <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+            <Badge variant={event.status === "published" ? "default" : "secondary"}>
               {formatStatus(event.status)}
-            </p>
+            </Badge>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">{event.title}</h2>
             <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
               {formatEventType(event.eventType)} · {formatDateTime(event.startsAt, event.timezone)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={onEdit} size="lg" type="button">
+            {event.status === "draft" ? (
+              <>
+                <Button disabled={!readiness.ready} onClick={onPublish} size="lg" type="button">
+                  Publish event
+                </Button>
+                <Button
+                  nativeButton={false}
+                  render={<Link href={`/events/${event.id}/content`} />}
+                  size="lg"
+                  variant="outline"
+                >
+                  Preview invitation
+                </Button>
+              </>
+            ) : event.status === "published" ? (
+              <Button
+                nativeButton={false}
+                render={<a href={readiness.publicUrl} rel="noreferrer" target="_blank" />}
+                size="lg"
+              >
+                Open invite
+              </Button>
+            ) : null}
+            <Button onClick={onEdit} size="lg" type="button" variant="outline">
               Edit event
             </Button>
             <Button
@@ -219,7 +370,7 @@ function EventOverviewContent({
               onClick={onRefresh}
               size="lg"
               type="button"
-              variant="outline"
+              variant="ghost"
             >
               {isRefreshing ? "Refreshing..." : "Refresh data"}
             </Button>
@@ -232,6 +383,8 @@ function EventOverviewContent({
           <MetadataItem label="Timezone" value={event.timezone} />
         </dl>
       </section>
+
+      <PublishingReadinessPanel event={event} onUnpublish={onUnpublish} readiness={readiness} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="RSVP summary">
         {summaryCards.map((card) => (
@@ -262,6 +415,251 @@ function EventOverviewContent({
         </div>
         <ActivityList activity={activity} />
       </section>
+    </div>
+  );
+}
+
+function PublishingReadinessPanel({
+  event,
+  onUnpublish,
+  readiness,
+}: {
+  event: Event;
+  onUnpublish: () => void;
+  readiness: EventPublishingReadiness;
+}) {
+  const published = event.status === "published";
+
+  return (
+    <section
+      aria-labelledby="publishing-readiness-title"
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-6"
+      id="publishing-readiness"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-primary">Publishing readiness</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight" id="publishing-readiness-title">
+            {published
+              ? "Your invitation is live"
+              : readiness.ready
+                ? "Ready for a final review"
+                : "Finish the blockers before publishing"}
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {published
+              ? "Saved event, theme, and section changes update the live invitation immediately. Unpublish before making changes that should stay private."
+              : "Readiness is checked by the API against event details, dates, theme compatibility, sections, and RSVP availability."}
+          </p>
+        </div>
+        <Badge variant={readiness.ready ? "default" : "destructive"}>
+          {readiness.ready ? "Ready" : `${readiness.blockers.length} blockers`}
+        </Badge>
+      </div>
+
+      <dl className="grid gap-3 text-sm sm:grid-cols-3">
+        <MetadataItem label="Public URL" value={readiness.publicUrl} />
+        <MetadataItem
+          label="Theme"
+          value={
+            readiness.theme
+              ? `${readiness.theme.name} · ${formatThemeMode(readiness.theme.mode)}`
+              : "Theme not selected"
+          }
+        />
+        <MetadataItem label="RSVP" value={formatRsvpStatus(readiness.rsvpStatus)} />
+      </dl>
+
+      {readiness.blockers.length > 0 ? (
+        <div className="grid gap-2" role="group" aria-label="Publishing blockers">
+          <h3 className="text-sm font-semibold">Required fixes</h3>
+          <ul className="grid gap-2">
+            {readiness.blockers.map((blocker, index) => (
+              <li
+                className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-destructive/30 bg-destructive/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                key={`${blocker.code}-${index}`}
+              >
+                <span className="text-sm leading-6">{blocker.message}</span>
+                <Button
+                  nativeButton={false}
+                  render={<Link href={publishingDestinationHref(event.id, blocker.destination)} />}
+                  size="sm"
+                  variant="outline"
+                >
+                  Fix in {publishingDestinationLabel(blocker.destination)}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {readiness.warnings.length > 0 ? (
+        <div className="grid gap-2">
+          <h3 className="text-sm font-semibold">Review before publishing</h3>
+          <ul className="grid gap-2 text-sm text-muted-foreground">
+            {readiness.warnings.map((warning, index) => (
+              <li
+                className="rounded-[var(--radius-md)] border border-border bg-muted/50 px-3 py-2 leading-6"
+                key={`${warning.code}-${index}`}
+              >
+                {warning.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {published || event.status === "archived" ? (
+        <div className="flex flex-wrap gap-2">
+          {published ? (
+            <>
+              <Button onClick={() => void copyInviteUrl(readiness.publicUrl)} type="button">
+                Copy link
+              </Button>
+              <Button
+                nativeButton={false}
+                render={<a href={readiness.publicUrl} rel="noreferrer" target="_blank" />}
+                variant="outline"
+              >
+                Open invite
+              </Button>
+              <Button
+                onClick={() => void shareInvite(event.title, readiness.publicUrl)}
+                type="button"
+                variant="outline"
+              >
+                Share invite
+              </Button>
+              <Button onClick={onUnpublish} type="button" variant="destructive">
+                Unpublish event
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Archived events cannot be published from this workspace.
+            </p>
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function PublishConfirmation({
+  error,
+  isPublishing,
+  onConfirm,
+  onOpenChange,
+  open,
+  readiness,
+}: {
+  error: string | null;
+  isPublishing: boolean;
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  readiness: EventPublishingReadiness;
+}) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Publish this invitation?</DialogTitle>
+          <DialogDescription>
+            Confirm the public destination and guest response state. Publishing makes the invite
+            available immediately.
+          </DialogDescription>
+        </DialogHeader>
+
+        <dl className="grid gap-2 text-sm">
+          <ConfirmationItem label="Public URL" value={readiness.publicUrl} />
+          <ConfirmationItem
+            label="Theme"
+            value={
+              readiness.theme
+                ? `${readiness.theme.name} · ${formatThemeMode(readiness.theme.mode)}`
+                : "Theme not selected"
+            }
+          />
+          <ConfirmationItem label="RSVP" value={formatRsvpStatus(readiness.rsvpStatus)} />
+          <ConfirmationItem label="Updates" value="Saved changes appear on the live invite" />
+        </dl>
+
+        {readiness.warnings.length > 0 ? (
+          <div className="grid gap-1 rounded-[var(--radius-md)] bg-muted p-3 text-sm">
+            <p className="font-semibold">Non-blocking warnings</p>
+            {readiness.warnings.map((warning, index) => (
+              <p className="text-muted-foreground" key={`${warning.code}-${index}`}>
+                {warning.message}
+              </p>
+            ))}
+          </div>
+        ) : null}
+
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <DialogFooter>
+          <Button disabled={isPublishing} onClick={() => onOpenChange(false)} variant="outline">
+            Cancel
+          </Button>
+          <Button disabled={isPublishing || !readiness.ready} onClick={onConfirm}>
+            {isPublishing ? "Publishing..." : "Publish event"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UnpublishConfirmation({
+  error,
+  isUnpublishing,
+  onConfirm,
+  onOpenChange,
+  open,
+}: {
+  error: string | null;
+  isUnpublishing: boolean;
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Unpublish this invitation?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Public and guest links will stop working immediately. Your saved event content remains
+            available as a draft and can be published again later.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isUnpublishing}>Keep published</AlertDialogCancel>
+          <AlertDialogAction disabled={isUnpublishing} onClick={onConfirm} variant="destructive">
+            {isUnpublishing ? "Unpublishing..." : "Unpublish event"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function ConfirmationItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1 rounded-[var(--radius-md)] bg-muted/60 p-3 sm:grid-cols-[7rem_1fr]">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="break-words font-medium">{value}</dd>
     </div>
   );
 }
@@ -306,16 +704,16 @@ function ActivityList({ activity }: { activity: ActivityEvent[] }) {
 function OverviewLoading() {
   return (
     <div className="grid gap-5" aria-label="Loading event overview" aria-live="polite">
-      <div className="h-36 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]" />
+      <Skeleton className="h-36 rounded-[var(--radius-lg)] motion-reduce:animate-none" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[0, 1, 2, 3, 4, 5].map((item) => (
-          <div
-            className="h-32 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]"
+          <Skeleton
+            className="h-32 rounded-[var(--radius-lg)] motion-reduce:animate-none"
             key={item}
           />
         ))}
       </div>
-      <div className="h-44 animate-pulse rounded-[var(--radius-lg)] bg-[var(--surface-muted)]" />
+      <Skeleton className="h-44 rounded-[var(--radius-lg)] motion-reduce:animate-none" />
     </div>
   );
 }
@@ -327,6 +725,82 @@ function MetadataItem({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 break-words font-semibold">{value}</dd>
     </div>
   );
+}
+
+function publishingDestinationHref(eventId: string, destination: EventPublishingDestination) {
+  if (destination === "theme") {
+    return `/events/${eventId}/theme`;
+  }
+
+  if (destination === "sections" || destination === "rsvp") {
+    return `/events/${eventId}/content`;
+  }
+
+  return `/events/${eventId}/settings`;
+}
+
+function publishingDestinationLabel(destination: EventPublishingDestination) {
+  if (destination === "theme") {
+    return "Theme";
+  }
+
+  if (destination === "sections") {
+    return "Content";
+  }
+
+  if (destination === "rsvp") {
+    return "RSVP";
+  }
+
+  return "Settings";
+}
+
+function formatRsvpStatus(status: EventPublishingReadiness["rsvpStatus"]) {
+  if (status === "open") {
+    return "Open for guest responses";
+  }
+
+  if (status === "closed") {
+    return "Included, responses closed";
+  }
+
+  return "Not included";
+}
+
+function formatThemeMode(mode: NonNullable<EventPublishingReadiness["theme"]>["mode"]) {
+  return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+async function copyInviteUrl(publicUrl: string) {
+  try {
+    await navigator.clipboard.writeText(publicUrl);
+    toast.success("Invite link copied.");
+  } catch {
+    toast.error("Unable to copy the invite link.");
+  }
+}
+
+async function shareInvite(title: string, publicUrl: string) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url: publicUrl });
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  await copyInviteUrl(publicUrl);
+}
+
+function toPublicationError(error: unknown) {
+  if (error instanceof ApiClientError && error.status === 409) {
+    return "This event changed after readiness was checked. Refresh the overview and review the latest changes before trying again.";
+  }
+
+  return toFriendlyApiMessage(error);
 }
 
 function getSummaryCards(summary: EventSummary, activity: ActivityEvent[]) {

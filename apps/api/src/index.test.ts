@@ -896,15 +896,18 @@ describe("API app", () => {
     const { authStore } = createTestAuthStore({
       access: roleAccess("viewer"),
     });
-    const publishingReadiness: PublishingReadiness = {
-      issues: [
-        {
-          message: "Select a valid theme before publishing",
-          path: ["selectedThemeId"],
-        },
-      ],
-      ready: false,
+    const themeBlocker = {
+      code: "theme.selection",
+      destination: "theme" as const,
+      message: "Select a valid theme before publishing",
+      path: ["selectedThemeId"],
     };
+    const publishingReadiness = createPublishingReadiness({
+      blockers: [themeBlocker],
+      issues: [{ message: themeBlocker.message, path: themeBlocker.path }],
+      ready: false,
+      theme: undefined,
+    });
     const { eventStore, getPublishingReadiness } = createTestEventStore({
       publishingReadiness,
     });
@@ -914,9 +917,13 @@ describe("API app", () => {
         authorization: `Bearer ${createSupabaseToken()}`,
       },
     });
+    const { publicPath: _publicPath, ...diagnostics } = publishingReadiness;
 
     await expect(response.json()).resolves.toEqual({
-      readiness: publishingReadiness,
+      readiness: {
+        ...diagnostics,
+        publicUrl: "http://localhost:3000/e/launch-night",
+      },
     });
     expect(response.status).toBe(200);
     expect(getPublishingReadiness).toHaveBeenCalledWith(eventId);
@@ -1144,6 +1151,7 @@ describe("API app", () => {
     const response = await app.request(`/events/${eventId}`, {
       body: JSON.stringify({
         eventType: "dinner",
+        expectedUpdatedAt: baseEvent.updatedAt,
         status: "published",
         title: "Updated Launch",
       }),
@@ -1159,9 +1167,35 @@ describe("API app", () => {
     });
     expect(response.status).toBe(200);
     expect(updateEvent).toHaveBeenCalledWith(eventId, {
+      actorUserId: localUser.id,
       eventType: "dinner",
+      expectedUpdatedAt: baseEvent.updatedAt,
       status: "published",
       title: "Updated Launch",
+    });
+
+    updateEvent.mockRejectedValueOnce(
+      new ApiHttpError("CONFLICT", "Event changed since publishing readiness was checked"),
+    );
+    const conflictResponse = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({
+        expectedUpdatedAt: baseEvent.updatedAt,
+        status: "published",
+      }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "publish-conflict-request",
+      },
+      method: "PATCH",
+    });
+
+    expect(conflictResponse.status).toBe(409);
+    await expect(conflictResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        message: "Event changed since publishing readiness was checked",
+      },
     });
   });
 
@@ -2616,6 +2650,7 @@ describe("API app", () => {
 
     const publishResponse = await app.request(`/events/${eventId}`, {
       body: JSON.stringify({
+        expectedUpdatedAt: createdEvent.updatedAt,
         status: "published",
       }),
       headers: managerHeaders,
@@ -2960,6 +2995,28 @@ function createTestDashboardDataStore({
   };
 }
 
+function createPublishingReadiness(
+  overrides: Partial<PublishingReadiness> = {},
+): PublishingReadiness {
+  return {
+    blockers: [],
+    eventUpdatedAt: baseEvent.updatedAt,
+    issues: [],
+    publicPath: `/e/${baseEvent.slug}`,
+    ready: true,
+    rsvpStatus: "open",
+    status: baseEvent.status,
+    theme: {
+      id: "lumiere-default",
+      mode: "system",
+      name: "Lumiere Default",
+    },
+    updatePolicy: "immediate",
+    warnings: [],
+    ...overrides,
+  };
+}
+
 function createTestEventStore({
   deletedEvent = {
     ...baseEvent,
@@ -2971,7 +3028,7 @@ function createTestEventStore({
   createdEvent = baseEvent,
   deletedEvents = [],
   events = [baseEvent],
-  publishingReadiness = { issues: [], ready: true },
+  publishingReadiness = createPublishingReadiness(),
   updatedEvent = baseEvent,
   restoredEvent = baseEvent,
 }: {
@@ -3261,7 +3318,13 @@ function createIntegrationSmokeStores() {
       event && event.slug === requestedSlug ? event : null,
     ),
     getPublishingReadiness: vi.fn(async (requestedEventId) =>
-      event && event.id === requestedEventId ? { issues: [], ready: true } : null,
+      event && event.id === requestedEventId
+        ? createPublishingReadiness({
+            eventUpdatedAt: event.updatedAt,
+            publicPath: `/e/${event.slug}`,
+            status: event.status,
+          })
+        : null,
     ),
     isEventSlugAvailable: vi.fn(async (requestedSlug, options = {}) => {
       if (!event || event.slug !== requestedSlug) {

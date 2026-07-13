@@ -82,9 +82,32 @@ export const eventsListResponseSchema = z.object({
 });
 export type EventsListResponse = z.infer<typeof eventsListResponseSchema>;
 
+export const eventPublishingDestinationSchema = z.enum(["details", "sections", "theme", "rsvp"]);
+export type EventPublishingDestination = z.infer<typeof eventPublishingDestinationSchema>;
+
+export const eventPublishingDiagnosticSchema = apiFieldErrorSchema.extend({
+  code: nonEmptyStringSchema.max(120),
+  destination: eventPublishingDestinationSchema,
+});
+export type EventPublishingDiagnostic = z.infer<typeof eventPublishingDiagnosticSchema>;
+
 export const eventPublishingReadinessSchema = z.object({
+  blockers: z.array(eventPublishingDiagnosticSchema),
+  eventUpdatedAt: eventSchema.shape.updatedAt,
   issues: z.array(apiFieldErrorSchema),
+  publicUrl: z.string().url(),
   ready: z.boolean(),
+  rsvpStatus: z.enum(["open", "closed", "not_included"]),
+  status: eventSchema.shape.status,
+  theme: z
+    .object({
+      id: nonEmptyStringSchema.max(120),
+      mode: eventSchema.shape.themeMode,
+      name: nonEmptyStringSchema.max(120),
+    })
+    .optional(),
+  updatePolicy: z.literal("immediate"),
+  warnings: z.array(eventPublishingDiagnosticSchema),
 });
 export type EventPublishingReadiness = z.infer<typeof eventPublishingReadinessSchema>;
 

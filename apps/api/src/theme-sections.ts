@@ -64,6 +64,10 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
   async replaceSections(eventId, sections) {
     return db.transaction(async (tx) => {
       await tx.delete(eventSections).where(eq(eventSections.eventId, eventId));
+      await tx
+        .update(events)
+        .set({ updatedAt: sql`now()` })
+        .where(eq(events.id, eventId));
 
       if (sections.length === 0) {
         return [];
@@ -103,23 +107,29 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
   },
 
   async updateEventTheme(eventId, input) {
-    await db
-      .insert(eventThemeSettings)
-      .values({
-        configJson: input.themeConfig,
-        eventId,
-        selectedThemeId: input.selectedThemeId,
-        themeMode: input.themeMode,
-      })
-      .onConflictDoUpdate({
-        target: eventThemeSettings.eventId,
-        set: {
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(eventThemeSettings)
+        .values({
           configJson: input.themeConfig,
+          eventId,
           selectedThemeId: input.selectedThemeId,
           themeMode: input.themeMode,
-          updatedAt: sql`now()`,
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: eventThemeSettings.eventId,
+          set: {
+            configJson: input.themeConfig,
+            selectedThemeId: input.selectedThemeId,
+            themeMode: input.themeMode,
+            updatedAt: sql`now()`,
+          },
+        });
+      await tx
+        .update(events)
+        .set({ updatedAt: sql`now()` })
+        .where(eq(events.id, eventId));
+    });
 
     return getEventThemeState(db, eventId);
   },

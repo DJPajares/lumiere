@@ -324,7 +324,14 @@ export const createRoutes = ({
         throw new ApiHttpError("NOT_FOUND", "Event not found");
       }
 
-      return context.json({ readiness });
+      const { publicPath, ...diagnostics } = readiness;
+
+      return context.json({
+        readiness: {
+          ...diagnostics,
+          publicUrl: new URL(publicPath, config.PUBLIC_APP_BASE_URL).toString(),
+        },
+      });
     },
   );
 
@@ -484,6 +491,7 @@ export const createRoutes = ({
     const { publicAccessCode, ...eventInput } = input;
     const event = await stores.eventStore.updateEvent(eventId, {
       ...eventInput,
+      ...(eventInput.status === "published" ? { actorUserId: context.get("manager").user.id } : {}),
       ...(publicAccessCode !== undefined
         ? {
             publicAccessCodeHash: publicAccessCode

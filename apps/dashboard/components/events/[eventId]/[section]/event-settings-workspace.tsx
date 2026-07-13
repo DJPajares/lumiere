@@ -93,8 +93,8 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
             <p className="text-sm font-semibold text-primary">Event settings</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">{event.title}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Public identity, schedule, venue, and publish state are bounded details that can be
-              updated without leaving this workspace.
+              Public identity, schedule, and venue are bounded details. Publishing readiness and the
+              live invitation state are managed from the event overview.
             </p>
           </div>
           <Badge variant={event.status === "published" ? "default" : "secondary"}>

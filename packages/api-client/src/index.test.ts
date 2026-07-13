@@ -108,16 +108,31 @@ describe("API client", () => {
   });
 
   it("returns manager publishing readiness diagnostics", async () => {
+    const readiness = {
+      blockers: [
+        {
+          code: "theme.selection",
+          destination: "theme",
+          message: "Select a valid theme before publishing",
+          path: ["selectedThemeId"],
+        },
+      ],
+      eventUpdatedAt: "2026-07-08T00:00:00.000Z",
+      issues: [
+        {
+          message: "Select a valid theme before publishing",
+          path: ["selectedThemeId"],
+        },
+      ],
+      publicUrl: "https://invite.example.test/e/launch-night",
+      ready: false,
+      rsvpStatus: "not_included",
+      status: "draft",
+      updatePolicy: "immediate",
+      warnings: [],
+    };
     const fetch = createFetchMock({
-      readiness: {
-        issues: [
-          {
-            message: "Select a valid theme before publishing",
-            path: ["selectedThemeId"],
-          },
-        ],
-        ready: false,
-      },
+      readiness,
     });
     const client = createApiClient({
       authToken: "manager-token",
@@ -133,6 +148,52 @@ describe("API client", () => {
     expect(fetch).toHaveBeenCalledWith(
       "https://api.example.test/events/00000000-0000-4000-8000-000000000101/publish-readiness",
       expect.anything(),
+    );
+
+    const event = {
+      createdAt: "2026-07-08T00:00:00.000Z",
+      eventType: "launch",
+      id: "00000000-0000-4000-8000-000000000101",
+      ownerUserId: "00000000-0000-4000-8000-000000000102",
+      publicSettings: {},
+      rsvpSettings: {},
+      slug: "launch-night",
+      startsAt: "2026-12-01T11:00:00.000Z",
+      status: "published",
+      themeConfig: {},
+      themeMode: "system",
+      timezone: "Asia/Singapore",
+      title: "Launch Night",
+      updatedAt: "2026-07-08T01:00:00.000Z",
+    } as const;
+    const mutationFetch = createFetchMock({ event });
+    const mutationClient = createApiClient({
+      authToken: "manager-token",
+      baseUrl: "https://api.example.test",
+      fetch: mutationFetch,
+    });
+
+    await mutationClient.publishEvent(event.id, readiness.eventUpdatedAt);
+    await mutationClient.unpublishEvent(event.id, event.updatedAt);
+
+    expect(mutationFetch).toHaveBeenNthCalledWith(
+      1,
+      `https://api.example.test/events/${event.id}`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          expectedUpdatedAt: readiness.eventUpdatedAt,
+          status: "published",
+        }),
+        method: "PATCH",
+      }),
+    );
+    expect(mutationFetch).toHaveBeenNthCalledWith(
+      2,
+      `https://api.example.test/events/${event.id}`,
+      expect.objectContaining({
+        body: JSON.stringify({ expectedUpdatedAt: event.updatedAt, status: "draft" }),
+        method: "PATCH",
+      }),
     );
   });
 

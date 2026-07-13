@@ -110,6 +110,7 @@ export type EventCreate = z.output<typeof eventCreateSchema>;
 
 export const eventUpdateSchema = z
   .object({
+    expectedUpdatedAt: isoDateTimeSchema.optional(),
     slug: publicSlugSchema.optional(),
     title: nonEmptyStringSchema.max(160).optional(),
     eventType: eventTypeSchema.optional(),

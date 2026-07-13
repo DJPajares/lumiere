@@ -143,7 +143,7 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
     <ResponsiveModal
       description={
         event
-          ? "Update the public identity, timing, venue, and publish state."
+          ? "Update the public identity, timing, and venue. Publishing is managed from the event overview."
           : "Start with the public identity, timing, and venue. Theme and guests come next."
       }
       dirty={dirty}

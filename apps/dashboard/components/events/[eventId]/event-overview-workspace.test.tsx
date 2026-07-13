@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
-import { cleanup, render, screen } from "@testing-library/react";
+import { ApiClientError } from "@lumiere/api-client";
+import type { ActivityEvent, Event, EventPublishingReadiness, EventSummary } from "@lumiere/types";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -18,6 +19,7 @@ describe("EventOverviewWorkspace", () => {
   });
 
   it("renders event metadata and response summary cards", async () => {
+    const user = userEvent.setup();
     const submittedActivity: ActivityEvent = {
       ...activityEvent,
       activityType: "rsvp_submitted",
@@ -26,12 +28,18 @@ describe("EventOverviewWorkspace", () => {
       },
     };
 
+    const unpublishEvent = vi.fn(async () => ({
+      event: { ...overviewEvent, status: "draft" as const, updatedAt: "2030-01-02T00:00:00.000Z" },
+    }));
+
     renderWithAuth({
       getEvent: vi.fn(async () => ({ event: overviewEvent })),
+      getEventPublishingReadiness: vi.fn(async () => ({ readiness: readyReadiness })),
       getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
       listEventActivity: vi.fn(async () => ({
         activity: [submittedActivity],
       })),
+      unpublishEvent,
     });
 
     expect(screen.getByLabelText("Loading event overview")).toBeTruthy();
@@ -52,31 +60,114 @@ describe("EventOverviewWorkspace", () => {
     expect(screen.getAllByText("Recent activity")).toHaveLength(2);
     expect(screen.getByText("1 updates")).toBeTruthy();
     expect(screen.getByText("RSVP submitted by Tan family")).toBeTruthy();
+    expect(screen.getByText("Your invitation is live")).toBeTruthy();
+    expect(screen.getByText(/Saved event, theme, and section changes update/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Open invite" })[0]?.getAttribute("href")).toBe(
+      readyReadiness.publicUrl,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Unpublish event" }));
+    const unpublishDialog = within(
+      await screen.findByRole("alertdialog", { name: "Unpublish this invitation?" }),
+    );
+
+    expect(unpublishDialog.getByText(/Public and guest links will stop working/)).toBeTruthy();
+    await user.click(unpublishDialog.getByRole("button", { name: "Unpublish event" }));
+
+    expect(unpublishEvent).toHaveBeenCalledWith("evt_123", readyReadiness.eventUpdatedAt);
+    expect(await screen.findByRole("button", { name: "Publish event" })).toBeTruthy();
   });
 
   it("renders an empty activity state", async () => {
+    const blocker = {
+      code: "theme.selection",
+      destination: "theme" as const,
+      message: "Select a valid theme before publishing",
+      path: ["selectedThemeId"],
+    };
+
     renderWithAuth({
-      getEvent: vi.fn(async () => ({ event: overviewEvent })),
+      getEvent: vi.fn(async () => ({ event: draftEvent })),
+      getEventPublishingReadiness: vi.fn(async () => ({
+        readiness: {
+          ...readyReadiness,
+          blockers: [blocker],
+          issues: [{ message: blocker.message, path: blocker.path }],
+          ready: false,
+          status: "draft" as const,
+          theme: undefined,
+        },
+      })),
       getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
       listEventActivity: vi.fn(async () => ({ activity: [] })),
     });
 
     expect(await screen.findByText("No activity yet")).toBeTruthy();
     expect(screen.getByText(/Activity will appear after managers publish changes/)).toBeTruthy();
+    expect(screen.getByText("Finish the blockers before publishing")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Fix in Theme" }).getAttribute("href")).toBe(
+      "/events/evt_123/theme",
+    );
+    expect(screen.getByRole("button", { name: "Preview invitation" }).getAttribute("href")).toBe(
+      "/events/evt_123/content",
+    );
+    expect(
+      (screen.getByRole("button", { name: "Publish event" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it("opens bounded event details from the event workspace", async () => {
     const user = userEvent.setup();
+    const publishedEvent = {
+      ...draftEvent,
+      status: "published" as const,
+      updatedAt: "2030-01-02T00:00:00.000Z",
+    };
+    const publishEvent = vi
+      .fn<DashboardApiClient["publishEvent"]>()
+      .mockRejectedValueOnce(
+        new ApiClientError(409, {
+          error: {
+            code: "CONFLICT",
+            message: "Event changed since publishing readiness was checked",
+            requestId: "publish-conflict-request",
+          },
+        }),
+      )
+      .mockResolvedValueOnce({ event: publishedEvent });
 
     renderWithAuth({
-      getEvent: vi.fn(async () => ({ event: overviewEvent })),
+      getEvent: vi.fn(async () => ({ event: draftEvent })),
+      getEventPublishingReadiness: vi.fn(async () => ({ readiness: readyReadiness })),
       getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
       listEventActivity: vi.fn(async () => ({ activity: [] })),
+      publishEvent,
     });
 
     await screen.findByText("Spring Dinner");
     await user.click(screen.getByRole("button", { name: "Edit event" }));
     expect(await screen.findByRole("dialog", { name: "Edit Spring Dinner" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+
+    await user.click(screen.getByRole("button", { name: "Publish event" }));
+    const publishDialog = within(
+      await screen.findByRole("dialog", { name: "Publish this invitation?" }),
+    );
+
+    expect(publishDialog.getByText(readyReadiness.publicUrl)).toBeTruthy();
+    expect(publishDialog.getByText("Open for guest responses")).toBeTruthy();
+    expect(publishDialog.getByText("Premium · System")).toBeTruthy();
+
+    await user.click(publishDialog.getByRole("button", { name: "Publish event" }));
+    expect((await publishDialog.findByRole("alert")).textContent).toContain(
+      "This event changed after readiness was checked",
+    );
+
+    await user.click(publishDialog.getByRole("button", { name: "Publish event" }));
+
+    expect(publishEvent).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText("Your invitation is live")).toBeTruthy();
   });
 });
 
@@ -129,6 +220,28 @@ const overviewEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "12 Orchard Road",
   venueName: "Glass Hall",
+};
+
+const draftEvent: Event = {
+  ...overviewEvent,
+  status: "draft",
+};
+
+const readyReadiness: EventPublishingReadiness = {
+  blockers: [],
+  eventUpdatedAt: overviewEvent.updatedAt,
+  issues: [],
+  publicUrl: "https://invite.example.test/e/spring-dinner",
+  ready: true,
+  rsvpStatus: "open",
+  status: "published",
+  theme: {
+    id: "premium",
+    mode: "system",
+    name: "Premium",
+  },
+  updatePolicy: "immediate",
+  warnings: [],
 };
 
 const overviewSummary: EventSummary = {
