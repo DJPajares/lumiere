@@ -493,7 +493,11 @@ export function DashboardSwitch({
   return (
     <FieldGroup className="gap-2">
       <FieldLabel htmlFor={inputId}>
-        <Field data-disabled={disabled || undefined} data-invalid={error ? true : undefined}>
+        <Field
+          data-disabled={disabled || undefined}
+          data-invalid={error ? true : undefined}
+          orientation="horizontal"
+        >
           <FieldContent>
             <FieldTitle>{label}</FieldTitle>
             {description ? (

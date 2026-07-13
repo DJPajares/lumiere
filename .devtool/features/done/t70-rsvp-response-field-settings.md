@@ -6,8 +6,8 @@ assignee: null
 epic: 'full-stack'
 dueDate: null
 created: '2026-07-13T09:00:00+08:00'
-modified: '2026-07-13T15:06:31+08:00'
-completedAt: '2026-07-13T15:06:31+08:00'
+modified: '2026-07-13T15:23:42+08:00'
+completedAt: '2026-07-13T15:23:42+08:00'
 labels: ['rsvp', 'dashboard', 'invite', 'api', 'database', 'settings']
 depends_on: ['t14-rsvp-api', 't29-invite-rsvp-form-flow', 't47-schema-driven-content-field-forms', 't50-event-theme-content-settings-model', 't56-dashboard-shadcn-foundation']
 order: 'a70'
@@ -61,3 +61,6 @@ Both fields default to enabled for new and existing events. When enabled, one gu
 - 2026-07-13T09:30:00+08:00: Promoted as the lowest-order unblocked backlog item because no tasks were marked todo; implementation started.
 - 2026-07-13T15:06:31+08:00: Added typed settings and database defaults/backfill, server-authoritative public and submission behavior, dashboard Base UI controls, conditional invite fields, retention safeguards, and coverage for all flag combinations.
 - 2026-07-13T15:06:31+08:00: Completed with repository typecheck, lint, tests, dashboard UI-boundary, changed-file formatting, and UI pre-flight checks passing. The repository-wide format check remains blocked by unrelated pre-existing files documented in the handoff.
+- 2026-07-13T15:20:00+08:00: Reopened after workflow review to move the response-field controls from event settings into the RSVP content editor and correct the stretched switch layout.
+- 2026-07-13T15:23:42+08:00: Moved guest-name and guest-message controls beside dietary and song-request controls in RSVP content, integrated them with section dirty/cancel/save handling, and switched the shared field composition to horizontal so toggles retain their compact width.
+- 2026-07-13T15:23:42+08:00: Correction completed with dashboard typecheck, all 86 dashboard tests, lint, changed-file formatting, and dashboard UI-boundary checks passing.

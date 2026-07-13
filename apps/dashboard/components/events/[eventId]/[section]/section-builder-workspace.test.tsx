@@ -182,9 +182,23 @@ describe("SectionBuilderWorkspace", () => {
         })),
       }),
     );
+    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async (_eventId, input) => ({
+      event: {
+        ...dashboardEvent,
+        rsvpSettings: {
+          ...dashboardEvent.rsvpSettings,
+          collectGuestMessage:
+            input.rsvpSettings?.collectGuestMessage ??
+            dashboardEvent.rsvpSettings.collectGuestMessage,
+          collectGuestNames:
+            input.rsvpSettings?.collectGuestNames ?? dashboardEvent.rsvpSettings.collectGuestNames,
+        },
+      },
+    }));
 
     renderWithAuth(
       createApiClientStub({
+        updateEvent,
         updateEventSections,
       }),
     );
@@ -216,22 +230,32 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(screen.getByRole("option", { name: "Guest-only" }));
     await user.click(screen.getByRole("button", { name: "Open Date and Time editor" }));
     await user.click(screen.getByRole("button", { name: "Date and Time move up" }));
+    await user.click(screen.getByRole("button", { name: "Open RSVP editor" }));
+    const rsvpEditor = within(screen.getByRole("region", { name: "RSVP" }));
+
+    await user.click(rsvpEditor.getByLabelText("Enable RSVP"));
+    await user.click(rsvpEditor.getByRole("switch", { name: /Guest names/ }));
+    await user.click(rsvpEditor.getByRole("switch", { name: /Guest message/ }));
+    await user.click(rsvpEditor.getByRole("switch", { name: /Dietary requirements/ }));
+    await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
     await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);
 
     await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
 
     const payload = updateEventSections.mock.calls[0]?.[1];
 
     expect(payload?.sections.map((section) => section.sectionType)).toEqual([
       "date",
       "introduction",
+      "rsvp",
       "details",
     ]);
     expect(payload?.sections[1]?.visibility).toBe("guest_only");
     expect(payload?.sections[1]?.content).toMatchObject({
       title: "Garden Supper",
     });
-    expect(payload?.sections[2]?.content).toMatchObject({
+    expect(payload?.sections[3]?.content).toMatchObject({
       items: [
         {
           label: "Schedule",
@@ -244,9 +268,22 @@ describe("SectionBuilderWorkspace", () => {
       ],
       title: "Details",
     });
+    expect(payload?.sections[2]?.content).toMatchObject({
+      questions: [
+        expect.objectContaining({ key: "dietary-notes" }),
+        expect.objectContaining({ key: "song-request" }),
+      ],
+    });
     expect(payload?.sections[0]?.sortOrder).toBe(0);
     expect(payload?.sections[1]?.sortOrder).toBe(1);
     expect(payload?.sections[2]?.sortOrder).toBe(2);
+    expect(payload?.sections[3]?.sortOrder).toBe(3);
+    expect(updateEvent).toHaveBeenCalledWith("evt_123", {
+      rsvpSettings: {
+        collectGuestMessage: false,
+        collectGuestNames: false,
+      },
+    });
     expect(await screen.findByText("Sections saved.")).toBeTruthy();
   });
 });

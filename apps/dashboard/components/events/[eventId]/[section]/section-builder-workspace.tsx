@@ -56,6 +56,11 @@ import {
 
 type JsonObject = Record<string, JsonValue>;
 
+type RsvpFieldSettings = {
+  collectGuestMessage: boolean;
+  collectGuestNames: boolean;
+};
+
 type SectionDraft = {
   contentText: string;
   enabled: boolean;
@@ -271,6 +276,10 @@ function SectionBuilderContent({
     () => state.sections[0]?.sectionKey ?? "",
   );
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
+  const [rsvpSettings, setRsvpSettings] = useState<RsvpFieldSettings>(() => ({
+    collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
+    collectGuestNames: state.event.rsvpSettings.collectGuestNames,
+  }));
   const previewModels = useMemo(
     () => createSectionPreviewModels(state.sections, state.theme, state.event),
     [state.event, state.sections, state.theme],
@@ -284,11 +293,26 @@ function SectionBuilderContent({
       )
     : -1;
   const nextSuggestedSection = getNextSuggestedSection(previewModels);
-  const dirtySectionKeys = useMemo(
+  const changedSectionKeys = useMemo(
     () => getDirtySectionKeys(state.sections, state.savedSections),
     [state.savedSections, state.sections],
   );
-  const hasUnsavedChanges = dirtySectionKeys.size > 0;
+  const rsvpSettingsDirty =
+    rsvpSettings.collectGuestMessage !== state.event.rsvpSettings.collectGuestMessage ||
+    rsvpSettings.collectGuestNames !== state.event.rsvpSettings.collectGuestNames;
+  const rsvpSectionKey = state.sections.find(
+    (section) => section.sectionType === "rsvp",
+  )?.sectionKey;
+  const dirtySectionKeys = useMemo(() => {
+    const keys = new Set(changedSectionKeys);
+
+    if (rsvpSettingsDirty && rsvpSectionKey) {
+      keys.add(rsvpSectionKey);
+    }
+
+    return keys;
+  }, [changedSectionKeys, rsvpSectionKey, rsvpSettingsDirty]);
+  const hasUnsavedChanges = changedSectionKeys.size > 0 || rsvpSettingsDirty;
   const validEnabledCount = previewModels.filter(
     (model) => model.section.enabled && model.status !== "invalid",
   ).length;
@@ -354,6 +378,10 @@ function SectionBuilderContent({
           }
         : current,
     );
+    setRsvpSettings({
+      collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
+      collectGuestNames: state.event.rsvpSettings.collectGuestNames,
+    });
   };
 
   const moveSection = (sectionKey: string, direction: -1 | 1) => {
@@ -432,17 +460,33 @@ function SectionBuilderContent({
     );
 
     try {
-      const response = await apiClient.updateEventSections(eventId, parsed.input);
-      const sectionDrafts = createSectionDrafts({
-        event: state.event,
-        existingSections: response.sections,
-        theme: state.theme,
+      let savedEvent = state.event;
+      let sectionDrafts = state.savedSections;
+
+      if (changedSectionKeys.size > 0) {
+        const response = await apiClient.updateEventSections(eventId, parsed.input);
+        sectionDrafts = createSectionDrafts({
+          event: state.event,
+          existingSections: response.sections,
+          theme: state.theme,
+        });
+      }
+
+      if (rsvpSettingsDirty) {
+        const response = await apiClient.updateEvent(eventId, { rsvpSettings });
+        savedEvent = response.event;
+      }
+
+      setRsvpSettings({
+        collectGuestMessage: savedEvent.rsvpSettings.collectGuestMessage,
+        collectGuestNames: savedEvent.rsvpSettings.collectGuestNames,
       });
 
       updateState((current) =>
         current.status === "ready"
           ? {
               ...current,
+              event: savedEvent,
               formMessage: "Sections saved.",
               isSaving: false,
               savedSections: sectionDrafts,
@@ -574,6 +618,10 @@ function SectionBuilderContent({
           selectedSectionKey={selectedPreview?.section.sectionKey}
           selectedSectionIndex={selectedPreviewIndex}
           updateSection={updateSection}
+          rsvpSettings={rsvpSettings}
+          updateRsvpSetting={(key, value) =>
+            setRsvpSettings((current) => ({ ...current, [key]: value }))
+          }
         />
 
         <SectionPreviewPanel
@@ -598,10 +646,12 @@ function SectionOrderPanel({
   onCancel,
   onOpen,
   onSave,
+  rsvpSettings,
   sectionErrors,
   selectedSectionKey,
   selectedSectionIndex,
   updateSection,
+  updateRsvpSetting,
 }: {
   canSave: boolean;
   dirtySectionKeys: Set<string>;
@@ -612,10 +662,12 @@ function SectionOrderPanel({
   onCancel: () => void;
   onOpen: (sectionKey: string) => void;
   onSave: () => void;
+  rsvpSettings: RsvpFieldSettings;
   sectionErrors: SectionErrorMap;
   selectedSectionKey?: string;
   selectedSectionIndex: number;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   return (
     <section
@@ -698,11 +750,13 @@ function SectionOrderPanel({
                       onCancel={onCancel}
                       onSave={onSave}
                       requirement={model.requirement}
+                      rsvpSettings={rsvpSettings}
                       section={model.section}
                       canDisable={model.canDisable}
                       disableLockReason={model.disableLockReason}
                       statusLabel={model.statusLabel}
                       updateSection={updateSection}
+                      updateRsvpSetting={updateRsvpSetting}
                       canSave={canSave}
                     />
                   </div>
@@ -933,9 +987,11 @@ function SectionEditor({
   onCancel,
   onSave,
   requirement,
+  rsvpSettings,
   section,
   statusLabel,
   updateSection,
+  updateRsvpSetting,
 }: {
   canDisable: boolean;
   canSave: boolean;
@@ -949,9 +1005,11 @@ function SectionEditor({
   onCancel: () => void;
   onSave: () => void;
   requirement: SectionBlueprintRequirement;
+  rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
   statusLabel: string;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   const definition = getSectionDefinition(section.sectionType);
   const hasContentError = Boolean(errors.content);
@@ -1076,8 +1134,10 @@ function SectionEditor({
           <SectionFieldForm
             disabled={!section.enabled}
             errors={errors}
+            rsvpSettings={rsvpSettings}
             section={section}
             updateSection={updateSection}
+            updateRsvpSetting={updateRsvpSetting}
           />
 
           <DeveloperJsonEditor
@@ -1100,11 +1160,13 @@ type SectionFieldController = {
   disabled: boolean;
   errors: SectionErrors;
   fieldError: (scope: FieldScope, path: JsonPath) => string | undefined;
+  rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
   settings: JsonObject;
   updateContentObject: (updater: (draft: JsonObject) => void) => void;
   updateContentValue: (path: JsonPath, value: JsonValue | undefined) => void;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
   updateSettingsObject: (updater: (draft: JsonObject) => void) => void;
   updateSettingsValue: (path: JsonPath, value: JsonValue | undefined) => void;
 };
@@ -1112,13 +1174,17 @@ type SectionFieldController = {
 function SectionFieldForm({
   disabled,
   errors,
+  rsvpSettings,
   section,
   updateSection,
+  updateRsvpSetting,
 }: {
   disabled: boolean;
   errors: SectionErrors;
+  rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   const content = readDraftObject(section.contentText);
   const settings = readDraftObject(section.settingsText);
@@ -1127,6 +1193,7 @@ function SectionFieldForm({
     disabled,
     errors,
     fieldError: (scope, path) => getFieldError(errors[scope], path),
+    rsvpSettings,
     section,
     settings,
     updateContentObject: (updater) =>
@@ -1140,6 +1207,7 @@ function SectionFieldForm({
         ),
       }),
     updateSection,
+    updateRsvpSetting,
     updateSettingsObject: (updater) =>
       updateSection(section.sectionKey, {
         settingsText: updateJsonObjectText(section.settingsText, updater),
@@ -1605,10 +1673,30 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
             Guest detail sections
           </h3>
           <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-            Show these common optional questions inside the guest RSVP details panel.
+            Choose the details guests can provide inside the RSVP panel.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
+          <DashboardSwitch
+            checked={controller.rsvpSettings.collectGuestNames}
+            description="Require one name for each attending guest."
+            disabled={controller.disabled}
+            id={`${controller.section.sectionKey}-collect-guest-names`}
+            label="Guest names"
+            onCheckedChange={(checked) =>
+              controller.updateRsvpSetting("collectGuestNames", checked)
+            }
+          />
+          <DashboardSwitch
+            checked={controller.rsvpSettings.collectGuestMessage}
+            description="Let guests add an optional note for the host."
+            disabled={controller.disabled}
+            id={`${controller.section.sectionKey}-collect-guest-message`}
+            label="Guest message"
+            onCheckedChange={(checked) =>
+              controller.updateRsvpSetting("collectGuestMessage", checked)
+            }
+          />
           <DashboardSwitch
             checked={dietaryQuestionEnabled}
             description="Let attending guests share allergies, dietary requirements, or meal notes."
@@ -1628,6 +1716,10 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
             onCheckedChange={(checked) => updatePresetQuestion(rsvpQuestionPresets.song, checked)}
           />
         </div>
+        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+          Turning off names or messages affects future replies only. Existing response data stays
+          available to managers.
+        </p>
       </section>
       <RepeaterField
         addLabel="Add RSVP question"

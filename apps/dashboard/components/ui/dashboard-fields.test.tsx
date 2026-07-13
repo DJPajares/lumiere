@@ -17,6 +17,7 @@ import {
   DashboardCombobox,
   DashboardNotice,
   DashboardSelect,
+  DashboardSwitch,
   DashboardTabs,
   DashboardTextInput,
 } from "./dashboard-fields";
@@ -228,6 +229,13 @@ describe("dashboard field primitives", () => {
     render(
       <div>
         <DashboardCheckbox id="enabled" label="Enabled" onChange={vi.fn()} checked />
+        <DashboardSwitch
+          checked
+          description="Keep the control compact."
+          id="compact-switch"
+          label="Compact switch"
+          onCheckedChange={vi.fn()}
+        />
         <DashboardNotice tone="success">Saved.</DashboardNotice>
         <DashboardTabs
           label="Settings"
@@ -240,6 +248,11 @@ describe("dashboard field primitives", () => {
     );
 
     expect((screen.getByLabelText("Enabled") as HTMLInputElement).checked).toBe(true);
+    const compactSwitch = screen.getByRole("switch", { name: /Compact switch/ });
+    expect(compactSwitch.className).toContain("w-11");
+    expect(compactSwitch.closest('[data-slot="field"]')?.getAttribute("data-orientation")).toBe(
+      "horizontal",
+    );
     expect(screen.getByRole("status").textContent).toBe("Saved.");
     expect(screen.getByRole("tablist", { name: "Settings" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Basics" }).getAttribute("aria-selected")).toBe("true");
