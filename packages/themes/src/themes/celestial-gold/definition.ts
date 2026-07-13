@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from "../../contracts";
+import { editorialRsvpCopyOverrides } from "../../rsvp-copy";
 import {
   allInviteSections,
   createRendererSlots,
@@ -22,6 +23,10 @@ export const celestialGoldTheme = {
     labels: { control: "Invitation appearance", dark: "Midnight", light: "Moonlight" },
     placement: "top-start",
     style: "celestial",
+  },
+  rsvpCopy: {
+    ...editorialRsvpCopyOverrides,
+    eyebrow: "Your evening reply",
   },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
@@ -102,7 +107,7 @@ export const celestialGoldTheme = {
       mediaTreatment: "Cinematic portrait within a luminous oval field and fine orbital rules.",
     },
     map: { aspect: "wide", frame: "celestial", overlay: "soft-vignette" },
-    rsvpDesign: "premium",
+    rsvpDesign: "editorial",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },
       details: {

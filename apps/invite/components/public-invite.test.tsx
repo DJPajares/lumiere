@@ -430,6 +430,7 @@ describe("public invite section renderers", () => {
         }),
         createSection({
           content: {
+            description: "Please reply before Friday.",
             questions: [
               {
                 key: "meal-choice",
@@ -438,6 +439,7 @@ describe("public invite section renderers", () => {
                 type: "single_choice",
               },
             ],
+            submitLabel: "Send private reply",
             title: "Private RSVP",
           },
           sectionKey: "rsvp",
@@ -478,8 +480,11 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
     expect(html).toContain("Meal choice");
+    expect(html).toContain("Private RSVP");
+    expect(html).toContain("Please reply before Friday.");
+    expect(html).toContain("Send private reply");
     expect(html).toContain("Will you celebrate with us?");
-    expect(html).toContain('data-rsvp-design="premium"');
+    expect(html).toContain('data-rsvp-design="editorial"');
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain("lumiere-guest-panel");
     expect(html).toContain("lumiere-rsvp-layout");

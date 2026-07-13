@@ -161,7 +161,7 @@ describe("invite app routes", () => {
     expect(html).toContain("Meal choice");
     expect(html).toContain("Will you celebrate with us?");
     expect(html).toContain("Confirm attendance");
-    expect(html).toContain('data-rsvp-design="premium"');
+    expect(html).toContain('data-rsvp-design="editorial"');
     expect(html).toContain('data-invite-context="guest"');
     expect(html).toContain('data-theme-id="premium"');
     expect(html).toContain('data-theme-mode="dark"');

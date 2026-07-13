@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { defaultRsvpCopy, type ThemeRsvpCopy } from "@lumiere/themes";
 import {
   defaultRsvpResponseFields,
   type RsvpResponseFields,
@@ -61,6 +62,7 @@ export type RsvpFormSubmitResult =
     };
 
 type RsvpFormProps = {
+  copy?: ThemeRsvpCopy;
   design?: RsvpDesign;
   eventSlug: string;
   guestGroup: {
@@ -71,12 +73,12 @@ type RsvpFormProps = {
   initialResponseStatus: RsvpStatus | null;
   questions: RsvpQuestion[];
   rsvpFields?: RsvpResponseFields;
-  submitLabel: string;
 };
 
-export type RsvpDesign = "default" | "kids" | "noel" | "premium";
+export type RsvpDesign = "default" | "editorial" | "playful" | "seasonal";
 
 export function RsvpForm({
+  copy = defaultRsvpCopy,
   design = "default",
   eventSlug,
   guestGroup,
@@ -84,7 +86,6 @@ export function RsvpForm({
   initialResponseStatus,
   questions,
   rsvpFields = defaultRsvpResponseFields,
-  submitLabel,
 }: RsvpFormProps) {
   const [state, setState] = useState(() =>
     createInitialRsvpFormState(guestGroup.maxPax, initialResponseStatus, rsvpFields),
@@ -98,7 +99,6 @@ export function RsvpForm({
   const [detailsOpen, setDetailsOpen] = useState(
     () => rsvpFields.collectGuestNames || questions.some((question) => question.required),
   );
-  const copy = getRsvpDesignCopy(design);
   const style = getRsvpDesignStyle(design);
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
   const isUpdatingExistingReply = Boolean(initialResponseStatus && !submittedResponse);
@@ -108,7 +108,7 @@ export function RsvpForm({
     questions.length > 0 ||
     rsvpFields.collectGuestMessage ||
     (isResponding && rsvpFields.collectGuestNames);
-  const detailsLabel = resolveDetailsLabel(copy.detailsLabel, {
+  const detailsLabel = resolveDetailsLabel(copy, {
     collectGuestMessage: rsvpFields.collectGuestMessage,
     collectGuestNames: isResponding && rsvpFields.collectGuestNames,
     hasQuestions: questions.length > 0,
@@ -164,7 +164,7 @@ export function RsvpForm({
     setIsSubmitting(false);
   };
 
-  const reservedSeatsCopy = `We've saved ${guestGroup.maxPax} ${
+  const reservedSeatsCopy = `${copy.reservedSeatsIntro} ${guestGroup.maxPax} ${
     guestGroup.maxPax === 1 ? "seat" : "seats"
   } for your party.`;
 
@@ -178,7 +178,7 @@ export function RsvpForm({
       <div className="grid gap-2">
         <p className={style.eyebrow}>{copy.eyebrow}</p>
         <h3 className={style.title}>
-          <span className="opacity-80">Hi </span>
+          <span className="opacity-80">{copy.greetingPrefix} </span>
           {guestGroup.label}
         </h3>
         <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
@@ -195,13 +195,15 @@ export function RsvpForm({
             {copy.successTitle}
           </p>
           <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            Your reply is with the host.
+            {copy.successDescription}
           </p>
           <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {formatRsvpStatus(submittedResponse.responseStatus)}
             {submittedResponse.attendeeCount > 0
               ? `, ${submittedResponse.attendeeCount} ${
-                  submittedResponse.attendeeCount === 1 ? "guest" : "guests"
+                  submittedResponse.attendeeCount === 1
+                    ? copy.guestLabelSingular.toLowerCase()
+                    : copy.guestLabelPlural.toLowerCase()
                 }`
               : ""}
             .
@@ -222,7 +224,7 @@ export function RsvpForm({
 
       {isUpdatingExistingReply ? (
         <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          You already sent a reply. Changes here will update the host's copy when you submit again.
+          {copy.updateNotice}
         </p>
       ) : null}
 
@@ -290,7 +292,7 @@ export function RsvpForm({
             <div className="grid place-items-center px-3 py-2 text-center">
               <span className={style.counterValue}>{state.attendeeCount}</span>
               <span className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
-                {state.attendeeCount === 1 ? "Guest" : "Guests"}
+                {state.attendeeCount === 1 ? copy.guestLabelSingular : copy.guestLabelPlural}
               </span>
             </div>
             <CounterButton
@@ -322,18 +324,18 @@ export function RsvpForm({
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none">
             <span>{detailsLabel}</span>
             <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              {detailsOpen ? "Close" : "Open"}
+              {detailsOpen ? copy.detailsCloseLabel : copy.detailsOpenLabel}
             </span>
           </summary>
 
           <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
             {isResponding && rsvpFields.collectGuestNames ? (
               <div className="grid gap-3">
-                <p className={style.fieldLabel}>Names for the guest list</p>
+                <p className={style.fieldLabel}>{copy.guestNamesLabel}</p>
                 {state.guestNames.map((name, index) => (
                   <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                      Guest {index + 1}
+                      {copy.guestNameLabel} {index + 1}
                     </span>
                     <input
                       aria-describedby={
@@ -367,9 +369,9 @@ export function RsvpForm({
             {questions.length > 0 ? (
               <div className="grid gap-4">
                 <div>
-                  <p className={style.fieldLabel}>A note for the host</p>
+                  <p className={style.fieldLabel}>{copy.questionGroupTitle}</p>
                   <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                    Required questions apply when your group is attending.
+                    {copy.questionGroupDescription}
                   </p>
                 </div>
                 {questions.map((question) => (
@@ -411,7 +413,7 @@ export function RsvpForm({
                       message: event.currentTarget.value,
                     }))
                   }
-                  placeholder="Optional"
+                  placeholder={copy.messagePlaceholder}
                   value={state.message}
                 />
                 <FieldError id="rsvp-message-error" message={errors.message} />
@@ -433,7 +435,7 @@ export function RsvpForm({
             : copy.submittingLabel
           : isUpdatingExistingReply
             ? copy.updateLabel
-            : submitLabel}
+            : copy.submitLabel}
       </button>
 
       <ReplyStatusPanel copy={statusCopy} tone={statusTone} />
@@ -509,71 +511,6 @@ function CounterButton({
   );
 }
 
-function getRsvpDesignCopy(design: RsvpDesign) {
-  switch (design) {
-    case "kids":
-      return {
-        acceptLabel: "We're coming",
-        attendancePrompt: "Can you join the party?",
-        countPrompt: "How many party guests?",
-        declineLabel: "Can't come",
-        declineNote: "We will let the host know your family cannot make it.",
-        detailsLabel: "Add names or a note",
-        eyebrow: "Your party reply",
-        messageLabel: "Anything the host should know?",
-        submittingLabel: "Sending reply...",
-        successTitle: "Reply sent",
-        updateLabel: "Update reply",
-        updatingLabel: "Updating reply...",
-      };
-    case "noel":
-      return {
-        acceptLabel: "We'll be there",
-        attendancePrompt: "Will you gather with us?",
-        countPrompt: "Who's joining?",
-        declineLabel: "Warm regrets",
-        declineNote: "We will send your warm regrets to the host.",
-        detailsLabel: "Add names or a note",
-        eyebrow: "Your holiday reply",
-        messageLabel: "A note for the host",
-        submittingLabel: "Sending reply...",
-        successTitle: "Reply received",
-        updateLabel: "Update reply",
-        updatingLabel: "Updating reply...",
-      };
-    case "premium":
-      return {
-        acceptLabel: "I'll be there",
-        attendancePrompt: "Will you celebrate with us?",
-        countPrompt: "Who's joining you?",
-        declineLabel: "Can't make it",
-        declineNote: "We will let the host know you cannot attend.",
-        detailsLabel: "Add names or a note",
-        eyebrow: "Your reply",
-        messageLabel: "Message for the host",
-        submittingLabel: "Sending reply...",
-        successTitle: "Reply received",
-        updateLabel: "Update attendance",
-        updatingLabel: "Updating attendance...",
-      };
-    default:
-      return {
-        acceptLabel: "I'll be there",
-        attendancePrompt: "Will you join us?",
-        countPrompt: "Who's coming?",
-        declineLabel: "Can't make it",
-        declineNote: "We will let the host know your group cannot attend.",
-        detailsLabel: "Add names or a note",
-        eyebrow: "Your reply",
-        messageLabel: "Message for the host",
-        submittingLabel: "Sending RSVP...",
-        successTitle: "RSVP received",
-        updateLabel: "Update RSVP",
-        updatingLabel: "Updating RSVP...",
-      };
-  }
-}
-
 function getRsvpDesignStyle(design: RsvpDesign) {
   const base = {
     card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.6)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] backdrop-blur sm:p-7",
@@ -588,7 +525,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
     title: "text-3xl font-light tracking-tight",
   };
 
-  if (design === "premium") {
+  if (design === "editorial") {
     return {
       ...base,
       card: `${base.card}`,
@@ -597,7 +534,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
     };
   }
 
-  if (design === "kids") {
+  if (design === "playful") {
     return {
       ...base,
       card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.4)] border-2 border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_20px_70px_color-mix(in_srgb,var(--accent)_18%,transparent)] sm:p-6",
@@ -606,7 +543,7 @@ function getRsvpDesignStyle(design: RsvpDesign) {
     };
   }
 
-  if (design === "noel") {
+  if (design === "seasonal") {
     return {
       ...base,
       card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.3)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-7",
@@ -1118,7 +1055,7 @@ function resizeGuestNames(guestNames: string[], attendeeCount: number) {
 }
 
 function resolveDetailsLabel(
-  fallback: string,
+  copy: ThemeRsvpCopy,
   {
     collectGuestMessage,
     collectGuestNames,
@@ -1130,18 +1067,18 @@ function resolveDetailsLabel(
   },
 ) {
   if (collectGuestNames && collectGuestMessage) {
-    return fallback;
+    return copy.detailsLabel;
   }
 
   if (collectGuestNames) {
-    return hasQuestions ? "Add guest names and answers" : "Add guest names";
+    return hasQuestions ? copy.detailsNamesAndAnswersLabel : copy.detailsNamesLabel;
   }
 
   if (collectGuestMessage) {
-    return hasQuestions ? "Add answers or a note" : "Add a note";
+    return hasQuestions ? copy.detailsAnswersOrNoteLabel : copy.detailsNoteLabel;
   }
 
-  return "Answer guest questions";
+  return copy.detailsQuestionsLabel;
 }
 
 function normalizeAnswerValue(value: string | string[] | undefined) {

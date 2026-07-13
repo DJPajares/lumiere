@@ -22,6 +22,48 @@ export type ThemeTokenSet = {
   focus: string;
 };
 
+export type ThemeRsvpCopy = {
+  acceptLabel: string;
+  attendancePrompt: string;
+  countPrompt: string;
+  declineLabel: string;
+  detailsAnswersOrNoteLabel: string;
+  detailsCloseLabel: string;
+  detailsLabel: string;
+  detailsNamesAndAnswersLabel: string;
+  detailsNamesLabel: string;
+  detailsNoteLabel: string;
+  detailsOpenLabel: string;
+  detailsQuestionsLabel: string;
+  eyebrow: string;
+  greetingPrefix: string;
+  guestLabelPlural: string;
+  guestLabelSingular: string;
+  guestLinkRequired: string;
+  guestNameLabel: string;
+  guestNamesLabel: string;
+  messageLabel: string;
+  messagePlaceholder: string;
+  questionGroupDescription: string;
+  questionGroupTitle: string;
+  reservedSeatsIntro: string;
+  sectionDescription: string;
+  sectionTitle: string;
+  submitLabel: string;
+  submittingLabel: string;
+  successDescription: string;
+  successTitle: string;
+  updateLabel: string;
+  updateNotice: string;
+  updatingLabel: string;
+};
+
+export type ThemeRsvpCopyOverrides = Partial<ThemeRsvpCopy>;
+
+export type ThemeRsvpManagerCopy = Partial<
+  Pick<ThemeRsvpCopy, "sectionDescription" | "sectionTitle" | "submitLabel">
+>;
+
 export type ThemeAssetManifest = {
   publicBasePath: `/themes/${ThemeId}`;
   slots: readonly ("backdrop" | "cover" | "gallery" | "ornament")[];
@@ -103,7 +145,7 @@ export type ThemeComposition = {
     overlay: "accent-wash" | "none" | "soft-vignette";
   };
   sectionDefaults: Partial<Record<SectionType, ThemeSectionDefault>>;
-  rsvpDesign: "default" | "kids" | "noel" | "premium";
+  rsvpDesign: "default" | "editorial" | "playful" | "seasonal";
   ambientMedia: {
     audioSlot: "none" | "optional";
     controlStrategy: "external-controls" | "not-supported";
@@ -161,6 +203,7 @@ export type ThemeDefinition = {
   supportedModes: ThemeMode[];
   defaultMode: ThemeMode;
   modeToggle?: ThemeModeTogglePresentation;
+  rsvpCopy?: ThemeRsvpCopyOverrides;
   supportedSections: SectionType[];
   requiredSections: SectionType[];
   recommendedSections: SectionType[];

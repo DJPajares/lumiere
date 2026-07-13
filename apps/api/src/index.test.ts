@@ -2678,7 +2678,7 @@ describe("API app", () => {
     expect(themeBody.selectedThemeId).toBe("premium");
     expect(themeBody.theme?.metadata).toMatchObject({
       composition: expect.objectContaining({
-        rsvpDesign: "premium",
+        rsvpDesign: "editorial",
       }),
       rsvpTreatment: expect.any(String),
     });

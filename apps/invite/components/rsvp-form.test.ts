@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@lumiere/api-client";
+import { resolveThemeRsvpCopy, themeRegistry } from "@lumiere/themes";
 import type { RsvpSubmissionResponse } from "@lumiere/types";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -23,7 +24,6 @@ describe("RSVP form flow helpers", () => {
         guestToken: "sample-guest-token-for-preview",
         initialResponseStatus: null,
         questions,
-        submitLabel: "Send RSVP",
       }),
     );
 
@@ -34,6 +34,22 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain("focus-within:ring-2");
     expect(html).toContain("Names for the guest list");
     expect(html).toContain('id="rsvp-message"');
+
+    const playfulHtml = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        copy: resolveThemeRsvpCopy(themeRegistry.kids),
+        design: "playful",
+        eventSlug: "birthday-party",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: null,
+        questions,
+      }),
+    );
+
+    expect(playfulHtml).toContain("Can you join the party?");
+    expect(playfulHtml).toContain("Your party reply");
+    expect(playfulHtml).toContain('data-rsvp-design="playful"');
   });
 
   it("renders an already-submitted reply as an update flow", () => {
@@ -48,7 +64,6 @@ describe("RSVP form flow helpers", () => {
           collectGuestMessage: false,
           collectGuestNames: false,
         },
-        submitLabel: "Send RSVP",
       }),
     );
 
@@ -69,7 +84,6 @@ describe("RSVP form flow helpers", () => {
           collectGuestMessage: false,
           collectGuestNames: true,
         },
-        submitLabel: "Send RSVP",
       }),
     );
     const messageOnlyHtml = renderToStaticMarkup(
@@ -83,7 +97,6 @@ describe("RSVP form flow helpers", () => {
           collectGuestMessage: true,
           collectGuestNames: false,
         },
-        submitLabel: "Send RSVP",
       }),
     );
 

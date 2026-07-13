@@ -4,6 +4,7 @@ import {
   isThemeId,
   normalizeLocationContent,
   normalizeStoryParagraphs,
+  resolveThemeRsvpCopy,
   resolveThemeRendererSlot,
   type StoryParagraph,
   type ThemeDefinition,
@@ -622,6 +623,7 @@ function SectionBody({
           rsvpDesign={rsvpDesign}
           rsvpFields={rsvpFields}
           settings={settings}
+          theme={theme}
           titleId={titleId}
         />
       );
@@ -1049,6 +1051,7 @@ function RsvpSection({
   rsvpDesign,
   rsvpFields,
   settings,
+  theme,
   titleId,
 }: {
   content: JsonObject;
@@ -1058,15 +1061,18 @@ function RsvpSection({
   rsvpDesign: RsvpDesign;
   rsvpFields?: RsvpResponseFields;
   settings: JsonObject;
+  theme: ThemeDefinition;
   titleId: string;
 }) {
-  const title = readString(content.title) ?? "RSVP";
-  const description =
-    readString(content.description) ??
-    "Review your guest details now. The RSVP form will open here when responses are enabled.";
+  const copy = resolveThemeRsvpCopy(theme, {
+    ...(readString(content.title) ? { sectionTitle: readString(content.title) } : {}),
+    ...(readString(content.description)
+      ? { sectionDescription: readString(content.description) }
+      : {}),
+    ...(readString(content.submitLabel) ? { submitLabel: readString(content.submitLabel) } : {}),
+  });
   const questions = readRsvpQuestions(content.questions);
   const requireGuestToken = readBoolean(settings.requireGuestToken, true);
-  const submitLabel = readSubmitLabel(content.submitLabel);
   const submitContext = guest && guestToken ? { guest, guestToken } : null;
 
   return (
@@ -1074,14 +1080,14 @@ function RsvpSection({
       <div className="lumiere-rsvp-copy grid gap-4">
         <div className="grid gap-3">
           <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
-            {title}
+            {copy.sectionTitle}
           </h2>
           <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
-            {description}
+            {copy.sectionDescription}
           </p>
           {!submitContext && requireGuestToken ? (
             <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              RSVP details unlock from a valid guest invite link.
+              {copy.guestLinkRequired}
             </p>
           ) : null}
         </div>
@@ -1093,7 +1099,7 @@ function RsvpSection({
             }`}
           >
             <p className="text-sm font-semibold text-[var(--accent-strong)]">
-              RSVP questions prepared by the host
+              {copy.questionGroupTitle}
             </p>
             <ul className="grid gap-2 text-sm leading-6">
               {questions.map((question, index) => (
@@ -1114,6 +1120,7 @@ function RsvpSection({
 
       {submitContext && (
         <RsvpForm
+          copy={copy}
           design={rsvpDesign}
           eventSlug={eventSlug}
           guestGroup={submitContext.guest.guestGroup}
@@ -1121,7 +1128,6 @@ function RsvpSection({
           initialResponseStatus={submitContext.guest.responseStatus}
           questions={questions}
           rsvpFields={rsvpFields}
-          submitLabel={submitLabel}
         />
       )}
     </div>
@@ -1791,12 +1797,6 @@ function readRsvpQuestions(value: JsonValue | undefined): RsvpQuestion[] {
       },
     ];
   });
-}
-
-function readSubmitLabel(value: JsonValue | undefined) {
-  const label = readString(value);
-
-  return !label || label === "Send RSVP" ? "Confirm attendance" : label;
 }
 
 function readRsvpQuestionType(value: JsonValue | undefined): RsvpQuestionType | undefined {

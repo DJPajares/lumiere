@@ -4,6 +4,7 @@ import {
   availableThemeIds,
   buildThemeCompatibilityMatrix,
   canDisableBlueprintSection,
+  defaultRsvpCopy,
   eventTypeBlueprints,
   evaluateThemeCompatibility,
   expansionInviteCompositionMaps,
@@ -15,6 +16,7 @@ import {
   inviteVisualCompositionSystem,
   normalizeLocationContent,
   reverieReferenceLinks,
+  resolveThemeRsvpCopy,
   sectionDefinitions,
   sampleInviteCompositionMaps,
   themeRegistry,
@@ -119,6 +121,34 @@ describe("theme registry", () => {
     expect(
       Object.entries(themeRegistry).every(([registryId, theme]) => registryId === theme.id),
     ).toBe(true);
+
+    expect(resolveThemeRsvpCopy(themeRegistry["lumiere-default"])).toEqual(defaultRsvpCopy);
+    expect(resolveThemeRsvpCopy(themeRegistry.kids)).toMatchObject({
+      attendancePrompt: "Can you join the party?",
+      eyebrow: "Your party reply",
+    });
+    expect(resolveThemeRsvpCopy(themeRegistry["editorial-ivory"])).toMatchObject({
+      eyebrow: "Kindly reply",
+      updateLabel: "Update attendance",
+    });
+    expect(
+      resolveThemeRsvpCopy(themeRegistry.kids, {
+        sectionDescription: "Please answer by Friday.",
+        sectionTitle: "Reply for dinner",
+        submitLabel: "Send dinner reply",
+      }),
+    ).toMatchObject({
+      attendancePrompt: "Can you join the party?",
+      sectionDescription: "Please answer by Friday.",
+      sectionTitle: "Reply for dinner",
+      submitLabel: "Send dinner reply",
+    });
+    expect(
+      resolveThemeRsvpCopy({ id: "lumiere-default", rsvpCopy: { eyebrow: "" } }),
+    ).toMatchObject({
+      eyebrow: defaultRsvpCopy.eyebrow,
+      submitLabel: defaultRsvpCopy.submitLabel,
+    });
   });
 
   it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {
@@ -528,7 +558,7 @@ describe("theme registry", () => {
 
     expect(premium.composition.hero.fullViewport).toBe(true);
     expect(premium.composition.hero.composition).toBe("layered-portrait");
-    expect(premium.composition.rsvpDesign).toBe("premium");
+    expect(premium.composition.rsvpDesign).toBe("editorial");
     expect(premium.composition.visualSystem).toMatchObject({
       compositionMap: "wedding-editorial",
       motionProfile: "immersive",

@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from "../../contracts";
+import { playfulRsvpCopyOverrides } from "../../rsvp-copy";
 import {
   allInviteSections,
   createRendererSlots,
@@ -15,6 +16,7 @@ export const kidsTheme = {
   supportedEventTypes: ["birthday", "kids_party"],
   supportedModes: ["light"],
   defaultMode: "light",
+  rsvpCopy: playfulRsvpCopyOverrides,
   supportedSections: [...publicCoreSections, "profile", "details", "gallery", "custom"],
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [
@@ -77,7 +79,7 @@ export const kidsTheme = {
       mediaTreatment: "Bright celebrant image with large rounded corners and simple caption space.",
     },
     map: { aspect: "landscape", frame: "playful", overlay: "none" },
-    rsvpDesign: "kids",
+    rsvpDesign: "playful",
     sectionDefaults: {
       date: {
         composition: "framed",

@@ -368,7 +368,7 @@ export const galleryContentSchema = z.object({
 export const rsvpContentSchema = z.object({
   title: nonEmptyString.max(160),
   description: z.string().trim().max(800).optional(),
-  submitLabel: z.string().trim().max(80).default("Send RSVP"),
+  submitLabel: z.string().trim().max(80).optional(),
   questions: z
     .array(
       z.object({

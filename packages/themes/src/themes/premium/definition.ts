@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from "../../contracts";
+import { editorialRsvpCopyOverrides } from "../../rsvp-copy";
 import {
   allInviteSections,
   createRendererSlots,
@@ -22,6 +23,7 @@ export const premiumTheme = {
     placement: "top-start",
     style: "soft-pill",
   },
+  rsvpCopy: editorialRsvpCopyOverrides,
   supportedSections: [
     ...publicCoreSections,
     "profile",
@@ -111,7 +113,7 @@ export const premiumTheme = {
         "Tall portrait media with offset frame, depth shadow, and subtle parallax hooks.",
     },
     map: { aspect: "wide", frame: "editorial", overlay: "soft-vignette" },
-    rsvpDesign: "premium",
+    rsvpDesign: "editorial",
     sectionDefaults: {
       date: {
         composition: "full-bleed",

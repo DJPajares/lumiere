@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from "../../contracts";
+import { seasonalRsvpCopyOverrides } from "../../rsvp-copy";
 import {
   allInviteSections,
   createRendererSlots,
@@ -21,6 +22,7 @@ export const noelTheme = {
     placement: "top-start",
     style: "seasonal",
   },
+  rsvpCopy: seasonalRsvpCopyOverrides,
   supportedSections: [...publicCoreSections, "story", "details", "dress_code", "gallery", "custom"],
   requiredSections: ["introduction", "date", "location"],
   recommendedSections: [
@@ -97,7 +99,7 @@ export const noelTheme = {
       mediaTreatment: "Warm table or gathering image with evergreen framing and soft light.",
     },
     map: { aspect: "landscape", frame: "seasonal", overlay: "accent-wash" },
-    rsvpDesign: "noel",
+    rsvpDesign: "seasonal",
     sectionDefaults: {
       date: {
         composition: "full-bleed",

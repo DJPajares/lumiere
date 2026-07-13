@@ -17,6 +17,10 @@ export const modernMinimalTheme = {
   supportedEventTypes: [...expansionEventTypes, "launch"],
   supportedModes: ["light", "dark", "system"],
   defaultMode: "system",
+  rsvpCopy: {
+    eyebrow: "Response",
+    submitLabel: "Send response",
+  },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [

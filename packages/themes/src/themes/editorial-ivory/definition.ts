@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from "../../contracts";
+import { editorialRsvpCopyOverrides } from "../../rsvp-copy";
 import {
   allInviteSections,
   createRendererSlots,
@@ -22,6 +23,10 @@ export const editorialIvoryTheme = {
     labels: { control: "Invitation appearance", dark: "Ink", light: "Paper" },
     placement: "top-start",
     style: "editorial",
+  },
+  rsvpCopy: {
+    ...editorialRsvpCopyOverrides,
+    eyebrow: "Kindly reply",
   },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
@@ -102,7 +107,7 @@ export const editorialIvoryTheme = {
       mediaTreatment: "Tall offset portrait with a fine border and page-number caption.",
     },
     map: { aspect: "portrait", frame: "editorial", overlay: "none" },
-    rsvpDesign: "premium",
+    rsvpDesign: "editorial",
     sectionDefaults: {
       date: { composition: "full-bleed", density: "spacious", motion: "section-reveal" },
       details: {

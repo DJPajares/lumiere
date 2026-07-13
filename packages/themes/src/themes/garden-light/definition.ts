@@ -23,6 +23,10 @@ export const gardenLightTheme = {
     placement: "top-start",
     style: "organic",
   },
+  rsvpCopy: {
+    attendancePrompt: "Will you join us in the garden?",
+    eyebrow: "Your garden reply",
+  },
   supportedSections: allInviteSections,
   requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [
