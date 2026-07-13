@@ -60,6 +60,27 @@ describe("EventSettingsWorkspace", () => {
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
 
     expect(updateEvent).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Delete event" }));
+    const deleteDialog = await screen.findByRole("dialog", { name: "Delete Summer Dinner" });
+    const confirmation = screen.getByLabelText(/Type Summer Dinner to confirm/);
+    const deleteAction = screen.getAllByRole("button", { name: "Delete event" }).at(-1) as
+      HTMLButtonElement | undefined;
+
+    expect(deleteDialog).toBeTruthy();
+    expect(deleteDialog.textContent).toContain(
+      "public invitation, guest links, and RSVP submission",
+    );
+    expect(deleteAction?.disabled).toBe(true);
+    await user.type(confirmation, "summer dinner");
+    expect(deleteAction?.disabled).toBe(true);
+    await user.clear(confirmation);
+    await user.type(confirmation, "Summer Dinner");
+    expect(deleteAction?.disabled).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Keep event" }));
+    expect(
+      await screen.findByRole("alertdialog", { name: "Discard unsaved changes?" }),
+    ).toBeTruthy();
   });
 
   it("keeps edits visible when saving settings fails", async () => {

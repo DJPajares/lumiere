@@ -62,6 +62,9 @@ jobs:
       - name: Check theme ownership boundaries
         run: pnpm check:theme-boundaries
 
+      - name: Check Next Image contracts
+        run: pnpm check:next-image-usage
+
       - name: Check theme registry contracts
         run: pnpm check:theme-contracts
 

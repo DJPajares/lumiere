@@ -1,5 +1,8 @@
 "use client";
 
+import { Button, buttonVariants } from "@lumiere/dashboard-ui/components/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@lumiere/dashboard-ui/components/field";
+import { Input } from "@lumiere/dashboard-ui/components/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -49,56 +52,55 @@ export function LoginForm() {
   const visibleError = formError ?? errorMessage;
 
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit}>
-      <div className="grid gap-2">
-        <label className="text-sm font-semibold" htmlFor="manager-email">
-          Manager email
-        </label>
-        <input
-          autoComplete="email"
-          className="min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSubmitting}
-          id="manager-email"
-          name="email"
-          onChange={(event) => setEmail(event.target.value)}
-          type="email"
-          value={email}
-        />
-      </div>
-      <div className="grid gap-2">
-        <label className="text-sm font-semibold" htmlFor="manager-password">
-          Password
-        </label>
-        <input
-          autoComplete="current-password"
-          className="min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSubmitting}
-          id="manager-password"
-          name="password"
-          onChange={(event) => setPassword(event.target.value)}
-          type="password"
-          value={password}
-        />
-      </div>
-      {visibleError ? (
-        <p className="rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]">
-          {visibleError}
-        </p>
-      ) : null}
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+      <FieldGroup>
+        <Field data-disabled={isSubmitting} data-invalid={Boolean(visibleError)}>
+          <FieldLabel htmlFor="manager-email">Manager email</FieldLabel>
+          <Input
+            aria-describedby={visibleError ? "manager-sign-in-error" : undefined}
+            aria-invalid={Boolean(visibleError)}
+            autoComplete="email"
+            className="min-h-11"
+            disabled={isSubmitting}
+            id="manager-email"
+            name="email"
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            value={email}
+          />
+        </Field>
+        <Field data-disabled={isSubmitting} data-invalid={Boolean(visibleError)}>
+          <FieldLabel htmlFor="manager-password">Password</FieldLabel>
+          <Input
+            aria-describedby={visibleError ? "manager-sign-in-error" : undefined}
+            aria-invalid={Boolean(visibleError)}
+            autoComplete="current-password"
+            className="min-h-11"
+            disabled={isSubmitting}
+            id="manager-password"
+            name="password"
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            value={password}
+          />
+        </Field>
+        <Field data-invalid={Boolean(visibleError)}>
+          <FieldError id="manager-sign-in-error">{visibleError}</FieldError>
+        </Field>
+      </FieldGroup>
       {status === "authenticated" ? (
-        <p className="rounded-[var(--radius-md)] border border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--success)]">
+        <p
+          className="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-success"
+          role="status"
+        >
           Signed in. Opening the dashboard.
         </p>
       ) : null}
-      <button
-        className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isSubmitting}
-        type="submit"
-      >
+      <Button className="min-h-11 w-full" disabled={isSubmitting} size="lg" type="submit">
         {isSubmitting ? "Signing in" : "Sign in"}
-      </button>
+      </Button>
       <Link
-        className="text-sm font-semibold text-[var(--accent-strong)] underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        className={buttonVariants({ className: "min-h-11 w-full", size: "lg", variant: "link" })}
         href="/"
       >
         Return to dashboard

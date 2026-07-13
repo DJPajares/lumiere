@@ -1,7 +1,11 @@
+// @vitest-environment jsdom
+
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   DashboardAuthProvider,
@@ -18,17 +22,26 @@ import DashboardHome from "../app/page";
 import AccountSettingsPage from "../app/settings/page";
 import ProfileSettingsPage from "../app/settings/profile/page";
 
-const redirect = vi.hoisted(() => vi.fn());
+const { redirect, routerReplace } = vi.hoisted(() => ({
+  redirect: vi.fn(),
+  routerReplace: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   redirect,
   usePathname: () => "/events",
   useRouter: () => ({
-    replace: vi.fn(),
+    replace: routerReplace,
   }),
 }));
 
 describe("dashboard routes", () => {
+  afterEach(() => {
+    cleanup();
+    routerReplace.mockClear();
+    window.history.replaceState({}, "", "/");
+  });
+
   it("declares dashboard PWA metadata and icons", () => {
     expect(dashboardAppMetadata.applicationName).toBe("Lumiere Dashboard");
     expect(dashboardAppMetadata.manifest).toBe("/manifest.webmanifest");
@@ -48,9 +61,7 @@ describe("dashboard routes", () => {
   });
 
   it("declares dashboard install icons in the web manifest", () => {
-    const manifest = JSON.parse(
-      readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
-    );
+    const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8"));
 
     expect(manifest).toMatchObject({
       background_color: "#f7f5f0",
@@ -88,13 +99,37 @@ describe("dashboard routes", () => {
     expect(html).not.toContain("Event list placeholder");
   });
 
-  it("renders the login form for signed-out managers", () => {
+  it("renders and submits the login form for signed-out managers", async () => {
     const html = renderWithAuth(createElement(LoginPage), unauthenticatedAuthValue);
+    const user = userEvent.setup();
+    const signIn = vi.fn(async () => ({ ok: true as const }));
 
     expect(html).toContain("Manager sign in");
     expect(html).toContain("Manager email");
     expect(html).toContain("Password");
     expect(html).toContain("Sign in");
+
+    window.history.replaceState({}, "", "/login?redirectTo=/events/demo-event/content");
+    render(
+      createElement(DashboardAuthProvider, {
+        value: { ...unauthenticatedAuthValue, signIn },
+        children: createElement(LoginPage),
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Enter the manager email and password.",
+    );
+    await user.type(screen.getByLabelText("Manager email"), " manager@example.com ");
+    await user.type(screen.getByLabelText("Password"), "correct horse battery staple");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(signIn).toHaveBeenCalledWith({
+      email: "manager@example.com",
+      password: "correct horse battery staple",
+    });
+    expect(routerReplace).toHaveBeenCalledWith("/events/demo-event/content");
   });
 
   it("redirects the redundant event index to Home", () => {

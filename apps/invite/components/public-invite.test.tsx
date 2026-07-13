@@ -1,13 +1,21 @@
-import { createElement } from "react";
+// @vitest-environment jsdom
+
+import { act, createElement } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EventSection, PublicEventResponse, PublicGuestInviteResponse } from "@lumiere/types";
 
 import { resolveBrowserMode } from "./invite-theme-mode-control";
 import { GuestInvitation, PublicInvitation } from "./public-invite";
 
 describe("public invite section renderers", () => {
-  it("renders a distinct public hero and composition signature for every expansion theme", () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+    window.localStorage.clear();
+  });
+
+  it("renders a distinct public hero and composition signature for every expansion theme", async () => {
     const directions = [
       ["editorial-ivory", "ivory-editorial", "lumiere-hero--editorial-ivory"],
       ["garden-light", "garden-celebration", "lumiere-hero--garden-light"],
@@ -55,10 +63,82 @@ describe("public invite section renderers", () => {
       expect(html).toContain("A titled story paragraph.");
       expect(html).toContain("An untitled story paragraph.");
 
-      return `${compositionMap}:${heroClassName}`;
+      return {
+        backdrop: readDataValue(html, "backdrop-type"),
+        compositionMap,
+        frame: readDataValue(html, "frame-style"),
+        heroClassName,
+        imageTreatment: readDataValue(html, "image-treatment"),
+        mode: readDataValue(html, "theme-resolved-mode"),
+        ornament: readDataValue(html, "ornament-set"),
+        sectionCompositions: readDataValues(html, "section-composition"),
+        themeId,
+      };
     });
 
-    expect(new Set(signatures).size).toBe(directions.length);
+    expect(new Set(signatures.map((signature) => JSON.stringify(signature))).size).toBe(
+      directions.length,
+    );
+    expect(signatures).toMatchInlineSnapshot(`
+      [
+        {
+          "backdrop": "editorial-whitespace",
+          "compositionMap": "ivory-editorial",
+          "frame": "offset",
+          "heroClassName": "lumiere-hero--editorial-ivory",
+          "imageTreatment": "desaturated",
+          "mode": "light",
+          "ornament": "editorial-rules",
+          "sectionCompositions": [
+            "full-bleed",
+            "timeline",
+          ],
+          "themeId": "editorial-ivory",
+        },
+        {
+          "backdrop": "gradient",
+          "compositionMap": "garden-celebration",
+          "frame": "organic",
+          "heroClassName": "lumiere-hero--garden-light",
+          "imageTreatment": "sun-washed",
+          "mode": "light",
+          "ornament": "botanical",
+          "sectionCompositions": [
+            "full-bleed",
+            "layered-media",
+          ],
+          "themeId": "garden-light",
+        },
+        {
+          "backdrop": "solid",
+          "compositionMap": "minimal-modern",
+          "frame": "frameless",
+          "heroClassName": "lumiere-hero--modern-minimal",
+          "imageTreatment": "crisp",
+          "mode": "light",
+          "ornament": "none",
+          "sectionCompositions": [
+            "full-bleed",
+            "timeline",
+          ],
+          "themeId": "modern-minimal",
+        },
+        {
+          "backdrop": "image",
+          "compositionMap": "celestial-evening",
+          "frame": "gilded",
+          "heroClassName": "lumiere-hero--celestial-gold",
+          "imageTreatment": "nocturne",
+          "mode": "dark",
+          "ornament": "constellation",
+          "sectionCompositions": [
+            "full-bleed",
+            "layered-media",
+          ],
+          "themeId": "celestial-gold",
+        },
+      ]
+    `);
 
     const toggleableInvite = createInvite([]);
     toggleableInvite.selectedThemeId = "premium";
@@ -76,6 +156,38 @@ describe("public invite section renderers", () => {
       toggleableHtml.indexOf("lumiere-invitation"),
     );
     expect(toggleableHtml).toContain("Invitation appearance: switch to");
+
+    const container = document.createElement("div");
+    const root = createRoot(container);
+
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    window.matchMedia = vi.fn(
+      (query: string): MediaQueryList =>
+        ({
+          addEventListener: vi.fn(),
+          addListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+          matches: query === "(prefers-reduced-motion: reduce)",
+          media: query,
+          onchange: null,
+          removeEventListener: vi.fn(),
+          removeListener: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+    document.body.append(container);
+    await act(() => root.render(createElement(PublicInvitation, { invite: toggleableInvite })));
+    const modeControl = container.querySelector<HTMLButtonElement>(
+      'button[aria-label^="Invitation appearance: switch to"]',
+    );
+
+    expect(modeControl?.getAttribute("aria-pressed")).toBe("false");
+    await act(() => modeControl?.click());
+    expect(modeControl?.getAttribute("aria-pressed")).toBe("true");
+    expect(modeControl?.closest("main")?.getAttribute("data-theme-resolved-mode")).toBe("dark");
+    expect(window.localStorage.getItem("lumiere:theme-mode:garden-evening")).toBe("dark");
+    await act(() => root.unmount());
 
     const systemInvite = createInvite([]);
     systemInvite.selectedThemeId = "modern-minimal";
@@ -502,6 +614,18 @@ describe("public invite section renderers", () => {
     expect(html).toContain('src="https://audio.example.com/private-suite.mp3"');
   });
 });
+
+function readDataValue(html: string, attribute: string) {
+  return html.match(new RegExp(`data-${attribute}="([^"]+)"`))?.[1] ?? null;
+}
+
+function readDataValues(html: string, attribute: string) {
+  return [
+    ...new Set(
+      [...html.matchAll(new RegExp(`data-${attribute}="([^"]+)"`, "g"))].map((match) => match[1]),
+    ),
+  ];
+}
 
 function createInvite(sections: EventSection[]): PublicEventResponse {
   return {

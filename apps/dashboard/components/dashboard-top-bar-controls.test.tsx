@@ -102,14 +102,17 @@ describe("DashboardTopBarControls", () => {
     expect(document.activeElement).toBe(accountTrigger);
   });
 
-  it("shows notification loading, unread count, and event updates", async () => {
+  it("shows notification loading, unread count, and persistent dismissal", async () => {
     const userEventController = userEvent.setup();
     const request = createDeferred<{ notifications: Notification[] }>();
+    const dismissEventNotification = vi.fn<DashboardApiClient["dismissEventNotification"]>(
+      async () => ({ dismissed: true }),
+    );
     const listEventNotifications = vi.fn<DashboardApiClient["listEventNotifications"]>(
       () => request.promise,
     );
 
-    renderControls({ eventId: "event-42", listEventNotifications });
+    renderControls({ dismissEventNotification, eventId: "event-42", listEventNotifications });
 
     await userEventController.click(screen.getByRole("button", { name: "Notifications" }));
     expect(screen.getByLabelText("Loading notifications")).toBeTruthy();
@@ -128,8 +131,16 @@ describe("DashboardTopBarControls", () => {
     expect(screen.getAllByLabelText("Unread")).toHaveLength(1);
     expect(listEventNotifications).toHaveBeenCalledWith("event-42");
 
+    await userEventController.click(
+      screen.getByRole("button", { name: "Dismiss notification: New RSVP received" }),
+    );
+
+    expect(dismissEventNotification).toHaveBeenCalledWith("event-42", "notification-1");
+    expect(screen.queryByText("New RSVP received")).toBeNull();
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+
     await userEventController.keyboard("{Escape}");
-    expect(document.activeElement).toBe(notificationTrigger);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Notifications" }));
   });
 
   it("marks an unread notification read before navigating to its safe destination", async () => {

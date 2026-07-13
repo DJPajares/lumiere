@@ -15,6 +15,9 @@ describe("DashboardTopNavigation", () => {
   let media: ReturnType<typeof installMatchMedia>;
 
   beforeEach(() => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     media = installMatchMedia();
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0, writable: true });
     window.requestAnimationFrame = (callback) => window.setTimeout(() => callback(0), 0);
@@ -42,6 +45,57 @@ describe("DashboardTopNavigation", () => {
     expect(screen.getByRole("link", { name: "Home" })).toBeTruthy();
     expect(brand.getAttribute("href")).toBe("/");
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
+    expect({
+      desktop1440: {
+        navigation: desktopNavigation.dataset.breakpoint,
+        responsiveClasses: responsiveClasses(desktopNavigation),
+        shell: responsiveClasses(desktopNavigation.parentElement),
+      },
+      mobile390: {
+        navigation: mobileTrigger.dataset.breakpoint,
+        responsiveClasses: responsiveClasses(mobileTrigger),
+        shell: responsiveClasses(desktopNavigation.parentElement),
+      },
+      tablet768: {
+        navigation: desktopNavigation.dataset.breakpoint,
+        responsiveClasses: responsiveClasses(desktopNavigation),
+        triggerClasses: responsiveClasses(mobileTrigger),
+      },
+    }).toMatchInlineSnapshot(`
+      {
+        "desktop1440": {
+          "navigation": "tablet-desktop",
+          "responsiveClasses": [
+            "md:flex",
+            "md:justify-center",
+          ],
+          "shell": [
+            "sm:px-6",
+            "lg:px-8",
+          ],
+        },
+        "mobile390": {
+          "navigation": "mobile-only",
+          "responsiveClasses": [
+            "md:hidden",
+          ],
+          "shell": [
+            "sm:px-6",
+            "lg:px-8",
+          ],
+        },
+        "tablet768": {
+          "navigation": "tablet-desktop",
+          "responsiveClasses": [
+            "md:flex",
+            "md:justify-center",
+          ],
+          "triggerClasses": [
+            "md:hidden",
+          ],
+        },
+      }
+    `);
   });
 
   it("opens the animated mobile navigation, supports Escape, and restores trigger focus", async () => {
@@ -65,7 +119,9 @@ describe("DashboardTopNavigation", () => {
     render(<DashboardTopNavigation activePath="/events/demo-event/guests" />);
 
     await user.click(screen.getByRole("button", { name: "Open dashboard navigation" }));
-    await user.click(await screen.findByRole("link", { name: "Activity" }));
+    const activityLink = await screen.findByRole("link", { name: "Activity" });
+    activityLink.addEventListener("click", (event) => event.preventDefault());
+    await user.click(activityLink);
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
@@ -139,6 +195,12 @@ describe("DashboardTopNavigation", () => {
 
 function setScrollY(value: number) {
   Object.defineProperty(window, "scrollY", { configurable: true, value, writable: true });
+}
+
+function responsiveClasses(element: Element | null) {
+  return (element?.getAttribute("class") ?? "")
+    .split(/\s+/)
+    .filter((className) => /^(?:sm|md|lg|xl):/.test(className));
 }
 
 function installMatchMedia() {

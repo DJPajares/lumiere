@@ -17,6 +17,7 @@
     "check:dashboard-ui-boundary": "node scripts/check-dashboard-ui-boundary.mjs",
     "check:theme-boundaries": "node scripts/check-theme-boundaries.mjs",
     "check:theme-contracts": "pnpm --filter @lumiere/themes test",
+    "check:follow-up-regression": "pnpm check:next-image-usage && pnpm check:theme-boundaries && pnpm test",
     "db:generate": "pnpm --filter @lumiere/db db:generate",
     "db:migrate": "pnpm --filter @lumiere/db db:migrate",
     "db:seed": "pnpm --filter @lumiere/api exec node --import tsx ../../packages/db/src/seed.ts",
@@ -37,7 +38,7 @@
     "prettier": "^3.9.5",
     "tailwindcss": "^4.3.2",
     "turbo": "^2.10.5",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
 }
