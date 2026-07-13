@@ -6,7 +6,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { noelEffects } from "./visual";
+import { noelEffects, noelPresentation } from "./visual";
 
 export const noelTheme = {
   id: "noel",
@@ -16,6 +16,7 @@ export const noelTheme = {
   supportedEventTypes: ["holiday", "dinner", "private_event"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  presentation: noelPresentation,
   modeToggle: {
     defaultPreference: "system",
     labels: { control: "Invitation appearance", dark: "Candlelight", light: "Snowlight" },

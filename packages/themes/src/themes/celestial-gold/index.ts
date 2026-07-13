@@ -10,5 +10,5 @@ export const celestialGoldThemeModule = {
 } satisfies ThemeModule;
 
 export { celestialGoldTheme } from "./definition";
-export { celestialGoldEffects } from "./visual";
+export { celestialGoldEffects, celestialGoldPresentation } from "./visual";
 export { celestialGoldAssets } from "./assets";

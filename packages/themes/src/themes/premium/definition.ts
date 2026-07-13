@@ -6,7 +6,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { premiumEffects } from "./visual";
+import { premiumEffects, premiumPresentation } from "./visual";
 
 export const premiumTheme = {
   id: "premium",
@@ -17,6 +17,7 @@ export const premiumTheme = {
   supportedEventTypes: ["wedding", "dinner", "private_event"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  presentation: premiumPresentation,
   modeToggle: {
     defaultPreference: "system",
     labels: { control: "Invitation appearance", dark: "Candlelight", light: "Daylight" },

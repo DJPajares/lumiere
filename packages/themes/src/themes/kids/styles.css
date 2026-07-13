@@ -1,0 +1,4 @@
+[data-theme-id="kids"] .lumiere-hero-media::after {
+  inset: 0.5rem;
+  border-style: dashed;
+}

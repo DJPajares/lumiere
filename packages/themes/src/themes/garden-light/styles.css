@@ -1,0 +1,79 @@
+[data-theme-id="garden-light"] .lumiere-invitation {
+  background:
+    radial-gradient(
+      circle at 8% 18%,
+      color-mix(in srgb, var(--surface-muted) 48%, transparent),
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 92% 62%,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 26rem
+    ),
+    var(--background);
+}
+
+[data-theme-id="garden-light"] .lumiere-section--hero {
+  padding-block: clamp(4rem, 8vw, 7rem);
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-copy {
+  justify-items: center;
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-title {
+  max-width: 13ch;
+  font-size: clamp(3.8rem, 8vw, 7.5rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-subtitle,
+[data-theme-id="garden-light"] .lumiere-hero-body {
+  margin-inline: auto;
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-media {
+  border: 0;
+  border-radius: 48% 48% var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 32px 88px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-media::after {
+  inset: 0.75rem;
+  border-radius: 48% 48% calc(var(--radius-lg) - 0.25rem) calc(var(--radius-lg) - 0.25rem);
+}
+
+[data-theme-id="garden-light"] .lumiere-hero-media img {
+  border-radius: inherit;
+}
+
+[data-theme-id="garden-light"] .lumiere-section--full-bleed,
+[data-theme-id="garden-light"] .lumiere-section--gallery-feature {
+  background:
+    radial-gradient(
+      circle at 16% 12%,
+      color-mix(in srgb, var(--surface) 78%, transparent),
+      transparent 18rem
+    ),
+    var(--surface-muted);
+}
+
+[data-theme-id="garden-light"] .lumiere-section__body h2 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.6rem, 5.5vw, 5.4rem);
+  font-weight: 400;
+  line-height: 0.96;
+}
+
+[data-theme-id="garden-light"] .lumiere-section-image,
+[data-theme-id="garden-light"] .lumiere-map-preview {
+  border-radius: var(--radius-lg) var(--radius-lg) calc(var(--radius-lg) * 2)
+    calc(var(--radius-lg) * 2);
+}
+
+[data-theme-id="garden-light"] .lumiere-story-rail {
+  padding-left: clamp(1rem, 4vw, 3rem);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
+}

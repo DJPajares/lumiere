@@ -6,7 +6,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { kidsEffects } from "./visual";
+import { kidsEffects, kidsPresentation } from "./visual";
 
 export const kidsTheme = {
   id: "kids",
@@ -16,6 +16,7 @@ export const kidsTheme = {
   supportedEventTypes: ["birthday", "kids_party"],
   supportedModes: ["light"],
   defaultMode: "light",
+  presentation: kidsPresentation,
   rsvpCopy: playfulRsvpCopyOverrides,
   supportedSections: [...publicCoreSections, "profile", "details", "gallery", "custom"],
   requiredSections: ["introduction", "date", "location", "rsvp"],

@@ -10,5 +10,5 @@ export const editorialIvoryThemeModule = {
 } satisfies ThemeModule;
 
 export { editorialIvoryTheme } from "./definition";
-export { editorialIvoryEffects } from "./visual";
+export { editorialIvoryEffects, editorialIvoryPresentation } from "./visual";
 export { editorialIvoryAssets } from "./assets";

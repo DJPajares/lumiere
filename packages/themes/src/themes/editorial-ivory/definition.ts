@@ -6,7 +6,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { editorialIvoryEffects } from "./visual";
+import { editorialIvoryEffects, editorialIvoryPresentation } from "./visual";
 
 export const editorialIvoryTheme = {
   id: "editorial-ivory",
@@ -18,6 +18,7 @@ export const editorialIvoryTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  presentation: editorialIvoryPresentation,
   modeToggle: {
     defaultPreference: "system",
     labels: { control: "Invitation appearance", dark: "Ink", light: "Paper" },

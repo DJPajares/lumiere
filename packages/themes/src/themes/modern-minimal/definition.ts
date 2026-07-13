@@ -5,7 +5,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { modernMinimalEffects } from "./visual";
+import { modernMinimalEffects, modernMinimalPresentation } from "./visual";
 
 export const modernMinimalTheme = {
   id: "modern-minimal",
@@ -17,6 +17,7 @@ export const modernMinimalTheme = {
   supportedEventTypes: [...expansionEventTypes, "launch"],
   supportedModes: ["light", "dark", "system"],
   defaultMode: "system",
+  presentation: modernMinimalPresentation,
   rsvpCopy: {
     eyebrow: "Response",
     submitLabel: "Send response",

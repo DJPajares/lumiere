@@ -5,7 +5,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { lumiereDefaultEffects } from "./visual";
+import { lumiereDefaultEffects, lumiereDefaultPresentation } from "./visual";
 
 export const lumiereDefaultTheme = {
   id: "lumiere-default",
@@ -15,6 +15,7 @@ export const lumiereDefaultTheme = {
   supportedEventTypes: ["dinner", "launch", "private_event", "other"],
   supportedModes: ["light", "dark", "system"],
   defaultMode: "system",
+  presentation: lumiereDefaultPresentation,
   supportedSections: [...publicCoreSections, "story", "gallery", "custom"],
   requiredSections: ["introduction", "date", "location"],
   recommendedSections: [...publicCoreSections],

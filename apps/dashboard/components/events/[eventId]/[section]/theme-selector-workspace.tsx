@@ -8,6 +8,7 @@ import {
   evaluateThemeCompatibility,
   getTheme,
   isThemeId,
+  resolveTheme,
   type ThemeCompatibilityResult,
   type ThemeDefinition,
 } from "@lumiere/themes";
@@ -627,11 +628,7 @@ export function buildThemeGalleryEntries({
   preferredMode: ThemeMode;
   themes: Theme[];
 }): ThemeGalleryEntry[] {
-  const defaultTheme = getTheme("lumiere-default");
-
-  if (!defaultTheme) {
-    return [];
-  }
+  const defaultTheme = resolveTheme(undefined);
 
   return themes
     .map((theme): ThemeGalleryEntry => {

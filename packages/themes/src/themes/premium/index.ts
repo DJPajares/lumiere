@@ -10,5 +10,5 @@ export const premiumThemeModule = {
 } satisfies ThemeModule;
 
 export { premiumTheme } from "./definition";
-export { premiumEffects } from "./visual";
+export { premiumEffects, premiumPresentation } from "./visual";
 export { premiumAssets } from "./assets";

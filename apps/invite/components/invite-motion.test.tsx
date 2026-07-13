@@ -18,22 +18,22 @@ import {
 } from "./invite-motion-primitives";
 
 describe("invite motion system", () => {
-  it("provides no-motion, low-motion, and premium-motion variants", () => {
+  it("provides no-motion, low-motion, and high-motion variants", () => {
     const variants = [
       resolveInviteMotionIntensity("immersive", true),
       resolveInviteMotionIntensity("calm"),
       resolveInviteMotionIntensity("immersive"),
     ];
 
-    expect(variants).toEqual(["none", "low", "premium"]);
+    expect(variants).toEqual(["none", "low", "high"]);
     expect(inviteMotionPresets.none.revealDistance).toBe(0);
     expect(inviteMotionPresets.low.parallaxDistance).toBe(0);
-    expect(inviteMotionPresets.premium.parallaxDistance).toBeGreaterThanOrEqual(80);
-    expect(inviteMotionPresets.premium.maxMotionBlur).toBeGreaterThan(0);
+    expect(inviteMotionPresets.high.parallaxDistance).toBeGreaterThanOrEqual(80);
+    expect(inviteMotionPresets.high.maxMotionBlur).toBeGreaterThan(0);
   });
 
   it("uses the reliable frame driver for replayable reveals and transient blur", () => {
-    expect(resolveInviteMotionDriver("premium")).toBe("raf");
+    expect(resolveInviteMotionDriver("high")).toBe("raf");
     expect(resolveInviteMotionDriver("low")).toBe("raf");
     expect(resolveInviteMotionDriver("none")).toBe("none");
     expect(calculateMotionBlur(0, 16, 3.2)).toBe(0);

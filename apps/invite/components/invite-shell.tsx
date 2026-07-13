@@ -1,4 +1,4 @@
-import { getTheme, isThemeId, type ThemeDefinition } from "@lumiere/themes";
+import { resolveTheme, type ThemeDefinition } from "@lumiere/themes";
 import type { ThemeMode } from "@lumiere/types";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -24,9 +24,9 @@ export function InviteShell({
   context,
   eventKey = "invite-preview",
   mode = "light",
-  themeId = "lumiere-default",
+  themeId,
 }: InviteShellProps) {
-  const theme = getInviteTheme(themeId);
+  const theme = resolveTheme(themeId);
   const resolvedMode = resolveThemeMode(mode, theme);
   const style = themeToStyle(theme, resolvedMode);
   const modeVariables = {
@@ -132,10 +132,6 @@ function normalizeHex(hex: string) {
       : value;
 
   return [0, 2, 4].map((index) => Number.parseInt(normalized.slice(index, index + 2), 16));
-}
-
-function getInviteTheme(themeId: string) {
-  return (isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!;
 }
 
 function resolveThemeMode(mode: ThemeMode, theme: ThemeDefinition): ResolvedThemeMode {

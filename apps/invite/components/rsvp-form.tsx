@@ -1,7 +1,12 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
-import { defaultRsvpCopy, type ThemeRsvpCopy } from "@lumiere/themes";
+import {
+  defaultRsvpCopy,
+  defaultRsvpPresentation,
+  type ThemeRsvpCopy,
+  type ThemeRsvpPresentation,
+} from "@lumiere/themes";
 import {
   defaultRsvpResponseFields,
   type RsvpResponseFields,
@@ -63,7 +68,6 @@ export type RsvpFormSubmitResult =
 
 type RsvpFormProps = {
   copy?: ThemeRsvpCopy;
-  design?: RsvpDesign;
   eventSlug: string;
   guestGroup: {
     label: string;
@@ -71,19 +75,18 @@ type RsvpFormProps = {
   };
   guestToken: string;
   initialResponseStatus: RsvpStatus | null;
+  presentation?: ThemeRsvpPresentation;
   questions: RsvpQuestion[];
   rsvpFields?: RsvpResponseFields;
 };
 
-export type RsvpDesign = "default" | "editorial" | "playful" | "seasonal";
-
 export function RsvpForm({
   copy = defaultRsvpCopy,
-  design = "default",
   eventSlug,
   guestGroup,
   guestToken,
   initialResponseStatus,
+  presentation = defaultRsvpPresentation,
   questions,
   rsvpFields = defaultRsvpResponseFields,
 }: RsvpFormProps) {
@@ -99,7 +102,6 @@ export function RsvpForm({
   const [detailsOpen, setDetailsOpen] = useState(
     () => rsvpFields.collectGuestNames || questions.some((question) => question.required),
   );
-  const style = getRsvpDesignStyle(design);
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
   const isUpdatingExistingReply = Boolean(initialResponseStatus && !submittedResponse);
   const hasSubmittedReply = Boolean(submittedResponse);
@@ -170,14 +172,13 @@ export function RsvpForm({
 
   return (
     <form
-      className={style.card}
-      data-rsvp-design={design}
+      className={presentation.cardClassName}
       data-rsvp-state={statusTone}
       onSubmit={handleSubmit}
     >
       <div className="grid gap-2">
-        <p className={style.eyebrow}>{copy.eyebrow}</p>
-        <h3 className={style.title}>
+        <p className={presentation.eyebrowClassName}>{copy.eyebrow}</p>
+        <h3 className={presentation.titleClassName}>
           <span className="opacity-80">{copy.greetingPrefix} </span>
           {guestGroup.label}
         </h3>
@@ -229,7 +230,7 @@ export function RsvpForm({
       ) : null}
 
       <fieldset className="grid gap-3" disabled={isLocked || isSubmitting}>
-        <legend className={style.fieldLabel}>{copy.attendancePrompt}</legend>
+        <legend className={presentation.fieldLabelClassName}>{copy.attendancePrompt}</legend>
         <div className="grid grid-cols-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
           <RsvpStatusOption
             checked={state.responseStatus === "attending"}
@@ -269,7 +270,7 @@ export function RsvpForm({
 
       {isResponding && (
         <div className="grid gap-2">
-          <p className={style.fieldLabel}>{copy.countPrompt}</p>
+          <p className={presentation.fieldLabelClassName}>{copy.countPrompt}</p>
           <div
             aria-describedby={errors.attendeeCount ? "attendeeCount-error" : undefined}
             className="grid grid-cols-[3.5rem_1fr_3.5rem] items-center rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
@@ -290,7 +291,7 @@ export function RsvpForm({
               -
             </CounterButton>
             <div className="grid place-items-center px-3 py-2 text-center">
-              <span className={style.counterValue}>{state.attendeeCount}</span>
+              <span className={presentation.counterValueClassName}>{state.attendeeCount}</span>
               <span className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
                 {state.attendeeCount === 1 ? copy.guestLabelSingular : copy.guestLabelPlural}
               </span>
@@ -331,7 +332,7 @@ export function RsvpForm({
           <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
             {isResponding && rsvpFields.collectGuestNames ? (
               <div className="grid gap-3">
-                <p className={style.fieldLabel}>{copy.guestNamesLabel}</p>
+                <p className={presentation.fieldLabelClassName}>{copy.guestNamesLabel}</p>
                 {state.guestNames.map((name, index) => (
                   <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
@@ -342,7 +343,7 @@ export function RsvpForm({
                         errors[`guestNames.${index}`] ? `guestName-${index}-error` : undefined
                       }
                       aria-invalid={Boolean(errors[`guestNames.${index}`])}
-                      className={style.input}
+                      className={presentation.inputClassName}
                       disabled={isLocked || isSubmitting}
                       id={`guestName-${index}`}
                       onChange={(event) => {
@@ -369,7 +370,7 @@ export function RsvpForm({
             {questions.length > 0 ? (
               <div className="grid gap-4">
                 <div>
-                  <p className={style.fieldLabel}>{copy.questionGroupTitle}</p>
+                  <p className={presentation.fieldLabelClassName}>{copy.questionGroupTitle}</p>
                   <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
                     {copy.questionGroupDescription}
                   </p>
@@ -378,7 +379,7 @@ export function RsvpForm({
                   <QuestionField
                     error={errors[`answers.${question.key}`]}
                     isDisabled={isLocked || isSubmitting}
-                    inputClassName={style.input}
+                    inputClassName={presentation.inputClassName}
                     key={question.key}
                     onChange={(value) =>
                       setState((current) => ({
@@ -400,11 +401,11 @@ export function RsvpForm({
 
             {rsvpFields.collectGuestMessage ? (
               <label className="grid gap-2" htmlFor="rsvp-message">
-                <span className={style.fieldLabel}>{copy.messageLabel}</span>
+                <span className={presentation.fieldLabelClassName}>{copy.messageLabel}</span>
                 <textarea
                   aria-describedby={errors.message ? "rsvp-message-error" : undefined}
                   aria-invalid={Boolean(errors.message)}
-                  className={`${style.input} min-h-24 py-3 leading-6`}
+                  className={`${presentation.inputClassName} min-h-24 py-3 leading-6`}
                   disabled={isLocked || isSubmitting}
                   id="rsvp-message"
                   onChange={(event) =>
@@ -425,7 +426,7 @@ export function RsvpForm({
 
       <button
         {...invitePressFeedbackProps}
-        className={style.submit}
+        className={presentation.submitClassName}
         disabled={isSubmitting || isLocked}
         type="submit"
       >
@@ -509,49 +510,6 @@ function CounterButton({
       {children}
     </button>
   );
-}
-
-function getRsvpDesignStyle(design: RsvpDesign) {
-  const base = {
-    card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.6)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] backdrop-blur sm:p-7",
-    counterValue: "text-2xl font-semibold leading-none",
-    eyebrow: "text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)]",
-    fieldLabel:
-      "text-xs font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
-    input:
-      "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
-    submit:
-      "min-h-12 w-full rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-    title: "text-3xl font-light tracking-tight",
-  };
-
-  if (design === "editorial") {
-    return {
-      ...base,
-      card: `${base.card}`,
-      title:
-        "font-serif text-3xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-4xl",
-    };
-  }
-
-  if (design === "playful") {
-    return {
-      ...base,
-      card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.4)] border-2 border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_20px_70px_color-mix(in_srgb,var(--accent)_18%,transparent)] sm:p-6",
-      submit: `${base.submit} rounded-[var(--radius-lg)]`,
-      title: "text-3xl font-semibold tracking-tight",
-    };
-  }
-
-  if (design === "seasonal") {
-    return {
-      ...base,
-      card: "grid gap-5 rounded-[calc(var(--radius-lg)*1.3)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-7",
-      title: "font-serif text-3xl font-light tracking-tight sm:text-4xl",
-    };
-  }
-
-  return base;
 }
 
 function RsvpStatusOption({

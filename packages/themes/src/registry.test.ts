@@ -16,6 +16,7 @@ import {
   inviteVisualCompositionSystem,
   normalizeLocationContent,
   reverieReferenceLinks,
+  resolveTheme,
   resolveThemeRsvpCopy,
   sectionDefinitions,
   sampleInviteCompositionMaps,
@@ -121,6 +122,10 @@ describe("theme registry", () => {
     expect(
       Object.entries(themeRegistry).every(([registryId, theme]) => registryId === theme.id),
     ).toBe(true);
+    expect(resolveTheme("unavailable-theme").id).toBe("lumiere-default");
+    expect(resolveTheme(undefined)).toBe(themeRegistry["lumiere-default"]);
+    expect(themeRegistry.kids.presentation.hero.frameClassName).toContain("lumiere-hero--kids");
+    expect(themeRegistry.premium.presentation.rsvp.titleClassName).toContain("font-serif");
 
     expect(resolveThemeRsvpCopy(themeRegistry["lumiere-default"])).toEqual(defaultRsvpCopy);
     expect(resolveThemeRsvpCopy(themeRegistry.kids)).toMatchObject({

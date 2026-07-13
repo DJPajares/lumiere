@@ -38,18 +38,18 @@ describe("RSVP form flow helpers", () => {
     const playfulHtml = renderToStaticMarkup(
       createElement(RsvpForm, {
         copy: resolveThemeRsvpCopy(themeRegistry.kids),
-        design: "playful",
         eventSlug: "birthday-party",
         guestGroup,
         guestToken: "sample-guest-token-for-preview",
         initialResponseStatus: null,
+        presentation: themeRegistry.kids.presentation.rsvp,
         questions,
       }),
     );
 
     expect(playfulHtml).toContain("Can you join the party?");
     expect(playfulHtml).toContain("Your party reply");
-    expect(playfulHtml).toContain('data-rsvp-design="playful"');
+    expect(playfulHtml).toContain("border-2");
   });
 
   it("renders an already-submitted reply as an update flow", () => {

@@ -1,0 +1,99 @@
+[data-theme-id="editorial-ivory"] .lumiere-invitation {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(50% - 0.5px),
+      color-mix(in srgb, var(--border) 18%, transparent) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    var(--background);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section--hero {
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section--hero::before {
+  position: absolute;
+  inset: clamp(0.9rem, 2.6vw, 2.25rem);
+  border-block: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section__index {
+  display: inline;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-hero-title {
+  max-width: 8ch;
+  font-size: clamp(4.2rem, 10vw, 9.5rem);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-hero-media {
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-hero-media::after {
+  inset: 1rem -1rem -1rem 1rem;
+  border-color: var(--accent);
+  border-radius: 0;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-hero-media img,
+[data-theme-id="editorial-ivory"] .lumiere-section-image {
+  border-radius: 0;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section:not(.lumiere-section--hero) {
+  border-top: 1px solid color-mix(in srgb, var(--border) 64%, transparent);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section__body h2 {
+  max-width: 11ch;
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.8rem, 6vw, 6rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section--framed .lumiere-section__inner,
+[data-theme-id="editorial-ivory"] .lumiere-detail-item,
+[data-theme-id="editorial-ivory"] .lumiere-profile-card,
+[data-theme-id="editorial-ivory"] .lumiere-map-preview,
+[data-theme-id="editorial-ivory"] .lumiere-map-card {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-section--framed .lumiere-section__inner {
+  border-inline: 0;
+  background: transparent;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-detail-grid {
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-detail-item {
+  border-width: 0 0 1px;
+  background: transparent;
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="editorial-ivory"] .lumiere-section--hero::before {
+    inset: 0.7rem;
+  }
+
+  [data-theme-id="editorial-ivory"] .lumiere-hero-title {
+    font-size: clamp(3.4rem, 17vw, 5.4rem);
+  }
+}

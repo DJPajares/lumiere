@@ -10,5 +10,5 @@ export const lumiereDefaultThemeModule = {
 } satisfies ThemeModule;
 
 export { lumiereDefaultTheme } from "./definition";
-export { lumiereDefaultEffects } from "./visual";
+export { lumiereDefaultEffects, lumiereDefaultPresentation } from "./visual";
 export { lumiereDefaultAssets } from "./assets";

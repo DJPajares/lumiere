@@ -7,10 +7,9 @@ import {
   getBlueprintSectionRequirement,
   getSectionBlueprint,
   getSectionDefinition,
-  getTheme,
-  isThemeId,
   normalizeLocationContent,
   normalizeStoryParagraphs,
+  resolveTheme,
   validateEventTypeSections,
   type SectionBlueprintRequirement,
   type ThemeDefinition,
@@ -785,7 +784,7 @@ function SectionPreviewPanel({
   setPreviewContext: (context: PreviewContext) => void;
   theme: Theme;
 }) {
-  const themeDefinition = resolveThemeDefinition(theme.id);
+  const themeDefinition = resolveTheme(theme.id);
   const resolvedMode = resolvePreviewThemeMode(event.themeMode, themeDefinition);
   const previewStyle = themeToPreviewStyle(themeDefinition, resolvedMode);
   const appearsInContext =
@@ -3166,10 +3165,6 @@ function statusPillClassName(status: SectionPreviewModel["status"]) {
   }
 
   return `${base} bg-[var(--surface-muted)] text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]`;
-}
-
-function resolveThemeDefinition(themeId: string) {
-  return (isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!;
 }
 
 function resolvePreviewThemeMode(

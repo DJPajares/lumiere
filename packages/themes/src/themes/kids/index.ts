@@ -10,5 +10,5 @@ export const kidsThemeModule = {
 } satisfies ThemeModule;
 
 export { kidsTheme } from "./definition";
-export { kidsEffects } from "./visual";
+export { kidsEffects, kidsPresentation } from "./visual";
 export { kidsAssets } from "./assets";

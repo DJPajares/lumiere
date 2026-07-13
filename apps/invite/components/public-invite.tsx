@@ -1,9 +1,8 @@
 import {
   getSectionDefinition,
-  getTheme,
-  isThemeId,
   normalizeLocationContent,
   normalizeStoryParagraphs,
+  resolveTheme,
   resolveThemeRsvpCopy,
   resolveThemeRendererSlot,
   type StoryParagraph,
@@ -27,7 +26,7 @@ import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-prim
 import { InviteMotionRuntime } from "./invite-motion-runtime";
 import { InviteShell } from "./invite-shell";
 import { InviteVisualLayer } from "./invite-visual-layer";
-import { RsvpForm, type RsvpDesign, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
+import { RsvpForm, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
 type JsonObject = Record<string, JsonValue>;
 type InvitationContext = "guest" | "public";
@@ -93,7 +92,7 @@ function InvitationFrame({
     context === "guest"
       ? "This guest invite is valid. More private details will appear here as the host enables them."
       : "The host has published this event. Public sections will appear here as they are enabled.";
-  const theme = resolveInviteTheme(invite.selectedThemeId ?? invite.theme?.id);
+  const theme = resolveTheme(invite.selectedThemeId ?? invite.theme?.id);
   const rsvpDesign = theme.composition.rsvpDesign;
   const visualSystem = theme.composition.visualSystem;
   const visualEffects = theme.composition.effects;
@@ -146,7 +145,6 @@ function InvitationFrame({
                 index={index}
                 key={item.section.id}
                 item={item}
-                rsvpDesign={rsvpDesign}
                 rsvpFields={"rsvpFields" in invite ? invite.rsvpFields : undefined}
                 theme={theme}
               />
@@ -260,13 +258,14 @@ function PublicHero({
     : "introduction";
   const layout = section ? (readString(section.settings.layout) ?? "editorial") : "editorial";
   const fullViewport = theme.composition.hero.fullViewport;
+  const presentation = theme.presentation.hero;
 
   return (
     <section
       className={joinClassNames(
         "lumiere-section lumiere-section--hero lumiere-section--full-bleed grid content-center gap-8 overflow-hidden px-5 py-10 sm:px-8 lg:px-12",
         fullViewport ? "min-h-[100dvh]" : "min-h-[82dvh]",
-        getHeroFrameClassName(theme),
+        presentation.frameClassName,
       )}
       data-motion-kind="hero-reveal"
       data-motion-scope="invite-section"
@@ -279,7 +278,13 @@ function PublicHero({
       data-theme-hero-composition={theme.composition.hero.composition}
       id={anchorId}
     >
-      <div className={getHeroInnerClassName(theme, Boolean(coverImage))}>
+      <div
+        className={
+          coverImage && presentation.innerWithMediaClassName
+            ? presentation.innerWithMediaClassName
+            : presentation.innerClassName
+        }
+      >
         <div className="lumiere-hero-copy grid gap-6">
           <div className="lumiere-section__kicker">
             <p className="text-sm font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
@@ -316,18 +321,18 @@ function PublicHero({
 
         {coverImage ? (
           <figure
-            className={getHeroMediaClassName(theme)}
+            className={presentation.mediaClassName}
             data-motion-soft-image="true"
             data-parallax-layer="hero-media"
           >
             <InviteImage
               alt={coverImage.alt}
-              className={getHeroImageClassName(theme)}
+              className={presentation.imageClassName}
               data-parallax-layer="hero-image"
               decoding="async"
               src={coverImage.url}
               priority
-              sizes={getHeroImageSizes(theme)}
+              sizes={presentation.imageSizes}
             />
             {coverImage.caption ? (
               <figcaption className="px-4 py-3 text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
@@ -336,7 +341,7 @@ function PublicHero({
             ) : null}
           </figure>
         ) : (
-          <aside className={getHeroFallbackClassName(theme)} data-parallax-layer="hero-media">
+          <aside className={presentation.fallbackClassName} data-parallax-layer="hero-media">
             <p className="text-sm font-semibold text-[var(--accent-strong)]">Public details</p>
             <h2 className="lumiere-display text-2xl font-semibold">{invite.event.title}</h2>
             <div className="grid gap-3">
@@ -353,112 +358,6 @@ function PublicHero({
         )}
       </div>
     </section>
-  );
-}
-
-function getHeroFrameClassName(theme: ThemeDefinition) {
-  switch (theme.id) {
-    case "premium":
-      return "lumiere-hero--premium bg-[radial-gradient(circle_at_12%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_28%),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_64%,var(--background)),var(--background))]";
-    case "kids":
-      return "lumiere-hero--kids bg-[radial-gradient(circle_at_15%_18%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_24%),linear-gradient(180deg,var(--surface),var(--background))]";
-    case "noel":
-      return "lumiere-hero--noel bg-[radial-gradient(circle_at_80%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_30%),linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_54%,var(--background)))]";
-    case "editorial-ivory":
-      return "lumiere-hero--editorial-ivory bg-[linear-gradient(105deg,var(--background)_0%,var(--background)_52%,color-mix(in_srgb,var(--surface-muted)_58%,var(--background))_52%,var(--surface)_100%)]";
-    case "garden-light":
-      return "lumiere-hero--garden-light bg-[radial-gradient(circle_at_18%_14%,color-mix(in_srgb,var(--surface-muted)_82%,transparent),transparent_30%),radial-gradient(circle_at_84%_24%,color-mix(in_srgb,var(--accent)_13%,transparent),transparent_27%),var(--background)]";
-    case "modern-minimal":
-      return "lumiere-hero--modern-minimal bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_66%,var(--surface-muted)_66%,var(--surface-muted)_100%)]";
-    case "celestial-gold":
-      return "lumiere-hero--celestial-gold bg-[radial-gradient(circle_at_72%_28%,color-mix(in_srgb,var(--accent)_21%,transparent),transparent_24%),radial-gradient(circle_at_18%_80%,color-mix(in_srgb,var(--surface-muted)_64%,transparent),transparent_35%),var(--background)]";
-    default:
-      return "bg-[linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_42%,var(--background)))]";
-  }
-}
-
-function getHeroInnerClassName(theme: ThemeDefinition, hasImage: boolean) {
-  switch (theme.id) {
-    case "premium":
-      return "mx-auto grid w-full max-w-6xl gap-9 lg:grid-cols-[0.9fr_1.1fr] lg:items-center";
-    case "kids":
-      return "mx-auto grid w-full max-w-4xl gap-7 text-center";
-    case "noel":
-      return "mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center";
-    case "editorial-ivory":
-      return "mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center";
-    case "garden-light":
-      return hasImage
-        ? "mx-auto grid w-full max-w-5xl gap-8 text-center"
-        : "mx-auto grid w-full max-w-4xl gap-8 text-center sm:grid-cols-2 sm:text-left";
-    case "modern-minimal":
-      return "mx-auto grid w-full max-w-7xl gap-0 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch";
-    case "celestial-gold":
-      return "mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-2 lg:items-center";
-    default:
-      return "mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center";
-  }
-}
-
-function getHeroMediaClassName(theme: ThemeDefinition) {
-  const base =
-    "lumiere-hero-media overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_15%,transparent)]";
-
-  switch (theme.id) {
-    case "premium":
-      return joinClassNames(
-        base,
-        "order-first mx-auto w-full max-w-[20rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
-      );
-    case "kids":
-      return joinClassNames(base, "mx-auto w-full max-w-[22rem] rounded-[var(--radius-lg)]");
-    case "noel":
-      return joinClassNames(base, "order-first rounded-[var(--radius-lg)] lg:order-none");
-    case "editorial-ivory":
-      return joinClassNames(
-        base,
-        "order-first mx-auto w-full max-w-[24rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
-      );
-    case "garden-light":
-      return joinClassNames(base, "mx-auto w-full max-w-3xl rounded-[var(--radius-lg)]");
-    case "modern-minimal":
-      return joinClassNames(base, "rounded-[var(--radius-lg)]");
-    case "celestial-gold":
-      return joinClassNames(
-        base,
-        "order-first mx-auto w-full max-w-[26rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
-      );
-    default:
-      return joinClassNames(base, "rounded-[var(--radius-lg)]");
-  }
-}
-
-function getHeroImageClassName(theme: ThemeDefinition) {
-  switch (theme.id) {
-    case "kids":
-      return "aspect-[4/3] w-full object-cover sm:aspect-[1/1]";
-    case "noel":
-      return "aspect-[4/5] w-full object-cover sm:aspect-[16/12]";
-    case "garden-light":
-      return "aspect-[4/3] w-full object-cover sm:aspect-[16/9]";
-    case "modern-minimal":
-      return "aspect-[3/4] w-full object-cover sm:aspect-[4/5] lg:h-full lg:min-h-[66dvh]";
-    case "celestial-gold":
-    case "editorial-ivory":
-      return "aspect-[4/5] w-full object-cover lg:min-h-[68dvh]";
-    default:
-      return "aspect-[4/5] w-full object-cover";
-  }
-}
-
-function getHeroFallbackClassName(theme: ThemeDefinition) {
-  return joinClassNames(
-    "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_12%,transparent)]",
-    ["premium", "editorial-ivory", "garden-light", "modern-minimal", "celestial-gold"].includes(
-      theme.id,
-    )
-      ? "lumiere-hero-media lumiere-hero-fallback"
-      : undefined,
   );
 }
 
@@ -493,7 +392,6 @@ function PublicSection({
   guestToken,
   index,
   item,
-  rsvpDesign,
   rsvpFields,
   theme,
 }: {
@@ -502,7 +400,6 @@ function PublicSection({
   guestToken?: string;
   index: number;
   item: RenderableSection;
-  rsvpDesign: RsvpDesign;
   rsvpFields?: RsvpResponseFields;
   theme: ThemeDefinition;
 }) {
@@ -553,7 +450,6 @@ function PublicSection({
             guestToken={guestToken}
             item={item}
             layout={layout}
-            rsvpDesign={rsvpDesign}
             rsvpFields={rsvpFields}
             theme={theme}
             titleId={titleId}
@@ -571,7 +467,6 @@ function SectionBody({
   guestToken,
   item,
   layout,
-  rsvpDesign,
   rsvpFields,
   theme,
   titleId,
@@ -582,7 +477,6 @@ function SectionBody({
   guestToken?: string;
   item: RenderableSection;
   layout: string;
-  rsvpDesign: RsvpDesign;
   rsvpFields?: RsvpResponseFields;
   theme: ThemeDefinition;
   titleId: string;
@@ -620,7 +514,6 @@ function SectionBody({
           eventSlug={eventSlug}
           guest={guest}
           guestToken={guestToken}
-          rsvpDesign={rsvpDesign}
           rsvpFields={rsvpFields}
           settings={settings}
           theme={theme}
@@ -1048,7 +941,6 @@ function RsvpSection({
   eventSlug,
   guest,
   guestToken,
-  rsvpDesign,
   rsvpFields,
   settings,
   theme,
@@ -1058,7 +950,6 @@ function RsvpSection({
   eventSlug: string;
   guest?: GuestContext;
   guestToken?: string;
-  rsvpDesign: RsvpDesign;
   rsvpFields?: RsvpResponseFields;
   settings: JsonObject;
   theme: ThemeDefinition;
@@ -1121,11 +1012,11 @@ function RsvpSection({
       {submitContext && (
         <RsvpForm
           copy={copy}
-          design={rsvpDesign}
           eventSlug={eventSlug}
           guestGroup={submitContext.guest.guestGroup}
           guestToken={submitContext.guestToken}
           initialResponseStatus={submitContext.guest.responseStatus}
+          presentation={theme.presentation.rsvp}
           questions={questions}
           rsvpFields={rsvpFields}
         />
@@ -1389,25 +1280,6 @@ function SectionImage({
   );
 }
 
-function getHeroImageSizes(theme: ThemeDefinition) {
-  switch (theme.id) {
-    case "kids":
-      return "min(22rem, 100vw)";
-    case "garden-light":
-      return "min(48rem, 100vw)";
-    case "editorial-ivory":
-      return "(min-width: 1024px) 61vw, 100vw";
-    case "modern-minimal":
-      return "(min-width: 1024px) 40vw, 100vw";
-    case "premium":
-    case "noel":
-    case "celestial-gold":
-      return "(min-width: 1024px) 50vw, 100vw";
-    default:
-      return "(min-width: 1024px) 48vw, 100vw";
-  }
-}
-
 function getSectionImageSizes({ compact, feature }: { compact: boolean; feature: boolean }) {
   if (compact) {
     return "(min-width: 640px) 33vw, 100vw";
@@ -1664,12 +1536,6 @@ function resolveSectionParallaxKind(
 
 function joinClassNames(...classNames: Array<string | undefined>) {
   return classNames.filter(Boolean).join(" ");
-}
-
-function resolveInviteTheme(themeId: string | undefined) {
-  return (
-    (themeId && isThemeId(themeId) ? getTheme(themeId) : undefined) ?? getTheme("lumiere-default")!
-  );
 }
 
 export function resolveAmbientAudioConfig(

@@ -10,5 +10,5 @@ export const gardenLightThemeModule = {
 } satisfies ThemeModule;
 
 export { gardenLightTheme } from "./definition";
-export { gardenLightEffects } from "./visual";
+export { gardenLightEffects, gardenLightPresentation } from "./visual";
 export { gardenLightAssets } from "./assets";

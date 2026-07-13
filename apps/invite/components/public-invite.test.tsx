@@ -97,6 +97,15 @@ describe("public invite section renderers", () => {
 
     expect(unsupportedHtml).toContain('data-theme-resolved-mode="light"');
     expect(unsupportedHtml).not.toContain('data-theme-mode-initializer="true"');
+
+    const fallbackInvite = createInvite([]);
+    fallbackInvite.selectedThemeId = "unavailable-theme";
+    const fallbackHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: fallbackInvite }),
+    );
+
+    expect(fallbackHtml).toContain('data-theme-id="lumiere-default"');
+    expect(fallbackHtml).toContain('data-composition-map="neutral-basic"');
     expect(
       resolveBrowserMode({
         configuredMode: "toggleable",
@@ -220,9 +229,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain('data-composition-map="wedding-editorial"');
     expect(html).toContain('data-motion-profile="immersive"');
-    expect(html).toContain('data-motion-intensity="premium"');
+    expect(html).toContain('data-motion-intensity="high"');
     expect(html).toContain('data-motion-root="invite"');
-    expect(html).toContain('data-motion-runtime-marker="premium"');
+    expect(html).toContain('data-motion-runtime-marker="high"');
     expect(html).toContain('data-backdrop-type="gradient"');
     expect(html).toContain('data-texture-policy="fine-noise"');
     expect(html).toContain('data-ornament-set="candlelight"');

@@ -6,7 +6,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { celestialGoldEffects } from "./visual";
+import { celestialGoldEffects, celestialGoldPresentation } from "./visual";
 
 export const celestialGoldTheme = {
   id: "celestial-gold",
@@ -18,6 +18,7 @@ export const celestialGoldTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner", "holiday"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "dark",
+  presentation: celestialGoldPresentation,
   modeToggle: {
     defaultPreference: "dark",
     labels: { control: "Invitation appearance", dark: "Midnight", light: "Moonlight" },

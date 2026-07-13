@@ -10,5 +10,5 @@ export const modernMinimalThemeModule = {
 } satisfies ThemeModule;
 
 export { modernMinimalTheme } from "./definition";
-export { modernMinimalEffects } from "./visual";
+export { modernMinimalEffects, modernMinimalPresentation } from "./visual";
 export { modernMinimalAssets } from "./assets";

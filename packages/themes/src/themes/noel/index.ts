@@ -10,5 +10,5 @@ export const noelThemeModule = {
 } satisfies ThemeModule;
 
 export { noelTheme } from "./definition";
-export { noelEffects } from "./visual";
+export { noelEffects, noelPresentation } from "./visual";
 export { noelAssets } from "./assets";

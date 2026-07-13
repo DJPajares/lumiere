@@ -1,0 +1,109 @@
+[data-theme-id="modern-minimal"] .lumiere-invitation {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(25% - 0.5px),
+      color-mix(in srgb, var(--border) 18%, transparent) 25%,
+      transparent calc(25% + 0.5px),
+      transparent calc(75% - 0.5px),
+      color-mix(in srgb, var(--border) 18%, transparent) 75%,
+      transparent calc(75% + 0.5px)
+    ),
+    var(--background);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-section__index {
+  display: inline;
+  color: var(--accent);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-section--hero {
+  border-bottom: 1px solid var(--foreground);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-hero-copy {
+  align-content: space-between;
+  padding: clamp(1.5rem, 4vw, 4rem);
+  border: 1px solid var(--foreground);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-hero-title {
+  max-width: 12ch;
+  font-size: clamp(3.5rem, 8vw, 8rem);
+  font-weight: 600;
+  line-height: 0.86;
+  letter-spacing: -0.065em;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-hero-facts {
+  gap: 0;
+  border-top: 1px solid var(--foreground);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-hero-fact {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-hero-media,
+[data-theme-id="modern-minimal"] .lumiere-hero-media::after,
+[data-theme-id="modern-minimal"] .lumiere-section-image,
+[data-theme-id="modern-minimal"] .lumiere-map-preview,
+[data-theme-id="modern-minimal"] .lumiere-map-card,
+[data-theme-id="modern-minimal"] .lumiere-detail-item,
+[data-theme-id="modern-minimal"] .lumiere-profile-card,
+[data-theme-id="modern-minimal"] .lumiere-section__inner {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-section:not(.lumiere-section--hero) {
+  border-top: 1px solid var(--foreground);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-section--full-bleed,
+[data-theme-id="modern-minimal"] .lumiere-section--gallery-feature {
+  background: var(--surface-muted);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-section__body h2 {
+  max-width: 14ch;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.7rem, 6vw, 6.5rem);
+  font-weight: 600;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-detail-grid,
+[data-theme-id="modern-minimal"] .lumiere-profile-grid {
+  gap: 0;
+  border-top: 1px solid var(--foreground);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-detail-item,
+[data-theme-id="modern-minimal"] .lumiere-profile-card {
+  border-width: 0 0 1px;
+  border-color: var(--foreground);
+  background: transparent;
+}
+
+[data-theme-id="modern-minimal"] button,
+[data-theme-id="modern-minimal"] input,
+[data-theme-id="modern-minimal"] select,
+[data-theme-id="modern-minimal"] textarea {
+  border-radius: 0;
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="modern-minimal"] .lumiere-hero-copy {
+    padding: 1.25rem;
+  }
+
+  [data-theme-id="modern-minimal"] .lumiere-hero-title {
+    font-size: clamp(3rem, 16vw, 5rem);
+  }
+}

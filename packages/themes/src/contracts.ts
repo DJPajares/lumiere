@@ -64,6 +64,31 @@ export type ThemeRsvpManagerCopy = Partial<
   Pick<ThemeRsvpCopy, "sectionDescription" | "sectionTitle" | "submitLabel">
 >;
 
+export type ThemeHeroPresentation = {
+  fallbackClassName: string;
+  frameClassName: string;
+  imageClassName: string;
+  imageSizes: string;
+  innerClassName: string;
+  innerWithMediaClassName?: string;
+  mediaClassName: string;
+};
+
+export type ThemeRsvpPresentation = {
+  cardClassName: string;
+  counterValueClassName: string;
+  eyebrowClassName: string;
+  fieldLabelClassName: string;
+  inputClassName: string;
+  submitClassName: string;
+  titleClassName: string;
+};
+
+export type ThemeInvitePresentation = {
+  hero: ThemeHeroPresentation;
+  rsvp: ThemeRsvpPresentation;
+};
+
 export type ThemeAssetManifest = {
   publicBasePath: `/themes/${ThemeId}`;
   slots: readonly ("backdrop" | "cover" | "gallery" | "ornament")[];
@@ -203,6 +228,7 @@ export type ThemeDefinition = {
   supportedModes: ThemeMode[];
   defaultMode: ThemeMode;
   modeToggle?: ThemeModeTogglePresentation;
+  presentation: ThemeInvitePresentation;
   rsvpCopy?: ThemeRsvpCopyOverrides;
   supportedSections: SectionType[];
   requiredSections: SectionType[];

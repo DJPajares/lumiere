@@ -37,6 +37,10 @@ export function getTheme(themeId: string): ThemeDefinition | undefined {
   return isThemeId(themeId) ? themeRegistry[themeId] : undefined;
 }
 
+export function resolveTheme(themeId: string | null | undefined): ThemeDefinition {
+  return (themeId ? getTheme(themeId) : undefined) ?? themeRegistry["lumiere-default"];
+}
+
 export function getThemeOrThrow(themeId: string): ThemeDefinition {
   const theme = getTheme(themeId);
 

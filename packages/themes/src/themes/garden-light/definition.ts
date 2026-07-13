@@ -5,7 +5,7 @@ import {
   expansionEventTypes,
   publicCoreSections,
 } from "../../theme-shared";
-import { gardenLightEffects } from "./visual";
+import { gardenLightEffects, gardenLightPresentation } from "./visual";
 
 export const gardenLightTheme = {
   id: "garden-light",
@@ -17,6 +17,7 @@ export const gardenLightTheme = {
   supportedEventTypes: [...expansionEventTypes, "dinner"],
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
+  presentation: gardenLightPresentation,
   modeToggle: {
     defaultPreference: "system",
     labels: { control: "Invitation appearance", dark: "Evening", light: "Daylight" },

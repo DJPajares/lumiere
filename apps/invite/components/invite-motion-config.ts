@@ -1,6 +1,6 @@
 import type { ThemeMotionProfile } from "@lumiere/themes";
 
-export type InviteMotionIntensity = "none" | "low" | "premium";
+export type InviteMotionIntensity = "high" | "low" | "none";
 
 export type InviteMotionPreset = {
   intersectionThreshold: number;
@@ -28,7 +28,7 @@ export const inviteMotionPresets = {
     revealDistance: 10,
     revealDuration: 560,
   },
-  premium: {
+  high: {
     intersectionThreshold: 0.12,
     maxMotionBlur: 3.2,
     parallaxDistance: 88,
@@ -40,9 +40,9 @@ export const inviteMotionPresets = {
 
 const profileIntensity = {
   calm: "low",
-  immersive: "premium",
-  playful: "premium",
-  seasonal: "premium",
+  immersive: "high",
+  playful: "high",
+  seasonal: "high",
 } satisfies Record<ThemeMotionProfile, InviteMotionIntensity>;
 
 export function resolveInviteMotionIntensity(
