@@ -61,22 +61,47 @@ describe("SectionBuilderWorkspace", () => {
 
   it("shows validation for enabled sections with missing required fields", async () => {
     const user = userEvent.setup();
+    const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({
+      sections: [savedLegacyStorySection],
+    }));
 
-    renderWithAuth(createApiClientStub());
+    renderWithAuth(createApiClientStub({ listEventSections }));
 
     await screen.findByText("Configure content for Spring Dinner");
-    await user.click(screen.getByRole("button", { name: "Open Story editor" }));
     const storyEditor = within(screen.getByRole("region", { name: "Story" }));
+    const legacyBody = storyEditor.getByLabelText("Paragraph body") as HTMLTextAreaElement;
 
     await user.click(storyEditor.getByLabelText("Enable Story"));
-    await user.clear(storyEditor.getByLabelText(/^Paragraph/));
+    expect(legacyBody.value).toBe("A legacy paragraph without a title.");
+
+    await user.type(storyEditor.getByLabelText("Paragraph title (optional)"), "First chapter");
+    await user.click(storyEditor.getByRole("button", { name: "Add story paragraph" }));
+
+    const titleInputs = storyEditor.getAllByLabelText("Paragraph title (optional)");
+    const bodyInputs = storyEditor.getAllByLabelText("Paragraph body");
+
+    await user.type(titleInputs[1]!, "Second chapter");
+    await user.clear(bodyInputs[1]!);
+    await user.type(bodyInputs[1]!, "A structured paragraph with a title.");
+    await user.click(storyEditor.getAllByRole("button", { name: "Move up" })[1]!);
+
+    expect(
+      (storyEditor.getAllByLabelText("Paragraph title (optional)")[0] as HTMLInputElement).value,
+    ).toBe("Second chapter");
+    expect((storyEditor.getAllByLabelText("Paragraph body")[0] as HTMLTextAreaElement).value).toBe(
+      "A structured paragraph with a title.",
+    );
+
+    await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);
     await user.click(storyEditor.getByRole("button", { name: "Save sections" }));
 
     expect(
       await screen.findByText("Check the highlighted section fields before saving."),
     ).toBeTruthy();
-    expect(storyEditor.getByLabelText(/^Paragraph/).getAttribute("aria-invalid")).toBe("true");
-    expect(storyEditor.getAllByText(/paragraphs\.0:/).length).toBeGreaterThan(0);
+    expect(storyEditor.getAllByLabelText("Paragraph body")[0]!.getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(storyEditor.getAllByText(/paragraphs\.0\.body:/).length).toBeGreaterThan(0);
   });
 
   it("locks enabled required sections once the event is published", async () => {
@@ -377,6 +402,26 @@ const savedIntroductionSection: EventSection = {
     layout: "editorial",
   },
   sortOrder: 0,
+  updatedAt: "2030-01-01T00:00:00.000Z",
+  visibility: "public",
+};
+
+const savedLegacyStorySection: EventSection = {
+  content: {
+    paragraphs: ["A legacy paragraph without a title."],
+    title: "Our story",
+  },
+  createdAt: "2030-01-01T00:00:00.000Z",
+  enabled: false,
+  eventId: "evt_123",
+  id: "section_story",
+  sectionKey: "story",
+  sectionType: "story",
+  settings: {
+    density: "balanced",
+    layout: "timeline",
+  },
+  sortOrder: 3,
   updatedAt: "2030-01-01T00:00:00.000Z",
   visibility: "public",
 };

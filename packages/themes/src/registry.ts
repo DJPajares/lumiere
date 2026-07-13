@@ -118,7 +118,17 @@ export function validateThemeSection(
     return { ok: false, issues };
   }
 
-  return { ok: true, section, theme };
+  return {
+    ok: true,
+    section:
+      section.sectionType === "story"
+        ? {
+            ...section,
+            content: contentResult.data as typeof section.content,
+          }
+        : section,
+    theme,
+  };
 }
 
 export function validateThemeSections(themeId: ThemeId, sections: EventSectionMutationInput[]) {

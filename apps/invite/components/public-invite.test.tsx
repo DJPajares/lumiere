@@ -28,6 +28,18 @@ describe("public invite section renderers", () => {
           sectionType: "introduction",
           sortOrder: 0,
         }),
+        createSection({
+          content: {
+            paragraphs: [
+              { title: "Chapter one", body: "A titled story paragraph." },
+              { body: "An untitled story paragraph." },
+            ],
+            title: "Our story",
+          },
+          sectionKey: "story",
+          sectionType: "story",
+          sortOrder: 1,
+        }),
       ]);
       invite.selectedThemeId = themeId;
       invite.themeMode = themeId === "celestial-gold" ? "dark" : "light";
@@ -38,6 +50,9 @@ describe("public invite section renderers", () => {
       expect(html).toContain(`data-composition-map="${compositionMap}"`);
       expect(html).toContain(heroClassName);
       expect(html).toContain(`${themeId} event portrait`);
+      expect(html).toContain("Chapter one");
+      expect(html).toContain("A titled story paragraph.");
+      expect(html).toContain("An untitled story paragraph.");
 
       return `${compositionMap}:${heroClassName}`;
     });
@@ -175,6 +190,8 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Map preview");
     expect(html).toContain("Garden portrait at golden hour");
     expect(html).toContain("Garden aisle at dusk");
+    expect(html).toContain("First the quiet hello.");
+    expect(html).toContain("Then a life gathered around one table.");
   });
 
   it("respects section settings for columns, density, variants, and swatches", () => {

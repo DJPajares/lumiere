@@ -9,6 +9,7 @@ import {
   getSectionDefinition,
   getTheme,
   isThemeId,
+  normalizeStoryParagraphs,
   validateEventTypeSections,
   type SectionBlueprintRequirement,
   type ThemeDefinition,
@@ -1811,7 +1812,7 @@ const rsvpQuestionPresets = {
 } as const;
 
 function StoryFields({ controller }: { controller: SectionFieldController }) {
-  const paragraphs = readStringArray(controller.content.paragraphs);
+  const paragraphs = normalizeStoryParagraphs(controller.content.paragraphs);
 
   return (
     <div className="grid gap-5">
@@ -1820,12 +1821,12 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
         addLabel="Add story paragraph"
         controller={controller}
         emptyLabel="No story paragraphs yet."
-        items={paragraphs.map((paragraph) => ({ paragraph }))}
+        items={paragraphs}
         label="Story paragraphs"
         onAdd={() =>
           controller.updateContentValue(
             ["paragraphs"],
-            [...paragraphs, "Add a short story paragraph."],
+            [...paragraphs, { body: "Add a short story paragraph." }],
           )
         }
         onMove={(from, to) =>
@@ -1838,14 +1839,22 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
           )
         }
         renderItem={(_, index) => (
-          <TextField
-            controller={controller}
-            label="Paragraph"
-            multiline
-            path={["paragraphs", index]}
-            required
-            scope="content"
-          />
+          <div className="grid gap-4">
+            <TextField
+              controller={controller}
+              label="Paragraph title (optional)"
+              path={["paragraphs", index, "title"]}
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Paragraph body"
+              multiline
+              path={["paragraphs", index, "body"]}
+              required
+              scope="content"
+            />
+          </div>
         )}
       />
       <AssetField controller={controller} label="Story image" path={["image"]} />
@@ -2812,7 +2821,7 @@ function PreviewRsvp({ content, settings }: { content: JsonObject; settings: Jso
 }
 
 function PreviewStory({ content }: { content: JsonObject }) {
-  const paragraphs = readStringArray(content.paragraphs);
+  const paragraphs = normalizeStoryParagraphs(content.paragraphs);
   const image = readAsset(content.image);
 
   return (
@@ -2824,12 +2833,14 @@ function PreviewStory({ content }: { content: JsonObject }) {
         {paragraphs.length > 0 ? (
           <div className="grid gap-3">
             {paragraphs.map((paragraph, index) => (
-              <p
-                className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]"
-                key={index}
-              >
-                {paragraph}
-              </p>
+              <div className="grid gap-1" key={index}>
+                {paragraph.title ? (
+                  <h4 className="text-sm font-semibold">{paragraph.title}</h4>
+                ) : null}
+                <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
+                  {paragraph.body}
+                </p>
+              </div>
             ))}
           </div>
         ) : (
@@ -3304,12 +3315,14 @@ function createSectionDrafts({
     const existing = existingByType.get(sectionType);
     const definition = getSectionDefinition(sectionType);
     const blueprint = getSectionBlueprint(event.eventType, sectionType);
+    const content =
+      existing?.content ??
+      blueprint?.createDefaultContent(event) ??
+      defaultContentForSection(sectionType, event);
 
     return {
       contentText: formatJsonText(
-        existing?.content ??
-          blueprint?.createDefaultContent(event) ??
-          defaultContentForSection(sectionType, event),
+        normalizeSectionContentForEditor(sectionType, content as JsonObject),
       ),
       enabled: existing?.enabled ?? blueprint?.defaultEnabled ?? false,
       id: existing?.id,
@@ -3321,6 +3334,17 @@ function createSectionDrafts({
         existing?.visibility ?? blueprint?.defaultVisibility ?? definition.defaultVisibility,
     };
   });
+}
+
+function normalizeSectionContentForEditor(sectionType: SectionType, content: JsonObject) {
+  if (sectionType !== "story") {
+    return content;
+  }
+
+  return {
+    ...content,
+    paragraphs: normalizeStoryParagraphs(content.paragraphs),
+  };
 }
 
 export function parseSectionDrafts(

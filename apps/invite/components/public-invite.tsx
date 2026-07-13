@@ -2,7 +2,9 @@ import {
   getSectionDefinition,
   getTheme,
   isThemeId,
+  normalizeStoryParagraphs,
   resolveThemeRendererSlot,
+  type StoryParagraph,
   type ThemeDefinition,
   type ThemeMotionKind,
   type ThemeSectionComposition,
@@ -761,7 +763,7 @@ function StorySection({
   titleId: string;
 }) {
   const title = readString(content.title) ?? "Story";
-  const paragraphs = readStringArray(content.paragraphs);
+  const paragraphs: StoryParagraph[] = normalizeStoryParagraphs(content.paragraphs);
   const image = readAsset(content.image);
   const isTimeline = composition === "timeline";
 
@@ -795,8 +797,20 @@ function StorySection({
                   className="absolute -left-[1.65rem] top-2 size-2 rounded-full bg-[var(--accent)]"
                 />
               ) : null}
+              {paragraph.title ? (
+                <h3
+                  className={joinClassNames(
+                    "lumiere-story-entry-title font-semibold",
+                    isTimeline
+                      ? "text-sm uppercase tracking-[0.12em] text-[var(--accent-strong)]"
+                      : "text-lg leading-7",
+                  )}
+                >
+                  {paragraph.title}
+                </h3>
+              ) : null}
               <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
-                {paragraph}
+                {paragraph.body}
               </p>
             </div>
           ))}

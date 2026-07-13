@@ -618,8 +618,58 @@ describe("theme registry", () => {
 
   it("validates sample event sections against a supported theme", () => {
     const results = validateThemeSections("premium", [...baseSections]);
+    const legacyStory = validateThemeSection("premium", {
+      sectionType: "story",
+      sectionKey: "legacy-story",
+      sortOrder: 4,
+      visibility: "public",
+      content: {
+        paragraphs: ["A paragraph saved before story titles existed."],
+        title: "Our story",
+      },
+      settings: {},
+    });
+    const structuredStory = validateThemeSection("premium", {
+      sectionType: "story",
+      sectionKey: "structured-story",
+      sortOrder: 5,
+      visibility: "public",
+      content: {
+        paragraphs: [
+          { title: "Chapter one", body: "A titled paragraph." },
+          { title: "", body: "An untitled paragraph." },
+        ],
+        title: "Our story",
+      },
+      settings: {},
+    });
+    const missingBody = validateThemeSection("premium", {
+      sectionType: "story",
+      sectionKey: "invalid-story",
+      sortOrder: 6,
+      visibility: "public",
+      content: {
+        paragraphs: [{ title: "A title is not enough" }],
+        title: "Our story",
+      },
+      settings: {},
+    });
 
     expect(results.every((result) => result.ok)).toBe(true);
+    expect(legacyStory.ok).toBe(true);
+    if (legacyStory.ok) {
+      expect(legacyStory.section.content.paragraphs).toEqual([
+        { body: "A paragraph saved before story titles existed." },
+      ]);
+    }
+    expect(structuredStory.ok).toBe(true);
+    if (structuredStory.ok) {
+      expect(structuredStory.section.content.paragraphs).toEqual([
+        { title: "Chapter one", body: "A titled paragraph." },
+        { body: "An untitled paragraph." },
+      ]);
+    }
+    expect(missingBody.ok).toBe(false);
   });
 
   it("rejects public RSVP sections", () => {

@@ -74,11 +74,53 @@ export const dateContentSchema = z.object({
   countdownLabel: z.string().trim().max(80).optional(),
 });
 
+export const storyParagraphTitleMaxLength = 120;
+export const storyParagraphBodyMaxLength = 1200;
+
+export const storyParagraphSchema = z.preprocess(
+  (value) => (typeof value === "string" ? { body: value } : value),
+  z
+    .object({
+      title: z.string().trim().max(storyParagraphTitleMaxLength).optional(),
+      body: nonEmptyString.max(storyParagraphBodyMaxLength),
+    })
+    .transform(({ title, body }): StoryParagraph => (title ? { title, body } : { body })),
+);
+
+export type StoryParagraph = {
+  title?: string;
+  body: string;
+};
+
+export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((paragraph) => {
+    if (typeof paragraph === "string") {
+      return { body: paragraph };
+    }
+
+    if (typeof paragraph !== "object" || paragraph === null || Array.isArray(paragraph)) {
+      return { body: "" };
+    }
+
+    const title =
+      "title" in paragraph && typeof paragraph.title === "string" ? paragraph.title : undefined;
+    const body = "body" in paragraph && typeof paragraph.body === "string" ? paragraph.body : "";
+
+    return title === undefined ? { body } : { title, body };
+  });
+}
+
 export const storyContentSchema = z.object({
   title: nonEmptyString.max(160),
-  paragraphs: z.array(nonEmptyString.max(1200)).min(1).max(8),
+  paragraphs: z.array(storyParagraphSchema).min(1).max(8),
   image: assetSchema.optional(),
 });
+
+export type StoryContent = z.infer<typeof storyContentSchema>;
 
 export const detailsContentSchema = z.object({
   title: nonEmptyString.max(160),

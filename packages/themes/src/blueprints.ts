@@ -444,7 +444,7 @@ function defaultContent(sectionType: SectionType, event: EventBlueprintContext) 
 
   if (sectionType === "story") {
     return {
-      paragraphs: ["Share a short note about this celebration."],
+      paragraphs: [{ body: "Share a short note about this celebration." }],
       title: "Our story",
     };
   }
