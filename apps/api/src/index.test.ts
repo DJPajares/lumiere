@@ -682,6 +682,8 @@ describe("API app", () => {
   it("serializes database event timestamps as shared API datetimes", () => {
     const event = toApiEvent({
       createdAt: "2026-07-08 00:00:00+00",
+      deletedAt: null,
+      deletedByUserId: null,
       endsAt: null,
       eventType: "launch",
       id: eventId,
@@ -689,6 +691,7 @@ describe("API app", () => {
       publicAccessCodeHash: null,
       publicSettingsJson: {},
       publicSlug: "new-launch",
+      purgeAfter: null,
       rsvpSettingsJson: {},
       selectedThemeId: null,
       startsAt: "2026-12-01 11:00:00+00",
@@ -1263,31 +1266,70 @@ describe("API app", () => {
     expect(updateEvent).not.toHaveBeenCalled();
   });
 
-  it("archives an event instead of hard deleting it", async () => {
-    const archivedEvent = {
+  it("soft deletes an owner-confirmed event and restores it as a draft", async () => {
+    const publishedEvent = {
       ...baseEvent,
+      status: "published" as const,
+    };
+    const deletedEvent = {
+      ...publishedEvent,
+      deletedAt: "2026-07-08T02:00:00.000Z",
+      purgeAfter: "2026-08-07T02:00:00.000Z",
       status: "archived" as const,
       updatedAt: "2026-07-08T02:00:00.000Z",
+    };
+    const restoredEvent = {
+      ...baseEvent,
+      status: "draft" as const,
+      updatedAt: "2026-07-08T03:00:00.000Z",
     };
     const { authStore } = createTestAuthStore({
       access: roleAccess("owner"),
     });
-    const { archiveEvent, eventStore } = createTestEventStore({
-      archivedEvent,
+    const { deleteEvent, eventStore, restoreEvent } = createTestEventStore({
+      deletedEvent,
+      events: [publishedEvent],
+      restoredEvent,
     });
     const app = createApp({ authStore, config: loadTestConfig(), eventStore });
     const response = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({ confirmationTitle: baseEvent.title }),
       headers: {
         authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
       },
       method: "DELETE",
     });
 
     await expect(response.json()).resolves.toEqual({
-      event: archivedEvent,
+      event: deletedEvent,
     });
     expect(response.status).toBe(200);
-    expect(archiveEvent).toHaveBeenCalledWith(eventId);
+    expect(deleteEvent).toHaveBeenCalledWith(eventId, localUser.id, baseEvent.title);
+
+    const repeatedDeleteResponse = await app.request(`/events/${eventId}`, {
+      body: JSON.stringify({ confirmationTitle: baseEvent.title }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+      },
+      method: "DELETE",
+    });
+
+    await expect(repeatedDeleteResponse.json()).resolves.toEqual({ event: deletedEvent });
+    expect(repeatedDeleteResponse.status).toBe(200);
+    expect(deleteEvent).toHaveBeenCalledTimes(2);
+
+    const restoreResponse = await app.request(`/events/${eventId}/restore`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+      method: "POST",
+    });
+
+    await expect(restoreResponse.json()).resolves.toEqual({ event: restoredEvent });
+    expect(restoreResponse.status).toBe(200);
+    expect(restoreEvent).toHaveBeenCalledWith(eventId, localUser.id);
   });
 
   it("returns registry-backed theme metadata", async () => {
@@ -2919,24 +2961,30 @@ function createTestDashboardDataStore({
 }
 
 function createTestEventStore({
-  archivedEvent = {
+  deletedEvent = {
     ...baseEvent,
+    deletedAt: "2026-07-08T02:00:00.000Z",
+    purgeAfter: "2026-08-07T02:00:00.000Z",
     status: "archived",
   } as Event,
   createError,
   createdEvent = baseEvent,
+  deletedEvents = [],
   events = [baseEvent],
   publishingReadiness = { issues: [], ready: true },
   updatedEvent = baseEvent,
+  restoredEvent = baseEvent,
 }: {
-  archivedEvent?: Event | null;
+  deletedEvent?: Event | null;
   createError?: Error;
   createdEvent?: Event;
+  deletedEvents?: Event[];
   events?: Event[];
   publishingReadiness?: PublishingReadiness | null;
   updatedEvent?: Event | null;
+  restoredEvent?: Event | "expired" | "not_deleted" | null;
 } = {}) {
-  const archiveEvent = vi.fn(async () => archivedEvent);
+  const deleteEvent = vi.fn(async () => deletedEvent);
   const createEvent = vi.fn(async (_ownerUserId: string, _input: EventCreate) => {
     if (createError) {
       throw createError;
@@ -2960,27 +3008,33 @@ function createTestEventStore({
     },
   );
   const listManagedEvents = vi.fn(async () => events);
+  const listDeletedEvents = vi.fn(async () => deletedEvents);
+  const restoreEvent = vi.fn(async () => restoredEvent);
   const updateEvent = vi.fn(async (_eventId: string, _input: EventUpdate) => updatedEvent);
   const eventStore: EventStore = {
-    archiveEvent,
     createEvent,
+    deleteEvent,
     getEvent,
     getEventBySlug,
     getPublishingReadiness,
     isEventSlugAvailable,
+    listDeletedEvents,
     listManagedEvents,
+    restoreEvent,
     updateEvent,
   };
 
   return {
-    archiveEvent,
     createEvent,
+    deleteEvent,
     eventStore,
     getEvent,
     getEventBySlug,
     getPublishingReadiness,
     isEventSlugAvailable,
+    listDeletedEvents,
     listManagedEvents,
+    restoreEvent,
     updateEvent,
   };
 }
@@ -3140,16 +3194,38 @@ function createIntegrationSmokeStores() {
   };
 
   const eventStore: EventStore = {
-    archiveEvent: vi.fn(async (requestedEventId) => {
+    deleteEvent: vi.fn(async (requestedEventId, actorUserId, confirmationTitle) => {
       if (!event || requestedEventId !== event.id) {
         return null;
       }
 
+      if (event.title !== confirmationTitle) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Event title confirmation does not match");
+      }
+
+      if (event.deletedAt) {
+        return event;
+      }
+
       event = {
         ...event,
+        deletedAt: smokeNow,
+        purgeAfter: "2031-01-31T00:00:00.000Z",
         status: "archived",
         updatedAt: smokeNow,
       };
+      activity = [
+        ...activity,
+        {
+          actorId: actorUserId,
+          actorType: "manager",
+          activityType: "event_deleted",
+          createdAt: smokeNow,
+          eventId: event.id,
+          id: "00000000-0000-4000-8000-000000000904",
+          metadata: {},
+        },
+      ];
 
       return event;
     }),
@@ -3194,9 +3270,43 @@ function createIntegrationSmokeStores() {
 
       return event.id === options.exceptEventId;
     }),
-    listManagedEvents: vi.fn(async (userId) =>
-      event && event.ownerUserId === userId ? [event] : [],
+    listDeletedEvents: vi.fn(async (userId) =>
+      event && event.ownerUserId === userId && event.deletedAt ? [event] : [],
     ),
+    listManagedEvents: vi.fn(async (userId) =>
+      event && event.ownerUserId === userId && !event.deletedAt ? [event] : [],
+    ),
+    restoreEvent: vi.fn(async (requestedEventId, actorUserId) => {
+      if (!event || requestedEventId !== event.id) {
+        return null;
+      }
+
+      if (!event.deletedAt) {
+        return "not_deleted" as const;
+      }
+
+      event = {
+        ...event,
+        deletedAt: undefined,
+        purgeAfter: undefined,
+        status: "draft",
+        updatedAt: smokeNow,
+      };
+      activity = [
+        ...activity,
+        {
+          actorId: actorUserId,
+          actorType: "manager",
+          activityType: "event_restored",
+          createdAt: smokeNow,
+          eventId: event.id,
+          id: "00000000-0000-4000-8000-000000000905",
+          metadata: {},
+        },
+      ];
+
+      return event;
+    }),
     updateEvent: vi.fn(async (requestedEventId, input) => {
       if (!event || requestedEventId !== event.id) {
         return null;

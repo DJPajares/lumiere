@@ -14,7 +14,7 @@ import {
   type RsvpResponse,
   type RsvpSubmission,
 } from "@lumiere/types";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
 
@@ -58,7 +58,13 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       })
       .from(events)
       .innerJoin(eventPublications, eq(eventPublications.eventId, events.id))
-      .where(and(eq(events.publicSlug, eventSlug), eq(events.status, "published")))
+      .where(
+        and(
+          eq(events.publicSlug, eventSlug),
+          eq(events.status, "published"),
+          isNull(events.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!event) {

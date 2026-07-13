@@ -2,7 +2,7 @@ import type { ApiEnv } from "@lumiere/config";
 import type { Database } from "@lumiere/db";
 import { eventManagers, events, users } from "@lumiere/db";
 import type { ManagerRole } from "@lumiere/types";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
 import { createHmac, timingSafeEqual, webcrypto } from "node:crypto";
 
@@ -66,7 +66,11 @@ export type EventAccessLookup =
     };
 
 export type AuthStore = {
-  findEventAccess(eventId: string, userId: string): Promise<EventAccessLookup>;
+  findEventAccess(
+    eventId: string,
+    userId: string,
+    options?: { includeDeleted?: boolean },
+  ): Promise<EventAccessLookup>;
   upsertUserProfile(input: UpsertUserProfileInput): Promise<LocalUser>;
 };
 
@@ -80,14 +84,18 @@ const jwksCache = new Map<string, { expiresAt: number; keys: SupabaseJwksKey[] }
 const jwksCacheTtlMs = 10 * 60 * 1000;
 
 export const createDrizzleAuthStore = (db: Database): AuthStore => ({
-  async findEventAccess(eventId, userId) {
+  async findEventAccess(eventId, userId, options = {}) {
     const [event] = await db
       .select({
         id: events.id,
         ownerUserId: events.ownerUserId,
       })
       .from(events)
-      .where(eq(events.id, eventId))
+      .where(
+        options.includeDeleted
+          ? eq(events.id, eventId)
+          : and(eq(events.id, eventId), isNull(events.deletedAt)),
+      )
       .limit(1);
 
     if (!event) {
@@ -205,15 +213,19 @@ export const requireManagerAuth = ({
 export const assertEventAccess = async ({
   authStore,
   eventId,
+  includeDeleted = false,
   manager,
   minimumRole = "viewer",
 }: {
   authStore: AuthStore;
   eventId: string;
+  includeDeleted?: boolean;
   manager: AuthenticatedManager;
   minimumRole?: ManagerRole;
 }) => {
-  const lookup = await authStore.findEventAccess(eventId, manager.user.id);
+  const lookup = includeDeleted
+    ? await authStore.findEventAccess(eventId, manager.user.id, { includeDeleted: true })
+    : await authStore.findEventAccess(eventId, manager.user.id);
 
   if (!lookup.eventFound) {
     throw new ApiHttpError("NOT_FOUND", "Event not found");

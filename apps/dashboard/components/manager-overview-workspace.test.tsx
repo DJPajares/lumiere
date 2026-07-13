@@ -130,7 +130,10 @@ describe("ManagerOverviewWorkspace", () => {
 
 function renderOverview(apiClient: Partial<DashboardApiClient>) {
   const authValue: DashboardAuthContextValue = {
-    apiClient: apiClient as DashboardApiClient,
+    apiClient: {
+      listDeletedEvents: async () => ({ events: [] }),
+      ...apiClient,
+    } as DashboardApiClient,
     errorMessage: null,
     getAccessToken: async () => "manager-token",
     session: {

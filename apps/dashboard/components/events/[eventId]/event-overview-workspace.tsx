@@ -416,8 +416,12 @@ function formatActivityTitle(activity: ActivityEvent) {
   switch (activity.activityType) {
     case "event_created":
       return "Event created";
+    case "event_deleted":
+      return "Event deleted";
     case "event_published":
       return "Event published";
+    case "event_restored":
+      return "Event restored";
     case "guest_group_created":
       return "Guest group created";
     case "guest_invite_opened":

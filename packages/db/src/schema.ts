@@ -73,6 +73,7 @@ export const schemaIndexNames = {
   eventsPublicSlug: "events_public_slug_unique",
   eventSlugAliasesSlug: "event_slug_aliases_slug_unique",
   eventSlugAliasesEventId: "event_slug_aliases_event_id_idx",
+  eventsOwnerDeletedAt: "events_owner_deleted_at_idx",
   eventsOwnerUserId: "events_owner_user_id_idx",
   eventsStatusStartsAt: "events_status_starts_at_idx",
   eventManagersEventUser: "event_managers_event_user_unique",
@@ -133,10 +134,16 @@ export const events = pgTable(
       .notNull()
       .default(jsonObjectDefault),
     createdAt: createdAtColumn(),
+    deletedAt: timestamp("deleted_at", { mode: "string", withTimezone: true }),
+    deletedByUserId: uuid("deleted_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    purgeAfter: timestamp("purge_after", { mode: "string", withTimezone: true }),
     updatedAt: updatedAtColumn(),
   },
   (table) => [
     uniqueIndex(schemaIndexNames.eventsPublicSlug).on(table.publicSlug),
+    index(schemaIndexNames.eventsOwnerDeletedAt).on(table.ownerUserId, table.deletedAt),
     index(schemaIndexNames.eventsOwnerUserId).on(table.ownerUserId),
     index(schemaIndexNames.eventsStatusStartsAt).on(table.status, table.startsAt),
   ],
@@ -381,7 +388,8 @@ export const themeRegistrySnapshots = pgTable(
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
-  ownedEvents: many(events),
+  deletedEvents: many(events, { relationName: "eventDeleter" }),
+  ownedEvents: many(events, { relationName: "eventOwner" }),
   managerMemberships: many(eventManagers),
   notifications: many(notifications),
 }));
@@ -389,6 +397,12 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const eventsRelations = relations(events, ({ one, many }) => ({
   owner: one(users, {
     fields: [events.ownerUserId],
+    relationName: "eventOwner",
+    references: [users.id],
+  }),
+  deletedBy: one(users, {
+    fields: [events.deletedByUserId],
+    relationName: "eventDeleter",
     references: [users.id],
   }),
   managers: many(eventManagers),

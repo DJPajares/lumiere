@@ -23,6 +23,7 @@ import {
   type ActivityEventsResponse,
   type ApiError,
   type EventCreateRequest,
+  type EventDeletionRequest,
   type EventResponse,
   type EventPublishingReadinessResponse,
   type EventSectionsResponse,
@@ -140,8 +141,9 @@ export const createApiClient = ({
   };
 
   return {
-    archiveEvent: (eventId: string): Promise<EventResponse> =>
+    deleteEvent: (eventId: string, input: EventDeletionRequest): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
+        body: input,
         method: "DELETE",
       }),
     createEvent: (input: EventCreateRequest): Promise<EventResponse> =>
@@ -233,6 +235,8 @@ export const createApiClient = ({
     listEventSections: (eventId: string): Promise<EventSectionsResponse> =>
       request(`/events/${encodePathSegment(eventId)}/sections`, eventSectionsResponseSchema),
     listEvents: (): Promise<EventsListResponse> => request("/events", eventsListResponseSchema),
+    listDeletedEvents: (): Promise<EventsListResponse> =>
+      request("/events/trash", eventsListResponseSchema),
     listGuestGroups: (eventId: string): Promise<GuestGroupsResponse> =>
       request(`/events/${encodePathSegment(eventId)}/guest-groups`, guestGroupsResponseSchema),
     listThemes: (): Promise<ThemesResponse> =>
@@ -261,6 +265,10 @@ export const createApiClient = ({
           method: "POST",
         },
       ),
+    restoreEvent: (eventId: string): Promise<EventResponse> =>
+      request(`/events/${encodePathSegment(eventId)}/restore`, eventResponseSchema, {
+        method: "POST",
+      }),
     submitRsvp: (
       eventSlug: string,
       guestToken: string,

@@ -1,5 +1,6 @@
 import type { Database } from "@lumiere/db";
 import {
+  activityEvents,
   eventManagers,
   eventPublications,
   eventRsvpSettings,
@@ -18,6 +19,7 @@ import {
   validateThemeSections,
 } from "@lumiere/themes";
 import {
+  eventDeletionRetentionDays,
   rsvpSettingsSchema,
   type ApiFieldError,
   type Event,
@@ -26,7 +28,7 @@ import {
   type EventSectionMutation,
   type EventUpdate,
 } from "@lumiere/types";
-import { and, asc, desc, eq, getTableColumns, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, isNotNull, isNull, ne, sql } from "drizzle-orm";
 
 import { ApiHttpError } from "./errors";
 import { toIsoDateTime } from "./serialization";
@@ -49,15 +51,23 @@ export type PublishingReadiness = {
 };
 
 export type EventStore = {
-  archiveEvent(eventId: string): Promise<Event | null>;
   createEvent(ownerUserId: string, input: EventCreatePersistence): Promise<Event>;
+  deleteEvent(
+    eventId: string,
+    actorUserId: string,
+    confirmationTitle: string,
+  ): Promise<Event | null>;
   getEvent(eventId: string): Promise<Event | null>;
   getEventBySlug(slug: string): Promise<Event | null>;
   getPublishingReadiness(eventId: string): Promise<PublishingReadiness | null>;
   isEventSlugAvailable(slug: string, options?: { exceptEventId?: string }): Promise<boolean>;
+  listDeletedEvents(userId: string): Promise<Event[]>;
   listManagedEvents(userId: string): Promise<Event[]>;
+  restoreEvent(eventId: string, actorUserId: string): Promise<EventRestoreResult>;
   updateEvent(eventId: string, input: EventUpdatePersistence): Promise<Event | null>;
 };
+
+export type EventRestoreResult = Event | "expired" | "not_deleted" | null;
 
 export type EventCreatePersistence = Omit<EventCreate, "publicAccessCode"> & {
   publicAccessCodeHash?: string;
@@ -68,25 +78,6 @@ export type EventUpdatePersistence = Omit<EventUpdate, "publicAccessCode"> & {
 };
 
 export const createDrizzleEventStore = (db: Database): EventStore => ({
-  async archiveEvent(eventId) {
-    const [event] = await db
-      .update(events)
-      .set({
-        status: "archived",
-        updatedAt: sql`now()`,
-      })
-      .where(eq(events.id, eventId))
-      .returning();
-
-    if (!event) {
-      return null;
-    }
-
-    const settings = await getEventSettings(db, event.id);
-
-    return toApiEvent(event, settings?.themeSettings, settings?.rsvpSettings);
-  },
-
   async createEvent(ownerUserId, input) {
     return withDuplicateSlugHandling(async () =>
       db.transaction(async (tx) => {
@@ -142,6 +133,70 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
         return toApiEvent(event, themeSettings, rsvpSettings);
       }),
     );
+  },
+
+  async deleteEvent(eventId, actorUserId, confirmationTitle) {
+    return db.transaction(async (tx) => {
+      const database = tx as unknown as StoreDatabase;
+      const current = await getManagerEventRecord(database, eq(events.id, eventId), {
+        includeDeleted: true,
+      });
+
+      if (!current) {
+        return null;
+      }
+
+      if (current.event.title !== confirmationTitle) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Event title confirmation does not match", {
+          fields: [
+            {
+              message: `Type ${current.event.title} exactly to delete this event`,
+              path: ["confirmationTitle"],
+            },
+          ],
+        });
+      }
+
+      if (current.event.deletedAt) {
+        return toApiEvent(current.event, current.themeSettings, current.rsvpSettings);
+      }
+
+      const [event] = await tx
+        .update(events)
+        .set({
+          deletedAt: sql`now()`,
+          deletedByUserId: actorUserId,
+          purgeAfter: sql`now() + (${eventDeletionRetentionDays} * interval '1 day')`,
+          status: "archived",
+          updatedAt: sql`now()`,
+        })
+        .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+        .returning();
+
+      if (!event) {
+        const deleted = await getManagerEventRecord(database, eq(events.id, eventId), {
+          includeDeleted: true,
+        });
+
+        return deleted?.event.deletedAt
+          ? toApiEvent(deleted.event, deleted.themeSettings, deleted.rsvpSettings)
+          : null;
+      }
+
+      await tx.insert(activityEvents).values({
+        actorId: actorUserId,
+        actorType: "manager",
+        activityType: "event_deleted",
+        eventId,
+        metadataJson: {
+          previousStatus: current.event.status,
+          purgeAfter: event.purgeAfter,
+          retentionDays: eventDeletionRetentionDays,
+        },
+      });
+
+      return toApiEvent(event, current.themeSettings, current.rsvpSettings);
+    });
   },
 
   async getEvent(eventId) {
@@ -202,17 +257,99 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
       .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
       .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
       .where(
-        sql`${events.ownerUserId} = ${userId} or exists (
+        and(
+          isNull(events.deletedAt),
+          sql`(${events.ownerUserId} = ${userId} or exists (
           select 1 from ${eventManagers}
           where ${eventManagers.eventId} = ${events.id}
             and ${eventManagers.userId} = ${userId}
-        )`,
+        ))`,
+        ),
       )
       .orderBy(desc(events.createdAt));
 
     return records.map((record) =>
       toApiEvent(record.event, record.themeSettings, record.rsvpSettings),
     );
+  },
+
+  async listDeletedEvents(userId) {
+    const records = await db
+      .select({
+        event: events,
+        rsvpSettings: eventRsvpSettings,
+        themeSettings: eventThemeSettings,
+      })
+      .from(events)
+      .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
+      .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
+      .where(
+        and(
+          isNotNull(events.deletedAt),
+          sql`(${events.ownerUserId} = ${userId} or exists (
+            select 1 from ${eventManagers}
+            where ${eventManagers.eventId} = ${events.id}
+              and ${eventManagers.userId} = ${userId}
+              and ${eventManagers.role} = 'owner'
+          ))`,
+        ),
+      )
+      .orderBy(desc(events.deletedAt));
+
+    return records.map((record) =>
+      toApiEvent(record.event, record.themeSettings, record.rsvpSettings),
+    );
+  },
+
+  async restoreEvent(eventId, actorUserId) {
+    return db.transaction(async (tx) => {
+      const database = tx as unknown as StoreDatabase;
+      const current = await getManagerEventRecord(database, eq(events.id, eventId), {
+        includeDeleted: true,
+      });
+
+      if (!current) {
+        return null;
+      }
+
+      if (!current.event.deletedAt) {
+        return "not_deleted";
+      }
+
+      const [event] = await tx
+        .update(events)
+        .set({
+          deletedAt: null,
+          deletedByUserId: null,
+          purgeAfter: null,
+          status: "draft",
+          updatedAt: sql`now()`,
+        })
+        .where(
+          and(
+            eq(events.id, eventId),
+            isNotNull(events.deletedAt),
+            gt(events.purgeAfter, sql`now()`),
+          ),
+        )
+        .returning();
+
+      if (!event) {
+        return "expired";
+      }
+
+      await tx.insert(activityEvents).values({
+        actorId: actorUserId,
+        actorType: "manager",
+        activityType: "event_restored",
+        eventId,
+        metadataJson: {
+          restoredAsStatus: "draft",
+        },
+      });
+
+      return toApiEvent(event, current.themeSettings, current.rsvpSettings);
+    });
   },
 
   async updateEvent(eventId, input) {
@@ -248,7 +385,7 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
               : {}),
             updatedAt: sql`now()`,
           })
-          .where(eq(events.id, eventId))
+          .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
           .returning();
 
         if (!event) {
@@ -461,11 +598,13 @@ export const toApiEvent = (
   rsvpSettings?: RsvpSettingsRow | null,
 ): Event => ({
   createdAt: toIsoDateTime(event.createdAt),
+  deletedAt: event.deletedAt ? toIsoDateTime(event.deletedAt) : undefined,
   endsAt: event.endsAt ? toIsoDateTime(event.endsAt) : undefined,
   eventType: event.eventType,
   id: event.id,
   ownerUserId: event.ownerUserId,
   publicSettings: event.publicSettingsJson as Event["publicSettings"],
+  purgeAfter: event.purgeAfter ? toIsoDateTime(event.purgeAfter) : undefined,
   hasPublicAccessCode: event.publicAccessCodeHash !== null,
   rsvpSettings: rsvpSettingsSchema.parse(rsvpSettings?.settingsJson ?? {}),
   selectedThemeId: themeSettings?.selectedThemeId ?? undefined,
@@ -484,6 +623,7 @@ export const toApiEvent = (
 const getManagerEventRecord = async (
   db: StoreDatabase,
   predicate: ReturnType<typeof eq>,
+  options: { includeDeleted?: boolean } = {},
 ): Promise<ManagerEventRecord | null> => {
   const [record] = await db
     .select({
@@ -494,21 +634,10 @@ const getManagerEventRecord = async (
     .from(events)
     .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
     .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
-    .where(predicate)
+    .where(options.includeDeleted ? predicate : and(predicate, isNull(events.deletedAt)))
     .limit(1);
 
   return record ?? null;
-};
-
-const getEventSettings = async (db: StoreDatabase, eventId: string) => {
-  const record = await getManagerEventRecord(db, eq(events.id, eventId));
-
-  return record
-    ? {
-        rsvpSettings: record.rsvpSettings,
-        themeSettings: record.themeSettings,
-      }
-    : null;
 };
 
 const listDraftSections = async (db: StoreDatabase, eventId: string): Promise<EventSection[]> => {

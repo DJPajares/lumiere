@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   eventCreateSchema,
+  eventDeletionSchema,
   eventSchema,
   eventSectionSchema,
   eventSectionsUpdateSchema,
@@ -56,6 +57,9 @@ export type EventCreateResponse = z.infer<typeof eventCreateResponseSchema>;
 
 export const eventUpdateRequestSchema = eventUpdateSchema;
 export type EventUpdateRequest = z.input<typeof eventUpdateRequestSchema>;
+
+export const eventDeletionRequestSchema = eventDeletionSchema;
+export type EventDeletionRequest = z.input<typeof eventDeletionRequestSchema>;
 
 export const eventResponseSchema = z.object({
   event: eventSchema,

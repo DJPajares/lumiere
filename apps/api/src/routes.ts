@@ -12,6 +12,7 @@ import {
   byEventAndNotificationIdParamsSchema,
   byEventIdParamsSchema,
   eventCreateRequestSchema,
+  eventDeletionRequestSchema,
   eventSectionsUpdateRequestSchema,
   eventSlugSuggestionRequestSchema,
   eventThemeUpdateRequestSchema,
@@ -220,6 +221,14 @@ export const createRoutes = ({
     return context.json({
       events,
     });
+  });
+
+  routes.get("/events/trash", requireManagerAuth({ authStore, config }), async (context) => {
+    const store = requireEventStore(eventStore);
+    const manager = context.get("manager");
+    const events = await store.listDeletedEvents(manager.user.id);
+
+    return context.json({ events });
   });
 
   routes.get(
@@ -496,13 +505,20 @@ export const createRoutes = ({
   routes.delete("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
     const stores = requireManagerStores({ authStore, eventStore });
     const eventId = parseEventIdParam(context.req.param("eventId"));
+    const manager = context.get("manager");
     await assertEventAccess({
       authStore: stores.authStore,
       eventId,
-      manager: context.get("manager"),
+      includeDeleted: true,
+      manager,
       minimumRole: "owner",
     });
-    const event = await stores.eventStore.archiveEvent(eventId);
+    const input = await parseJsonBody(context, eventDeletionRequestSchema);
+    const event = await stores.eventStore.deleteEvent(
+      eventId,
+      manager.user.id,
+      input.confirmationTitle,
+    );
 
     if (!event) {
       throw new ApiHttpError("NOT_FOUND", "Event not found");
@@ -512,6 +528,38 @@ export const createRoutes = ({
       event,
     });
   });
+
+  routes.post(
+    "/events/:eventId/restore",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerStores({ authStore, eventStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        includeDeleted: true,
+        manager,
+        minimumRole: "owner",
+      });
+      const result = await stores.eventStore.restoreEvent(eventId, manager.user.id);
+
+      if (!result) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      if (result === "not_deleted") {
+        throw new ApiHttpError("CONFLICT", "Event is not deleted");
+      }
+
+      if (result === "expired") {
+        throw new ApiHttpError("CONFLICT", "Event restoration window has expired");
+      }
+
+      return context.json({ event: result });
+    },
+  );
 
   routes.get(
     "/events/:eventId/theme",

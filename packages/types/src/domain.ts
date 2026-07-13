@@ -37,6 +37,8 @@ export const defaultRsvpResponseFields: RsvpResponseFields = {
   collectGuestNames: true,
 };
 
+export const eventDeletionRetentionDays = 30;
+
 export const rsvpSettingsSchema = z
   .object({
     collectGuestMessage: z.boolean().default(defaultRsvpResponseFields.collectGuestMessage),
@@ -72,6 +74,8 @@ export const eventSchema = z.object({
   hasPublicAccessCode: z.boolean().optional(),
   rsvpSettings: rsvpSettingsSchema.prefault({}),
   createdAt: isoDateTimeSchema,
+  deletedAt: isoDateTimeSchema.optional(),
+  purgeAfter: isoDateTimeSchema.optional(),
   updatedAt: isoDateTimeSchema,
 });
 export type Event = z.infer<typeof eventSchema>;
@@ -156,6 +160,11 @@ export const eventUpdateSchema = z
   });
 export type EventUpdateInput = z.input<typeof eventUpdateSchema>;
 export type EventUpdate = z.output<typeof eventUpdateSchema>;
+
+export const eventDeletionSchema = z.object({
+  confirmationTitle: nonEmptyStringSchema.max(160),
+});
+export type EventDeletion = z.infer<typeof eventDeletionSchema>;
 
 export const eventManagerSchema = z.object({
   id: idSchema,

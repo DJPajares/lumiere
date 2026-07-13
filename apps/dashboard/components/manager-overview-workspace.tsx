@@ -3,6 +3,7 @@
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button, buttonVariants } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@lumiere/dashboard-ui/components/tabs";
 import { cn } from "@lumiere/dashboard-ui/lib/utils";
 import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
@@ -27,6 +28,7 @@ type EventInsight = {
 };
 
 type ManagerOverviewData = {
+  deletedEvents: Event[];
   events: Event[];
   insights: EventInsight[];
 };
@@ -49,6 +51,7 @@ export function ManagerOverviewWorkspace() {
   const requestRevision = useRef(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [restoringEventId, setRestoringEventId] = useState<string | null>(null);
 
   const loadOverview = useCallback(async () => {
     const revision = requestRevision.current + 1;
@@ -66,7 +69,10 @@ export function ManagerOverviewWorkspace() {
     setState(initialState);
 
     try {
-      const { events } = await apiClient.listEvents();
+      const [{ events }, { events: deletedEvents }] = await Promise.all([
+        apiClient.listEvents(),
+        apiClient.listDeletedEvents(),
+      ]);
 
       if (revision !== requestRevision.current) {
         return;
@@ -102,7 +108,7 @@ export function ManagerOverviewWorkspace() {
       }
 
       setState({
-        data: { events, insights },
+        data: { deletedEvents, events, insights },
         error: null,
         status: "ready",
       });
@@ -118,6 +124,25 @@ export function ManagerOverviewWorkspace() {
       });
     }
   }, [apiClient]);
+
+  const restoreEvent = async (event: Event) => {
+    if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
+      return;
+    }
+
+    setRestoringEventId(event.id);
+
+    try {
+      await apiClient.restoreEvent(event.id);
+      toast.success(`${event.title} was restored as a draft.`);
+      await loadOverview();
+    } catch (error) {
+      toast.error(toFriendlyApiMessage(error));
+    } finally {
+      setRestoringEventId(null);
+    }
+  };
 
   useEffect(() => {
     void loadOverview();
@@ -138,12 +163,19 @@ export function ManagerOverviewWorkspace() {
   if (state.data.events.length === 0) {
     return (
       <>
-        <ManagerOverviewEmpty
-          onCreate={() => {
-            setEditingEvent(null);
-            setModalOpen(true);
-          }}
-        />
+        <div className="grid gap-5">
+          <ManagerOverviewEmpty
+            onCreate={() => {
+              setEditingEvent(null);
+              setModalOpen(true);
+            }}
+          />
+          <DeletedEvents
+            events={state.data.deletedEvents}
+            onRestore={(event) => void restoreEvent(event)}
+            restoringEventId={restoringEventId}
+          />
+        </div>
         <EventBasicsModal
           event={editingEvent}
           onOpenChange={setModalOpen}
@@ -167,6 +199,8 @@ export function ManagerOverviewWorkspace() {
           setModalOpen(true);
         }}
         onRefresh={() => void loadOverview()}
+        onRestore={(event) => void restoreEvent(event)}
+        restoringEventId={restoringEventId}
       />
       <EventBasicsModal
         event={editingEvent}
@@ -178,6 +212,7 @@ export function ManagerOverviewWorkspace() {
                 ? {
                     ...current,
                     data: {
+                      deletedEvents: current.data.deletedEvents,
                       events: current.data.events.map((item) =>
                         item.id === event.id ? event : item,
                       ),
@@ -203,11 +238,15 @@ function ManagerOverviewContent({
   onCreate,
   onEdit,
   onRefresh,
+  onRestore,
+  restoringEventId,
 }: {
   data: ManagerOverviewData;
   onCreate: () => void;
   onEdit: (event: Event) => void;
   onRefresh: () => void;
+  onRestore: (event: Event) => void;
+  restoringEventId: string | null;
 }) {
   const now = new Date();
   const overview = useMemo(() => buildManagerOverview(data, now), [data, now]);
@@ -286,7 +325,71 @@ function ManagerOverviewContent({
           <RecentActivity activity={overview.recentActivity} />
         </div>
       </div>
+
+      <DeletedEvents
+        events={data.deletedEvents}
+        onRestore={onRestore}
+        restoringEventId={restoringEventId}
+      />
     </div>
+  );
+}
+
+function DeletedEvents({
+  events,
+  onRestore,
+  restoringEventId,
+}: {
+  events: Event[];
+  onRestore: (event: Event) => void;
+  restoringEventId: string | null;
+}) {
+  if (events.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight">Recently deleted</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Deleted events keep their guest data, settings, activity, and media references during the
+          restoration window. Restored events return as drafts.
+        </p>
+      </div>
+
+      <ul className="mt-4 divide-y divide-border">
+        {events.map((event) => {
+          const restoring = restoringEventId === event.id;
+          const restorable = event.purgeAfter ? Date.parse(event.purgeAfter) > Date.now() : false;
+
+          return (
+            <li
+              className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              key={event.id}
+            >
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold">{event.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {restorable && event.purgeAfter
+                    ? `Restore by ${formatDateTime(event.purgeAfter)}`
+                    : "Restoration window expired"}
+                </p>
+              </div>
+              <Button
+                className="min-h-10"
+                disabled={!restorable || restoringEventId !== null}
+                onClick={() => onRestore(event)}
+                size="sm"
+                variant="outline"
+              >
+                {restoring ? "Restoring event" : "Restore as draft"}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -723,7 +826,9 @@ function formatActivityTitle(activity: ActivityEvent) {
 
   const labels: Record<ActivityEvent["activityType"], string> = {
     event_created: "Event created",
+    event_deleted: "Event deleted",
     event_published: "Event published",
+    event_restored: "Event restored",
     guest_group_created: "Guest group created",
     guest_invite_opened: "Guest invite opened",
     notification_created: "Notification created",

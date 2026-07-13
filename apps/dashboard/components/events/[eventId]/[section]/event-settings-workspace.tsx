@@ -3,12 +3,13 @@
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
-import type { Event } from "@lumiere/types";
+import { eventDeletionRetentionDays, type Event } from "@lumiere/types";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
 import { EventBasicsModal } from "../../event-basics-modal";
+import { EventDeletionModal } from "../../event-deletion-modal";
 import {
   formatDateTime,
   formatEventType,
@@ -28,6 +29,7 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
     status: "loading",
   });
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const loadEvent = useCallback(async () => {
     if (!apiClient) {
@@ -111,11 +113,33 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
         </Button>
       </section>
 
+      <section className="grid gap-4 rounded-[var(--radius-lg)] border border-destructive/30 bg-card p-5 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
+        <div>
+          <p className="text-sm font-semibold text-destructive">Danger zone</p>
+          <h2 className="mt-2 text-lg font-semibold">Delete this event</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Public and guest access stops immediately. The event remains recoverable from Home for{" "}
+            {eventDeletionRetentionDays} days.
+          </p>
+        </div>
+        <Button className="min-h-10" onClick={() => setDeleteOpen(true)} variant="destructive">
+          Delete event
+        </Button>
+      </section>
+
       <EventBasicsModal
         event={event}
         onOpenChange={setEditOpen}
         onSaved={(savedEvent) => setState({ error: null, event: savedEvent, status: "ready" })}
         open={editOpen}
+      />
+      <EventDeletionModal
+        event={event}
+        onDeleted={() => {
+          window.location.assign("/");
+        }}
+        onOpenChange={setDeleteOpen}
+        open={deleteOpen}
       />
     </>
   );

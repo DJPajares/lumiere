@@ -17,7 +17,7 @@ import {
   type PublicGuestContext,
   type RsvpResponseFields,
 } from "@lumiere/types";
-import { and, asc, eq, getTableColumns, or } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, isNull, or } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
 import { toApiEventSection } from "./theme-sections";
@@ -141,6 +141,7 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
     .where(
       and(
         or(eq(events.publicSlug, eventSlug), eq(eventSlugAliases.slug, eventSlug)),
+        isNull(events.deletedAt),
         eq(events.status, "published"),
       ),
     )

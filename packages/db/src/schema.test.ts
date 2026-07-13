@@ -93,6 +93,11 @@ describe("database schema", () => {
 
     expect(eventColumns).not.toHaveProperty("selectedThemeId");
     expect(eventColumns).not.toHaveProperty("rsvpSettingsJson");
+    expect(eventColumns).toMatchObject({
+      deletedAt: expect.anything(),
+      deletedByUserId: expect.anything(),
+      purgeAfter: expect.anything(),
+    });
     expect(themeColumns).toHaveProperty("selectedThemeId");
     expect(rsvpColumns).toHaveProperty("settingsJson");
     expect(sectionColumns).toMatchObject({
@@ -133,6 +138,7 @@ describe("database schema", () => {
     expect(schemaIndexNames).toMatchObject({
       eventsPublicSlug: "events_public_slug_unique",
       eventSlugAliasesSlug: "event_slug_aliases_slug_unique",
+      eventsOwnerDeletedAt: "events_owner_deleted_at_idx",
       eventsOwnerUserId: "events_owner_user_id_idx",
       guestGroupsInviteTokenHash: "guest_groups_invite_token_hash_unique",
       rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",

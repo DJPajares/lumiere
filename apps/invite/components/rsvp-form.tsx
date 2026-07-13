@@ -228,7 +228,7 @@ export function RsvpForm({
 
       <fieldset className="grid gap-3" disabled={isLocked || isSubmitting}>
         <legend className={style.fieldLabel}>{copy.attendancePrompt}</legend>
-        <div className="grid rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner grid-cols-2">
+        <div className="grid grid-cols-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
           <RsvpStatusOption
             checked={state.responseStatus === "attending"}
             label={copy.acceptLabel}
