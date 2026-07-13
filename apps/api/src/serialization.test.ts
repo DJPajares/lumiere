@@ -151,12 +151,14 @@ describe("API serialization", () => {
       },
       publication: {
         publicSettingsJson: {},
+        rsvpSettingsJson: {},
         sectionsJson: [],
         selectedThemeId: "premium",
         themeConfigJson: {},
         themeMode: "toggleable",
       },
     } as unknown as Parameters<typeof toPublicEventRecord>[0]);
+    const { rsvpFields: _guestOnlyRsvpFields, ...publicEventPayload } = publicEvent;
 
     expect(
       publicEventResponseSchema.parse({
@@ -164,7 +166,7 @@ describe("API serialization", () => {
         sections: [],
       }),
     ).toEqual({
-      ...publicEvent,
+      ...publicEventPayload,
       event: expect.objectContaining({
         endsAt: "2026-08-23T15:30:00.000Z",
         startsAt: "2026-08-23T09:00:00.000Z",

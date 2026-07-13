@@ -8,7 +8,12 @@ import {
   notifications,
   rsvpResponses,
 } from "@lumiere/db";
-import type { Event, RsvpResponse, RsvpSubmission } from "@lumiere/types";
+import {
+  rsvpSettingsSchema,
+  type Event,
+  type RsvpResponse,
+  type RsvpSubmission,
+} from "@lumiere/types";
 import { and, eq, sql } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
@@ -23,8 +28,11 @@ export type RsvpSubmissionRecord = {
 
 export type RsvpSubmissionRejected =
   | { reason: "closed" }
+  | { reason: "guest_names_disabled" }
+  | { reason: "guest_names_required" }
   | { maxPax: number; reason: "max_pax_exceeded" }
   | { reason: "maybe_disabled" }
+  | { reason: "message_disabled" }
   | { reason: "updates_disabled" };
 
 export type RsvpSubmissionResult =
@@ -97,6 +105,22 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       };
     }
 
+    if (!settings.collectGuestNames && submission.guestNames.length > 0) {
+      return { reason: "guest_names_disabled" };
+    }
+
+    if (
+      settings.collectGuestNames &&
+      submission.attendeeCount > 0 &&
+      submission.guestNames.length !== submission.attendeeCount
+    ) {
+      return { reason: "guest_names_required" };
+    }
+
+    if (!settings.collectGuestMessage && submission.message !== undefined) {
+      return { reason: "message_disabled" };
+    }
+
     const existingResponse = await getExistingResponse(db, guestGroup.id);
 
     if (existingResponse && !settings.allowUpdates) {
@@ -110,8 +134,10 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
             .set({
               answersJson: submission.answers,
               attendeeCount: submission.attendeeCount,
-              guestNamesJson: submission.guestNames,
-              message: submission.message,
+              guestNamesJson: settings.collectGuestNames
+                ? submission.guestNames
+                : existingResponse.guestNamesJson,
+              message: settings.collectGuestMessage ? submission.message : existingResponse.message,
               responseStatus: submission.responseStatus,
               updatedAt: sql`now()`,
             })
@@ -208,13 +234,19 @@ const getExistingResponse = async (db: Database, guestGroupId: string) => {
   return response ?? null;
 };
 
-const readRsvpSettings = (settings: Event["rsvpSettings"]) => ({
-  allowMaybe: settings.allowMaybe === true,
-  allowUpdates: settings.allowUpdates !== false,
-  closed: settings.closed === true,
-  closesAt: typeof settings.closesAt === "string" ? settings.closesAt : undefined,
-  enabled: settings.enabled !== false,
-});
+const readRsvpSettings = (settings: Event["rsvpSettings"]) => {
+  const parsed = rsvpSettingsSchema.parse(settings);
+
+  return {
+    allowMaybe: parsed.allowMaybe === true,
+    allowUpdates: parsed.allowUpdates !== false,
+    closed: parsed.closed === true,
+    closesAt: typeof parsed.closesAt === "string" ? parsed.closesAt : undefined,
+    collectGuestMessage: parsed.collectGuestMessage,
+    collectGuestNames: parsed.collectGuestNames,
+    enabled: parsed.enabled !== false,
+  };
+};
 
 const isPast = (isoDateTime: string | undefined) =>
   isoDateTime

@@ -1615,8 +1615,8 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
             disabled={controller.disabled}
             id={`${controller.section.sectionKey}-rsvp-dietary-question`}
             label="Dietary requirements"
-            onChange={(event) =>
-              updatePresetQuestion(rsvpQuestionPresets.dietary, event.target.checked)
+            onCheckedChange={(checked) =>
+              updatePresetQuestion(rsvpQuestionPresets.dietary, checked)
             }
           />
           <DashboardSwitch
@@ -1625,9 +1625,7 @@ function RsvpFields({ controller }: { controller: SectionFieldController }) {
             disabled={controller.disabled}
             id={`${controller.section.sectionKey}-rsvp-song-question`}
             label="Song request"
-            onChange={(event) =>
-              updatePresetQuestion(rsvpQuestionPresets.song, event.target.checked)
-            }
+            onCheckedChange={(checked) => updatePresetQuestion(rsvpQuestionPresets.song, checked)}
           />
         </div>
       </section>

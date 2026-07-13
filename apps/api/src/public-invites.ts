@@ -2,7 +2,6 @@ import type { Database } from "@lumiere/db";
 import {
   eventSectionContents,
   eventSections,
-  eventRsvpSettings,
   eventThemeSettings,
   eventPublications,
   eventSlugAliases,
@@ -10,7 +9,14 @@ import {
   guestGroups,
   rsvpResponses,
 } from "@lumiere/db";
-import type { Event, EventSection, PublicEventSummary, PublicGuestContext } from "@lumiere/types";
+import {
+  rsvpResponseFieldsSchema,
+  type Event,
+  type EventSection,
+  type PublicEventSummary,
+  type PublicGuestContext,
+  type RsvpResponseFields,
+} from "@lumiere/types";
 import { and, asc, eq, getTableColumns, or } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
@@ -23,6 +29,7 @@ type PublicEventRow = {
 
 export type PublicEventRecord = {
   event: PublicEventSummary & { id: string };
+  rsvpFields: RsvpResponseFields;
   selectedThemeId?: string;
   sections: EventSection[];
   themeConfig: Event["themeConfig"];
@@ -124,12 +131,12 @@ const getPublishedEvent = async (db: Database, eventSlug: string) => {
   const [event] = await db
     .select({
       event: events,
-      rsvpSettings: eventRsvpSettings,
+      publication: eventPublications,
       themeSettings: eventThemeSettings,
     })
     .from(events)
     .leftJoin(eventSlugAliases, eq(eventSlugAliases.eventId, events.id))
-    .leftJoin(eventRsvpSettings, eq(eventRsvpSettings.eventId, events.id))
+    .innerJoin(eventPublications, eq(eventPublications.eventId, events.id))
     .leftJoin(eventThemeSettings, eq(eventThemeSettings.eventId, events.id))
     .where(
       and(
@@ -187,6 +194,7 @@ export const toPublicEventRecord = (event: PublicEventRow): PublicEventRecord =>
     venueAddress: event.event.venueAddress ?? undefined,
     venueName: event.event.venueName ?? undefined,
   },
+  rsvpFields: rsvpResponseFieldsSchema.parse(event.publication.rsvpSettingsJson),
   selectedThemeId: event.publication.selectedThemeId,
   themeConfig: event.publication.themeConfigJson as Event["themeConfig"],
   themeMode: event.publication.themeMode,
@@ -195,7 +203,7 @@ export const toPublicEventRecord = (event: PublicEventRow): PublicEventRecord =>
 
 type LivePublicEventRow = {
   event: typeof events.$inferSelect;
-  rsvpSettings: typeof eventRsvpSettings.$inferSelect | null;
+  publication: typeof eventPublications.$inferSelect;
   sections: EventSection[];
   themeSettings: typeof eventThemeSettings.$inferSelect | null;
 };
@@ -216,6 +224,7 @@ const toLivePublicEventRecord = (
     venueAddress: event.event.venueAddress ?? undefined,
     venueName: event.event.venueName ?? undefined,
   },
+  rsvpFields: rsvpResponseFieldsSchema.parse(event.publication.rsvpSettingsJson),
   selectedThemeId: event.themeSettings?.selectedThemeId ?? undefined,
   sections: event.sections,
   themeConfig: (event.themeSettings?.configJson ?? {}) as Event["themeConfig"],

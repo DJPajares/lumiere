@@ -32,6 +32,7 @@ type JsonObject = Record<string, unknown>;
 
 const jsonObjectDefault = sql`'{}'::jsonb`;
 const jsonArrayDefault = sql`'[]'::jsonb`;
+const rsvpSettingsDefault = sql`'{"collectGuestMessage": true, "collectGuestNames": true}'::jsonb`;
 
 const pgEnumValues = <TValue extends string>(values: readonly TValue[]) =>
   values as [TValue, ...TValue[]];
@@ -171,7 +172,7 @@ export const eventRsvpSettings = pgTable("event_rsvp_settings", {
   eventId: uuid("event_id")
     .primaryKey()
     .references(() => events.id, { onDelete: "cascade" }),
-  settingsJson: jsonb("settings_json").$type<JsonObject>().notNull().default(jsonObjectDefault),
+  settingsJson: jsonb("settings_json").$type<JsonObject>().notNull().default(rsvpSettingsDefault),
   updatedAt: updatedAtColumn(),
 });
 
@@ -242,7 +243,7 @@ export const eventPublications = pgTable("event_publications", {
   rsvpSettingsJson: jsonb("rsvp_settings_json")
     .$type<JsonObject>()
     .notNull()
-    .default(jsonObjectDefault),
+    .default(rsvpSettingsDefault),
   sectionsJson: jsonb("sections_json").$type<EventSection[]>().notNull().default(jsonArrayDefault),
   publishedAt: timestamp("published_at", { mode: "string", withTimezone: true })
     .notNull()

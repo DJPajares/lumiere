@@ -342,6 +342,10 @@ describe("public invite section renderers", () => {
         },
         responseStatus: null,
       },
+      rsvpFields: {
+        collectGuestMessage: true,
+        collectGuestNames: true,
+      },
       themeConfig: {
         ambientAudio: {
           label: "Private music",

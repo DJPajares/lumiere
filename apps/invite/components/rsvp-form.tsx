@@ -1,7 +1,13 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
-import type { RsvpStatus, RsvpSubmissionRequest, RsvpSubmissionResponse } from "@lumiere/types";
+import {
+  defaultRsvpResponseFields,
+  type RsvpResponseFields,
+  type RsvpStatus,
+  type RsvpSubmissionRequest,
+  type RsvpSubmissionResponse,
+} from "@lumiere/types";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
@@ -64,6 +70,7 @@ type RsvpFormProps = {
   guestToken: string;
   initialResponseStatus: RsvpStatus | null;
   questions: RsvpQuestion[];
+  rsvpFields?: RsvpResponseFields;
   submitLabel: string;
 };
 
@@ -76,10 +83,11 @@ export function RsvpForm({
   guestToken,
   initialResponseStatus,
   questions,
+  rsvpFields = defaultRsvpResponseFields,
   submitLabel,
 }: RsvpFormProps) {
   const [state, setState] = useState(() =>
-    createInitialRsvpFormState(guestGroup.maxPax, initialResponseStatus),
+    createInitialRsvpFormState(guestGroup.maxPax, initialResponseStatus, rsvpFields),
   );
   const [errors, setErrors] = useState<RsvpFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,8 +95,8 @@ export function RsvpForm({
     RsvpSubmissionResponse["response"] | null
   >(null);
   const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(() =>
-    questions.some((question) => question.required),
+  const [detailsOpen, setDetailsOpen] = useState(
+    () => rsvpFields.collectGuestNames || questions.some((question) => question.required),
   );
   const copy = getRsvpDesignCopy(design);
   const style = getRsvpDesignStyle(design);
@@ -96,6 +104,15 @@ export function RsvpForm({
   const isUpdatingExistingReply = Boolean(initialResponseStatus && !submittedResponse);
   const hasSubmittedReply = Boolean(submittedResponse);
   const isResponding = state.responseStatus !== "not_attending";
+  const hasDetails =
+    questions.length > 0 ||
+    rsvpFields.collectGuestMessage ||
+    (isResponding && rsvpFields.collectGuestNames);
+  const detailsLabel = resolveDetailsLabel(copy.detailsLabel, {
+    collectGuestMessage: rsvpFields.collectGuestMessage,
+    collectGuestNames: isResponding && rsvpFields.collectGuestNames,
+    hasQuestions: questions.length > 0,
+  });
   const isLocked = isRsvpLocked(recoveryState);
   const statusTone = getReplyTone({
     hasSubmittedReply,
@@ -105,6 +122,7 @@ export function RsvpForm({
   });
   const statusCopy = getReplyStatusCopy({
     attendeeCount: submittedResponse?.attendeeCount ?? state.attendeeCount,
+    collectGuestMessage: rsvpFields.collectGuestMessage,
     guestGroupLabel: guestGroup.label,
     hasSubmittedReply,
     initialResponseStatus,
@@ -128,6 +146,7 @@ export function RsvpForm({
       guestToken,
       maxPax: guestGroup.maxPax,
       questions,
+      rsvpFields,
       state,
       submit: (...args) => createInviteApiClient().submitRsvp(...args),
     });
@@ -217,7 +236,14 @@ export function RsvpForm({
             label={copy.acceptLabel}
             name="responseStatus"
             onChange={() =>
-              setState((current) => withResponseStatus(current, "attending", guestGroup.maxPax))
+              setState((current) =>
+                withResponseStatus(
+                  current,
+                  "attending",
+                  guestGroup.maxPax,
+                  rsvpFields.collectGuestNames,
+                ),
+              )
             }
             value="attending"
           />
@@ -226,7 +252,14 @@ export function RsvpForm({
             label={copy.declineLabel}
             name="responseStatus"
             onChange={() =>
-              setState((current) => withResponseStatus(current, "not_attending", guestGroup.maxPax))
+              setState((current) =>
+                withResponseStatus(
+                  current,
+                  "not_attending",
+                  guestGroup.maxPax,
+                  rsvpFields.collectGuestNames,
+                ),
+              )
             }
             value="not_attending"
           />
@@ -246,7 +279,11 @@ export function RsvpForm({
               label="Remove one guest"
               onClick={() =>
                 setState((current) =>
-                  withAttendeeCount(current, Math.max(1, current.attendeeCount - 1)),
+                  withAttendeeCount(
+                    current,
+                    Math.max(1, current.attendeeCount - 1),
+                    rsvpFields.collectGuestNames,
+                  ),
                 )
               }
             >
@@ -266,6 +303,7 @@ export function RsvpForm({
                   withAttendeeCount(
                     current,
                     Math.min(guestGroup.maxPax, current.attendeeCount + 1),
+                    rsvpFields.collectGuestNames,
                   ),
                 )
               }
@@ -281,105 +319,113 @@ export function RsvpForm({
         </p>
       )}
 
-      <details
-        className="group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
-        onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
-        open={detailsOpen}
-      >
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none">
-          <span>{copy.detailsLabel}</span>
-          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            {detailsOpen ? "Close" : "Open"}
-          </span>
-        </summary>
+      {hasDetails ? (
+        <details
+          className="group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
+          onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+          open={detailsOpen}
+        >
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none">
+            <span>{detailsLabel}</span>
+            <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+              {detailsOpen ? "Close" : "Open"}
+            </span>
+          </summary>
 
-        <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
-          {isResponding ? (
-            <div className="grid gap-3">
-              <p className={style.fieldLabel}>Names for the guest list</p>
-              {state.guestNames.map((name, index) => (
-                <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                    Guest {index + 1}
-                  </span>
-                  <input
-                    aria-describedby={
-                      errors[`guestNames.${index}`] ? `guestName-${index}-error` : undefined
-                    }
-                    aria-invalid={Boolean(errors[`guestNames.${index}`])}
-                    className={style.input}
-                    disabled={isLocked || isSubmitting}
-                    id={`guestName-${index}`}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
+          <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
+            {isResponding && rsvpFields.collectGuestNames ? (
+              <div className="grid gap-3">
+                <p className={style.fieldLabel}>Names for the guest list</p>
+                {state.guestNames.map((name, index) => (
+                  <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+                      Guest {index + 1}
+                    </span>
+                    <input
+                      aria-describedby={
+                        errors[`guestNames.${index}`] ? `guestName-${index}-error` : undefined
+                      }
+                      aria-invalid={Boolean(errors[`guestNames.${index}`])}
+                      className={style.input}
+                      disabled={isLocked || isSubmitting}
+                      id={`guestName-${index}`}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        setState((current) => ({
+                          ...current,
+                          guestNames: current.guestNames.map((item, itemIndex) =>
+                            itemIndex === index ? value : item,
+                          ),
+                        }));
+                      }}
+                      value={name}
+                    />
+                    <FieldError
+                      id={`guestName-${index}-error`}
+                      message={errors[`guestNames.${index}`]}
+                    />
+                  </label>
+                ))}
+                <FieldError id="guestNames-error" message={errors.guestNames} />
+              </div>
+            ) : null}
+
+            {questions.length > 0 ? (
+              <div className="grid gap-4">
+                <div>
+                  <p className={style.fieldLabel}>A note for the host</p>
+                  <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+                    Required questions apply when your group is attending.
+                  </p>
+                </div>
+                {questions.map((question) => (
+                  <QuestionField
+                    error={errors[`answers.${question.key}`]}
+                    isDisabled={isLocked || isSubmitting}
+                    inputClassName={style.input}
+                    key={question.key}
+                    onChange={(value) =>
                       setState((current) => ({
                         ...current,
-                        guestNames: current.guestNames.map((item, itemIndex) =>
-                          itemIndex === index ? value : item,
-                        ),
-                      }));
-                    }}
-                    value={name}
+                        answers: {
+                          ...current.answers,
+                          [question.key]: value,
+                        },
+                      }))
+                    }
+                    question={question}
+                    value={
+                      state.answers[question.key] ?? (question.type === "multi_choice" ? [] : "")
+                    }
                   />
-                  <FieldError
-                    id={`guestName-${index}-error`}
-                    message={errors[`guestNames.${index}`]}
-                  />
-                </label>
-              ))}
-            </div>
-          ) : null}
-
-          {questions.length > 0 ? (
-            <div className="grid gap-4">
-              <div>
-                <p className={style.fieldLabel}>A note for the host</p>
-                <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-                  Required questions apply when your group is attending.
-                </p>
+                ))}
               </div>
-              {questions.map((question) => (
-                <QuestionField
-                  error={errors[`answers.${question.key}`]}
-                  isDisabled={isLocked || isSubmitting}
-                  inputClassName={style.input}
-                  key={question.key}
-                  onChange={(value) =>
+            ) : null}
+
+            {rsvpFields.collectGuestMessage ? (
+              <label className="grid gap-2" htmlFor="rsvp-message">
+                <span className={style.fieldLabel}>{copy.messageLabel}</span>
+                <textarea
+                  aria-describedby={errors.message ? "rsvp-message-error" : undefined}
+                  aria-invalid={Boolean(errors.message)}
+                  className={`${style.input} min-h-24 py-3 leading-6`}
+                  disabled={isLocked || isSubmitting}
+                  id="rsvp-message"
+                  onChange={(event) =>
                     setState((current) => ({
                       ...current,
-                      answers: {
-                        ...current.answers,
-                        [question.key]: value,
-                      },
+                      message: event.currentTarget.value,
                     }))
                   }
-                  question={question}
-                  value={
-                    state.answers[question.key] ?? (question.type === "multi_choice" ? [] : "")
-                  }
+                  placeholder="Optional"
+                  value={state.message}
                 />
-              ))}
-            </div>
-          ) : null}
-
-          <label className="grid gap-2" htmlFor="rsvp-message">
-            <span className={style.fieldLabel}>{copy.messageLabel}</span>
-            <textarea
-              className={`${style.input} min-h-24 py-3 leading-6`}
-              disabled={isLocked || isSubmitting}
-              id="rsvp-message"
-              onChange={(event) =>
-                setState((current) => ({
-                  ...current,
-                  message: event.currentTarget.value,
-                }))
-              }
-              placeholder="Optional"
-              value={state.message}
-            />
-          </label>
-        </div>
-      </details>
+                <FieldError id="rsvp-message-error" message={errors.message} />
+              </label>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
 
       <button
         {...invitePressFeedbackProps}
@@ -748,6 +794,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export function createInitialRsvpFormState(
   maxPax: number,
   responseStatus: RsvpStatus | null,
+  rsvpFields: RsvpResponseFields = defaultRsvpResponseFields,
 ): RsvpFormState {
   if (responseStatus === "not_attending") {
     return {
@@ -762,7 +809,7 @@ export function createInitialRsvpFormState(
   return {
     answers: {},
     attendeeCount: 1,
-    guestNames: [""],
+    guestNames: rsvpFields.collectGuestNames ? [""] : [],
     message: "",
     responseStatus:
       responseStatus === "attending" || responseStatus === "maybe" ? responseStatus : "",
@@ -772,10 +819,12 @@ export function createInitialRsvpFormState(
 export function validateRsvpFormState({
   maxPax,
   questions,
+  rsvpFields = defaultRsvpResponseFields,
   state,
 }: {
   maxPax: number;
   questions: RsvpQuestion[];
+  rsvpFields?: RsvpResponseFields;
   state: RsvpFormState;
 }):
   | {
@@ -803,12 +852,18 @@ export function validateRsvpFormState({
     errors.attendeeCount = `This invite allows up to ${maxPax} pax.`;
   }
 
-  const guestNames = isAttending
-    ? state.guestNames
-        .slice(0, attendeeCount)
-        .map((name) => name.trim())
-        .filter(Boolean)
-    : [];
+  const guestNames =
+    isAttending && rsvpFields.collectGuestNames
+      ? state.guestNames.slice(0, attendeeCount).map((name, index) => {
+          const normalized = name.trim();
+
+          if (!normalized) {
+            errors[`guestNames.${index}`] = "Enter a name for this attendee.";
+          }
+
+          return normalized;
+        })
+      : [];
 
   const answers = questions.flatMap((question) => {
     const value = state.answers[question.key];
@@ -840,7 +895,7 @@ export function validateRsvpFormState({
       answers,
       attendeeCount,
       guestNames,
-      message: state.message.trim() || undefined,
+      message: rsvpFields.collectGuestMessage ? state.message.trim() || undefined : undefined,
       responseStatus: state.responseStatus,
     },
     ok: true,
@@ -852,6 +907,7 @@ export async function submitRsvpFormState({
   guestToken,
   maxPax,
   questions,
+  rsvpFields = defaultRsvpResponseFields,
   state,
   submit,
 }: {
@@ -859,10 +915,11 @@ export async function submitRsvpFormState({
   guestToken: string;
   maxPax: number;
   questions: RsvpQuestion[];
+  rsvpFields?: RsvpResponseFields;
   state: RsvpFormState;
   submit: SubmitRsvp;
 }): Promise<RsvpFormSubmitResult> {
-  const validation = validateRsvpFormState({ maxPax, questions, state });
+  const validation = validateRsvpFormState({ maxPax, questions, rsvpFields, state });
 
   if (!validation.ok) {
     return validation;
@@ -889,6 +946,7 @@ export async function submitRsvpFormState({
 
 function getReplyStatusCopy({
   attendeeCount,
+  collectGuestMessage,
   guestGroupLabel,
   hasSubmittedReply,
   initialResponseStatus,
@@ -897,6 +955,7 @@ function getReplyStatusCopy({
   responseStatus,
 }: {
   attendeeCount: number;
+  collectGuestMessage: boolean;
   guestGroupLabel: string;
   hasSubmittedReply: boolean;
   initialResponseStatus: RsvpStatus | null;
@@ -943,7 +1002,9 @@ function getReplyStatusCopy({
 
   if (responseStatus === "not_attending") {
     return {
-      body: `No seats will be held for ${guestGroupLabel}. You can still leave the host a note.`,
+      body: collectGuestMessage
+        ? `No seats will be held for ${guestGroupLabel}. You can still leave the host a note.`
+        : `No seats will be held for ${guestGroupLabel}. The host will receive your attendance reply.`,
       meta: "Draft reply",
       title: "Sending regrets is okay.",
     };
@@ -1023,6 +1084,7 @@ function withResponseStatus(
   state: RsvpFormState,
   responseStatus: RsvpStatus,
   maxPax: number,
+  collectGuestNames: boolean,
 ): RsvpFormState {
   if (responseStatus === "not_attending") {
     return {
@@ -1038,21 +1100,52 @@ function withResponseStatus(
   return {
     ...state,
     attendeeCount,
-    guestNames: resizeGuestNames(state.guestNames, attendeeCount),
+    guestNames: collectGuestNames ? resizeGuestNames(state.guestNames, attendeeCount) : [],
     responseStatus,
   };
 }
 
-function withAttendeeCount(state: RsvpFormState, attendeeCount: number): RsvpFormState {
+function withAttendeeCount(
+  state: RsvpFormState,
+  attendeeCount: number,
+  collectGuestNames: boolean,
+): RsvpFormState {
   return {
     ...state,
     attendeeCount,
-    guestNames: resizeGuestNames(state.guestNames, attendeeCount),
+    guestNames: collectGuestNames ? resizeGuestNames(state.guestNames, attendeeCount) : [],
   };
 }
 
 function resizeGuestNames(guestNames: string[], attendeeCount: number) {
   return Array.from({ length: attendeeCount }, (_, index) => guestNames[index] ?? "");
+}
+
+function resolveDetailsLabel(
+  fallback: string,
+  {
+    collectGuestMessage,
+    collectGuestNames,
+    hasQuestions,
+  }: {
+    collectGuestMessage: boolean;
+    collectGuestNames: boolean;
+    hasQuestions: boolean;
+  },
+) {
+  if (collectGuestNames && collectGuestMessage) {
+    return fallback;
+  }
+
+  if (collectGuestNames) {
+    return hasQuestions ? "Add guest names and answers" : "Add guest names";
+  }
+
+  if (collectGuestMessage) {
+    return hasQuestions ? "Add answers or a note" : "Add a note";
+  }
+
+  return "Answer guest questions";
 }
 
 function normalizeAnswerValue(value: string | string[] | undefined) {

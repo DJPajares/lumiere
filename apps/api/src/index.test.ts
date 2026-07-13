@@ -85,7 +85,10 @@ const baseEvent: Event = {
   themeMode: "system",
   themeConfig: {},
   publicSettings: {},
-  rsvpSettings: {},
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
   createdAt: "2026-07-08T00:00:00.000Z",
   updatedAt: "2026-07-08T00:00:00.000Z",
 };
@@ -161,6 +164,10 @@ const publicEventRecord: PublicEventRecord = {
     venueName: baseEvent.venueName,
     venueAddress: baseEvent.venueAddress,
     publicSettings: {},
+  },
+  rsvpFields: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
   },
   selectedThemeId: "lumiere-default",
   sections: [baseSection],
@@ -660,7 +667,10 @@ describe("API app", () => {
     expect(createEvent).toHaveBeenCalledWith(localUser.id, {
       eventType: "launch",
       publicSettings: {},
-      rsvpSettings: {},
+      rsvpSettings: {
+        collectGuestMessage: true,
+        collectGuestNames: true,
+      },
       slug: "new-launch",
       startsAt: "2026-12-01T11:00:00.000Z",
       themeMode: "system",
@@ -2140,6 +2150,7 @@ describe("API app", () => {
       themeMode: "system",
       sections: [baseSection, guestOnlyRsvpSection],
       guest: publicGuestInviteRecord.guest,
+      rsvpFields: publicGuestInviteRecord.rsvpFields,
     });
     expect(response.status).toBe(200);
     expect(getPublicGuestInvite).toHaveBeenCalledWith({
@@ -3513,6 +3524,10 @@ function toSmokePublicEventRecord(
       title: event.title,
       venueAddress: event.venueAddress,
       venueName: event.venueName,
+    },
+    rsvpFields: {
+      collectGuestMessage: event.rsvpSettings.collectGuestMessage,
+      collectGuestNames: event.rsvpSettings.collectGuestNames,
     },
     selectedThemeId: event.selectedThemeId,
     sections: sections

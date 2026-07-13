@@ -341,6 +341,10 @@ const publicGuestInviteResponse: PublicGuestInviteResponse = {
     },
     responseStatus: null,
   },
+  rsvpFields: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
 };
 
 function createSection(

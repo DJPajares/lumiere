@@ -1357,6 +1357,39 @@ const throwRsvpRejection = (rejection: RsvpSubmissionRejected): never => {
     });
   }
 
+  if (rejection.reason === "guest_names_disabled") {
+    throw new ApiHttpError("VALIDATION_ERROR", "Guest names are disabled for this event", {
+      fields: [
+        {
+          message: "Do not submit guest names for this event",
+          path: ["guestNames"],
+        },
+      ],
+    });
+  }
+
+  if (rejection.reason === "guest_names_required") {
+    throw new ApiHttpError("VALIDATION_ERROR", "Guest names are required for every attendee", {
+      fields: [
+        {
+          message: "Enter a name for every attendee",
+          path: ["guestNames"],
+        },
+      ],
+    });
+  }
+
+  if (rejection.reason === "message_disabled") {
+    throw new ApiHttpError("VALIDATION_ERROR", "Guest messages are disabled for this event", {
+      fields: [
+        {
+          message: "Do not submit a guest message for this event",
+          path: ["message"],
+        },
+      ],
+    });
+  }
+
   throw new ApiHttpError("CONFLICT", "RSVP updates are not allowed");
 };
 
@@ -1422,4 +1455,5 @@ const toPublicEventResponse = (publicEvent: PublicEventRecord) => {
 const toPublicGuestInviteResponse = (publicGuestInvite: PublicGuestInviteRecord) => ({
   ...toPublicEventResponse(publicGuestInvite),
   guest: publicGuestInvite.guest,
+  rsvpFields: publicGuestInvite.rsvpFields,
 });

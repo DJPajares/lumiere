@@ -151,11 +151,23 @@ describe("RSVP store", () => {
     const updatedResponse = {
       ...responseRow,
       attendeeCount: 3,
-      guestNamesJson: ["Mina Tan", "Alex Tan", "Jamie Tan"],
       updatedAt: "2026-07-08T05:00:00.000Z",
     };
+    const eventWithResponseFieldsDisabled = {
+      ...eventRow,
+      rsvpSettingsJson: {
+        ...eventRow.rsvpSettingsJson,
+        collectGuestMessage: false,
+        collectGuestNames: false,
+      },
+    };
     const db = new FakeRsvpDb(
-      [[eventRow], [guestGroupRow], [responseRow], [{ userId: ownerUserId }]],
+      [
+        [eventWithResponseFieldsDisabled],
+        [guestGroupRow],
+        [responseRow],
+        [{ userId: ownerUserId }],
+      ],
       updatedResponse,
     );
     const store = createDrizzleRsvpStore(db.asDatabase());
@@ -166,7 +178,7 @@ describe("RSVP store", () => {
       submission: {
         responseStatus: "attending",
         attendeeCount: 3,
-        guestNames: ["Mina Tan", "Alex Tan", "Jamie Tan"],
+        guestNames: [],
         answers: [],
         message: undefined,
       },
@@ -176,7 +188,8 @@ describe("RSVP store", () => {
       response: {
         id: responseId,
         attendeeCount: 3,
-        guestNames: ["Mina Tan", "Alex Tan", "Jamie Tan"],
+        guestNames: ["Mina Tan", "Alex Tan"],
+        message: "Excited to attend.",
       },
       updatedExisting: true,
     });
@@ -185,8 +198,8 @@ describe("RSVP store", () => {
       values: {
         answersJson: [],
         attendeeCount: 3,
-        guestNamesJson: ["Mina Tan", "Alex Tan", "Jamie Tan"],
-        message: undefined,
+        guestNamesJson: ["Mina Tan", "Alex Tan"],
+        message: "Excited to attend.",
         responseStatus: "attending",
         updatedAt: expect.anything(),
       },
@@ -209,6 +222,120 @@ describe("RSVP store", () => {
         }),
       ],
     });
+
+    const namesOnlyEvent = {
+      ...eventRow,
+      rsvpSettingsJson: {
+        ...eventRow.rsvpSettingsJson,
+        collectGuestMessage: false,
+        collectGuestNames: true,
+      },
+    };
+    const namesOnlyDb = new FakeRsvpDb(
+      [[namesOnlyEvent], [guestGroupRow], [], [{ userId: ownerUserId }]],
+      { ...responseRow, message: null },
+    );
+    const namesOnlyResult = await createDrizzleRsvpStore(namesOnlyDb.asDatabase()).submitGuestRsvp({
+      eventSlug: "launch-night",
+      inviteTokenHash: "hashed-token",
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: ["Mina Tan", "Alex Tan"],
+        answers: [],
+        message: undefined,
+      },
+    });
+
+    expect(namesOnlyResult).toMatchObject({ response: { guestNames: ["Mina Tan", "Alex Tan"] } });
+    expect(namesOnlyDb.insertValues).toContainEqual({
+      table: rsvpResponses,
+      values: expect.objectContaining({
+        guestNamesJson: ["Mina Tan", "Alex Tan"],
+        message: undefined,
+      }),
+    });
+
+    const messageOnlyEvent = {
+      ...eventRow,
+      rsvpSettingsJson: {
+        ...eventRow.rsvpSettingsJson,
+        collectGuestMessage: true,
+        collectGuestNames: false,
+      },
+    };
+    const messageOnlyDb = new FakeRsvpDb(
+      [[messageOnlyEvent], [guestGroupRow], [], [{ userId: ownerUserId }]],
+      { ...responseRow, guestNamesJson: [], message: "See you there." },
+    );
+    const messageOnlyResult = await createDrizzleRsvpStore(
+      messageOnlyDb.asDatabase(),
+    ).submitGuestRsvp({
+      eventSlug: "launch-night",
+      inviteTokenHash: "hashed-token",
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: [],
+        answers: [],
+        message: "See you there.",
+      },
+    });
+
+    expect(messageOnlyResult).toMatchObject({
+      response: { guestNames: [], message: "See you there." },
+    });
+    expect(messageOnlyDb.insertValues).toContainEqual({
+      table: rsvpResponses,
+      values: expect.objectContaining({
+        guestNamesJson: [],
+        message: "See you there.",
+      }),
+    });
+
+    const missingNamesResult = await createDrizzleRsvpStore(
+      new FakeRsvpDb([[eventRow], [guestGroupRow]], responseRow).asDatabase(),
+    ).submitGuestRsvp({
+      eventSlug: "launch-night",
+      inviteTokenHash: "hashed-token",
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: [],
+        answers: [],
+        message: undefined,
+      },
+    });
+    const disabledMessageResult = await createDrizzleRsvpStore(
+      new FakeRsvpDb([[namesOnlyEvent], [guestGroupRow]], responseRow).asDatabase(),
+    ).submitGuestRsvp({
+      eventSlug: "launch-night",
+      inviteTokenHash: "hashed-token",
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: ["Mina Tan", "Alex Tan"],
+        answers: [],
+        message: "This should be rejected.",
+      },
+    });
+    const disabledNamesResult = await createDrizzleRsvpStore(
+      new FakeRsvpDb([[messageOnlyEvent], [guestGroupRow]], responseRow).asDatabase(),
+    ).submitGuestRsvp({
+      eventSlug: "launch-night",
+      inviteTokenHash: "hashed-token",
+      submission: {
+        responseStatus: "attending",
+        attendeeCount: 2,
+        guestNames: ["Mina Tan", "Alex Tan"],
+        answers: [],
+        message: "Allowed note.",
+      },
+    });
+
+    expect(missingNamesResult).toEqual({ reason: "guest_names_required" });
+    expect(disabledMessageResult).toEqual({ reason: "message_disabled" });
+    expect(disabledNamesResult).toEqual({ reason: "guest_names_disabled" });
   });
 });
 

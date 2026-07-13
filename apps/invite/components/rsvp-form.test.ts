@@ -32,6 +32,8 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain("4 seats");
     expect(html).toContain("Awaiting reply");
     expect(html).toContain("focus-within:ring-2");
+    expect(html).toContain("Names for the guest list");
+    expect(html).toContain('id="rsvp-message"');
   });
 
   it("renders an already-submitted reply as an update flow", () => {
@@ -42,6 +44,10 @@ describe("RSVP form flow helpers", () => {
         guestToken: "sample-guest-token-for-preview",
         initialResponseStatus: "attending",
         questions,
+        rsvpFields: {
+          collectGuestMessage: false,
+          collectGuestNames: false,
+        },
         submitLabel: "Send RSVP",
       }),
     );
@@ -49,6 +55,42 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain('data-rsvp-state="updating"');
     expect(html).toContain("Already submitted");
     expect(html).toContain("Update RSVP");
+    expect(html).not.toContain("Names for the guest list");
+    expect(html).not.toContain('id="rsvp-message"');
+
+    const namesOnlyHtml = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        eventSlug: "garden-evening",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: "attending",
+        questions,
+        rsvpFields: {
+          collectGuestMessage: false,
+          collectGuestNames: true,
+        },
+        submitLabel: "Send RSVP",
+      }),
+    );
+    const messageOnlyHtml = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        eventSlug: "garden-evening",
+        guestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: "attending",
+        questions,
+        rsvpFields: {
+          collectGuestMessage: true,
+          collectGuestNames: false,
+        },
+        submitLabel: "Send RSVP",
+      }),
+    );
+
+    expect(namesOnlyHtml).toContain("Names for the guest list");
+    expect(namesOnlyHtml).not.toContain('id="rsvp-message"');
+    expect(messageOnlyHtml).not.toContain("Names for the guest list");
+    expect(messageOnlyHtml).toContain('id="rsvp-message"');
   });
 
   it("submits an attending RSVP with guest names and custom answers", async () => {
@@ -160,6 +202,9 @@ describe("RSVP form flow helpers", () => {
     expect(result.ok).toBe(false);
     expect(result.ok ? undefined : result.errors["answers.meal"]).toBe(
       "This question is required.",
+    );
+    expect(result.ok ? undefined : result.errors["guestNames.1"]).toBe(
+      "Enter a name for this attendee.",
     );
   });
 

@@ -17,6 +17,7 @@ import {
   idSchema,
   isoDateTimeSchema,
   jsonObjectSchema,
+  jsonValueSchema,
   metadataSchema,
   nonEmptyStringSchema,
   optionalTextSchema,
@@ -24,6 +25,33 @@ import {
   slugSchema,
   timezoneSchema,
 } from "./primitives";
+
+export const rsvpResponseFieldsSchema = z.object({
+  collectGuestMessage: z.boolean().default(true),
+  collectGuestNames: z.boolean().default(true),
+});
+export type RsvpResponseFields = z.infer<typeof rsvpResponseFieldsSchema>;
+
+export const defaultRsvpResponseFields: RsvpResponseFields = {
+  collectGuestMessage: true,
+  collectGuestNames: true,
+};
+
+export const rsvpSettingsSchema = z
+  .object({
+    collectGuestMessage: z.boolean().default(defaultRsvpResponseFields.collectGuestMessage),
+    collectGuestNames: z.boolean().default(defaultRsvpResponseFields.collectGuestNames),
+  })
+  .catchall(jsonValueSchema);
+export type RsvpSettings = z.infer<typeof rsvpSettingsSchema>;
+
+export const rsvpSettingsUpdateSchema = z
+  .object({
+    collectGuestMessage: z.boolean().optional(),
+    collectGuestNames: z.boolean().optional(),
+  })
+  .catchall(jsonValueSchema);
+export type RsvpSettingsUpdate = z.infer<typeof rsvpSettingsUpdateSchema>;
 
 export const eventSchema = z.object({
   id: idSchema,
@@ -42,7 +70,7 @@ export const eventSchema = z.object({
   themeConfig: metadataSchema,
   publicSettings: metadataSchema,
   hasPublicAccessCode: z.boolean().optional(),
-  rsvpSettings: metadataSchema,
+  rsvpSettings: rsvpSettingsSchema.prefault({}),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
@@ -62,7 +90,7 @@ export const eventCreateSchema = z
     themeMode: themeModeSchema.default("system"),
     publicSettings: metadataSchema,
     publicAccessCode: z.string().trim().min(16).max(256).optional(),
-    rsvpSettings: metadataSchema,
+    rsvpSettings: rsvpSettingsSchema.prefault({}),
   })
   .superRefine((value, context) => {
     if (value.endsAt && Date.parse(value.endsAt) <= Date.parse(value.startsAt)) {
@@ -106,7 +134,7 @@ export const eventUpdateSchema = z
     themeMode: themeModeSchema.optional(),
     publicSettings: jsonObjectSchema.optional(),
     publicAccessCode: z.string().trim().min(16).max(256).nullable().optional(),
-    rsvpSettings: jsonObjectSchema.optional(),
+    rsvpSettings: rsvpSettingsUpdateSchema.optional(),
   })
   .strict()
   .superRefine((value, context) => {

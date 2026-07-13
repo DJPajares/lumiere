@@ -13,6 +13,7 @@ import type {
   JsonValue,
   PublicEventResponse,
   PublicGuestInviteResponse,
+  RsvpResponseFields,
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
@@ -141,6 +142,7 @@ function InvitationFrame({
                 key={item.section.id}
                 item={item}
                 rsvpDesign={rsvpDesign}
+                rsvpFields={"rsvpFields" in invite ? invite.rsvpFields : undefined}
                 theme={theme}
               />
             ))}
@@ -487,6 +489,7 @@ function PublicSection({
   index,
   item,
   rsvpDesign,
+  rsvpFields,
   theme,
 }: {
   eventSlug: string;
@@ -495,6 +498,7 @@ function PublicSection({
   index: number;
   item: RenderableSection;
   rsvpDesign: RsvpDesign;
+  rsvpFields?: RsvpResponseFields;
   theme: ThemeDefinition;
 }) {
   const definition = getSectionDefinition(item.section.sectionType);
@@ -545,6 +549,7 @@ function PublicSection({
             item={item}
             layout={layout}
             rsvpDesign={rsvpDesign}
+            rsvpFields={rsvpFields}
             titleId={titleId}
           />
         </div>
@@ -561,6 +566,7 @@ function SectionBody({
   item,
   layout,
   rsvpDesign,
+  rsvpFields,
   titleId,
 }: {
   composition: SectionComposition;
@@ -570,6 +576,7 @@ function SectionBody({
   item: RenderableSection;
   layout: string;
   rsvpDesign: RsvpDesign;
+  rsvpFields?: RsvpResponseFields;
   titleId: string;
 }) {
   const { content, section, settings } = item;
@@ -599,6 +606,7 @@ function SectionBody({
           guest={guest}
           guestToken={guestToken}
           rsvpDesign={rsvpDesign}
+          rsvpFields={rsvpFields}
           settings={settings}
           titleId={titleId}
         />
@@ -1001,6 +1009,7 @@ function RsvpSection({
   guest,
   guestToken,
   rsvpDesign,
+  rsvpFields,
   settings,
   titleId,
 }: {
@@ -1009,6 +1018,7 @@ function RsvpSection({
   guest?: GuestContext;
   guestToken?: string;
   rsvpDesign: RsvpDesign;
+  rsvpFields?: RsvpResponseFields;
   settings: JsonObject;
   titleId: string;
 }) {
@@ -1072,6 +1082,7 @@ function RsvpSection({
           guestToken={submitContext.guestToken}
           initialResponseStatus={submitContext.guest.responseStatus}
           questions={questions}
+          rsvpFields={rsvpFields}
           submitLabel={submitLabel}
         />
       )}

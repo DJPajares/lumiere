@@ -158,7 +158,10 @@ const springDinner: Event = {
   id: "event-spring",
   ownerUserId: "manager-1",
   publicSettings: {},
-  rsvpSettings: {},
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
   slug: "spring-dinner",
   startsAt: "2030-06-01T10:30:00.000Z",
   status: "draft",

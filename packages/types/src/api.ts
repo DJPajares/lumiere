@@ -11,6 +11,7 @@ import {
   guestGroupMutationSchema,
   guestGroupSchema,
   notificationSchema,
+  rsvpResponseFieldsSchema,
   rsvpResponseSchema,
   rsvpSubmissionSchema,
   themeSchema,
@@ -261,5 +262,6 @@ export type PublicGuestContext = z.infer<typeof publicGuestContextSchema>;
 
 export const publicGuestInviteResponseSchema = publicEventResponseSchema.extend({
   guest: publicGuestContextSchema,
+  rsvpFields: rsvpResponseFieldsSchema,
 });
 export type PublicGuestInviteResponse = z.infer<typeof publicGuestInviteResponseSchema>;

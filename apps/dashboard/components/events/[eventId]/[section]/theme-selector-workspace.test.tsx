@@ -256,7 +256,10 @@ const dashboardEvent: Event = {
   id: "evt_123",
   ownerUserId: "user_123",
   publicSettings: {},
-  rsvpSettings: {},
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
   slug: "garden-evening",
   startsAt: "2030-06-01T10:30:00.000Z",
   status: "draft",

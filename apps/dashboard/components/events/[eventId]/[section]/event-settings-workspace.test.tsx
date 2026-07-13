@@ -26,8 +26,20 @@ describe("EventSettingsWorkspace", () => {
       title: "Summer Dinner",
       updatedAt: "2030-01-01T01:00:00.000Z",
     };
-    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async () => ({
-      event: updatedEvent,
+    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async (_eventId, input) => ({
+      event: input.rsvpSettings
+        ? {
+            ...updatedEvent,
+            rsvpSettings: {
+              ...updatedEvent.rsvpSettings,
+              collectGuestMessage:
+                input.rsvpSettings.collectGuestMessage ??
+                updatedEvent.rsvpSettings.collectGuestMessage,
+              collectGuestNames:
+                input.rsvpSettings.collectGuestNames ?? updatedEvent.rsvpSettings.collectGuestNames,
+            },
+          }
+        : updatedEvent,
     }));
 
     renderWithAuth({
@@ -61,6 +73,18 @@ describe("EventSettingsWorkspace", () => {
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("switch", { name: /Collect a guest message/ }));
+    await user.click(screen.getByRole("button", { name: "Save RSVP fields" }));
+
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(2));
+    expect(updateEvent).toHaveBeenLastCalledWith("evt_123", {
+      rsvpSettings: {
+        collectGuestMessage: false,
+        collectGuestNames: true,
+      },
+    });
+    expect(screen.getByText(/Previously submitted names and messages stay retained/)).toBeTruthy();
   });
 
   it("keeps edits visible when saving settings fails", async () => {
@@ -121,7 +145,10 @@ const settingsEvent: Event = {
   id: "evt_123",
   ownerUserId: "user_123",
   publicSettings: {},
-  rsvpSettings: {},
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
   slug: "spring-dinner",
   startsAt: "2030-06-01T10:30:00.000Z",
   status: "draft",

@@ -17,13 +17,14 @@ import {
   validateEventTypeSections,
   validateThemeSections,
 } from "@lumiere/themes";
-import type {
-  ApiFieldError,
-  Event,
-  EventCreate,
-  EventSection,
-  EventSectionMutation,
-  EventUpdate,
+import {
+  rsvpSettingsSchema,
+  type ApiFieldError,
+  type Event,
+  type EventCreate,
+  type EventSection,
+  type EventSectionMutation,
+  type EventUpdate,
 } from "@lumiere/types";
 import { and, asc, desc, eq, getTableColumns, ne, sql } from "drizzle-orm";
 
@@ -296,6 +297,15 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
 
         const managerEvent = toApiEvent(event, themeSettings, rsvpSettings);
 
+        if (input.rsvpSettings !== undefined && event.status === "published") {
+          await tx
+            .update(eventPublications)
+            .set({
+              rsvpSettingsJson: managerEvent.rsvpSettings,
+            })
+            .where(eq(eventPublications.eventId, eventId));
+        }
+
         if (input.status === "published") {
           const sections = await listDraftSections(database, eventId);
           const readiness = evaluatePublishingReadiness({ event: managerEvent, sections });
@@ -457,7 +467,7 @@ export const toApiEvent = (
   ownerUserId: event.ownerUserId,
   publicSettings: event.publicSettingsJson as Event["publicSettings"],
   hasPublicAccessCode: event.publicAccessCodeHash !== null,
-  rsvpSettings: (rsvpSettings?.settingsJson ?? {}) as Event["rsvpSettings"],
+  rsvpSettings: rsvpSettingsSchema.parse(rsvpSettings?.settingsJson ?? {}),
   selectedThemeId: themeSettings?.selectedThemeId ?? undefined,
   slug: event.publicSlug,
   startsAt: toIsoDateTime(event.startsAt),
@@ -595,16 +605,21 @@ const updateRsvpSettings = async (
     return current;
   }
 
+  const settingsJson = rsvpSettingsSchema.parse({
+    ...(current?.settingsJson ?? {}),
+    ...input.rsvpSettings,
+  });
+
   const [settings] = await db
     .insert(eventRsvpSettings)
     .values({
       eventId,
-      settingsJson: input.rsvpSettings,
+      settingsJson,
     })
     .onConflictDoUpdate({
       target: eventRsvpSettings.eventId,
       set: {
-        settingsJson: input.rsvpSettings,
+        settingsJson,
         updatedAt: sql`now()`,
       },
     })

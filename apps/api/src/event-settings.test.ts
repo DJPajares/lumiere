@@ -14,7 +14,11 @@ const event: Event = {
   hasPublicAccessCode: false,
   ownerUserId: "00000000-0000-4000-8000-000000000101",
   publicSettings: {},
-  rsvpSettings: { enabled: true },
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+    enabled: true,
+  },
   selectedThemeId: "lumiere-default",
   slug: "launch-night",
   startsAt: "2026-12-01T11:00:00.000Z",

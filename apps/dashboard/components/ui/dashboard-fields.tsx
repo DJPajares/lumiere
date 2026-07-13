@@ -17,6 +17,16 @@ import {
   SelectValue,
 } from "@lumiere/dashboard-ui/components/select";
 import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@lumiere/dashboard-ui/components/field";
+import { Switch } from "@lumiere/dashboard-ui/components/switch";
+import {
   useId,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
@@ -444,52 +454,67 @@ export function DashboardCheckbox({
   );
 }
 
-type DashboardSwitchProps = Omit<DashboardCheckboxProps, "checkboxClassName">;
+type DashboardSwitchProps = {
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean | "false" | "true";
+  checked?: boolean;
+  defaultChecked?: boolean;
+  description?: ReactNode;
+  disabled?: boolean;
+  error?: string;
+  id?: string;
+  label: ReactNode;
+  name?: string;
+  onCheckedChange?: (checked: boolean) => void;
+  required?: boolean;
+};
 
 export function DashboardSwitch({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  checked,
+  defaultChecked,
   description,
+  disabled,
   error,
   id,
   label,
-  ...inputProps
+  name,
+  onCheckedChange,
+  required,
 }: DashboardSwitchProps) {
   const inputId = useResolvedId(id);
+  const describedBy = describeBy(
+    ariaDescribedBy,
+    description ? `${inputId}-description` : undefined,
+    error ? `${inputId}-error` : undefined,
+  );
 
   return (
-    <div className="grid gap-2">
-      <label
-        className="flex items-center justify-between gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 text-sm transition hover:bg-[var(--surface-muted)]"
-        htmlFor={inputId}
-      >
-        <span>
-          <span className="block font-semibold">{label}</span>
-          {description ? (
-            <span
-              className="mt-1 block leading-6 text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]"
-              id={`${inputId}-description`}
-            >
-              {description}
-            </span>
-          ) : null}
-        </span>
-        <span className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-[var(--surface-muted)] p-1 ring-1 ring-[var(--border)] transition has-[:checked]:bg-[var(--accent)]">
-          <input
-            {...inputProps}
-            aria-describedby={description ? `${inputId}-description` : undefined}
-            aria-invalid={error ? true : inputProps["aria-invalid"]}
-            className="peer sr-only"
+    <FieldGroup className="gap-2">
+      <FieldLabel htmlFor={inputId}>
+        <Field data-disabled={disabled || undefined} data-invalid={error ? true : undefined}>
+          <FieldContent>
+            <FieldTitle>{label}</FieldTitle>
+            {description ? (
+              <FieldDescription id={`${inputId}-description`}>{description}</FieldDescription>
+            ) : null}
+          </FieldContent>
+          <Switch
+            aria-describedby={describedBy}
+            aria-invalid={error ? true : ariaInvalid}
+            checked={checked}
+            defaultChecked={defaultChecked}
+            disabled={disabled}
             id={inputId}
-            type="checkbox"
+            name={name}
+            onCheckedChange={onCheckedChange}
+            required={required}
           />
-          <span className="size-4 rounded-full bg-[var(--surface)] shadow-sm transition peer-checked:translate-x-5" />
-        </span>
-      </label>
-      {error ? (
-        <p className="text-sm leading-5 text-[var(--error)]" id={`${inputId}-error`} role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+        </Field>
+      </FieldLabel>
+      {error ? <FieldError id={`${inputId}-error`}>{error}</FieldError> : null}
+    </FieldGroup>
   );
 }
 

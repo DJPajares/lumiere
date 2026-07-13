@@ -25,7 +25,10 @@ describe("shared schemas", () => {
       slug: "holiday-dinner",
       themeMode: "system",
       publicSettings: {},
-      rsvpSettings: {},
+      rsvpSettings: {
+        collectGuestMessage: true,
+        collectGuestNames: true,
+      },
     });
   });
 
@@ -66,6 +69,18 @@ describe("shared schemas", () => {
     });
 
     expect(() => eventUpdateSchema.parse({})).toThrow("At least one event field is required");
+
+    expect(
+      eventUpdateSchema.parse({
+        rsvpSettings: {
+          collectGuestNames: false,
+        },
+      }),
+    ).toEqual({
+      rsvpSettings: {
+        collectGuestNames: false,
+      },
+    });
   });
 
   it("allows an event update to clear its optional end time", () => {
