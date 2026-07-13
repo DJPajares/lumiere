@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InviteImage } from "../components/invite-image";
 import { InviteShell } from "../components/invite-shell";
 
 export default function InviteHome() {
@@ -8,11 +9,12 @@ export default function InviteHome() {
       <section className="grid min-h-[100dvh] content-center gap-8 px-5 py-10 sm:px-8 lg:px-16">
         <div className="mx-auto grid max-w-3xl gap-6 text-center">
           <div className="mx-auto inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-            <img
+            <InviteImage
               alt=""
               aria-hidden="true"
               className="h-12 w-auto object-contain"
               height={48}
+              sizes="48px"
               src="/logo.png"
               width={48}
             />

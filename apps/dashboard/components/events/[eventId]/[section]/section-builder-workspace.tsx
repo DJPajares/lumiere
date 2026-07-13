@@ -24,6 +24,7 @@ import {
   type SectionVisibility,
   type Theme,
 } from "@lumiere/types";
+import Image from "next/image";
 import Link from "next/link";
 import {
   useCallback,
@@ -2804,7 +2805,16 @@ function PreviewImage({
 
   return (
     <figure className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]">
-      <img alt={asset.alt} className={`${aspectClassName} w-full object-cover`} src={asset.url} />
+      <Image
+        alt={asset.alt}
+        className={`${aspectClassName} w-full object-cover`}
+        height={1067}
+        loading="lazy"
+        sizes="(min-width: 640px) 50vw, 100vw"
+        src={asset.url}
+        unoptimized
+        width={1600}
+      />
       {asset.caption ? (
         <figcaption className="bg-[var(--surface-muted)] px-3 py-2 text-xs">
           {asset.caption}

@@ -23,7 +23,8 @@
     "db:logs": "docker compose logs -f postgres",
     "db:studio": "pnpm --filter @lumiere/db db:studio",
     "format": "prettier --write --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\"",
-    "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\""
+    "format:check": "prettier --check --ignore-unknown \"**/*.{json,yml,yaml,mjs,ts,tsx}\"",
+    "check:next-image-usage": "node scripts/check-next-image-usage.mjs"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",

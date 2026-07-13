@@ -1,5 +1,7 @@
 import type { ThemeVisualEffects } from "@lumiere/themes";
 
+import { InviteImage } from "./invite-image";
+
 type InviteVisualLayerProps = {
   backdropImageUrl?: string;
   effects: ThemeVisualEffects;
@@ -19,14 +21,17 @@ export function InviteVisualLayer({ backdropImageUrl, effects }: InviteVisualLay
       >
         <div className="lumiere-visual-layer__viewport">
           <span className="lumiere-visual-layer__backdrop" />
-          {hasBackdropImage ? (
-            <img
+          {hasBackdropImage && backdropImageUrl ? (
+            <InviteImage
               alt=""
               className="lumiere-visual-layer__image"
               decoding="async"
               fetchPriority="low"
+              height={1080}
               loading="lazy"
+              sizes="100vw"
               src={backdropImageUrl}
+              width={1920}
             />
           ) : null}
           <span className="lumiere-visual-layer__wash" />

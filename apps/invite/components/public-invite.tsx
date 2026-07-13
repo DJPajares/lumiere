@@ -16,6 +16,7 @@ import type {
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
+import { InviteImage } from "./invite-image";
 import { resolveInviteMotionIntensity } from "./invite-motion-config";
 import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
 import { InviteMotionRuntime } from "./invite-motion-runtime";
@@ -312,13 +313,14 @@ function PublicHero({
             data-motion-soft-image="true"
             data-parallax-layer="hero-media"
           >
-            <img
+            <InviteImage
               alt={coverImage.alt}
               className={getHeroImageClassName(theme)}
               data-parallax-layer="hero-image"
               decoding="async"
-              fetchPriority="high"
               src={coverImage.url}
+              priority
+              sizes={getHeroImageSizes(theme)}
             />
             {coverImage.caption ? (
               <figcaption className="px-4 py-3 text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
@@ -1245,13 +1247,14 @@ function SectionImage({
       data-image-role={feature ? "feature" : compact ? "compact" : "supporting"}
       data-motion-soft-image="true"
     >
-      <img
+      <InviteImage
         alt={asset.alt}
         className={`${aspectClassName} w-full object-cover`}
         data-parallax-layer="section-image"
         decoding="async"
         loading="lazy"
         src={asset.url}
+        sizes={getSectionImageSizes({ compact, feature })}
       />
       {asset.caption ? (
         <figcaption className="bg-[var(--surface-muted)] px-3 py-2 text-sm">
@@ -1260,6 +1263,37 @@ function SectionImage({
       ) : null}
     </figure>
   );
+}
+
+function getHeroImageSizes(theme: ThemeDefinition) {
+  switch (theme.id) {
+    case "kids":
+      return "min(22rem, 100vw)";
+    case "garden-light":
+      return "min(48rem, 100vw)";
+    case "editorial-ivory":
+      return "(min-width: 1024px) 61vw, 100vw";
+    case "modern-minimal":
+      return "(min-width: 1024px) 40vw, 100vw";
+    case "premium":
+    case "noel":
+    case "celestial-gold":
+      return "(min-width: 1024px) 50vw, 100vw";
+    default:
+      return "(min-width: 1024px) 48vw, 100vw";
+  }
+}
+
+function getSectionImageSizes({ compact, feature }: { compact: boolean; feature: boolean }) {
+  if (compact) {
+    return "(min-width: 640px) 33vw, 100vw";
+  }
+
+  if (feature) {
+    return "(min-width: 1024px) 50vw, 100vw";
+  }
+
+  return "(min-width: 768px) 50vw, 100vw";
 }
 
 function getSectionFrameClassName(composition: SectionComposition, density: SectionDensity) {
