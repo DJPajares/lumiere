@@ -1,5 +1,6 @@
 [data-theme-id="noel"] {
   --noel-berry: #a94747;
+  --noel-crest-art: url("/themes/noel/ornament/noel-crest-candlelight.svg");
   --noel-gold: #c7a967;
   --noel-ice: #dcebe3;
   --noel-shadow: #03110c;
@@ -7,6 +8,7 @@
 
 [data-theme-id="noel"][data-theme-resolved-mode="light"] {
   --noel-berry: #a63f42;
+  --noel-crest-art: url("/themes/noel/ornament/noel-crest-snowlight.svg");
   --noel-gold: #9f7d38;
   --noel-ice: #f8fbf8;
   --noel-shadow: #153126;
@@ -143,19 +145,19 @@
 }
 
 [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament {
-  width: min(52vw, 42rem);
+  width: min(48vw, 38rem);
   aspect-ratio: 2 / 1;
   background: url("/themes/noel/ornament/evergreen-bough.svg") center / contain no-repeat;
-  filter: drop-shadow(0 12px 24px color-mix(in srgb, var(--noel-shadow) 32%, transparent));
-  opacity: 0.72;
+  filter: drop-shadow(0 12px 28px color-mix(in srgb, var(--noel-shadow) 26%, transparent));
+  opacity: 0.68;
 }
 
 [data-theme-id="noel"]
   [data-ornament-set="snowfall"]
   .lumiere-ornament[data-ornament-position="primary"] {
-  top: -3rem;
-  right: -6rem;
-  transform: rotate(5deg);
+  top: -3.5rem;
+  right: -5rem;
+  transform: rotate(2deg);
 }
 
 [data-theme-id="noel"]
@@ -163,8 +165,9 @@
   .lumiere-ornament[data-ornament-position="secondary"] {
   bottom: -2rem;
   left: -8rem;
-  width: min(42vw, 34rem);
-  transform: scale(-1) rotate(4deg);
+  width: min(38vw, 29rem);
+  opacity: 0.42;
+  transform: scale(-1) rotate(2deg);
 }
 
 [data-theme-id="noel"]
@@ -207,20 +210,26 @@
 
 [data-theme-id="noel"] .lumiere-section--hero::after {
   position: absolute;
-  top: clamp(0.55rem, 1.7vw, 1.3rem);
+  top: calc(clamp(0.8rem, 2.2vw, 1.8rem) - clamp(1.15rem, 2.08vw, 1.46rem));
   left: 50%;
-  width: min(18vw, 8rem);
-  height: 1.4rem;
-  background:
-    radial-gradient(circle at center, var(--noel-berry) 0 3px, transparent 4px),
-    linear-gradient(
-      90deg,
-      transparent,
-      var(--noel-gold) 24% 46%,
-      transparent 46% 54%,
-      var(--noel-gold) 54% 76%,
-      transparent
+  width: clamp(11rem, 22vw, 14rem);
+  height: clamp(3.85rem, 7vw, 4.9rem);
+  background-image:
+    var(--noel-crest-art),
+    radial-gradient(
+      ellipse at 50% 28%,
+      color-mix(in srgb, var(--background) 98%, transparent) 0 34%,
+      color-mix(in srgb, var(--background) 78%, transparent) 52%,
+      transparent 72%
     );
+  background-position:
+    center,
+    center 18%;
+  background-repeat: no-repeat;
+  background-size:
+    contain,
+    86% 58%;
+  filter: drop-shadow(0 4px 6px color-mix(in srgb, var(--noel-shadow) 24%, transparent));
   content: "";
   pointer-events: none;
   transform: translateX(-50%);
@@ -613,19 +622,14 @@
 }
 
 [data-theme-id="noel"] .lumiere-outro-layout::before {
-  width: 5rem;
-  height: 1rem;
+  width: clamp(10rem, 18vw, 12.5rem);
+  height: clamp(3.5rem, 6vw, 4.5rem);
   margin-inline: auto;
-  background:
-    radial-gradient(circle at center, var(--noel-berry) 0 3px, transparent 4px),
-    linear-gradient(
-      90deg,
-      transparent,
-      var(--noel-gold) 22% 46%,
-      transparent 46% 54%,
-      var(--noel-gold) 54% 78%,
-      transparent
-    );
+  background-image: var(--noel-crest-art);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(0 5px 9px color-mix(in srgb, var(--noel-shadow) 24%, transparent));
   content: "";
 }
 
@@ -679,8 +683,8 @@
   [data-theme-id="noel"]
     [data-ornament-set="snowfall"]
     .lumiere-ornament[data-ornament-position="primary"] {
-    right: -10rem;
-    width: min(76vw, 36rem);
+    right: -7rem;
+    width: min(64vw, 31rem);
   }
 }
 
@@ -691,6 +695,12 @@
 
   [data-theme-id="noel"] .lumiere-section--hero::before {
     inset: 0.65rem;
+  }
+
+  [data-theme-id="noel"] .lumiere-section--hero::after {
+    top: -0.4rem;
+    width: 10.5rem;
+    height: 3.8rem;
   }
 
   [data-theme-id="noel"] .lumiere-hero-title {
@@ -710,19 +720,19 @@
   [data-theme-id="noel"]
     [data-ornament-set="snowfall"]
     .lumiere-ornament[data-ornament-position="primary"] {
-    top: -1.5rem;
-    right: -9rem;
-    width: 29rem;
-    opacity: 0.54;
+    top: -2.25rem;
+    right: -5.5rem;
+    width: 21rem;
+    opacity: 0.48;
   }
 
   [data-theme-id="noel"]
     [data-ornament-set="snowfall"]
     .lumiere-ornament[data-ornament-position="secondary"] {
-    bottom: 3rem;
-    left: -8rem;
-    width: 23rem;
-    opacity: 0.38;
+    bottom: -3rem;
+    left: -6rem;
+    width: 18rem;
+    opacity: 0.24;
   }
 
   [data-theme-id="noel"]
