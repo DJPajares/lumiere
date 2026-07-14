@@ -542,12 +542,13 @@ export const themeTemplateSpecs = {
   },
   noel: {
     id: "noel",
-    designRead: "Cozy seasonal layout with evergreen accents and warm candlelit surfaces.",
-    eventTypeFit: ["holiday", "dinner", "private_event"],
+    designRead: themeRegistry.noel.designRead,
+    eventTypeFit: themeRegistry.noel.supportedEventTypes,
     moodBoardNotes: [
       "Evergreen, candlelight, winter table settings, and warm humanist typography.",
-      "Seasonal without novelty clutter; atmosphere comes from light and materials.",
+      "Pearl frost, cold window light, and sculpted evergreen boughs create atmosphere without novelty clutter.",
       "Works for Christmas and year-end gatherings without requiring religious imagery.",
+      "Adapts the Christmas atmosphere to weddings, birthdays, kids' parties, launches, dinners, and private celebrations.",
     ],
     antiSlopConstraints: [
       "Avoid emoji-heavy holiday styling and obvious clip-art seasonal motifs.",
@@ -577,7 +578,8 @@ export const themeTemplateSpecs = {
       level: "seasonal",
       motionProfile: "seasonal",
       parallaxProfile: "story-depth",
-      reducedMotion: "Disable story depth and keep warmth through layered color and spacing.",
+      reducedMotion:
+        "Stop snowfall, glints, and story depth while keeping the winter atmosphere through layered color and spacing.",
     },
     sectionTreatments: [
       {

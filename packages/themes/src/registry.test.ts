@@ -4,6 +4,7 @@ import {
   availableThemeIds,
   buildThemeCompatibilityMatrix,
   canDisableBlueprintSection,
+  compatibilityEventTypes,
   defaultRsvpCopy,
   eventTypeBlueprints,
   evaluateThemeCompatibility,
@@ -869,6 +870,15 @@ describe("theme registry", () => {
 
   it("filters themes by event type", () => {
     expect(getThemesForEventType("holiday").map((theme) => theme.id)).toContain("noel");
-    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual(["kids"]);
+    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual(["kids", "noel"]);
+    expect(
+      compatibilityEventTypes.every(
+        (eventType) =>
+          evaluateThemeCompatibility({ eventType, theme: themeRegistry.noel }).canApply,
+      ),
+    ).toBe(true);
+    expect(new Set(themeRegistry.noel.supportedSections)).toEqual(
+      new Set(Object.keys(sectionDefinitions)),
+    );
   });
 });

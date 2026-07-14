@@ -1,17 +1,31 @@
-import type { ThemeVisualEffects } from "../../contracts";
+import type { ThemeRsvpPresentation, ThemeVisualEffects } from "../../contracts";
 import { createThemePresentation, seasonalRsvpPresentation } from "../../theme-shared";
+
+export const noelRsvpPresentation = {
+  ...seasonalRsvpPresentation,
+  cardClassName:
+    "lumiere-rsvp-card--noel grid gap-4 border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-4 shadow-[0_32px_100px_color-mix(in_srgb,var(--background)_46%,transparent)] backdrop-blur-xl sm:p-6",
+  eyebrowClassName:
+    "text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]",
+  inputClassName:
+    "min-h-11 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-sm text-[var(--foreground)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
+  submitClassName:
+    "min-h-12 w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+  titleClassName:
+    "lumiere-display text-3xl font-normal leading-tight tracking-[-0.02em] text-[var(--foreground)] sm:text-4xl",
+} satisfies ThemeRsvpPresentation;
 
 export const noelPresentation = createThemePresentation({
   hero: {
-    frameClassName:
-      "lumiere-hero--noel bg-[radial-gradient(circle_at_80%_12%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_30%),linear-gradient(180deg,var(--background),color-mix(in_srgb,var(--surface-muted)_54%,var(--background)))]",
+    fallbackClassName: "lumiere-noel-folio",
+    frameClassName: "lumiere-hero--noel",
     imageClassName: "aspect-[4/5] w-full object-cover sm:aspect-[16/12]",
     imageSizes: "(min-width: 1024px) 50vw, 100vw",
     innerClassName:
-      "mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center",
-    mediaClassName: "order-first rounded-[var(--radius-lg)] lg:order-none",
+      "mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[minmax(0,1.12fr)_minmax(19rem,0.72fr)] lg:items-center lg:gap-16",
+    mediaClassName: "lumiere-noel-portrait rounded-[var(--radius-lg)]",
   },
-  rsvp: seasonalRsvpPresentation,
+  rsvp: noelRsvpPresentation,
 });
 
 export const noelEffects = {
@@ -19,6 +33,6 @@ export const noelEffects = {
   dividerStyle: "luminous",
   frameStyle: "frosted",
   imageTreatment: "frosted",
-  ornaments: { density: "sparse", enabled: true, set: "snowfall" },
+  ornaments: { density: "balanced", enabled: true, set: "snowfall" },
   texture: { policy: "frost", strength: "subtle" },
 } satisfies ThemeVisualEffects;

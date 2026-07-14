@@ -1,36 +1,34 @@
 import type { ThemeDefinition } from "../../contracts";
 import { seasonalRsvpCopyOverrides } from "../../rsvp-copy";
-import {
-  allInviteSections,
-  createRendererSlots,
-  expansionEventTypes,
-  publicCoreSections,
-} from "../../theme-shared";
+import { allEventTypes, allInviteSections, createRendererSlots } from "../../theme-shared";
 import { noelEffects, noelPresentation } from "./visual";
 
 export const noelTheme = {
   id: "noel",
   label: "Noel",
-  description: "Seasonal holiday invitation for Christmas and year-end gatherings.",
-  designRead: "Cozy seasonal layout with evergreen accents and warm candlelit surfaces.",
-  supportedEventTypes: ["holiday", "dinner", "private_event"],
+  description: "Christmas-inspired invitation for celebrations of every event type.",
+  designRead:
+    "A peaceful winter conservatory with sculpted evergreen boughs, drifting snow, pearl frost, and candlelit invitation folios.",
+  supportedEventTypes: allEventTypes,
   supportedModes: ["light", "dark", "toggleable"],
   defaultMode: "toggleable",
   presentation: noelPresentation,
   modeToggle: {
-    defaultPreference: "system",
+    defaultPreference: "dark",
     labels: { control: "Invitation appearance", dark: "Candlelight", light: "Snowlight" },
     placement: "top-start",
     style: "seasonal",
   },
   rsvpCopy: seasonalRsvpCopyOverrides,
-  supportedSections: [...publicCoreSections, "story", "details", "dress_code", "gallery", "custom"],
-  requiredSections: ["introduction", "date", "location"],
+  supportedSections: allInviteSections,
+  requiredSections: ["introduction", "date", "location", "rsvp"],
   recommendedSections: [
     "introduction",
     "date",
+    "profile",
     "details",
     "dress_code",
+    "entourage",
     "location",
     "gallery",
     "rsvp",
@@ -49,30 +47,30 @@ export const noelTheme = {
   ],
   tokens: {
     light: {
-      background: "#fbf4e8",
-      foreground: "#1f2f28",
-      surface: "#fffdf8",
-      surfaceMuted: "#e9ddc5",
-      border: "#cdbd9f",
-      accent: "#2f6d52",
-      accentStrong: "#1f4a39",
-      success: "#2f6d52",
-      warning: "#a36b24",
-      error: "#a83b38",
-      focus: "#2f6d52",
+      background: "#f1f5f1",
+      foreground: "#172b23",
+      surface: "#fbfcf8",
+      surfaceMuted: "#e2ebe4",
+      border: "#b6c8bb",
+      accent: "#285f48",
+      accentStrong: "#143d2d",
+      success: "#267054",
+      warning: "#94652e",
+      error: "#a84242",
+      focus: "#276b50",
     },
     dark: {
-      background: "#101a16",
-      foreground: "#f4eadb",
-      surface: "#182620",
-      surfaceMuted: "#22352d",
-      border: "#375043",
-      accent: "#8bc6a6",
-      accentStrong: "#bde0ca",
-      success: "#8bc6a6",
-      warning: "#e0a35a",
-      error: "#e18480",
-      focus: "#8bc6a6",
+      background: "#071a14",
+      foreground: "#f2f4ea",
+      surface: "#0e281e",
+      surfaceMuted: "#17372b",
+      border: "#3f5b4c",
+      accent: "#9ed0b4",
+      accentStrong: "#d9e8dd",
+      success: "#86c7a2",
+      warning: "#e0b46a",
+      error: "#e18783",
+      focus: "#b9dec8",
     },
   },
   composition: {
@@ -83,11 +81,11 @@ export const noelTheme = {
       mood: "Warm acoustic holiday music with guest-controlled playback.",
     },
     backgroundTreatment:
-      "Evergreen and candlelight layers with cozy framed details, never emoji-heavy clutter.",
+      "Deep evergreen and snowy pearl fields with slow falling snow, sculpted boughs, cold window light, and small candle-gold details.",
     effects: noelEffects,
     visualSystem: {
       cardStackPolicy:
-        "Use cozy framed details selectively; seasonal hero, gallery, and story moments should carry depth and atmosphere.",
+        "Use invitation-folio borders and corner botanicals for practical details; hero, gallery, story, and outro remain spacious atmospheric chapters.",
       compositionMap: "wedding-editorial",
       imageStrategy:
         "Prefer real table, venue, or gathering imagery with warm captions; missing media becomes a candlelit fact rail, not festive clutter.",
@@ -97,7 +95,8 @@ export const noelTheme = {
     hero: {
       composition: "seasonal-tableau",
       fullViewport: true,
-      mediaTreatment: "Warm table or gathering image with evergreen framing and soft light.",
+      mediaTreatment:
+        "An arched winter portrait or a frosted invitation folio framed by an asymmetrical evergreen bough and quiet snow.",
     },
     map: { aspect: "landscape", frame: "seasonal", overlay: "accent-wash" },
     rsvpDesign: "seasonal",
@@ -117,6 +116,11 @@ export const noelTheme = {
         density: "balanced",
         motion: "card-reveal",
       },
+      entourage: {
+        composition: "editorial-split",
+        density: "balanced",
+        motion: "section-reveal",
+      },
       gallery: {
         composition: "gallery-feature",
         density: "balanced",
@@ -127,6 +131,17 @@ export const noelTheme = {
         composition: "editorial-split",
         density: "balanced",
         motion: "section-reveal",
+      },
+      outro: {
+        composition: "full-bleed",
+        density: "spacious",
+        motion: "section-reveal",
+      },
+      profile: {
+        composition: "editorial-split",
+        density: "balanced",
+        layout: "seasonal-portrait",
+        motion: "media-reveal",
       },
       rsvp: {
         composition: "framed",
@@ -140,37 +155,38 @@ export const noelTheme = {
       },
     },
   },
-  radius: { sm: "0.5rem", md: "0.75rem", lg: "1rem" },
+  radius: { sm: "0.25rem", md: "0.5rem", lg: "0.75rem" },
   typography: {
-    display: "warm serif or humanist sans depending on renderer",
-    body: "humanist sans",
+    display: "old-style winter serif",
+    body: "quiet humanist sans",
     css: {
       bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
-      eyebrowLetterSpacing: "0.18em",
+        '"Avenir Next", Avenir, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      displayFamily:
+        '"Iowan Old Style", "Palatino Linotype", Palatino, Baskerville, Georgia, ui-serif, serif',
+      eyebrowLetterSpacing: "0.24em",
     },
     scale: "editorial",
   },
-  imageTreatment: "Warm gallery frames with seasonal captions and preserved aspect ratios.",
-  rsvpTreatment: "Cozy RSVP panel with clear attendance state and host message support.",
+  imageTreatment:
+    "Cool cinematic crops behind a pearl-frost inner line, evergreen shadow, and discreet winter caption rail.",
+  rsvpTreatment:
+    "A candlelit invitation folio with a fine double border, clear attendance state, and evergreen primary action.",
   compatibility: {
-    backdropStrategy: "Evergreen and candlelit surfaces with cozy full-width seasonal chapters.",
+    backdropStrategy:
+      "A deep evergreen winter conservatory with drifting snow, cold window light, and pearl-frost chapter shifts.",
     fontPairing: {
       body: "humanist sans",
       display: "warm serif",
     },
     motionLevel: "seasonal",
     ornamentStrategy:
-      "Seasonal light, evergreen framing, and warm tablescape cues without festive clutter.",
-    rendererSlots: createRendererSlots({
-      fallback: ["introduction", "outro", "custom"],
-      specialized: ["date", "details", "dress_code", "gallery", "location", "rsvp", "story"],
-    }),
+      "Sculpted evergreen boughs, sparse berries, fine ribbon arcs, and layered snow; no clip art, novelty icons, or glitter fields.",
+    rendererSlots: createRendererSlots({ specialized: allInviteSections }),
   },
   dashboardPreview: {
-    swatch: "#2f6d52",
-    summary: "Seasonal holiday theme with light and candlelit dark variants.",
+    swatch: "#285f48",
+    summary: "Winter-conservatory Christmas theme with drifting snow and invitation-folio details.",
   },
   previewData: {
     eventTitle: "Noel Supper",
@@ -199,5 +215,6 @@ export const noelTheme = {
   accessibilityNotes: [
     "Red/green seasonal cues must include text labels.",
     "Dark mode should avoid low-contrast evergreen-on-black pairings.",
+    "Snowfall and decorative glints stop when reduced motion is requested.",
   ],
 } satisfies ThemeDefinition;

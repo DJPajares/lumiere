@@ -1,4 +1,4 @@
-import type { EventType, SectionType } from "@lumiere/types";
+import { eventTypeSchema, type EventType, type SectionType } from "@lumiere/types";
 import type {
   ThemeHeroPresentation,
   ThemeInvitePresentation,
@@ -91,6 +91,8 @@ export const allInviteSections: SectionType[] = [
   "gallery",
   "custom",
 ];
+
+export const allEventTypes: EventType[] = [...eventTypeSchema.options];
 
 export const expansionEventTypes: EventType[] = ["wedding", "birthday", "private_event", "other"];
 

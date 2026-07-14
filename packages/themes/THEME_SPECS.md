@@ -51,10 +51,11 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 
 ## Noel
 
-- Fit: holiday dinners and year-end gatherings.
-- Mood: evergreen, candlelight, warm table settings, restrained seasonal texture.
-- Motion: seasonal, story-depth profile; reduced motion disables story drift.
-- Sections: cinematic seasonal hero, framed dinner details, editorial story, feature gallery, split location, cozy RSVP, full-width outro.
+- Fit: every event type, including weddings, birthdays, kids parties, holidays, dinners, launches, private events, and generic celebrations.
+- Mood: peaceful winter conservatory, deep evergreen, pearl frost, cold window light, restrained berries, and candle-gold details.
+- Motion: two-depth falling snow, quiet glints, and a seasonal story-depth profile; reduced motion stops all ambient movement.
+- Ornaments: original code-native evergreen boughs, small berry and ribbon cues, and fine folio borders rather than clip art or glitter.
+- Sections: asymmetric seasonal hero, arched winter imagery, invitation-folio details, editorial profiles and entourages, story depth, feature gallery, split location, crafted RSVP, and full-width outro.
 - Ambient media: optional warm acoustic track with guest-controlled playback.
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.
 - Dashboard preview: evergreen table scene, cream surface, and restrained seasonal accent.

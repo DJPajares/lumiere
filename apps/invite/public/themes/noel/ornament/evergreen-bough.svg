@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 260">
+  <defs>
+    <linearGradient id="branch" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d7444"/>
+      <stop offset="1" stop-color="#d0b77b"/>
+    </linearGradient>
+    <linearGradient id="needle" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#244b37"/>
+      <stop offset=".58" stop-color="#52745a"/>
+      <stop offset="1" stop-color="#8ba087"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#365b42"/>
+      <stop offset="1" stop-color="#7f987c"/>
+    </linearGradient>
+    <g id="fir-sprig" fill="none" stroke="url(#needle)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0 0V-74" stroke-width="3.5"/>
+      <path d="m0-8-18-14m18 7 20-16M0-24l-24-17m24 8 26-20M0-42l-23-18m23 9 22-19M0-58l-14-12m14 5 12-8" stroke-width="2.6"/>
+    </g>
+  </defs>
+  <path d="M14 239C151 211 306 127 507 19" fill="none" stroke="url(#branch)" stroke-linecap="round" stroke-width="6"/>
+  <g>
+    <use href="#fir-sprig" transform="translate(48 230) rotate(-56) scale(.62)"/>
+    <use href="#fir-sprig" transform="translate(71 222) rotate(43) scale(.54)"/>
+    <use href="#fir-sprig" transform="translate(96 212) rotate(-31) scale(.76)"/>
+    <use href="#fir-sprig" transform="translate(122 201) rotate(31) scale(.68)"/>
+    <use href="#fir-sprig" transform="translate(148 188) rotate(-23) scale(.82)"/>
+    <use href="#fir-sprig" transform="translate(176 174) rotate(35) scale(.74)"/>
+    <use href="#fir-sprig" transform="translate(205 158) rotate(-17) scale(.86)"/>
+    <use href="#fir-sprig" transform="translate(234 142) rotate(32) scale(.78)"/>
+    <use href="#fir-sprig" transform="translate(266 123) rotate(-13) scale(.84)"/>
+    <use href="#fir-sprig" transform="translate(298 105) rotate(35) scale(.76)"/>
+    <use href="#fir-sprig" transform="translate(331 86) rotate(-9) scale(.76)"/>
+    <use href="#fir-sprig" transform="translate(364 68) rotate(39) scale(.65)"/>
+    <use href="#fir-sprig" transform="translate(398 51) rotate(-5) scale(.62)"/>
+    <use href="#fir-sprig" transform="translate(433 37) rotate(45) scale(.5)"/>
+    <use href="#fir-sprig" transform="translate(467 26) rotate(2) scale(.42)"/>
+  </g>
+  <g fill="url(#leaf)">
+    <path d="M72 211c-26-4-40-19-40-39 22-3 40 7 50 30-1 5-4 8-10 9Z"/>
+    <path d="M79 206c4-25 19-39 39-40 3 21-6 39-28 50-5-1-9-5-11-10Z"/>
+    <path d="M253 125c-23-8-32-24-28-43 21 2 35 14 40 36-3 5-7 7-12 7Z"/>
+    <path d="M261 121c8-22 24-32 43-29-1 20-13 34-35 41-5-2-7-6-8-12Z"/>
+  </g>
+  <g fill="#ad4548" stroke="#e6c8b1" stroke-width="1">
+    <circle cx="79" cy="207" r="5"/>
+    <circle cx="89" cy="203" r="4"/>
+    <circle cx="83" cy="216" r="3.5"/>
+    <circle cx="260" cy="123" r="4.5"/>
+    <circle cx="270" cy="119" r="3.5"/>
+    <circle cx="265" cy="130" r="3"/>
+  </g>
+  <g fill="#d7bd7f">
+    <circle cx="177" cy="173" r="2.4"/>
+    <circle cx="337" cy="82" r="2"/>
+    <circle cx="434" cy="34" r="1.8"/>
+  </g>
+</svg>
