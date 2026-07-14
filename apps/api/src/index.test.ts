@@ -2304,7 +2304,7 @@ describe("API app", () => {
         body: JSON.stringify({
           responseStatus: "attending",
           attendeeCount: 2,
-          guestNames: ["Mina Tan", "Alex Tan"],
+          guestNames: [],
           answers: [],
           message: "Excited to attend.",
         }),
@@ -2325,7 +2325,7 @@ describe("API app", () => {
       submission: {
         responseStatus: "attending",
         attendeeCount: 2,
-        guestNames: ["Mina Tan", "Alex Tan"],
+        guestNames: [],
         answers: [],
         message: "Excited to attend.",
       },

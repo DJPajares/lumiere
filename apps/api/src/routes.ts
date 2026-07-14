@@ -1424,17 +1424,6 @@ const throwRsvpRejection = (rejection: RsvpSubmissionRejected): never => {
     });
   }
 
-  if (rejection.reason === "guest_names_required") {
-    throw new ApiHttpError("VALIDATION_ERROR", "Guest names are required for every attendee", {
-      fields: [
-        {
-          message: "Enter a name for every attendee",
-          path: ["guestNames"],
-        },
-      ],
-    });
-  }
-
   if (rejection.reason === "message_disabled") {
     throw new ApiHttpError("VALIDATION_ERROR", "Guest messages are disabled for this event", {
       fields: [

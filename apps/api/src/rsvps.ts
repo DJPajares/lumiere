@@ -29,7 +29,6 @@ export type RsvpSubmissionRecord = {
 export type RsvpSubmissionRejected =
   | { reason: "closed" }
   | { reason: "guest_names_disabled" }
-  | { reason: "guest_names_required" }
   | { maxPax: number; reason: "max_pax_exceeded" }
   | { reason: "maybe_disabled" }
   | { reason: "message_disabled" }
@@ -113,14 +112,6 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
 
     if (!settings.collectGuestNames && submission.guestNames.length > 0) {
       return { reason: "guest_names_disabled" };
-    }
-
-    if (
-      settings.collectGuestNames &&
-      submission.attendeeCount > 0 &&
-      submission.guestNames.length !== submission.attendeeCount
-    ) {
-      return { reason: "guest_names_required" };
     }
 
     if (!settings.collectGuestMessage && submission.message !== undefined) {

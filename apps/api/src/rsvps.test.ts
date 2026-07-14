@@ -293,8 +293,12 @@ describe("RSVP store", () => {
       }),
     });
 
-    const missingNamesResult = await createDrizzleRsvpStore(
-      new FakeRsvpDb([[eventRow], [guestGroupRow]], responseRow).asDatabase(),
+    const optionalNamesDb = new FakeRsvpDb([[eventRow], [guestGroupRow]], {
+      ...responseRow,
+      guestNamesJson: [],
+    });
+    const optionalNamesResult = await createDrizzleRsvpStore(
+      optionalNamesDb.asDatabase(),
     ).submitGuestRsvp({
       eventSlug: "launch-night",
       inviteTokenHash: "hashed-token",
@@ -333,7 +337,11 @@ describe("RSVP store", () => {
       },
     });
 
-    expect(missingNamesResult).toEqual({ reason: "guest_names_required" });
+    expect(optionalNamesResult).toMatchObject({ response: { guestNames: [] } });
+    expect(optionalNamesDb.insertValues).toContainEqual({
+      table: rsvpResponses,
+      values: expect.objectContaining({ guestNamesJson: [] }),
+    });
     expect(disabledMessageResult).toEqual({ reason: "message_disabled" });
     expect(disabledNamesResult).toEqual({ reason: "guest_names_disabled" });
   });
