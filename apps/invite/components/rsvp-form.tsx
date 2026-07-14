@@ -107,9 +107,7 @@ export function useRsvpFormController({
   >(null);
   const [isEditingExistingReply, setIsEditingExistingReply] = useState(false);
   const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(
-    () => rsvpFields.collectGuestNames || questions.some((question) => question.required),
-  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
   const hasExistingReply = Boolean(initialResponseStatus || submittedResponse);
   const isConfirmationVisible = hasExistingReply && !isEditingExistingReply;
@@ -117,12 +115,10 @@ export function useRsvpFormController({
   const hasSubmittedReply = Boolean(submittedResponse);
   const isResponding = state.responseStatus !== "not_attending";
   const hasDetails =
-    questions.length > 0 ||
-    rsvpFields.collectGuestMessage ||
-    (isResponding && rsvpFields.collectGuestNames);
+    questions.length > 0 || rsvpFields.collectGuestMessage || rsvpFields.collectGuestNames;
   const detailsLabel = resolveDetailsLabel(copy, {
     collectGuestMessage: rsvpFields.collectGuestMessage,
-    collectGuestNames: isResponding && rsvpFields.collectGuestNames,
+    collectGuestNames: rsvpFields.collectGuestNames,
     hasQuestions: questions.length > 0,
   });
   const isLocked = isRsvpLocked(recoveryState);
@@ -271,7 +267,7 @@ export function createInitialRsvpFormState(
     return {
       answers: {},
       attendeeCount: 0,
-      guestNames: [],
+      guestNames: rsvpFields.collectGuestNames ? [""] : [],
       message: "",
       responseStatus,
     };
@@ -325,15 +321,10 @@ export function validateRsvpFormState({
 
   const guestNames =
     isAttending && rsvpFields.collectGuestNames
-      ? state.guestNames.slice(0, attendeeCount).map((name, index) => {
-          const normalized = name.trim();
-
-          if (!normalized) {
-            errors[`guestNames.${index}`] = "Enter a name for this attendee.";
-          }
-
-          return normalized;
-        })
+      ? state.guestNames
+          .slice(0, attendeeCount)
+          .map((name) => name.trim())
+          .filter(Boolean)
       : [];
 
   const answers = questions.flatMap((question) => {
@@ -541,7 +532,7 @@ function withResponseStatus(
     return {
       ...state,
       attendeeCount: 0,
-      guestNames: [],
+      guestNames: collectGuestNames ? (state.guestNames.length > 0 ? state.guestNames : [""]) : [],
       responseStatus,
     };
   }

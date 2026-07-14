@@ -1010,7 +1010,7 @@ function RsvpSection({
       </div>
 
       {submitContext && (
-        <div className="w-full max-w-xl lg:justify-self-end">
+        <div className="w-full max-w-2xl lg:justify-self-end">
           <RsvpForm
             copy={copy}
             eventSlug={eventSlug}

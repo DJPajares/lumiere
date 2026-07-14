@@ -130,7 +130,7 @@ describe("theme registry", () => {
     expect(themeRegistry.kids.presentation.rsvp.rendererId).toBe("common");
     expect(themeRegistry["lumiere-default"].presentation.rsvp.rendererId).toBe("common");
     expect(themeRegistry.premium.presentation.rsvp.titleClassName).toContain("font-serif");
-    expect(themeRegistry.premium.presentation.rsvp.rendererId).toBe("editorial-ledger");
+    expect(themeRegistry.premium.presentation.rsvp.rendererId).toBe("common");
 
     expect(resolveThemeRsvpCopy(themeRegistry["lumiere-default"])).toEqual(defaultRsvpCopy);
     expect(resolveThemeRsvpCopy(themeRegistry.kids)).toMatchObject({

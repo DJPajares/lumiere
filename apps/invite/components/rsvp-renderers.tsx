@@ -90,7 +90,9 @@ function CommonRsvpRenderer(contract: RsvpRendererContract) {
       <AttendanceControls contract={contract} />
       <DetailsControls contract={contract} />
       <SubmitAction contract={contract} />
-      <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+      {!contract.flags.isUpdatingExistingReply ? (
+        <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+      ) : null}
     </form>
   );
 }
@@ -138,32 +140,32 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
         </div>
       ) : null}
 
-      <div
-        className={
-          contract.flags.hasDetails
-            ? "grid border-y border-[var(--border)] lg:grid-cols-[0.82fr_1.18fr]"
-            : "grid border-y border-[var(--border)]"
-        }
-      >
+      <div className="grid border-y border-[var(--border)]">
         <section
           aria-label="Attendance"
-          className="grid content-start gap-4 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-4 py-5 sm:px-5 lg:border-r lg:border-[var(--border)] lg:py-6"
+          className={`grid content-start gap-5 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-4 py-5 sm:px-5 lg:py-6 ${
+            contract.flags.isResponding ? "sm:grid-cols-2" : ""
+          }`}
         >
           <AttendanceControls contract={contract} />
         </section>
         {contract.flags.hasDetails ? (
           <section
             aria-label="Guest details"
-            className="grid content-start px-4 py-5 sm:px-5 lg:py-6"
+            className="grid content-start border-t border-[var(--border)] px-4 py-4 sm:px-5"
           >
             <DetailsControls contract={contract} expandedLabel />
           </section>
         ) : null}
       </div>
 
-      <div className="grid gap-3 px-4 py-5 sm:grid-cols-[minmax(10rem,0.72fr)_1.28fr] sm:items-start sm:px-5">
-        <SubmitAction contract={contract} />
-        <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+      <div className="grid gap-4 px-4 py-5 sm:px-5">
+        <div className="w-full sm:max-w-xs">
+          <SubmitAction contract={contract} />
+        </div>
+        {!contract.flags.isUpdatingExistingReply ? (
+          <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+        ) : null}
       </div>
     </form>
   );
@@ -379,18 +381,27 @@ function DetailsControls({
     return null;
   }
 
+  const isOptional = !contract.questions.some((question) => question.required);
+
   return (
     <details
       className={
         expandedLabel
-          ? "group border-y border-[var(--border)]"
+          ? "group"
           : "group rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
       }
       onToggle={(event) => contract.actions.setDetailsOpen(event.currentTarget.open)}
       open={contract.details.isOpen}
     >
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
-        <span>{contract.details.label}</span>
+        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span>{contract.details.label}</span>
+          {isOptional ? (
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_52%,transparent)]">
+              Optional
+            </span>
+          ) : null}
+        </span>
         <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
           {contract.details.isOpen
             ? contract.copy.detailsCloseLabel
@@ -399,7 +410,7 @@ function DetailsControls({
       </summary>
 
       <div className="grid gap-5 border-t border-[var(--border)] pb-4 pt-4">
-        {contract.flags.isResponding && contract.enabledFields.collectGuestNames ? (
+        {contract.enabledFields.collectGuestNames ? (
           <div className="grid gap-3">
             <p className={contract.presentation.fieldLabelClassName}>
               {contract.copy.guestNamesLabel}

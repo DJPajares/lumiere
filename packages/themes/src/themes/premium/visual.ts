@@ -1,5 +1,5 @@
 import type { ThemeVisualEffects } from "../../contracts";
-import { createThemePresentation, editorialLedgerRsvpPresentation } from "../../theme-shared";
+import { createThemePresentation, editorialRsvpPresentation } from "../../theme-shared";
 
 export const premiumPresentation = createThemePresentation({
   hero: {
@@ -13,7 +13,7 @@ export const premiumPresentation = createThemePresentation({
     mediaClassName:
       "order-first mx-auto w-full max-w-[20rem] rounded-[var(--radius-lg)] lg:order-none lg:max-w-none",
   },
-  rsvp: editorialLedgerRsvpPresentation,
+  rsvp: editorialRsvpPresentation,
 });
 
 export const premiumEffects = {

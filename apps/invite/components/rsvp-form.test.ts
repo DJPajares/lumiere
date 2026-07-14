@@ -41,6 +41,8 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain("focus-within:ring-2");
     expect(html).toContain("Names for the guest list");
     expect(html).toContain('id="rsvp-message"');
+    expect(html).toContain("Optional");
+    expect(html).not.toContain("<details open");
 
     const playfulHtml = renderToStaticMarkup(
       createElement(RsvpForm, {
@@ -71,15 +73,13 @@ describe("RSVP form flow helpers", () => {
       }),
     );
 
-    expect(editorialHtml).toContain('data-rsvp-renderer="editorial-ledger"');
-    expect(editorialHtml).toContain('data-rsvp-layout="editorial-ledger"');
-    expect(editorialHtml).toContain('aria-label="Attendance"');
-    expect(editorialHtml).toContain('aria-label="Guest details"');
+    expect(editorialHtml).toContain('data-rsvp-renderer="common"');
+    expect(editorialHtml).not.toContain('data-rsvp-layout="editorial-ledger"');
     expect(editorialHtml).toContain('type="radio"');
     expect(editorialHtml).toContain('aria-live="polite"');
     expect(editorialHtml).toContain('aria-label="Remove one guest"');
     expect(editorialHtml).toContain('aria-label="Add one guest"');
-    expect(editorialHtml).toContain("4 guests");
+    expect(editorialHtml).toContain("4 seats");
     expect(editorialHtml).toContain('id="guestName-0"');
     expect(editorialHtml).toContain('id="rsvp-message"');
   });
@@ -124,7 +124,7 @@ describe("RSVP form flow helpers", () => {
           questions,
           rsvpFields: {
             collectGuestMessage: false,
-            collectGuestNames: false,
+            collectGuestNames: true,
           },
         }),
       ),
@@ -137,8 +137,14 @@ describe("RSVP form flow helpers", () => {
     await act(() => updateButton?.click());
 
     expect(container.querySelector("form")?.getAttribute("data-rsvp-state")).toBe("updating");
-    expect(container.textContent).toContain("Already submitted");
+    expect(container.textContent).toContain("You already sent a reply");
     expect(container.textContent).toContain("Update RSVP");
+    expect(container.querySelector("details")?.open).toBe(false);
+    expect(container.querySelector("#guestName-0")).toBeTruthy();
+    await act(() =>
+      container.querySelector<HTMLInputElement>('input[value="not_attending"]')?.click(),
+    );
+    expect(container.querySelector("#guestName-0")).toBeTruthy();
     await act(() => root.unmount());
 
     const editorialHtml = renderToStaticMarkup(
@@ -153,12 +159,12 @@ describe("RSVP form flow helpers", () => {
       }),
     );
 
-    expect(editorialHtml).toContain('data-rsvp-renderer="editorial-ledger"');
+    expect(editorialHtml).toContain('data-rsvp-renderer="common"');
     expect(editorialHtml).toContain('data-rsvp-state="confirmed"');
     expect(editorialHtml).toContain("rounded-[var(--radius-lg)]");
   });
 
-  it("renders loading, recovery, and success states through the premium renderer contract", () => {
+  it("renders loading, recovery, and success states through the ledger fallback contract", () => {
     const Renderer = resolveRsvpRenderer("editorial-ledger");
     const noOptionalFieldsContract = createRendererContract();
     noOptionalFieldsContract.enabledFields = {
@@ -302,7 +308,7 @@ describe("RSVP form flow helpers", () => {
     );
   });
 
-  it("returns field-level validation errors for missing required questions", () => {
+  it("requires configured questions while keeping blank names and notes optional", () => {
     const result = validateRsvpFormState({
       maxPax: 4,
       questions,
@@ -319,9 +325,29 @@ describe("RSVP form flow helpers", () => {
     expect(result.ok ? undefined : result.errors["answers.meal"]).toBe(
       "This question is required.",
     );
-    expect(result.ok ? undefined : result.errors["guestNames.1"]).toBe(
-      "Enter a name for this attendee.",
-    );
+    expect(result.ok ? undefined : result.errors["guestNames.1"]).toBeUndefined();
+
+    const optionalDetailsResult = validateRsvpFormState({
+      maxPax: 4,
+      questions: [],
+      state: {
+        answers: {},
+        attendeeCount: 2,
+        guestNames: ["", ""],
+        message: "",
+        responseStatus: "attending",
+      },
+    });
+
+    expect(optionalDetailsResult).toMatchObject({
+      input: {
+        attendeeCount: 2,
+        guestNames: [],
+        message: undefined,
+        responseStatus: "attending",
+      },
+      ok: true,
+    });
   });
 
   it("preserves form state on submit failure by returning errors only", async () => {
@@ -369,6 +395,13 @@ describe("RSVP form flow helpers", () => {
       guestNames: [""],
       message: "",
       responseStatus: "attending",
+    });
+    expect(createInitialRsvpFormState(4, "not_attending")).toEqual({
+      answers: {},
+      attendeeCount: 0,
+      guestNames: [""],
+      message: "",
+      responseStatus: "not_attending",
     });
   });
 
