@@ -131,9 +131,7 @@ function InvitationFrame({
         <InviteMotionRuntime intensity={motionIntensity} />
         <InviteVisualLayer backdropImageUrl={backdropImage?.url} effects={visualEffects} />
         <ScrollProgress />
-        <PublicHero invite={invite} section={introduction} theme={theme} />
-
-        {guest ? <GuestContextPanel guest={guest} /> : null}
+        <PublicHero invite={invite} guest={guest} section={introduction} theme={theme} />
 
         {bodySections.length > 0 ? (
           <div className="grid w-full gap-0 py-2 sm:py-4">
@@ -240,10 +238,12 @@ function InvitationUnavailable({
 
 function PublicHero({
   invite,
+  guest,
   section,
   theme,
 }: {
   invite: InviteResponse;
+  guest?: GuestContext;
   section: RenderableSection | undefined;
   theme: ThemeDefinition;
 }) {
@@ -263,7 +263,7 @@ function PublicHero({
   return (
     <section
       className={joinClassNames(
-        "lumiere-section lumiere-section--hero lumiere-section--full-bleed grid content-center gap-8 overflow-hidden px-5 py-10 sm:px-8 lg:px-12",
+        "lumiere-section lumiere-section--hero lumiere-section--full-bleed grid content-center gap-20 overflow-hidden px-5 py-10 sm:px-8 lg:px-12",
         fullViewport ? "min-h-[100dvh]" : "min-h-[82dvh]",
         presentation.frameClassName,
       )}
@@ -357,6 +357,8 @@ function PublicHero({
           </aside>
         )}
       </div>
+
+      {guest ? <GuestContextPanel guest={guest} /> : null}
     </section>
   );
 }
