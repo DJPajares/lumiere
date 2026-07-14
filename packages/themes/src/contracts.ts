@@ -114,8 +114,10 @@ export type ThemeOrnamentSet =
   | "candlelight"
   | "confetti"
   | "constellation"
+  | "drapery"
   | "editorial-rules"
   | "none"
+  | "porcelain-rings"
   | "snowfall";
 
 export type ThemeDividerStyle = "dotted" | "hairline" | "luminous" | "none" | "short-rule";
@@ -231,7 +233,7 @@ export type ThemeDefinition = {
   supportedEventTypes: EventType[];
   supportedModes: ThemeMode[];
   defaultMode: ThemeMode;
-  modeToggle?: ThemeModeTogglePresentation;
+  modeToggle: ThemeModeTogglePresentation;
   presentation: ThemeInvitePresentation;
   rsvpCopy?: ThemeRsvpCopyOverrides;
   supportedSections: SectionType[];
@@ -240,7 +242,7 @@ export type ThemeDefinition = {
   sectionRhythm: SectionType[];
   tokens: {
     light: ThemeTokenSet;
-    dark?: ThemeTokenSet;
+    dark: ThemeTokenSet;
   };
   composition: ThemeComposition;
   radius: {
@@ -284,5 +286,7 @@ export const themeIds = [
   "garden-light",
   "modern-minimal",
   "celestial-gold",
+  "velvet-dusk",
+  "porcelain-blue",
 ] as const;
 export type ThemeId = (typeof themeIds)[number];

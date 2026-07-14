@@ -12,6 +12,7 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 ## Shared Requirements
 
 - Every theme must define event fit, design read, mood notes, anti-slop constraints, mode support, token guidance, radius, typography, image treatment, motion, ambient media, RSVP states, dashboard preview requirements, and naming guidance.
+- Every shipped theme exposes light, dark, system, and guest-toggleable manager options, with complete light/dark tokens and accessible toggle copy.
 - Every theme also owns a typed visual-effects profile: backdrop type and cover-image policy, texture/noise strength, ornament set and density, divider style, frame style, and image treatment. Effects must remain decorative, optional, and readable when images are missing.
 - Card-based treatment is allowed only when the theme intentionally calls for practical or basic sections.
 - Premium, seasonal, and playful themes must mix full-bleed, split, editorial, gallery, and framed moments.
@@ -95,6 +96,24 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - Sections: layered portrait hero/profile, full-width date, night-depth story, feature gallery, and luminous layered reply.
 - Ornament/backdrop: sparse orbital hairlines and quiet radial light without stars, zodiac symbols, or glitter.
 - Dashboard preview: real Evening Sky, Observatory Hall, date, gallery, and reply samples against a night field.
+
+## Velvet Dusk
+
+- Fit: weddings, birthdays, dinners, launches, holidays, private events, and generic celebrations.
+- Mood: oxblood velvet, warm portrait light, champagne rules, and a measured evening-program rhythm.
+- Motion: immersive story-depth movement; reduced motion preserves the proscenium frame and linear program sequence.
+- Sections: layered portrait hero, full-width date, program timeline, curtain-depth story, afterglow gallery, and formal full-width reply.
+- Ornament/backdrop: abstract curtain-edge curves and fine champagne rules without literal theatre imagery.
+- Dashboard preview: real Evening in Velvet, Crimson Room, program, gallery, and reply samples in matinee and afterglow modes.
+
+## Porcelain Blue
+
+- Fit: weddings, birthdays, dinners, launches, holidays, private events, and generic celebrations.
+- Mood: porcelain white, celadon haze, cobalt ink, wide daylight photography, and quiet gallery spacing.
+- Motion: calm hero-only depth; reduced motion retains the centered gallery wall and two-column ledger hierarchy.
+- Sections: centered landscape hero, airy detail splits, essay-like story, collected-image gallery, and editorial reply ledger.
+- Ornament/backdrop: sparse abstract porcelain rings and mineral paper texture without china patterns or ceramic clip art.
+- Dashboard preview: real Study in Blue, Glass Gallery, afternoon, collected moments, and reply samples.
 
 ## Naming And IP
 

@@ -15,9 +15,15 @@ export const modernMinimalTheme = {
   designRead:
     "Hard-edged modernist system with numbered facts, disciplined whitespace, and one cobalt signal.",
   supportedEventTypes: [...expansionEventTypes, "launch"],
-  supportedModes: ["light", "dark", "system"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "system",
   presentation: modernMinimalPresentation,
+  modeToggle: {
+    defaultPreference: "system",
+    labels: { control: "Invitation appearance", dark: "Graphite", light: "Paper" },
+    placement: "top-start",
+    style: "editorial",
+  },
   rsvpCopy: {
     eyebrow: "Response",
     submitLabel: "Send response",

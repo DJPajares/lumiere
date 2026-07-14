@@ -16,7 +16,7 @@ export const editorialIvoryTheme = {
   designRead:
     "Ivory editorial spread with tall portrait crops, sharp rules, and generous negative space.",
   supportedEventTypes: [...expansionEventTypes, "dinner"],
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "toggleable",
   presentation: editorialIvoryPresentation,
   modeToggle: {

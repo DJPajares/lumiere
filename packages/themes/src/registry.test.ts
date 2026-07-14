@@ -37,6 +37,8 @@ const expansionThemeIds = [
   "garden-light",
   "modern-minimal",
   "celestial-gold",
+  "velvet-dusk",
+  "porcelain-blue",
 ] as const;
 
 const baseSections = [
@@ -110,7 +112,7 @@ const baseSections = [
 ] as const;
 
 describe("theme registry", () => {
-  it("exports the initial themes and four-direction expansion pack", () => {
+  it("exports the initial themes and six-direction expansion pack", () => {
     expect(availableThemeIds).toEqual([
       "lumiere-default",
       "premium",
@@ -120,6 +122,14 @@ describe("theme registry", () => {
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
+    expect(
+      Object.values(themeRegistry).every(
+        (theme) =>
+          theme.supportedModes.join(",") === "light,dark,system,toggleable" &&
+          Boolean(theme.tokens.dark) &&
+          Boolean(theme.modeToggle),
+      ),
+    ).toBe(true);
     expect(new Set(availableThemeIds).size).toBe(availableThemeIds.length);
     expect(Object.keys(themeRegistry)).toEqual(availableThemeIds);
     expect(

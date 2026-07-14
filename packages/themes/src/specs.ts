@@ -24,7 +24,7 @@ export type ThemeTemplateSpec = {
   };
   tokenGuidance: {
     accent: string;
-    dark: string | null;
+    dark: string;
     light: string;
     status: string;
   };
@@ -106,7 +106,13 @@ const expansionSpecSections = [
 ] as const;
 
 const createExpansionThemeTemplateSpec = (
-  themeId: "celestial-gold" | "editorial-ivory" | "garden-light" | "modern-minimal",
+  themeId:
+    | "celestial-gold"
+    | "editorial-ivory"
+    | "garden-light"
+    | "modern-minimal"
+    | "porcelain-blue"
+    | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
 ): ThemeTemplateSpec => {
   const theme = themeRegistry[themeId];
@@ -207,8 +213,9 @@ export const themeTemplateSpecs = {
     ],
     modeSupport: {
       defaultMode: "system",
-      guidance: "System mode follows the visitor preference with restrained light and dark tokens.",
-      supported: ["light", "dark", "system"],
+      guidance:
+        "System mode follows the visitor preference; fixed light/dark and guest-toggleable modes remain available.",
+      supported: ["light", "dark", "system", "toggleable"],
     },
     tokenGuidance: {
       accent: "Warm amber accents mark primary actions, date facts, focus, and links.",
@@ -323,8 +330,9 @@ export const themeTemplateSpecs = {
     ],
     modeSupport: {
       defaultMode: "toggleable",
-      guidance: "Light and dark modes are both first-class; toggleable mode lets guests choose.",
-      supported: ["light", "dark", "toggleable"],
+      guidance:
+        "Light and dark are first-class, system follows the device, and toggleable lets guests choose.",
+      supported: ["light", "dark", "system", "toggleable"],
     },
     tokenGuidance: {
       accent: "Burnished gold anchors actions, hairlines, focus, and small ceremonial labels.",
@@ -443,12 +451,13 @@ export const themeTemplateSpecs = {
     ],
     modeSupport: {
       defaultMode: "light",
-      guidance: "Light-only theme with high contrast and cheerful surfaces.",
-      supported: ["light"],
+      guidance:
+        "Sunny light and night-party dark palettes support fixed, system, and guest-toggleable behavior.",
+      supported: ["light", "dark", "system", "toggleable"],
     },
     tokenGuidance: {
       accent: "Orange accent marks primary actions and playful highlights.",
-      dark: null,
+      dark: "Dark mode uses navy party-paper fields, warm cream type, and coral highlights.",
       light: "Light mode uses sunny cream, warm yellow surfaces, and dark slate text.",
       status: "Status colors remain semantic and should be paired with copy for parents.",
     },
@@ -558,8 +567,8 @@ export const themeTemplateSpecs = {
     modeSupport: {
       defaultMode: "toggleable",
       guidance:
-        "Light and dark modes both work; dark mode should feel candlelit, not low contrast.",
-      supported: ["light", "dark", "toggleable"],
+        "Light, dark, and system modes are intentional; toggleable lets guests choose snowlight or candlelight.",
+      supported: ["light", "dark", "system", "toggleable"],
     },
     tokenGuidance: {
       accent: "Evergreen is the primary accent; gold supports warmth, not status alone.",
@@ -743,6 +752,58 @@ export const themeTemplateSpecs = {
     ],
     namingGuidance:
       "Celestial Gold is a generic mood name; avoid astrology brands, observatory trademarks, and protected motifs.",
+  }),
+  "velvet-dusk": createExpansionThemeTemplateSpec("velvet-dusk", {
+    moodBoardNotes: [
+      "Oxblood velvet, champagne rules, warmly lit portraits, and the measured typography of an evening program.",
+      "A proscenium-like opening gives way to continuous schedule rails and cinematic afterglow imagery.",
+      "The theme feels formal and enveloping without borrowing literal theatre costumes, marquees, or iconography.",
+    ],
+    antiSlopConstraints: [
+      "Do not render literal curtains, stages, masks, ticket stubs, or marquee bulbs.",
+      "Champagne remains a fine signal rather than a metallic gradient across every surface.",
+      "Avoid recoloring Celestial Gold; use oxblood planes, program rhythm, and asymmetrical curtain-edge depth.",
+    ],
+    lightGuidance:
+      "Use blush parchment, deep wine foreground text, and a restrained oxblood action color for the matinee presentation.",
+    darkGuidance:
+      "Use warm near-black and oxblood planes with cream text and champagne accents for afterglow depth.",
+    statusGuidance:
+      "Status states retain dedicated semantic colors and text labels instead of borrowing champagne or wine.",
+    reducedMotion:
+      "Remove curtain-depth parallax and gallery drift while preserving the proscenium frame and program rails.",
+    dashboardRequirements: [
+      "Show An Evening in Velvet, The Crimson Room, and the real program, gallery, and reply samples.",
+      "Make the oxblood stage depth and champagne rules visible without using theatre clip art.",
+    ],
+    namingGuidance:
+      "Velvet Dusk is a generic material-and-time mood; avoid theatre, hospitality, fashion, and venue trademarks.",
+  }),
+  "porcelain-blue": createExpansionThemeTemplateSpec("porcelain-blue", {
+    moodBoardNotes: [
+      "Porcelain white, celadon haze, cobalt ink, and wide daylight photography create a calm gallery atmosphere.",
+      "Floating circular rules and broad landscape crops provide identity without literal ceramic patterns.",
+      "Old-style serif display type and precise sans copy keep formal details soft, modern, and highly readable.",
+    ],
+    antiSlopConstraints: [
+      "Do not use literal china patterns, painted flowers, waves, vases, or ceramic clip art.",
+      "Avoid turning pale blue into low-contrast monochrome; body text and actions keep clear ink contrast.",
+      "Do not recolor Editorial Ivory; use centered landscape composition, rounded gallery fields, and cobalt rings.",
+    ],
+    lightGuidance:
+      "Use cool porcelain fields, deep ink copy, translucent celadon bands, and one cobalt action color.",
+    darkGuidance:
+      "Shift to blue-hour charcoal with sea-glass accents and soft mineral-white text, never pure black.",
+    statusGuidance:
+      "Success, warning, and error remain semantic and are always paired with explicit state copy.",
+    reducedMotion:
+      "Remove hero depth and image reveals while retaining the centered gallery wall and spacious ledger rhythm.",
+    dashboardRequirements: [
+      "Show A Study in Blue, The Glass Gallery, and the real afternoon, gallery, and reply samples.",
+      "Represent porcelain light with whitespace and cobalt rules rather than decorative ceramic objects.",
+    ],
+    namingGuidance:
+      "Porcelain Blue is a generic color-and-material descriptor; avoid ceramic makers, museums, and hospitality trademarks.",
   }),
 } satisfies Record<ThemeId, ThemeTemplateSpec>;
 

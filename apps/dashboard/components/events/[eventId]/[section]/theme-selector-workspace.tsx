@@ -3,7 +3,10 @@
 import { ApiClientError } from "@lumiere/api-client";
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
+import { Grid2X2Icon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
+import { cn } from "@lumiere/dashboard-ui/utils";
 import {
   evaluateThemeCompatibility,
   getTheme,
@@ -49,6 +52,7 @@ type ThemeState = {
 
 type FieldErrors = Partial<Record<"selectedThemeId" | "themeMode", string>>;
 type GalleryModeFilter = "any" | ThemeMode;
+type ThemeGalleryView = "compact" | "large" | "list";
 type ReadinessFilter = "all" | "fully-supported";
 
 type ThemeGalleryEntry = {
@@ -197,6 +201,7 @@ function ThemeSelectorContent({
   const { apiClient } = useDashboardAuth();
   const [modeFilter, setModeFilter] = useState<GalleryModeFilter>("any");
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
+  const [galleryView, setGalleryView] = useState<ThemeGalleryView>("large");
   const [showIncompatible, setShowIncompatible] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
   const galleryEntries = useMemo(
@@ -352,7 +357,40 @@ function ThemeSelectorContent({
               {compatibleCount} compatible · {incompatibleCount} unavailable for this setup
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 xl:flex xl:items-end">
+            <div className="grid gap-2 sm:col-span-2 xl:col-span-1">
+              <span className="text-sm font-medium" id="theme-gallery-view-label">
+                Gallery view
+              </span>
+              <ToggleGroup
+                aria-labelledby="theme-gallery-view-label"
+                className="w-full sm:w-fit"
+                onValueChange={(value) => {
+                  const nextView = value[0] as ThemeGalleryView | undefined;
+
+                  if (nextView) {
+                    setGalleryView(nextView);
+                  }
+                }}
+                size="sm"
+                spacing={0}
+                value={[galleryView]}
+                variant="outline"
+              >
+                <ToggleGroupItem aria-label="Large theme cards" type="button" value="large">
+                  <LayoutGridIcon data-icon="inline-start" />
+                  Large
+                </ToggleGroupItem>
+                <ToggleGroupItem aria-label="Compact theme cards" type="button" value="compact">
+                  <Grid2X2Icon data-icon="inline-start" />
+                  Compact
+                </ToggleGroupItem>
+                <ToggleGroupItem aria-label="List themes" type="button" value="list">
+                  <ListIcon data-icon="inline-start" />
+                  List
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
             <DashboardSelect
               id="theme-mode-filter"
               label="Mode support"
@@ -399,7 +437,15 @@ function ThemeSelectorContent({
             title="No themes match these filters"
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            className={cn(
+              "grid gap-4",
+              galleryView === "large" && "md:grid-cols-2 xl:grid-cols-3",
+              galleryView === "compact" && "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4",
+              galleryView === "list" && "grid-cols-1",
+            )}
+            data-theme-gallery-view={galleryView}
+          >
             {visibleEntries.map((entry) => (
               <ThemeGalleryCard
                 entry={entry}
@@ -412,6 +458,7 @@ function ThemeSelectorContent({
                 onUse={applyTheme}
                 savingThemeId={state.savingThemeId}
                 selectedMode={state.values.themeMode}
+                view={galleryView}
               />
             ))}
           </div>
@@ -460,6 +507,7 @@ function ThemeGalleryCard({
   onUse,
   savingThemeId,
   selectedMode,
+  view,
 }: {
   entry: ThemeGalleryEntry;
   eventType: EventType;
@@ -470,6 +518,7 @@ function ThemeGalleryCard({
   onUse: (entry: ThemeGalleryEntry) => void;
   savingThemeId: string | null;
   selectedMode: ThemeMode;
+  view: ThemeGalleryView;
 }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(entry.resolvedMode);
   const modeEntry = useMemo(
@@ -497,14 +546,23 @@ function ThemeGalleryCard({
 
   return (
     <article
-      className={
+      className={cn(
+        "grid overflow-hidden rounded-lg border bg-card shadow-sm",
         isSelected
-          ? "grid overflow-hidden rounded-lg border border-primary bg-card shadow-sm ring-2 ring-primary/20"
-          : "grid overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
-      }
+          ? "border-primary ring-2 ring-primary/20"
+          : "border-border transition-shadow hover:shadow-md",
+        view === "list" && "lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:items-stretch",
+      )}
       data-theme-gallery-card={modeEntry.theme.id}
+      data-theme-gallery-card-view={view}
     >
-      <div className="bg-muted/40 p-3">
+      <div
+        className={cn(
+          "bg-muted/40",
+          view === "compact" ? "p-2" : "p-3",
+          view === "list" && "lg:flex lg:items-center",
+        )}
+      >
         <InviteThemePreviewRenderer
           fallbackReason={modeEntry.fallbackReason}
           mode={toPreviewMode(modeEntry.resolvedMode)}
@@ -512,7 +570,7 @@ function ThemeGalleryCard({
           thumbnail
         />
       </div>
-      <div className="grid gap-4 p-4">
+      <div className={cn("grid", view === "compact" ? "gap-3 p-3" : "gap-4 p-4")}>
         <div>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <h3 className="text-lg font-semibold">{entry.theme.name}</h3>
@@ -521,7 +579,12 @@ function ThemeGalleryCard({
               {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
             </div>
           </div>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          <p
+            className={cn(
+              "mt-1 text-sm leading-6 text-muted-foreground",
+              view === "compact" && "line-clamp-2",
+            )}
+          >
             {readThemeSummary(entry.theme)}
           </p>
         </div>
@@ -530,11 +593,7 @@ function ThemeGalleryCard({
           <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
             {statusLabel}
           </Badge>
-          {entry.theme.supportedModes.map((mode) => (
-            <Badge key={mode} variant="outline">
-              {formatMode(mode)}
-            </Badge>
-          ))}
+          <Badge variant="outline">{entry.theme.supportedModes.length} modes</Badge>
         </div>
 
         {modeEntry.reasons.length > 0 ? (
@@ -551,7 +610,12 @@ function ThemeGalleryCard({
           </ul>
         ) : null}
 
-        <div className="grid gap-3 border-t border-border pt-3">
+        <div
+          className={cn(
+            "grid gap-3 border-t border-border pt-3",
+            view === "list" && "sm:grid-cols-[minmax(12rem,0.8fr)_minmax(12rem,auto)] sm:items-end",
+          )}
+        >
           <DashboardSelect
             disabled={isSaving}
             id={`theme-mode-${entry.theme.id}`}

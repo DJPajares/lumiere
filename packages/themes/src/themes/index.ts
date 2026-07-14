@@ -7,7 +7,9 @@ import { kidsThemeModule } from "./kids";
 import { lumiereDefaultThemeModule } from "./lumiere-default";
 import { modernMinimalThemeModule } from "./modern-minimal";
 import { noelThemeModule } from "./noel";
+import { porcelainBlueThemeModule } from "./porcelain-blue";
 import { premiumThemeModule } from "./premium";
+import { velvetDuskThemeModule } from "./velvet-dusk";
 
 export * from "../contracts";
 export * from "./celestial-gold";
@@ -17,7 +19,9 @@ export * from "./kids";
 export * from "./lumiere-default";
 export * from "./modern-minimal";
 export * from "./noel";
+export * from "./porcelain-blue";
 export * from "./premium";
+export * from "./velvet-dusk";
 
 export const themeModuleRegistry = {
   "lumiere-default": lumiereDefaultThemeModule,
@@ -28,6 +32,8 @@ export const themeModuleRegistry = {
   "garden-light": gardenLightThemeModule,
   "modern-minimal": modernMinimalThemeModule,
   "celestial-gold": celestialGoldThemeModule,
+  "velvet-dusk": velvetDuskThemeModule,
+  "porcelain-blue": porcelainBlueThemeModule,
 } satisfies Record<ThemeId, ThemeModule>;
 
 export const themeVisualEffects = Object.fromEntries(

@@ -10,7 +10,7 @@ export const noelTheme = {
   designRead:
     "A peaceful winter conservatory with sculpted evergreen boughs, drifting snow, pearl frost, and candlelit invitation folios.",
   supportedEventTypes: allEventTypes,
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "toggleable",
   presentation: noelPresentation,
   modeToggle: {

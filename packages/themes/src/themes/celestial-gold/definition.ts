@@ -16,7 +16,7 @@ export const celestialGoldTheme = {
   designRead:
     "Midnight cinematic composition with warm gold type, orbital hairlines, and measured depth.",
   supportedEventTypes: [...expansionEventTypes, "dinner", "holiday"],
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "dark",
   presentation: celestialGoldPresentation,
   modeToggle: {

@@ -26,6 +26,8 @@ export type InviteCompositionMapId =
   | "ivory-editorial"
   | "minimal-modern"
   | "neutral-basic"
+  | "porcelain-gallery"
+  | "velvet-afterglow"
   | "wedding-editorial";
 
 export type ViewportBehavior = {
@@ -335,7 +337,12 @@ export const sampleInviteCompositionMaps: Record<"birthday" | "wedding", InviteC
 };
 
 export const expansionInviteCompositionMaps: Record<
-  "celestialGold" | "editorialIvory" | "gardenLight" | "modernMinimal",
+  | "celestialGold"
+  | "editorialIvory"
+  | "gardenLight"
+  | "modernMinimal"
+  | "porcelainBlue"
+  | "velvetDusk",
   InviteCompositionMap
 > = {
   editorialIvory: {
@@ -482,6 +489,80 @@ export const expansionInviteCompositionMaps: Record<
         composition: "layered-media",
         motion: "section-reveal",
         note: "Finish with a luminous reply or farewell rather than repeated framed panels.",
+        section: "rsvp",
+      },
+    ],
+  },
+  velvetDusk: {
+    eventTypes: ["wedding", "birthday", "dinner", "launch", "holiday", "private_event", "other"],
+    id: "velvet-afterglow",
+    name: "Velvet Dusk Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open like a theatre proscenium with one portrait, a low champagne rule, and restrained oxblood depth.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "timeline-reveal",
+        note: "Arrange the evening program as one continuous sequence instead of separate schedule cards.",
+        section: "details",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-parallax",
+        note: "Let story and host imagery overlap lightly like velvet curtains opening around the narrative.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "gallery-drift",
+        note: "Lead with a cinematic portrait and support it with a narrow afterglow contact sheet.",
+        section: "gallery",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Close with a formal reply scene framed by one champagne line and generous dark space.",
+        section: "rsvp",
+      },
+    ],
+  },
+  porcelainBlue: {
+    eventTypes: ["wedding", "birthday", "dinner", "launch", "holiday", "private_event", "other"],
+    id: "porcelain-gallery",
+    name: "Porcelain Blue Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open with a pale porcelain field, a wide gallery image, and an ink-blue title held low in the frame.",
+        section: "introduction",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Pair date and venue facts with quiet cobalt rules and a broad breathing margin.",
+        section: "details",
+      },
+      {
+        composition: "full-bleed",
+        motion: "media-reveal",
+        note: "Treat the story as a calm uninterrupted essay chapter with one floating image plane.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Compose photography like a ceramic gallery wall: one landscape anchor and two measured studies.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Use a ledger-like reply beside the closing invitation copy, never a detached utility card.",
         section: "rsvp",
       },
     ],

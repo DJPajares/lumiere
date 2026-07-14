@@ -21,6 +21,8 @@ describe("public invite section renderers", () => {
       ["garden-light", "garden-celebration", "lumiere-hero--garden-light"],
       ["modern-minimal", "minimal-modern", "lumiere-hero--modern-minimal"],
       ["celestial-gold", "celestial-evening", "lumiere-hero--celestial-gold"],
+      ["velvet-dusk", "velvet-afterglow", "lumiere-hero--velvet-dusk"],
+      ["porcelain-blue", "porcelain-gallery", "lumiere-hero--porcelain-blue"],
     ] as const;
     const signatures = directions.map(([themeId, compositionMap, heroClassName]) => {
       const invite = createInvite([
@@ -51,7 +53,8 @@ describe("public invite section renderers", () => {
         }),
       ]);
       invite.selectedThemeId = themeId;
-      invite.themeMode = themeId === "celestial-gold" ? "dark" : "light";
+      invite.themeMode =
+        themeId === "celestial-gold" || themeId === "velvet-dusk" ? "dark" : "light";
 
       const html = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
 
@@ -137,6 +140,33 @@ describe("public invite section renderers", () => {
           ],
           "themeId": "celestial-gold",
         },
+        {
+          "backdrop": "gradient",
+          "compositionMap": "velvet-afterglow",
+          "frame": "double-line",
+          "heroClassName": "lumiere-hero--velvet-dusk",
+          "imageTreatment": "cinematic",
+          "mode": "dark",
+          "ornament": "drapery",
+          "sectionCompositions": [
+            "full-bleed",
+            "layered-media",
+          ],
+          "themeId": "velvet-dusk",
+        },
+        {
+          "backdrop": "texture",
+          "compositionMap": "porcelain-gallery",
+          "frame": "frosted",
+          "heroClassName": "lumiere-hero--porcelain-blue",
+          "imageTreatment": "crisp",
+          "mode": "light",
+          "ornament": "porcelain-rings",
+          "sectionCompositions": [
+            "full-bleed",
+          ],
+          "themeId": "porcelain-blue",
+        },
       ]
     `);
 
@@ -200,15 +230,16 @@ describe("public invite section renderers", () => {
     expect(systemHtml).not.toContain("data-theme-mode-control=");
     expect(systemHtml).toContain("prefers-color-scheme: dark");
 
-    const unsupportedInvite = createInvite([]);
-    unsupportedInvite.selectedThemeId = "kids";
-    unsupportedInvite.themeMode = "toggleable";
-    const unsupportedHtml = renderToStaticMarkup(
-      createElement(PublicInvitation, { invite: unsupportedInvite }),
+    const kidsToggleableInvite = createInvite([]);
+    kidsToggleableInvite.selectedThemeId = "kids";
+    kidsToggleableInvite.themeMode = "toggleable";
+    const kidsToggleableHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: kidsToggleableInvite }),
     );
 
-    expect(unsupportedHtml).toContain('data-theme-resolved-mode="light"');
-    expect(unsupportedHtml).not.toContain('data-theme-mode-initializer="true"');
+    expect(kidsToggleableHtml).toContain('data-theme-resolved-mode="light"');
+    expect(kidsToggleableHtml).toContain('data-theme-mode-initializer="true"');
+    expect(kidsToggleableHtml).toContain('data-theme-mode-control="organic"');
 
     const fallbackInvite = createInvite([]);
     fallbackInvite.selectedThemeId = "unavailable-theme";

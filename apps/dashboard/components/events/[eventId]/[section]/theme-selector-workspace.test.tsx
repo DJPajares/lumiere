@@ -60,6 +60,13 @@ describe("ThemeSelectorWorkspace", () => {
     ).toBeTruthy();
     expect(document.querySelectorAll("[data-expanded-theme-preview]")).toHaveLength(0);
 
+    await user.click(screen.getByRole("button", { name: "Compact theme cards" }));
+    expect(document.querySelector('[data-theme-gallery-view="compact"]')).toBeTruthy();
+    expect(document.querySelector('[data-theme-gallery-card-view="compact"]')).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "List themes" }));
+    expect(document.querySelector('[data-theme-gallery-view="list"]')).toBeTruthy();
+    expect(document.querySelector('[data-theme-gallery-card-view="list"]')).toBeTruthy();
+
     await user.click(screen.getByRole("button", { name: "Preview Premium" }));
     const dialog = await screen.findByRole("dialog", { name: "Premium invite preview" });
 
@@ -94,7 +101,7 @@ describe("ThemeSelectorWorkspace", () => {
       themeConfig: {
         headlineTone: "playful",
       },
-      themeMode: "light",
+      themeMode: "toggleable",
     }));
 
     renderWithAuth({
@@ -111,7 +118,7 @@ describe("ThemeSelectorWorkspace", () => {
     expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
       selectedThemeId: "kids",
       themeConfig: {},
-      themeMode: "light",
+      themeMode: "toggleable",
     });
     expect(await screen.findByText("Kids is now active.")).toBeTruthy();
   });
@@ -151,7 +158,7 @@ describe("ThemeSelectorWorkspace", () => {
     expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
       selectedThemeId: "kids",
       themeConfig: {},
-      themeMode: "light",
+      themeMode: "toggleable",
     });
     expect(screen.getByRole("button", { name: "Use Kids" })).toBeTruthy();
   });
@@ -210,8 +217,8 @@ describe("ThemeSelectorWorkspace", () => {
       themes: [kidsTheme],
     });
 
-    expect(darkEntries[0]).toMatchObject({ isCompatible: false, resolvedMode: "dark" });
-    expect(darkEntries[0]?.reasons).toContain("Kids does not support dark mode.");
+    expect(darkEntries[0]).toMatchObject({ isCompatible: true, resolvedMode: "dark" });
+    expect(darkEntries[0]?.reasons).not.toContain("Kids does not support dark mode.");
   });
 });
 
@@ -336,7 +343,7 @@ const premiumTheme: Theme = {
     },
   },
   name: "Premium",
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   version: "0.0.0",
 };
 
@@ -367,7 +374,7 @@ const kidsTheme: Theme = {
     },
   },
   name: "Kids",
-  supportedModes: ["light"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   version: "0.0.0",
 };
 

@@ -15,7 +15,7 @@ export const premiumTheme = {
   designRead:
     "Cinematic wedding editorial with portrait-led hierarchy, spacious ceremony, and an invitation-native reply.",
   supportedEventTypes: ["wedding", "dinner", "private_event"],
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "toggleable",
   presentation: premiumPresentation,
   modeToggle: {

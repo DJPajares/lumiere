@@ -15,7 +15,7 @@ export const gardenLightTheme = {
   designRead:
     "Airy garden composition with dappled light, sage fields, and gently layered photography.",
   supportedEventTypes: [...expansionEventTypes, "dinner"],
-  supportedModes: ["light", "dark", "toggleable"],
+  supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "toggleable",
   presentation: gardenLightPresentation,
   modeToggle: {

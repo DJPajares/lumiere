@@ -1,1 +1,1 @@
-export { XIcon } from "lucide-react";
+export { Grid2X2Icon, LayoutGridIcon, ListIcon, XIcon } from "lucide-react";
