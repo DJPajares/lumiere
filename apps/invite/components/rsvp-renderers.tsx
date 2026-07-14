@@ -303,10 +303,12 @@ function AttendanceControls({ contract }: { contract: RsvpRendererContract }) {
 
   return (
     <>
-      <fieldset className="grid gap-3" disabled={isDisabled}>
-        <legend className={contract.presentation.fieldLabelClassName}>
-          {contract.copy.attendancePrompt}
-        </legend>
+      <fieldset className="grid gap-2" disabled={isDisabled}>
+        <div>
+          <legend className={contract.presentation.fieldLabelClassName}>
+            {contract.copy.attendancePrompt}
+          </legend>
+        </div>
         <div className="grid grid-cols-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
           <RsvpStatusOption
             checked={contract.formState.responseStatus === "attending"}
