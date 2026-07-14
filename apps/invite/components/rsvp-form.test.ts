@@ -1,8 +1,11 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@lumiere/api-client";
 import { resolveThemeRsvpCopy, themeRegistry } from "@lumiere/themes";
 import type { RsvpSubmissionResponse } from "@lumiere/types";
-import { createElement } from "react";
+import { act, createElement } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
@@ -81,7 +84,7 @@ describe("RSVP form flow helpers", () => {
     expect(editorialHtml).toContain('id="rsvp-message"');
   });
 
-  it("renders an already-submitted reply as an update flow", () => {
+  it("renders an already-submitted reply as a compact confirmation with an editable update flow", async () => {
     const html = renderToStaticMarkup(
       createElement(RsvpForm, {
         eventSlug: "garden-evening",
@@ -96,43 +99,63 @@ describe("RSVP form flow helpers", () => {
       }),
     );
 
-    expect(html).toContain('data-rsvp-state="updating"');
-    expect(html).toContain("Already submitted");
-    expect(html).toContain("Update RSVP");
+    expect(html).toContain('data-rsvp-state="confirmed"');
+    expect(html).toContain("Wonderful");
+    expect(html).toContain("Tan Family");
+    expect(html).toContain("party of 4");
+    expect(html).toContain("Update my reply");
+    expect(html).not.toContain("Will you join us?");
     expect(html).not.toContain("Names for the guest list");
     expect(html).not.toContain('id="rsvp-message"');
 
-    const namesOnlyHtml = renderToStaticMarkup(
-      createElement(RsvpForm, {
-        eventSlug: "garden-evening",
-        guestGroup,
-        guestToken: "sample-guest-token-for-preview",
-        initialResponseStatus: "attending",
-        questions,
-        rsvpFields: {
-          collectGuestMessage: false,
-          collectGuestNames: true,
-        },
-      }),
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+
+    await act(() =>
+      root.render(
+        createElement(RsvpForm, {
+          eventSlug: "garden-evening",
+          guestGroup,
+          guestToken: "sample-guest-token-for-preview",
+          initialResponseStatus: "attending",
+          questions,
+          rsvpFields: {
+            collectGuestMessage: false,
+            collectGuestNames: false,
+          },
+        }),
+      ),
     );
-    const messageOnlyHtml = renderToStaticMarkup(
+    const updateButton = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Update my reply",
+    );
+
+    expect(updateButton).toBeTruthy();
+    await act(() => updateButton?.click());
+
+    expect(container.querySelector("form")?.getAttribute("data-rsvp-state")).toBe("updating");
+    expect(container.textContent).toContain("Already submitted");
+    expect(container.textContent).toContain("Update RSVP");
+    await act(() => root.unmount());
+
+    const editorialHtml = renderToStaticMarkup(
       createElement(RsvpForm, {
+        copy: resolveThemeRsvpCopy(themeRegistry.premium),
         eventSlug: "garden-evening",
         guestGroup,
         guestToken: "sample-guest-token-for-preview",
         initialResponseStatus: "attending",
+        presentation: themeRegistry.premium.presentation.rsvp,
         questions,
-        rsvpFields: {
-          collectGuestMessage: true,
-          collectGuestNames: false,
-        },
       }),
     );
 
-    expect(namesOnlyHtml).toContain("Names for the guest list");
-    expect(namesOnlyHtml).not.toContain('id="rsvp-message"');
-    expect(messageOnlyHtml).not.toContain("Names for the guest list");
-    expect(messageOnlyHtml).toContain('id="rsvp-message"');
+    expect(editorialHtml).toContain('data-rsvp-renderer="editorial-ledger"');
+    expect(editorialHtml).toContain('data-rsvp-state="confirmed"');
+    expect(editorialHtml).toContain("rounded-[var(--radius-lg)]");
   });
 
   it("renders loading, recovery, and success states through the premium renderer contract", () => {
@@ -179,7 +202,8 @@ describe("RSVP form flow helpers", () => {
     expect(recoveryHtml).not.toContain("Your answers are still here");
     expect(successHtml).toContain('role="status"');
     expect(successHtml).toContain("Reply received");
-    expect(successHtml).toContain("2 guests");
+    expect(successHtml).toContain("party of 2");
+    expect(successHtml).toContain("Update my reply");
     expect(noOptionalFieldsHtml).not.toContain('aria-label="Guest details"');
     expect(noOptionalFieldsHtml).not.toContain('id="guestName-0"');
     expect(noOptionalFieldsHtml).not.toContain('id="rsvp-message"');
@@ -449,6 +473,7 @@ function createRendererContract({
   return {
     actions: {
       addAttendee: vi.fn(),
+      editReply: vi.fn(),
       removeAttendee: vi.fn(),
       setAnswer: vi.fn(),
       setDetailsOpen: vi.fn(),
@@ -477,6 +502,7 @@ function createRendererContract({
       isLocked,
       isResponding: true,
       isSubmitting,
+      isConfirmationVisible: Boolean(submittedResponse),
       isUpdatingExistingReply: false,
     },
     formState: {

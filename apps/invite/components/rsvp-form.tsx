@@ -105,12 +105,15 @@ export function useRsvpFormController({
   const [submittedResponse, setSubmittedResponse] = useState<
     RsvpSubmissionResponse["response"] | null
   >(null);
+  const [isEditingExistingReply, setIsEditingExistingReply] = useState(false);
   const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(
     () => rsvpFields.collectGuestNames || questions.some((question) => question.required),
   );
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
-  const isUpdatingExistingReply = Boolean(initialResponseStatus && !submittedResponse);
+  const hasExistingReply = Boolean(initialResponseStatus || submittedResponse);
+  const isConfirmationVisible = hasExistingReply && !isEditingExistingReply;
+  const isUpdatingExistingReply = hasExistingReply && isEditingExistingReply;
   const hasSubmittedReply = Boolean(submittedResponse);
   const isResponding = state.responseStatus !== "not_attending";
   const hasDetails =
@@ -164,6 +167,7 @@ export function useRsvpFormController({
       setErrors({});
       setSubmittedResponse(result.response);
       setDetailsOpen(false);
+      setIsEditingExistingReply(false);
     } else {
       setErrors(result.errors);
       setRecoveryState(result.recoveryState ?? null);
@@ -183,6 +187,10 @@ export function useRsvpFormController({
             rsvpFields.collectGuestNames,
           ),
         ),
+      editReply: () => {
+        setSubmittedResponse(null);
+        setIsEditingExistingReply(true);
+      },
       removeAttendee: () =>
         setState((current) =>
           withAttendeeCount(
@@ -236,6 +244,7 @@ export function useRsvpFormController({
       isLocked,
       isResponding,
       isSubmitting,
+      isConfirmationVisible,
       isUpdatingExistingReply,
     },
     formState: state,

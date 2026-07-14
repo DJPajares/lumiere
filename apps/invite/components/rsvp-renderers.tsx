@@ -16,6 +16,7 @@ type ReplyStatusCopy = {
 export type RsvpRendererContract = {
   actions: {
     addAttendee: () => void;
+    editReply: () => void;
     removeAttendee: () => void;
     setAnswer: (questionKey: string, value: string | string[]) => void;
     setDetailsOpen: (isOpen: boolean) => void;
@@ -44,6 +45,7 @@ export type RsvpRendererContract = {
     isLocked: boolean;
     isResponding: boolean;
     isSubmitting: boolean;
+    isConfirmationVisible: boolean;
     isUpdatingExistingReply: boolean;
   };
   formState: RsvpFormState;
@@ -72,6 +74,10 @@ export function resolveRsvpRenderer(
 }
 
 function CommonRsvpRenderer(contract: RsvpRendererContract) {
+  if (contract.flags.isConfirmationVisible) {
+    return <RsvpConfirmation contract={contract} />;
+  }
+
   return (
     <form
       className={contract.presentation.cardClassName}
@@ -90,6 +96,10 @@ function CommonRsvpRenderer(contract: RsvpRendererContract) {
 }
 
 function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
+  if (contract.flags.isConfirmationVisible) {
+    return <RsvpConfirmation contract={contract} editorial />;
+  }
+
   return (
     <form
       className={contract.presentation.cardClassName}
@@ -99,9 +109,9 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       data-rsvp-state={contract.status.tone}
       onSubmit={contract.actions.submit}
     >
-      <header className="grid gap-5 border-b border-[var(--border)] px-5 py-6 sm:px-7 sm:py-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <header className="grid gap-4 border-b border-[var(--border)] px-4 py-5 sm:px-5 sm:py-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <RsvpHeader contract={contract} />
-        <dl className="grid grid-cols-2 gap-5 border-t border-[var(--border)] pt-4 text-sm lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+        <dl className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-4 text-sm lg:border-t-0 lg:border-l lg:pl-5 lg:pt-0">
           <div>
             <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
               Party
@@ -123,7 +133,7 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       contract.recoveryState ||
       contract.errors.form ||
       contract.flags.isUpdatingExistingReply ? (
-        <div className="grid gap-4 px-5 pt-5 sm:px-7">
+        <div className="grid gap-3 px-4 pt-4 sm:px-5">
           <RsvpFeedback contract={contract} />
         </div>
       ) : null}
@@ -131,31 +141,93 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       <div
         className={
           contract.flags.hasDetails
-            ? "grid border-y border-[var(--border)] lg:grid-cols-[0.78fr_1.22fr]"
+            ? "grid border-y border-[var(--border)] lg:grid-cols-[0.82fr_1.18fr]"
             : "grid border-y border-[var(--border)]"
         }
       >
         <section
           aria-label="Attendance"
-          className="grid content-start gap-6 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-5 py-6 sm:px-7 lg:border-r lg:border-[var(--border)] lg:py-8"
+          className="grid content-start gap-4 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-4 py-5 sm:px-5 lg:border-r lg:border-[var(--border)] lg:py-6"
         >
           <AttendanceControls contract={contract} />
         </section>
         {contract.flags.hasDetails ? (
           <section
             aria-label="Guest details"
-            className="grid content-start px-5 py-6 sm:px-7 lg:py-8"
+            className="grid content-start px-4 py-5 sm:px-5 lg:py-6"
           >
             <DetailsControls contract={contract} expandedLabel />
           </section>
         ) : null}
       </div>
 
-      <div className="grid gap-5 px-5 py-6 sm:px-7 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">
+      <div className="grid gap-3 px-4 py-5 sm:grid-cols-[minmax(10rem,0.72fr)_1.28fr] sm:items-start sm:px-5">
         <SubmitAction contract={contract} />
         <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
       </div>
     </form>
+  );
+}
+
+function RsvpConfirmation({
+  contract,
+  editorial = false,
+}: {
+  contract: RsvpRendererContract;
+  editorial?: boolean;
+}) {
+  const responseStatus =
+    contract.submittedResponse?.responseStatus ?? contract.formState.responseStatus;
+  const attendeeCount = contract.submittedResponse?.attendeeCount;
+  const partySize = attendeeCount || contract.context.guestGroup.maxPax;
+  const isAttending = responseStatus === "attending";
+  const isMaybe = responseStatus === "maybe";
+  const description = isAttending
+    ? `We can't wait to celebrate with your party of ${partySize}. Your reply is safely with the host.`
+    : isMaybe
+      ? "Thanks for keeping us posted. Your latest reply is safely with the host."
+      : "Thank you for letting us know. Your reply is safely with the host.";
+
+  return (
+    <section
+      aria-label="RSVP confirmation"
+      className={contract.presentation.cardClassName}
+      data-rsvp-renderer={contract.presentation.rendererId}
+      data-rsvp-state="confirmed"
+    >
+      <div
+        className={`grid justify-items-center gap-5 text-center ${
+          editorial ? "px-5 py-9 sm:px-8 sm:py-11" : "py-4 sm:py-6"
+        }`}
+      >
+        <div
+          aria-hidden="true"
+          className="grid size-14 place-items-center rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--accent)_52%,var(--border))] text-2xl text-[var(--accent-strong)]"
+        >
+          <svg className="size-6" fill="none" viewBox="0 0 24 24">
+            <path d="m6 12 4 4 8-9" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+          </svg>
+        </div>
+        <div className="grid max-w-lg gap-3" role="status">
+          <p className={contract.presentation.eyebrowClassName}>{contract.copy.successTitle}</p>
+          <h3 className={contract.presentation.titleClassName}>
+            {isAttending ? "Wonderful" : "Thank you"},{" "}
+            <em className="font-normal">{contract.context.guestGroup.label}</em>
+          </h3>
+          <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] sm:text-base">
+            {description}
+          </p>
+        </div>
+        <button
+          {...invitePressFeedbackProps}
+          className="min-h-11 w-full max-w-[14rem] rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-5 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
+          onClick={contract.actions.editReply}
+          type="button"
+        >
+          {contract.copy.updateReplyLabel}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -179,7 +251,7 @@ function RsvpFeedback({ contract }: { contract: RsvpRendererContract }) {
     <>
       {contract.submittedResponse ? (
         <div
-          className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-5 text-center"
+          className="relative overflow-hidden rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-4 text-center"
           role="status"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--success)]">
@@ -233,7 +305,7 @@ function AttendanceControls({ contract }: { contract: RsvpRendererContract }) {
         <legend className={contract.presentation.fieldLabelClassName}>
           {contract.copy.attendancePrompt}
         </legend>
-        <div className="grid grid-cols-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
+        <div className="grid grid-cols-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-inner focus-within:ring-2 focus-within:ring-[var(--focus)]">
           <RsvpStatusOption
             checked={contract.formState.responseStatus === "attending"}
             describedBy={contract.errors.responseStatus ? "responseStatus-error" : undefined}
@@ -260,7 +332,7 @@ function AttendanceControls({ contract }: { contract: RsvpRendererContract }) {
           <div
             aria-describedby={contract.errors.attendeeCount ? "attendeeCount-error" : undefined}
             aria-invalid={Boolean(contract.errors.attendeeCount)}
-            className="grid grid-cols-[3.5rem_1fr_3.5rem] items-center rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
+            className="grid grid-cols-[3rem_1fr_3rem] items-center rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
           >
             <CounterButton
               disabled={isDisabled || contract.formState.attendeeCount <= 1}
@@ -312,7 +384,7 @@ function DetailsControls({
       className={
         expandedLabel
           ? "group border-y border-[var(--border)]"
-          : "group rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
+          : "group rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-4"
       }
       onToggle={(event) => contract.actions.setDetailsOpen(event.currentTarget.open)}
       open={contract.details.isOpen}
@@ -448,7 +520,7 @@ function ReplyStatusPanel({ copy, tone }: { copy: ReplyStatusCopy; tone: ReplyTo
 function RecoveryNotice({ canRetry, state }: { canRetry: boolean; state: RsvpRecoveryState }) {
   return (
     <section
-      className="grid gap-2 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--warning)_42%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_84%,transparent)]"
+      className="grid gap-2 rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--warning)_42%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_84%,transparent)]"
       role="alert"
     >
       <p className="font-semibold">{state.title}</p>
@@ -477,7 +549,7 @@ function CounterButton({
     <button
       {...invitePressFeedbackProps}
       aria-label={label}
-      className="grid size-12 place-items-center rounded-full text-2xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35 cursor-pointer"
+      className="grid size-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] text-xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -506,8 +578,8 @@ function RsvpStatusOption({
     <label
       className={
         checked
-          ? "grid min-h-11 cursor-pointer place-items-center rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition"
-          : "grid min-h-11 cursor-pointer place-items-center rounded-full px-4 py-3 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
+          ? "grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition"
+          : "grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] px-3 py-2 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
       }
     >
       <input
@@ -662,7 +734,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 
 function replyStatusClassName(tone: ReplyTone) {
   const base =
-    "flex flex-col gap-3 rounded-[var(--radius-lg)] border px-4 py-4 text-[var(--foreground)] sm:flex-row sm:items-center";
+    "flex flex-col gap-2 rounded-[var(--radius-md)] border px-4 py-3 text-[var(--foreground)] sm:flex-row sm:items-center";
 
   switch (tone) {
     case "accepted":

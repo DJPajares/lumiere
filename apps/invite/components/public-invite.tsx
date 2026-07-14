@@ -1010,16 +1010,18 @@ function RsvpSection({
       </div>
 
       {submitContext && (
-        <RsvpForm
-          copy={copy}
-          eventSlug={eventSlug}
-          guestGroup={submitContext.guest.guestGroup}
-          guestToken={submitContext.guestToken}
-          initialResponseStatus={submitContext.guest.responseStatus}
-          presentation={theme.presentation.rsvp}
-          questions={questions}
-          rsvpFields={rsvpFields}
-        />
+        <div className="w-full max-w-xl lg:justify-self-end">
+          <RsvpForm
+            copy={copy}
+            eventSlug={eventSlug}
+            guestGroup={submitContext.guest.guestGroup}
+            guestToken={submitContext.guestToken}
+            initialResponseStatus={submitContext.guest.responseStatus}
+            presentation={theme.presentation.rsvp}
+            questions={questions}
+            rsvpFields={rsvpFields}
+          />
+        </div>
       )}
     </div>
   );

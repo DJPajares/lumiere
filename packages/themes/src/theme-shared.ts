@@ -12,8 +12,8 @@ const heroFallbackBaseClassName =
 
 export const defaultRsvpPresentation = {
   cardClassName:
-    "grid gap-5 rounded-[calc(var(--radius-lg)*1.6)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] backdrop-blur sm:p-7",
-  counterValueClassName: "text-2xl font-semibold leading-none",
+    "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] backdrop-blur sm:p-5",
+  counterValueClassName: "text-xl font-semibold leading-none",
   eyebrowClassName: "text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)]",
   fieldLabelClassName:
     "text-xs font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
@@ -21,37 +21,36 @@ export const defaultRsvpPresentation = {
     "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
   rendererId: "common",
   submitClassName:
-    "min-h-12 w-full rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_16px_44px_color-mix(in_srgb,var(--accent)_28%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "text-3xl font-light tracking-tight",
+    "min-h-11 w-full rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+  titleClassName: "text-2xl font-light tracking-tight sm:text-3xl",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialRsvpPresentation = {
   ...defaultRsvpPresentation,
   titleClassName:
-    "font-serif text-3xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-4xl",
+    "font-serif text-2xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-3xl",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialLedgerRsvpPresentation = {
   ...editorialRsvpPresentation,
   cardClassName:
-    "grid overflow-hidden rounded-none border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] shadow-[0_32px_100px_color-mix(in_srgb,var(--accent)_18%,transparent)]",
+    "grid overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
   rendererId: "editorial-ledger",
-  submitClassName: `${editorialRsvpPresentation.submitClassName} rounded-none`,
+  submitClassName: editorialRsvpPresentation.submitClassName,
 } satisfies ThemeRsvpPresentation;
 
 export const playfulRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
-    "grid gap-5 rounded-[calc(var(--radius-lg)*1.4)] border-2 border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_20px_70px_color-mix(in_srgb,var(--accent)_18%,transparent)] sm:p-6",
-  submitClassName: `${defaultRsvpPresentation.submitClassName} rounded-[var(--radius-lg)]`,
-  titleClassName: "text-3xl font-semibold tracking-tight",
+    "grid gap-4 rounded-[var(--radius-lg)] border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_20px_64px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-5",
+  titleClassName: "text-2xl font-semibold tracking-tight sm:text-3xl",
 } satisfies ThemeRsvpPresentation;
 
 export const seasonalRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
-    "grid gap-5 rounded-[calc(var(--radius-lg)*1.3)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-5 shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-7",
-  titleClassName: "font-serif text-3xl font-light tracking-tight sm:text-4xl",
+    "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] sm:p-5",
+  titleClassName: "font-serif text-2xl font-light tracking-tight sm:text-3xl",
 } satisfies ThemeRsvpPresentation;
 
 export function createThemePresentation({

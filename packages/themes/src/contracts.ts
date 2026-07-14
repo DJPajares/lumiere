@@ -54,6 +54,7 @@ export type ThemeRsvpCopy = {
   successDescription: string;
   successTitle: string;
   updateLabel: string;
+  updateReplyLabel: string;
   updateNotice: string;
   updatingLabel: string;
 };

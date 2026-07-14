@@ -38,6 +38,7 @@ export const defaultRsvpCopy = {
   successDescription: "Your reply is with the host.",
   successTitle: "RSVP received",
   updateLabel: "Update RSVP",
+  updateReplyLabel: "Update my reply",
   updateNotice:
     "You already sent a reply. Changes here will update the host's copy when you submit again.",
   updatingLabel: "Updating RSVP...",
