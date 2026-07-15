@@ -92,6 +92,46 @@
   box-shadow: 0 24px 80px color-mix(in srgb, var(--background) 52%, transparent);
 }
 
+[data-theme-id="celestial-gold"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--background) 88%, transparent);
+  --map-caption-border: color-mix(in srgb, var(--accent) 58%, var(--border));
+  --map-caption-foreground: var(--foreground);
+  --map-embed-filter: grayscale(0.68) sepia(0.22) saturate(0.66) brightness(0.9) contrast(1.01);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: var(--background);
+  box-shadow:
+    0 30px 90px color-mix(in srgb, var(--background) 72%, transparent),
+    0 0 42px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+[data-theme-id="celestial-gold"][data-theme-resolved-mode="dark"] .lumiere-map-preview {
+  --map-embed-filter: grayscale(0.72) sepia(0.28) saturate(0.62) brightness(0.68) contrast(1.05);
+}
+
+[data-theme-id="celestial-gold"] .lumiere-map-preview[data-map-state="embedded"]::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: calc(var(--radius-lg) - 0.3rem);
+  box-shadow: inset 0 0 3rem color-mix(in srgb, var(--background) 24%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="celestial-gold"] .lumiere-map-caption {
+  border-radius: var(--radius-sm);
+  box-shadow:
+    0 16px 44px color-mix(in srgb, var(--background) 72%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+[data-theme-id="celestial-gold"] .lumiere-map-caption__venue {
+  font-family: var(--font-display), serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
 [data-theme-id="celestial-gold"] .lumiere-gallery-grid {
   align-items: center;
 }

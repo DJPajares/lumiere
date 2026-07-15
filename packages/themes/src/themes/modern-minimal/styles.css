@@ -64,6 +64,40 @@
   border-top: 1px solid var(--foreground);
 }
 
+[data-theme-id="modern-minimal"] .lumiere-map-preview {
+  --map-caption-background: var(--foreground);
+  --map-caption-border: var(--foreground);
+  --map-caption-foreground: var(--background);
+  --map-embed-filter: grayscale(1) contrast(1.08);
+  border: 1px solid var(--foreground);
+  background: var(--surface);
+}
+
+[data-theme-id="modern-minimal"] .lumiere-map-caption {
+  inset-inline: 0;
+  bottom: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  max-width: none;
+  padding: 0.75rem 0.9rem;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-map-caption__venue {
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+[data-theme-id="modern-minimal"] .lumiere-map-caption__attribution {
+  text-align: right;
+}
+
 [data-theme-id="modern-minimal"] .lumiere-section--full-bleed,
 [data-theme-id="modern-minimal"] .lumiere-section--gallery-feature {
   background: var(--surface-muted);

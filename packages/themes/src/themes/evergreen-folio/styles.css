@@ -656,6 +656,46 @@
   box-shadow: 7px 8px 0 color-mix(in srgb, var(--background) 48%, transparent);
 }
 
+[data-theme-id="evergreen-folio"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 96%, transparent);
+  --map-caption-border: var(--border);
+  --map-embed-filter: grayscale(0.72) sepia(0.24) saturate(0.62) contrast(0.94);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-map-embed {
+  top: 0.55rem;
+  left: 0.55rem;
+  width: calc(100% - 1.1rem);
+  height: calc(100% - 1.1rem + 2rem);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-map-caption {
+  right: 0.55rem;
+  bottom: 0.55rem;
+  left: 0.55rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  max-width: none;
+  padding: 0.8rem 0.9rem;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: blur(7px);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-map-caption__venue {
+  font-family: var(--font-body), serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-map-caption__attribution {
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: none;
+}
+
 [data-theme-id="evergreen-folio"] .lumiere-section-image img,
 [data-theme-id="evergreen-folio"] .lumiere-map-preview img {
   border-radius: 0;

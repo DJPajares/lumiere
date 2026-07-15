@@ -2,3 +2,26 @@
   inset: 0.5rem;
   border-style: dashed;
 }
+
+[data-theme-id="kids"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 96%, transparent);
+  --map-caption-border: var(--accent);
+  --map-embed-filter: saturate(1.08) brightness(1.02) contrast(0.92);
+  border-width: 2px;
+  border-style: dashed;
+  background: var(--surface);
+  box-shadow: 0.6rem 0.65rem 0 color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+[data-theme-id="kids"] .lumiere-map-caption {
+  padding: 0.75rem 1rem;
+  border-width: 2px;
+  border-radius: calc(var(--radius-md) * 1.15);
+  box-shadow: 0.3rem 0.35rem 0 color-mix(in srgb, var(--accent) 24%, transparent);
+  transform: rotate(-0.75deg);
+}
+
+[data-theme-id="kids"] .lumiere-map-caption__venue {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1rem;
+}

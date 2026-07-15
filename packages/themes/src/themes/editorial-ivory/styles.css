@@ -78,6 +78,37 @@
   background: transparent;
 }
 
+[data-theme-id="editorial-ivory"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 97%, transparent);
+  --map-caption-border: var(--foreground);
+  --map-embed-filter: grayscale(0.94) sepia(0.08) contrast(1.04);
+  border: 1px solid var(--foreground);
+  background: var(--surface);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-map-caption {
+  inset-inline: 0;
+  bottom: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  max-width: none;
+  padding: 0.8rem 0.95rem;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-map-caption__venue {
+  font-family: var(--font-display), serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+[data-theme-id="editorial-ivory"] .lumiere-map-caption__attribution {
+  text-align: right;
+}
+
 [data-theme-id="editorial-ivory"] .lumiere-detail-grid {
   gap: 0;
   border-top: 1px solid var(--border);

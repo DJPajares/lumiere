@@ -1,0 +1,59 @@
+.lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 92%, transparent);
+  --map-caption-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --map-caption-foreground: var(--foreground);
+  --map-embed-filter: saturate(0.78) contrast(0.96) sepia(0.06);
+}
+
+.lumiere-map-preview[data-map-state="embedded"] .lumiere-map-embed {
+  height: calc(100% + 2rem);
+  filter: var(--map-embed-filter);
+}
+
+.lumiere-map-caption {
+  right: auto;
+  bottom: 1rem;
+  left: 1rem;
+  display: grid;
+  min-width: min(14rem, calc(100% - 2rem));
+  max-width: calc(100% - 2rem);
+  gap: 0.4rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--map-caption-border);
+  background: var(--map-caption-background);
+  color: var(--map-caption-foreground);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--foreground) 12%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.lumiere-map-caption__venue {
+  overflow: hidden;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumiere-map-caption__attribution {
+  width: fit-content;
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.64;
+}
+
+.lumiere-map-caption__attribution:hover {
+  opacity: 1;
+}
+
+@media (max-width: 639px) {
+  .lumiere-map-caption {
+    bottom: 0.7rem;
+    left: 0.7rem;
+    min-width: 0;
+    max-width: calc(100% - 1.4rem);
+  }
+}

@@ -527,6 +527,42 @@
   box-shadow: 0 30px 90px color-mix(in srgb, var(--noel-shadow) 28%, transparent);
 }
 
+[data-theme-id="noel"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 90%, transparent);
+  --map-caption-border: color-mix(in srgb, var(--noel-gold) 48%, var(--border));
+  --map-caption-foreground: var(--foreground);
+  --map-embed-filter: grayscale(0.34) sepia(0.22) saturate(0.72) brightness(0.92) contrast(0.98);
+  background: var(--noel-shadow);
+}
+
+[data-theme-id="noel"][data-theme-resolved-mode="dark"] .lumiere-map-preview {
+  --map-embed-filter: grayscale(0.38) sepia(0.3) saturate(0.68) brightness(0.76) contrast(1.02);
+}
+
+[data-theme-id="noel"] .lumiere-map-preview[data-map-state="embedded"]::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--noel-gold) 38%, transparent);
+  border-radius: calc(var(--radius-lg) - 0.3rem);
+  box-shadow: inset 0 0 0 0.3rem color-mix(in srgb, var(--background) 18%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="noel"] .lumiere-map-caption {
+  border-radius: var(--radius-sm);
+  box-shadow:
+    0 16px 40px color-mix(in srgb, var(--noel-shadow) 40%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--noel-gold) 12%, transparent);
+}
+
+[data-theme-id="noel"] .lumiere-map-caption__venue {
+  font-family: var(--font-display), serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
 [data-theme-id="noel"] .lumiere-gallery-grid {
   gap: clamp(0.8rem, 1.8vw, 1.5rem);
   align-items: stretch;
