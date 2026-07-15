@@ -2,7 +2,7 @@
   "name": "lumiere",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.12.0",
+  "packageManager": "pnpm@11.13.0",
   "scripts": {
     "dev": "turbo dev",
     "dev:invite": "pnpm --filter @lumiere/invite dev",
@@ -38,7 +38,7 @@
     "prettier": "^3.9.5",
     "tailwindcss": "^4.3.2",
     "turbo": "^2.10.5",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }
 }
