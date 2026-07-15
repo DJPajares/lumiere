@@ -406,10 +406,10 @@ function NotificationControl({
         sideOffset={8}
       >
         <PopoverHeader className="border-b border-border px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <PopoverTitle className="font-semibold">Notifications</PopoverTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <PopoverTitle className="min-w-0 flex-1 font-semibold">Notifications</PopoverTitle>
             {unreadCount > 0 ? (
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <Badge variant="secondary">{unreadLabel}</Badge>
                 <Button
                   disabled={isMarkingAllRead}
@@ -516,7 +516,7 @@ function NotificationContent({
               )}
               key={notification.id}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex min-w-0 items-start gap-2">
                 <span
                   aria-label={notification.readAt ? undefined : "Unread"}
                   aria-hidden={notification.readAt ? "true" : undefined}
@@ -528,14 +528,14 @@ function NotificationContent({
                 />
                 <Button
                   aria-label={`Open notification: ${notification.title}`}
-                  className="min-w-0 flex-1 justify-start rounded-md px-1 py-0.5 text-left whitespace-normal"
+                  className="h-auto min-w-0 flex-1 justify-start rounded-md px-1 py-0.5 text-left whitespace-normal"
                   disabled={isPending}
                   onClick={() => onOpen(notification)}
                   variant="ghost"
                 >
                   <span className="grid min-w-0 flex-1 gap-1">
-                    <span className="flex items-start justify-between gap-3">
-                      <span className="truncate text-sm font-semibold leading-5">
+                    <span className="flex min-w-0 items-start justify-between gap-3">
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5">
                         {notification.title}
                       </span>
                       <time
@@ -545,7 +545,7 @@ function NotificationContent({
                         {formatNotificationDate(notification.createdAt)}
                       </time>
                     </span>
-                    <span className="text-xs leading-5 text-muted-foreground">
+                    <span className="break-words text-xs leading-5 text-muted-foreground">
                       {notification.message}
                     </span>
                   </span>
