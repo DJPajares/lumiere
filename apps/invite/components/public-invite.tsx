@@ -1211,7 +1211,7 @@ function MapPreview({
         data-map-state="embedded"
       >
         <iframe
-          className="absolute inset-0 size-full border-0"
+          className="lumiere-map-embed absolute inset-0 size-full border-0"
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
           src={embedUrl}
@@ -1220,17 +1220,17 @@ function MapPreview({
         {presentation.overlay !== "none" ? (
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 ${
+            className={`lumiere-map-overlay pointer-events-none absolute inset-0 ${
               presentation.overlay === "soft-vignette"
                 ? "bg-[radial-gradient(circle_at_center,transparent_48%,color-mix(in_srgb,var(--background)_38%,transparent))]"
                 : "bg-[color-mix(in_srgb,var(--accent)_7%,transparent)] mix-blend-multiply"
             }`}
           />
         ) : null}
-        <figcaption className="absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-xs text-[var(--foreground)] shadow-sm backdrop-blur">
-          <span className="font-semibold">{venueName}</span>
+        <figcaption className="lumiere-map-caption absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-xs text-[var(--foreground)] shadow-sm backdrop-blur">
+          <span className="lumiere-map-caption__venue font-semibold">{venueName}</span>
           <a
-            className="underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
+            className="lumiere-map-caption__attribution underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
             href="https://www.openstreetmap.org/copyright"
             rel="noopener noreferrer"
             target="_blank"
