@@ -703,14 +703,16 @@ export const createRoutes = ({
           ? { ok: true as const, section }
           : validateThemeSections(theme.id, [section])[0]!,
       );
-      const invalidSectionFields = validationResults.flatMap((result, index) =>
-        result.ok
-          ? []
-          : result.issues.map((message) => ({
-              message,
-              path: ["sections", index],
-            })),
-      );
+      const invalidSectionFields = validationResults.flatMap((result, index) => {
+        if (!("issues" in result)) {
+          return [];
+        }
+
+        return result.issues.map((message) => ({
+          message,
+          path: ["sections", index],
+        }));
+      });
       const invalidBlueprintFields = validateEventTypeSections({
         eventStatus: "draft",
         eventType: state.eventType,
@@ -1322,7 +1324,7 @@ const parseJsonBody = async <TOutput>(
 
   const result = schema.safeParse(body);
 
-  if (!result.success) {
+  if ("error" in result) {
     throw new ApiHttpError("VALIDATION_ERROR", "Invalid request body", {
       fields: zodIssuesToFieldErrors(result.error.issues),
     });
