@@ -109,9 +109,9 @@ const createExpansionThemeTemplateSpec = (
   themeId:
     | "celestial-gold"
     | "editorial-ivory"
+    | "evergreen-folio"
     | "garden-light"
     | "modern-minimal"
-    | "noel-v2"
     | "porcelain-blue"
     | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
@@ -661,31 +661,31 @@ export const themeTemplateSpecs = {
     namingGuidance:
       "Noel is a generic seasonal name; avoid protected holiday characters, songs, or brand marks.",
   },
-  "noel-v2": createExpansionThemeTemplateSpec("noel-v2", {
+  "evergreen-folio": createExpansionThemeTemplateSpec("evergreen-folio", {
     moodBoardNotes: [
-      "Warm cotton paper, hand-painted pine needles, holly, berries, and pine cones create a formal printed invitation.",
-      "Forest green and restrained Christmas red typography echo traditional stationery without copying a commercial card.",
-      "The tall botanical folio adapts to weddings, dinners, birthdays, launches, and private year-end gatherings.",
+      "Heirloom cotton paper, long-needle pine, hand-shaped holly, berries, and layered pine cones form a dense watercolor perimeter.",
+      "Engraved carmine titling, forest-green names, and book-serif details follow a formal Christmas wedding invitation hierarchy.",
+      "Square stationery geometry, ledger rows, archival print mats, and a detachable response card create a complete physical paper suite.",
     ],
     antiSlopConstraints: [
-      "Do not use stock clip art, novelty Christmas icons, glitter fields, or emoji ornamentation.",
-      "Keep the botanical frame outside the reading area and preserve clear type contrast at narrow widths.",
-      "Do not reduce the direction to a cream card with generic green borders; the painted frame and print rhythm are essential.",
+      "Never reuse Noel boughs, crests, snowfall, frosted glass, candle-gold cards, or winter-conservatory composition.",
+      "The painted perimeter must remain outside the reserved copy area at every viewport width.",
+      "Avoid stock clip art, novelty Christmas icons, glitter, rounded seasonal cards, and decorative foliage repeated on every section.",
     ],
     lightGuidance:
-      "Use warm cotton paper, forest ink, formal red display type, and soft tabletop shadows without pure white.",
+      "Place the cotton folio on a pale writing table with dark ink, carmine hierarchy, forest names, and restrained letterpress rules.",
     darkGuidance:
-      "Place the same readable cream folio within a deep evergreen candlelit field; surrounding surfaces use ivory text and sage actions.",
+      "Place the same readable paper folio on a dark walnut desk; supporting night sections use ivory copy and softened carmine actions.",
     statusGuidance:
-      "Red and green decoration never carries RSVP meaning alone; every state includes explicit copy and semantic contrast.",
+      "Carmine and forest colors never carry RSVP meaning alone; every state uses explicit language and semantic contrast.",
     reducedMotion:
-      "Remove section and companion-print reveals while preserving the static botanical frame, cotton-paper depth, and type hierarchy.",
+      "Remove the archival-print and section reveals while preserving the static paper suite and engraved hierarchy.",
     dashboardRequirements: [
-      "Show the portrait botanical folio, formal red title, and forest fact typography in the theme preview.",
-      "Keep Noel and Noel V2 visibly separate: the original reads as a winter conservatory while V2 reads as printed Christmas stationery.",
+      "Show Christmas Wedding in carmine, the couple's names in forest green, and the dense painted perimeter.",
+      "Present the theme as wedding stationery, never as a Noel variant or a recolored seasonal card.",
     ],
     namingGuidance:
-      "Noel V2 identifies Lumiere's second original Noel art direction; avoid protected card makers, illustrators, characters, or holiday brands.",
+      "Evergreen Folio is an original descriptive name; avoid protected stationers, illustrators, characters, songs, or holiday brands.",
   }),
   "editorial-ivory": createExpansionThemeTemplateSpec("editorial-ivory", {
     moodBoardNotes: [

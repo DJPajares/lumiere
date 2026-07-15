@@ -66,6 +66,7 @@ export type ThemeRsvpManagerCopy = Partial<
 >;
 
 export type ThemeHeroPresentation = {
+  eyebrowCopy?: string;
   fallbackClassName: string;
   frameClassName: string;
   imageClassName: string;
@@ -73,6 +74,7 @@ export type ThemeHeroPresentation = {
   innerClassName: string;
   innerWithMediaClassName?: string;
   mediaClassName: string;
+  pretitleCopy?: string;
 };
 
 export type ThemeRsvpRendererId = "common" | "editorial-ledger";
@@ -282,7 +284,7 @@ export const themeIds = [
   "premium",
   "kids",
   "noel",
-  "noel-v2",
+  "evergreen-folio",
   "editorial-ivory",
   "garden-light",
   "modern-minimal",

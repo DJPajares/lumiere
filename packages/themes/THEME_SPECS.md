@@ -61,16 +61,16 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.
 - Dashboard preview: evergreen table scene, cream surface, and restrained seasonal accent.
 
-## Noel V2
+## Evergreen Folio
 
-- Fit: every event type, with an especially strong read for Christmas weddings, holiday dinners, and formal year-end celebrations.
-- Mood: warm cotton paper, hand-painted evergreen and holly, restrained red berries, pine-cone brown, and traditional forest/red typography.
-- Motion: seasonal section and companion-print reveals only; reduced motion keeps the botanical folio completely static.
-- Ornaments: an original code-native portrait frame with pine needles, holly leaves, berries, and pine cones plus cropped botanical section corners.
-- Sections: centered printed-invitation hero, optional companion portrait, paper-folio details, editorial story/profile/location, matted gallery, crafted RSVP, and formal outro.
-- Ambient media: optional warm acoustic track with guest-controlled playback.
-- RSVP: cotton-paper response folio with double rules, clear attendance state, max pax, host message, and semantic closed/error states.
-- Dashboard preview: portrait botanical paper, formal red title, forest facts, and a distinct “Noel V2” label beside the original Noel.
+- Fit: Christmas weddings; intentionally not a universal seasonal theme.
+- Mood: heirloom cotton paper on a writing desk, dense watercolor pine and holly, carmine titling, forest-green names, and engraved Roman typography.
+- Motion: calm stationery and archival-print reveals with no parallax or ambient loop; reduced motion keeps the suite completely static.
+- Ornaments: one original painted perimeter of curved long-needle pine, hand-shaped holly, berries, and layered pine cones; no Noel assets, crest, mistletoe, snowfall, or repeated section boughs.
+- Sections: portrait wedding folio, optional archival companion print, formal date announcement, ledger details, timeline story, square-matted gallery, editorial venue, detachable reply card, and monogram-like outro.
+- Ambient media: optional chamber strings or acoustic carols with guest-controlled playback.
+- RSVP: detachable response card with a perforated rule, ledger fields, explicit party capacity, semantic states, and a carmine return action.
+- Dashboard preview: Christmas Wedding in carmine, couple names in forest green, dense painted perimeter, and the independent Evergreen Folio name.
 
 ## Editorial Ivory
 

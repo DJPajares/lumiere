@@ -118,7 +118,7 @@ describe("theme registry", () => {
       "premium",
       "kids",
       "noel",
-      "noel-v2",
+      "evergreen-folio",
       ...expansionThemeIds,
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
@@ -881,11 +881,7 @@ describe("theme registry", () => {
 
   it("filters themes by event type", () => {
     expect(getThemesForEventType("holiday").map((theme) => theme.id)).toContain("noel");
-    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual([
-      "kids",
-      "noel",
-      "noel-v2",
-    ]);
+    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual(["kids", "noel"]);
     expect(
       compatibilityEventTypes.every(
         (eventType) =>

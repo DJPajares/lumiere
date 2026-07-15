@@ -249,7 +249,11 @@ function PublicHero({
 }) {
   const content = section?.content ?? {};
   const coverImage = readAsset(content.coverImage);
-  const eyebrow = readString(content.eyebrow) ?? formatEventType(invite.event.eventType);
+  const eyebrow =
+    theme.presentation.hero.eyebrowCopy ??
+    readString(content.eyebrow) ??
+    formatEventType(invite.event.eventType);
+  const pretitle = theme.presentation.hero.pretitleCopy;
   const title = readString(content.title) ?? invite.event.title;
   const subtitle = readString(content.subtitle);
   const body = readString(content.body);
@@ -295,6 +299,7 @@ function PublicHero({
             </span>
           </div>
           <div className="grid gap-4">
+            {pretitle ? <p className="lumiere-display lumiere-hero-pretitle">{pretitle}</p> : null}
             <h1 className="lumiere-display lumiere-hero-title max-w-3xl text-5xl font-semibold leading-[0.96] text-balance sm:text-7xl">
               <InviteMaskedText>{title}</InviteMaskedText>
             </h1>

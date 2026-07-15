@@ -1,0 +1,743 @@
+[data-theme-id="evergreen-folio"] {
+  --folio-frame-art: url("/themes/evergreen-folio/ornament/painted-evergreen-frame.svg");
+  --folio-green: #1b5236;
+  --folio-ink: #22251f;
+  --folio-paper: #f1e3c7;
+  --folio-paper-deep: #dfcba8;
+  --folio-paper-light: #fbf3df;
+  --folio-red: #9d2229;
+  --folio-rule: #7d8f7d;
+  --folio-walnut: #2b1b12;
+}
+
+[data-theme-id="evergreen-folio"][data-theme-resolved-mode="light"] {
+  --folio-paper: #f4e8cf;
+  --folio-paper-deep: #e3d1b1;
+  --folio-paper-light: #fff7e7;
+  --folio-red: #9b2028;
+  --folio-rule: #758a78;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-invitation {
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--surface) 10%, transparent),
+      transparent 34rem
+    ),
+    linear-gradient(
+      104deg,
+      color-mix(in srgb, var(--background) 92%, #000) 0%,
+      var(--background) 46%,
+      color-mix(in srgb, var(--surface-muted) 18%, var(--background)) 100%
+    );
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-visual-layer__backdrop {
+  background:
+    repeating-linear-gradient(
+      91deg,
+      transparent 0 5.9rem,
+      color-mix(in srgb, var(--foreground) 2.5%, transparent) 5.95rem 6rem
+    ),
+    linear-gradient(145deg, var(--background), color-mix(in srgb, var(--surface) 16%, var(--background)));
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-visual-layer__wash {
+  display: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-visual-layer__texture {
+  color: var(--foreground);
+  mix-blend-mode: multiply;
+  opacity: 0.045;
+}
+
+[data-theme-id="evergreen-folio"] [data-theme-mode-control="editorial"] button {
+  border-color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  font-family: var(--font-body), serif;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--hero {
+  min-height: 100dvh;
+  padding-block: clamp(6.5rem, 10vw, 9rem);
+  border: 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 44%,
+      color-mix(in srgb, var(--surface) 16%, transparent),
+      transparent 42rem
+    ),
+    linear-gradient(135deg, color-mix(in srgb, var(--background) 78%, #000), var(--background));
+}
+
+[data-theme-id="evergreen-folio"][data-theme-resolved-mode="light"] .lumiere-section--hero {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 247, 229, 0.5), transparent 35rem),
+    linear-gradient(135deg, #b8aa94, #d4c5aa 46%, #a99b86);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--hero::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.2), transparent 14% 86%, rgba(0, 0, 0, 0.2)),
+    repeating-linear-gradient(
+      3deg,
+      transparent 0 6rem,
+      rgba(255, 255, 255, 0.018) 6.05rem 6.1rem
+    );
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-layout,
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy,
+[data-theme-id="evergreen-folio"] .lumiere-hero-media {
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy {
+  isolation: isolate;
+  width: min(100%, 45rem);
+  min-height: min(92rem, 118dvh);
+  align-content: center;
+  margin-inline: auto;
+  padding-block: clamp(14rem, 25vw, 17rem) clamp(13rem, 23vw, 15.5rem);
+  padding-inline: clamp(7rem, 20%, 9rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--folio-ink) 76%, transparent);
+  border-radius: 0.1rem;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.55), transparent 19rem),
+    radial-gradient(circle at 82% 84%, rgba(103, 69, 35, 0.07), transparent 22rem),
+    repeating-linear-gradient(
+      84deg,
+      rgba(70, 54, 33, 0.025) 0 0.5px,
+      transparent 0.5px 4px
+    ),
+    linear-gradient(145deg, var(--folio-paper-light), var(--folio-paper) 58%, var(--folio-paper-deep));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72) inset,
+    0 38px 100px rgba(14, 8, 4, 0.42),
+    0 7px 18px rgba(14, 8, 4, 0.28);
+  color: var(--folio-ink);
+  text-align: center;
+}
+
+/* The foliage owns a fixed perimeter. Copy starts inside its 20% safe area. */
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0.45rem;
+  background: var(--folio-frame-art) center / 100% 100% no-repeat;
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--folio-rule) 54%, transparent);
+  box-shadow: inset 0 0 0 0.3rem color-mix(in srgb, var(--folio-paper-light) 22%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy > * {
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker {
+  display: grid;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p {
+  display: grid;
+  grid-template-columns: minmax(1.5rem, 3rem) auto minmax(1.5rem, 3rem);
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 25rem;
+  margin-inline: auto;
+  color: var(--folio-ink);
+  font-family: var(--font-body), serif;
+  font-size: clamp(0.7rem, 1.4vw, 0.83rem);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1.5;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p::before,
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p::after {
+  height: 1px;
+  background: var(--folio-green);
+  content: "";
+  opacity: 0.72;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__index {
+  display: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-pretitle {
+  max-width: 9ch;
+  margin-inline: auto;
+  color: var(--folio-red);
+  font-size: clamp(3rem, 7vw, 5.45rem);
+  font-weight: 400;
+  line-height: 0.93;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-title {
+  max-width: 10ch;
+  margin-inline: auto;
+  color: var(--folio-green);
+  font-size: clamp(3.35rem, 8.2vw, 6rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-subtitle {
+  max-width: 27rem;
+  margin-inline: auto;
+  color: var(--folio-ink);
+  font-family: var(--font-body), serif;
+  font-size: clamp(1.25rem, 2.8vw, 1.75rem);
+  font-style: normal;
+  line-height: 1.45;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-body {
+  max-width: 29rem;
+  margin-inline: auto;
+  color: color-mix(in srgb, var(--folio-ink) 78%, transparent);
+  font-family: var(--font-body), serif;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-facts {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  max-width: 28rem;
+  margin: 1.25rem auto 0;
+  border-top: 1px solid color-mix(in srgb, var(--folio-rule) 52%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--folio-rule) 52%, transparent);
+  background: color-mix(in srgb, var(--folio-paper-light) 30%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-fact {
+  padding: 1rem 0.5rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-fact + .lumiere-hero-fact {
+  border-top: 1px solid color-mix(in srgb, var(--folio-rule) 38%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-fact dt {
+  color: var(--folio-red);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-hero-fact dd {
+  color: var(--folio-ink);
+  font-family: var(--font-body), serif;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-fallback {
+  display: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print {
+  isolation: isolate;
+  width: min(100%, 28rem);
+  margin-inline: auto;
+  padding: 0.7rem 0.7rem 2.5rem;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--folio-ink) 48%, transparent);
+  border-radius: 0;
+  background: var(--folio-paper-light);
+  box-shadow: 0 32px 88px rgba(12, 7, 3, 0.52);
+  transform: rotate(2.25deg) translateX(-0.5rem);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print::after {
+  position: absolute;
+  inset: 0.7rem 0.7rem 2.5rem;
+  z-index: 1;
+  border: 1px solid color-mix(in srgb, var(--folio-green) 46%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print img {
+  min-height: min(68dvh, 44rem);
+  border-radius: 0;
+  filter: saturate(0.86) contrast(1.03);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print figcaption {
+  position: relative;
+  z-index: 2;
+  border: 0;
+  background: transparent;
+  color: var(--folio-ink);
+  font-family: var(--font-body), serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section:not(.lumiere-section--hero) {
+  isolation: isolate;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section:not(.lumiere-section--hero)::after {
+  width: min(78vw, 58rem);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--border) 76%, transparent) 12% 88%,
+    transparent
+  );
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section__inner {
+  gap: clamp(2rem, 4vw, 4rem);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section:not(.lumiere-section--hero) .lumiere-section__kicker {
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section__eyebrow {
+  color: var(--accent-strong);
+  font-family: var(--font-body), serif;
+  font-size: 0.67rem;
+  letter-spacing: 0.2em;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section__index {
+  display: inline;
+  color: color-mix(in srgb, var(--foreground) 44%, transparent);
+  font-family: var(--font-body), serif;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section__body h2 {
+  max-width: 12ch;
+  color: var(--foreground);
+  font-size: clamp(2.9rem, 6vw, 5.8rem);
+  font-weight: 400;
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(
+      87deg,
+      transparent 0 4px,
+      color-mix(in srgb, var(--foreground) 2%, transparent) 4px 4.5px
+    ),
+    var(--surface);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent) inset,
+    8px 10px 0 color-mix(in srgb, var(--background) 42%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner::before {
+  position: absolute;
+  inset: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section--full-bleed,
+[data-theme-id="evergreen-folio"] .lumiere-section--gallery-feature {
+  border-color: color-mix(in srgb, var(--border) 52%, transparent);
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(8% - 0.5px),
+      color-mix(in srgb, var(--border) 24%, transparent) 8%,
+      transparent calc(8% + 0.5px),
+      transparent calc(92% - 0.5px),
+      color-mix(in srgb, var(--border) 24%, transparent) 92%,
+      transparent calc(92% + 0.5px)
+    ),
+    color-mix(in srgb, var(--surface-muted) 52%, var(--background));
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section[data-section-type="date"],
+[data-theme-id="evergreen-folio"] .lumiere-section[data-section-type="outro"] {
+  display: grid;
+  min-height: 72dvh;
+  align-items: center;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-date-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  max-width: 54rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-date-layout h2,
+[data-theme-id="evergreen-folio"] .lumiere-outro-layout h2 {
+  max-width: 12ch;
+  margin-inline: auto;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-date-panel {
+  padding: clamp(1.5rem, 4vw, 2.5rem) 1rem;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-date-panel p:first-child {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-detail-item,
+[data-theme-id="evergreen-folio"] .lumiere-profile-card,
+[data-theme-id="evergreen-folio"] [data-section-type="entourage"] .lumiere-section__body > div > div > div {
+  position: relative;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-detail-item {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-detail-item p {
+  margin-top: 0;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-story-rail {
+  gap: clamp(2rem, 4vw, 3.5rem);
+  padding-left: clamp(1.5rem, 4vw, 3rem);
+  border-left: 1px solid var(--accent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-story-step {
+  position: relative;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-story-step::before {
+  position: absolute;
+  top: 0.5rem;
+  left: calc(clamp(1.5rem, 4vw, 3rem) * -1 - 0.28rem);
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--surface);
+  background: var(--accent);
+  content: "";
+  transform: rotate(45deg);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-story-step p {
+  max-width: 44rem;
+  font-family: var(--font-body), serif;
+  font-size: clamp(1.14rem, 2vw, 1.4rem);
+  line-height: 1.75;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-profile-layout,
+[data-theme-id="evergreen-folio"] .lumiere-location-layout,
+[data-theme-id="evergreen-folio"] .lumiere-rsvp-layout {
+  gap: clamp(2.5rem, 7vw, 7rem);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section-image,
+[data-theme-id="evergreen-folio"] .lumiere-map-preview {
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: 7px 8px 0 color-mix(in srgb, var(--background) 48%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section-image img,
+[data-theme-id="evergreen-folio"] .lumiere-map-preview img {
+  border-radius: 0;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-gallery-grid {
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image {
+  padding: 0.5rem 0.5rem 2.2rem;
+  border-radius: 0;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image:nth-child(2n) {
+  transform: rotate(1.25deg);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image:nth-child(3n) {
+  transform: rotate(-1deg);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image figcaption {
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body), serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-map-card {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-section[data-section-type="rsvp"] {
+  background:
+    repeating-linear-gradient(
+      86deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--foreground) 2%, transparent) 5px 5.5px
+    ),
+    color-mix(in srgb, var(--surface-muted) 62%, var(--background));
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-rsvp-card--evergreen-folio {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-rsvp-card--evergreen-folio::before {
+  display: block;
+  width: 100%;
+  height: 1.1rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--border) 86%, transparent);
+  content: "DETACH AND RETURN";
+  color: color-mix(in srgb, var(--foreground) 52%, transparent);
+  font-family: var(--font-body), serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-align: center;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-rsvp-card--evergreen-folio::after {
+  position: absolute;
+  inset: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--border) 36%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-rsvp-card--evergreen-folio > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-outro-layout::before {
+  display: block;
+  width: 2.2rem;
+  height: 2.2rem;
+  margin: 0 auto 1rem;
+  border: 1px solid var(--accent);
+  content: "";
+  transform: rotate(45deg);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-guest-panel {
+  z-index: 4;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-guest-panel > div {
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background:
+    linear-gradient(35deg, transparent 49.7%, color-mix(in srgb, var(--border) 22%, transparent) 50%, transparent 50.3%),
+    var(--surface);
+  box-shadow: 6px 7px 0 color-mix(in srgb, var(--background) 42%, transparent);
+}
+
+[data-theme-id="evergreen-folio"] .lumiere-invitation__footer {
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  font-family: var(--font-body), serif;
+}
+
+@media (max-width: 1023px) {
+  [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-layout--media {
+    max-width: 48rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-profile-layout,
+  [data-theme-id="evergreen-folio"] .lumiere-location-layout,
+  [data-theme-id="evergreen-folio"] .lumiere-rsvp-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print {
+    width: min(78%, 27rem);
+    margin-top: 2.5rem;
+    transform: rotate(1.25deg);
+  }
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="evergreen-folio"] .lumiere-section--hero {
+    padding: 6.25rem 0.7rem 4rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy {
+    min-height: 76rem;
+    padding-block: 15rem 14rem;
+    padding-inline: 20%;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy::before {
+    inset: 0.35rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy::after {
+    inset: 0.7rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p {
+    grid-template-columns: 1.25rem auto 1.25rem;
+    gap: 0.55rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.13em;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-pretitle {
+    font-size: clamp(2.65rem, 13vw, 4rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-title {
+    font-size: clamp(2.75rem, 14vw, 4.3rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-subtitle {
+    font-size: clamp(1.05rem, 5.2vw, 1.4rem);
+    line-height: 1.4;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-body {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-fact {
+    padding: 0.82rem 0.25rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print {
+    width: calc(100% - 2.5rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print img {
+    min-height: 27rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-section__body h2 {
+    font-size: clamp(2.65rem, 13vw, 4.3rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner {
+    width: calc(100% - 1.2rem);
+    margin-inline: 0.6rem;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-detail-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 420px) {
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy {
+    min-height: 74rem;
+    padding-block: 14.5rem 13.5rem;
+    padding-inline: 20%;
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-pretitle {
+    font-size: clamp(2.35rem, 12vw, 3.2rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-title {
+    font-size: clamp(2.4rem, 12.5vw, 3.35rem);
+  }
+
+  [data-theme-id="evergreen-folio"] .lumiere-hero-fact dd {
+    font-size: 0.88rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print,
+  [data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
