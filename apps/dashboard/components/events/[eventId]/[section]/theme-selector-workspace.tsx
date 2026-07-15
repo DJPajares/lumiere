@@ -46,6 +46,8 @@ const LazyThemeExpandedPreview = lazy(async () => {
   return { default: module.ThemeExpandedPreview };
 });
 
+const themeGalleryViewStorageKey = "lumiere.dashboard.theme-gallery-view";
+
 type ThemeState = {
   selectedThemeId: string | null;
   themeMode: ThemeMode;
@@ -203,8 +205,27 @@ function ThemeSelectorContent({
   const [modeFilter, setModeFilter] = useState<GalleryModeFilter>("any");
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
   const [galleryView, setGalleryView] = useState<ThemeGalleryView>("large");
+  const [galleryViewStorageReady, setGalleryViewStorageReady] = useState(false);
   const [showIncompatible, setShowIncompatible] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
+
+  useEffect(() => {
+    setGalleryView(readStoredThemeGalleryView());
+    setGalleryViewStorageReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!galleryViewStorageReady || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(themeGalleryViewStorageKey, galleryView);
+    } catch {
+      // Storage may be disabled; the in-memory selection still works for this visit.
+    }
+  }, [galleryView, galleryViewStorageReady]);
+
   const galleryEntries = useMemo(
     () =>
       buildThemeGalleryEntries({
@@ -453,7 +474,6 @@ function ThemeSelectorContent({
               <ThemeGalleryCard
                 entry={entry}
                 eventType={state.eventType}
-                isCurrent={state.currentThemeId === entry.theme.id}
                 isSelected={state.values.selectedThemeId === entry.theme.id}
                 isSaving={state.isSaving}
                 key={entry.theme.id}
@@ -503,7 +523,6 @@ function ThemeSelectorContent({
 function ThemeGalleryCard({
   entry,
   eventType,
-  isCurrent,
   isSelected,
   isSaving,
   onPreview,
@@ -514,7 +533,6 @@ function ThemeGalleryCard({
 }: {
   entry: ThemeGalleryEntry;
   eventType: EventType;
-  isCurrent: boolean;
   isSelected: boolean;
   isSaving: boolean;
   onPreview: (entry: ThemeGalleryEntry) => void;
@@ -552,7 +570,6 @@ function ThemeGalleryCard({
       <ThemeGalleryListItem
         entry={entry}
         isActive={isActive}
-        isCurrent={isCurrent}
         isSaving={isSaving}
         isSelected={isSelected}
         modeEntry={modeEntry}
@@ -588,15 +605,9 @@ function ThemeGalleryCard({
       </div>
       <div className={cn("grid", view === "compact" ? "gap-2 p-2" : "gap-4 p-4")}>
         <div>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className={cn("font-semibold", view === "compact" ? "text-base" : "text-lg")}>
-              {entry.theme.name}
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {isCurrent ? <Badge>Current</Badge> : null}
-              {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
-            </div>
-          </div>
+          <h3 className={cn("font-semibold", view === "compact" ? "text-base" : "text-lg")}>
+            {entry.theme.name}
+          </h3>
           <p
             className={cn(
               "mt-1 text-sm leading-6 text-muted-foreground",
@@ -643,7 +654,7 @@ function ThemeGalleryCard({
           <div className="flex flex-wrap gap-2">
             <Button
               aria-label={`Use ${entry.theme.name}`}
-              className="min-h-10"
+              className="min-h-10 sm:min-w-32"
               disabled={!modeEntry.isCompatible || isSaving || isActive}
               onClick={() => void onUse(modeEntry)}
               size="sm"
@@ -656,7 +667,7 @@ function ThemeGalleryCard({
             </Button>
             <Button
               aria-label={`Preview ${entry.theme.name}`}
-              className="min-h-10"
+              className="min-h-10 sm:min-w-28"
               disabled={isSaving}
               onClick={() => onPreview(modeEntry)}
               size="sm"
@@ -674,7 +685,6 @@ function ThemeGalleryCard({
 function ThemeGalleryListItem({
   entry,
   isActive,
-  isCurrent,
   isSaving,
   isSelected,
   modeEntry,
@@ -687,7 +697,6 @@ function ThemeGalleryListItem({
 }: {
   entry: ThemeGalleryEntry;
   isActive: boolean;
-  isCurrent: boolean;
   isSaving: boolean;
   isSelected: boolean;
   modeEntry: ThemeGalleryEntry;
@@ -707,13 +716,11 @@ function ThemeGalleryListItem({
       data-theme-gallery-card={modeEntry.theme.id}
       data-theme-gallery-card-view="list"
     >
-      <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(19rem,auto)] sm:items-center sm:gap-5 sm:p-4">
+      <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(19rem,auto)] sm:items-start sm:gap-5 sm:p-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h3 className="text-base font-semibold">{entry.theme.name}</h3>
             <div className="flex flex-wrap gap-1.5">
-              {isCurrent ? <Badge>Current</Badge> : null}
-              {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
               <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
                 {statusLabel}
               </Badge>
@@ -758,7 +765,7 @@ function ThemeGalleryListItem({
           <div className="grid gap-2 min-[420px]:flex min-[420px]:flex-wrap">
             <Button
               aria-label={`Use ${entry.theme.name}`}
-              className="min-h-10 w-full min-[420px]:w-auto"
+              className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-32"
               disabled={!modeEntry.isCompatible || isSaving || isActive}
               onClick={() => void onUse(modeEntry)}
               size="sm"
@@ -771,7 +778,7 @@ function ThemeGalleryListItem({
             </Button>
             <Button
               aria-label={`Preview ${entry.theme.name}`}
-              className="min-h-10 w-full min-[420px]:w-auto"
+              className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-28"
               disabled={isSaving}
               onClick={() => onPreview(modeEntry)}
               size="sm"
@@ -816,6 +823,22 @@ function ThemeTokenStrip({ themeName, tokens }: { themeName: string; tokens: The
 
 function getThemePreviewTokens(entry: ThemeGalleryEntry) {
   return entry.previewDefinition.tokens[toPreviewMode(entry.resolvedMode)];
+}
+
+function readStoredThemeGalleryView(): ThemeGalleryView {
+  if (typeof window === "undefined") {
+    return "large";
+  }
+
+  try {
+    const storedView = window.localStorage.getItem(themeGalleryViewStorageKey);
+
+    return storedView === "compact" || storedView === "list" || storedView === "large"
+      ? storedView
+      : "large";
+  } catch {
+    return "large";
+  }
 }
 
 function ThemeEmptyState({ body, title }: { body: string; title: string }) {

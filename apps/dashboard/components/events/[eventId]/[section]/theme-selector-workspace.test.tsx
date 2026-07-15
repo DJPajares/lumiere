@@ -16,6 +16,7 @@ import { buildThemeGalleryEntries, ThemeSelectorWorkspace } from "./theme-select
 describe("ThemeSelectorWorkspace", () => {
   afterEach(() => {
     cleanup();
+    window.localStorage.clear();
   });
 
   it("loads themes and current event theme state", async () => {
@@ -68,6 +69,13 @@ describe("ThemeSelectorWorkspace", () => {
     expect(document.querySelector('[data-theme-gallery-card-view="list"]')).toBeTruthy();
     expect(document.querySelector('[data-invite-preview-boundary="isolated"]')).toBeNull();
     expect(screen.getByRole("img", { name: "Premium color tokens" })).toBeTruthy();
+    const premiumCard = document.querySelector<HTMLElement>('[data-theme-gallery-card="premium"]')!;
+    expect(premiumCard.querySelectorAll('[data-slot="badge"]')).toHaveLength(1);
+
+    cleanup();
+    renderWithAuth({ getEventTheme, listThemes });
+    await screen.findByRole("heading", { name: "Premium" });
+    expect(document.querySelector('[data-theme-gallery-view="list"]')).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Preview Premium" }));
     const dialog = await screen.findByRole("dialog", { name: "Premium invite preview" });
