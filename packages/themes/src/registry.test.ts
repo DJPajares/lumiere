@@ -118,6 +118,7 @@ describe("theme registry", () => {
       "premium",
       "kids",
       "noel",
+      "noel-v2",
       "evergreen-folio",
       ...expansionThemeIds,
     ]);
@@ -256,6 +257,14 @@ describe("theme registry", () => {
     expect(sectionDefinitions.rsvp.rendererKey).toBe("section.rsvp");
     expect(sectionDefinitions.rsvp.requiresGuestContext).toBe(true);
     expect(typeof sectionDefinitions.rsvp.rendererKey).toBe("string");
+
+    const legacyDressCode = sectionDefinitions.dress_code.contentSchema.parse({
+      description: "Formal attire.",
+      palette: [],
+      title: "Dress code",
+    });
+
+    expect(legacyDressCode).toMatchObject({ cards: [] });
   });
 
   it("defines event-type section blueprints for wedding and birthday defaults", () => {
@@ -278,6 +287,18 @@ describe("theme registry", () => {
     expect(
       weddingSections.every((section) => section.contentSchema && section.settingsSchema),
     ).toBe(true);
+    const dressCode = weddingSections.find((section) => section.sectionType === "dress_code");
+    const dressCodeDefaults = dressCode?.createDefaultContent({
+      eventType: "wedding",
+      startsAt: "2026-12-24T18:30:00+08:00",
+      timezone: "Asia/Singapore",
+      title: "Amara and Jules",
+      venueAddress: "12 Orchard Road, Singapore",
+      venueName: "The Glasshouse",
+    });
+
+    expect(dressCode).toBeDefined();
+    expect(dressCode?.contentSchema.safeParse(dressCodeDefaults).success).toBe(true);
     expect(birthdaySections.map((section) => section.sectionType)).toEqual(
       expect.arrayContaining(["introduction", "date", "details", "gallery", "rsvp"]),
     );

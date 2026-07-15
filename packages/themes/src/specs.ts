@@ -112,6 +112,7 @@ const createExpansionThemeTemplateSpec = (
     | "evergreen-folio"
     | "garden-light"
     | "modern-minimal"
+    | "noel-v2"
     | "porcelain-blue"
     | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
@@ -661,6 +662,32 @@ export const themeTemplateSpecs = {
     namingGuidance:
       "Noel is a generic seasonal name; avoid protected holiday characters, songs, or brand marks.",
   },
+  "noel-v2": createExpansionThemeTemplateSpec("noel-v2", {
+    moodBoardNotes: [
+      "Warm #faf0e6 linen paper, Cormorant Garamond, burgundy titles, antique-gold rules, and deep evergreen ink.",
+      "An original watercolor canopy introduces the invitation while straight pine, holly, berry, and pine-cone watercolors form a persistent postcard perimeter.",
+      "Alternating story chapters, circular attire swatches, and a full-height typographic closing create a sophisticated Christmas wedding rhythm.",
+    ],
+    antiSlopConstraints: [
+      "Do not copy Reverie source, exact artwork, logos, monograms, or component composition; use the reference only for editorial pacing and mood.",
+      "Keep watercolor ornaments outside the reading column and avoid snowfall, glitter, glass cards, novelty icons, or dense repeated foliage.",
+      "Do not turn every section into a bordered card; story, dress code, gallery, and outro need open editorial space.",
+    ],
+    lightGuidance:
+      "Use the exact #faf0e6 linen field, #59000f title hierarchy, evergreen body copy, warm translucent folios, and restrained antique-gold rules.",
+    darkGuidance:
+      "Use deep evergreen paper, #faf0e6 titles, warm cream copy, and exact #59000f borders on framed cards and reply controls.",
+    statusGuidance:
+      "Seasonal burgundy and evergreen never carry RSVP meaning alone; preserve explicit state copy and semantic success, warning, and error colors.",
+    reducedMotion:
+      "Remove section reveals and story depth while retaining the static timeline, typography, and edge-framing watercolors.",
+    dashboardRequirements: [
+      "Show the Cormorant Garamond hierarchy, warm linen field, burgundy title, and original watercolor canopy.",
+      "Include a small alternating story cue or attire palette so the preview reads as Noel v2 rather than recolored Noel.",
+    ],
+    namingGuidance:
+      "Noel v2 is a project-owned evolution; do not use third-party invitation names, copy, logos, monograms, or protected holiday artwork.",
+  }),
   "evergreen-folio": createExpansionThemeTemplateSpec("evergreen-folio", {
     moodBoardNotes: [
       "Heirloom cotton paper, long-needle pine, hand-shaped holly, berries, and layered pine cones form a dense watercolor perimeter.",

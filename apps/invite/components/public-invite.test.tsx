@@ -472,6 +472,13 @@ describe("public invite section renderers", () => {
           }),
           createSection({
             content: {
+              cards: [
+                {
+                  description: "Floor-length dresses and polished separates are welcome.",
+                  label: "For women",
+                  title: "Garden formal",
+                },
+              ],
               description: "Formal garden attire. Soft neutrals are welcome.",
               palette: [
                 {
@@ -483,6 +490,8 @@ describe("public invite section renderers", () => {
                   label: "Sage",
                 },
               ],
+              paletteDescription: "Soft garden colors and warm neutral tones.",
+              paletteTitle: "A garden celebration palette",
               title: "Dress code",
             },
             sectionKey: "dress-code",
@@ -517,6 +526,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain("A note from the hosts");
     expect(html).toContain("Champagne");
     expect(html).toContain("Sage");
+    expect(html).toContain("For women");
+    expect(html).toContain("Garden formal");
+    expect(html).toContain("A garden celebration palette");
     expect(html).not.toContain("background-color:#e7d6b8");
   });
 

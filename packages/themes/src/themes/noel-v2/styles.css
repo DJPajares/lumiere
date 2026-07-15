@@ -1,0 +1,1004 @@
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond/CormorantGaramond-Variable.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond/CormorantGaramond-Italic-Variable.ttf") format("truetype");
+}
+
+[data-theme-id="noel-v2"] {
+  --noel-v2-burgundy: #59000f;
+  --noel-v2-canopy-art: url("/themes/noel-v2/ornament/watercolor-canopy.webp");
+  --noel-v2-card-border: #c9ae7d;
+  --noel-v2-corner-art: url("/themes/noel-v2/ornament/watercolor-corner.webp");
+  --noel-v2-edge-horizontal-art: url("/themes/noel-v2/ornament/watercolor-edge-horizontal.webp");
+  --noel-v2-edge-vertical-art: url("/themes/noel-v2/ornament/watercolor-edge-vertical.webp");
+  --noel-v2-gold: #ac8747;
+  --noel-v2-paper: #faf0e6;
+  --noel-v2-pine: #1f3b2f;
+  --noel-v2-title: #59000f;
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] {
+  --noel-v2-card-border: #59000f;
+  --noel-v2-gold: #caa96e;
+  --noel-v2-title: #faf0e6;
+}
+
+[data-theme-id="noel-v2"] .lumiere-invitation {
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--surface) 62%, transparent),
+      transparent 38rem
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--background) 92%, var(--surface-muted)),
+      var(--background) 18% 82%,
+      color-mix(in srgb, var(--background) 92%, var(--surface-muted))
+    );
+  font-size: 1.08rem;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+[data-theme-id="noel-v2"] .lumiere-visual-layer__backdrop {
+  background:
+    repeating-linear-gradient(
+      96deg,
+      transparent 0 5.9rem,
+      color-mix(in srgb, var(--foreground) 2.2%, transparent) 5.95rem 6rem
+    ),
+    repeating-linear-gradient(
+      2deg,
+      transparent 0 4.4rem,
+      color-mix(in srgb, var(--foreground) 1.8%, transparent) 4.45rem 4.5rem
+    ),
+    var(--background);
+}
+
+[data-theme-id="noel-v2"] .lumiere-visual-layer__wash {
+  display: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-visual-layer__texture {
+  background:
+    radial-gradient(circle at 14% 18%, currentColor 0 0.45px, transparent 0.7px) 0 0 / 9px 11px,
+    radial-gradient(circle at 72% 64%, currentColor 0 0.4px, transparent 0.65px) 0 0 / 13px 15px;
+  color: var(--foreground);
+  mix-blend-mode: multiply;
+  opacity: 0.035;
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-visual-layer__texture {
+  mix-blend-mode: screen;
+  opacity: 0.025;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
+  inset: max(0.55rem, env(safe-area-inset-top)) 0.55rem max(0.55rem, env(safe-area-inset-bottom));
+  border: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
+  background:
+    var(--noel-v2-edge-horizontal-art) center top / calc(100% - 4rem) 2.65rem no-repeat,
+    var(--noel-v2-edge-horizontal-art) center bottom / calc(100% - 4rem) 2.65rem no-repeat,
+    var(--noel-v2-edge-vertical-art) left center / 2.65rem calc(100% - 4rem) no-repeat,
+    var(--noel-v2-edge-vertical-art) right center / 2.65rem calc(100% - 4rem) no-repeat;
+  filter: saturate(0.78) contrast(0.94);
+  opacity: 0.44;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament,
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+  width: clamp(4.25rem, 8vw, 7.25rem);
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 0;
+  background: var(--noel-v2-corner-art) left top / contain no-repeat;
+  box-shadow: none;
+  opacity: 1;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: block;
+  content: "";
+  transform: scaleY(-1);
+}
+
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="primary"] {
+  top: 0;
+  left: 0;
+  transform: none;
+}
+
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="secondary"] {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  transform: scaleX(-1);
+}
+
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="tertiary"] {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  transform: scale(-1);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornaments {
+  filter: saturate(0.64) brightness(0.88) contrast(1.04);
+  opacity: 0.34;
+}
+
+[data-theme-id="noel-v2"] [data-theme-mode-control="seasonal"] button {
+  border-color: color-mix(in srgb, var(--noel-v2-card-border) 74%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  font-family: var(--font-body), serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--foreground) 10%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--hero {
+  min-height: 100dvh;
+  align-content: start;
+  padding-block: clamp(18rem, 25vw, 20rem) clamp(5rem, 9vw, 7rem);
+  border: 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 22%,
+      color-mix(in srgb, var(--surface) 56%, transparent),
+      transparent 34rem
+    ),
+    transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--hero > div,
+[data-theme-id="noel-v2"] .lumiere-hero-copy {
+  position: static;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-media {
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-copy {
+  isolation: isolate;
+  width: min(100%, 48rem);
+  align-content: center;
+  gap: clamp(1.35rem, 3vw, 2.2rem);
+  margin-inline: auto;
+  text-align: center;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-copy > * {
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
+  position: absolute;
+  z-index: 1;
+  top: clamp(1.25rem, 4.5vw, 3.75rem);
+  left: 50%;
+  width: min(calc(100vw - 4rem), 34rem);
+  aspect-ratio: 1898 / 829;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+[data-theme-id="noel-v2"] .lumiere-noel-v2-decoration span {
+  display: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-noel-v2-decoration [data-decoration-position="top"] {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--noel-v2-canopy-art) center / contain no-repeat;
+  filter: saturate(0.82) contrast(0.96);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  .lumiere-noel-v2-decoration
+  [data-decoration-position="top"] {
+  filter: saturate(0.7) brightness(0.92) contrast(1.04);
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-copy .lumiere-section__kicker,
+[data-theme-id="noel-v2"] .lumiere-section__kicker {
+  justify-content: center;
+  padding: 0;
+  border: 0;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__eyebrow,
+[data-theme-id="noel-v2"] .lumiere-hero-copy .lumiere-section__kicker p {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  color: color-mix(in srgb, var(--noel-v2-gold) 86%, var(--foreground));
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.5;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__eyebrow::before,
+[data-theme-id="noel-v2"] .lumiere-section__eyebrow::after,
+[data-theme-id="noel-v2"] .lumiere-hero-copy .lumiere-section__kicker p::before,
+[data-theme-id="noel-v2"] .lumiere-hero-copy .lumiere-section__kicker p::after {
+  width: 0.36rem;
+  height: 0.36rem;
+  background:
+    radial-gradient(circle at 50% 18%, var(--noel-v2-pine) 0 30%, transparent 33%),
+    radial-gradient(circle at 18% 62%, var(--noel-v2-pine) 0 28%, transparent 31%),
+    radial-gradient(circle at 82% 62%, var(--noel-v2-pine) 0 28%, transparent 31%);
+  content: "";
+  transform: rotate(20deg);
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__index {
+  display: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-title {
+  max-width: 12ch;
+  margin-inline: auto;
+  color: var(--noel-v2-title);
+  font-size: clamp(3.25rem, 8vw, 6.25rem);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-subtitle {
+  max-width: 34rem;
+  margin-inline: auto;
+  font-size: clamp(1.35rem, 2.6vw, 2rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-body {
+  max-width: 35rem;
+  margin-inline: auto;
+  font-size: 1.08rem;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 1.25rem;
+  border-block: 1px solid color-mix(in srgb, var(--noel-v2-gold) 46%, transparent);
+  background: transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-fact {
+  min-height: 5.5rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
+  border-left: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-media {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--noel-v2-card-border) 78%, transparent);
+  border-radius: 48% 48% 0 0 / 12% 12% 0 0;
+  background: var(--surface);
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-hero-media::after {
+  inset: 0.65rem;
+  border-color: color-mix(in srgb, var(--noel-v2-gold) 54%, transparent);
+  border-radius: inherit;
+}
+
+[data-theme-id="noel-v2"] .lumiere-noel-v2-folio {
+  position: relative;
+  width: min(100%, 30rem);
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--noel-v2-card-border) 56%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: 0 22px 68px color-mix(in srgb, var(--foreground) 10%, transparent);
+  text-align: left;
+}
+
+[data-theme-id="noel-v2"] .lumiere-noel-v2-folio::before {
+  content: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-noel-v2-folio > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section:not(.lumiere-section--hero) {
+  isolation: isolate;
+  padding-block: clamp(4.75rem, 8vw, 7rem);
+  border-color: transparent;
+  background: transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section:not(.lumiere-section--hero)::after {
+  content: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__inner {
+  gap: clamp(1.35rem, 3vw, 2.25rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__body h2 {
+  max-width: 18ch;
+  margin-inline: auto;
+  color: var(--noel-v2-title);
+  font-size: clamp(2.45rem, 5vw, 4.75rem);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section__body h3 {
+  font-weight: 500;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--full-bleed,
+[data-theme-id="noel-v2"] .lumiere-section--gallery-feature {
+  border-color: transparent;
+  background: transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner {
+  position: relative;
+  border-color: transparent;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface) 34%, transparent);
+  box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner::before {
+  content: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme-id="noel-v2"]
+  :is(
+    .lumiere-detail-item,
+    .lumiere-profile-card,
+    [data-section-type="entourage"] .lumiere-section__body > div > div > div
+  ) {
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface) 56%, transparent);
+  box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-detail-grid {
+  gap: 1rem;
+}
+
+[data-theme-id="noel-v2"] .lumiere-detail-item {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-date-layout {
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  gap: clamp(2rem, 8vw, 8rem);
+  align-items: center;
+}
+
+[data-theme-id="noel-v2"] .lumiere-date-panel,
+[data-theme-id="noel-v2"] .lumiere-map-card {
+  border-color: transparent;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section[data-section-type="story"] {
+  padding-block: clamp(5rem, 8vw, 8rem);
+}
+
+[data-theme-id="noel-v2"] [data-section-type="story"] .lumiere-section__inner {
+  max-width: 88rem;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-layout {
+  width: 100%;
+  max-width: none;
+  margin-inline: auto;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-copy {
+  width: 100%;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-copy > h2 {
+  max-width: none;
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  text-align: center;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-rail {
+  position: relative;
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  padding: 0;
+  border: 0;
+  counter-reset: noel-v2-story;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-rail::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: color-mix(in srgb, var(--noel-v2-gold) 52%, transparent);
+  content: "";
+  transform: translateX(-50%);
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step {
+  position: relative;
+  width: calc(50% - clamp(2.5rem, 6vw, 5rem));
+  min-height: 12rem;
+  counter-increment: noel-v2-story;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd) {
+  justify-self: start;
+  text-align: right;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step:nth-child(even) {
+  justify-self: end;
+  text-align: left;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step > span {
+  display: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step::before {
+  display: block;
+  margin-bottom: 1rem;
+  color: color-mix(in srgb, var(--noel-v2-gold) 84%, var(--foreground));
+  font-family: var(--font-display), serif;
+  font-size: clamp(3.25rem, 6vw, 5.5rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0.8;
+  content: counter(noel-v2-story, upper-roman);
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step::after {
+  position: absolute;
+  top: 2rem;
+  width: 0.58rem;
+  height: 0.58rem;
+  border: 1px solid var(--noel-v2-gold);
+  border-radius: 50%;
+  background: var(--background);
+  box-shadow: 0 0 0 0.5rem var(--background);
+  content: "";
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd)::after {
+  right: calc(clamp(2.5rem, 6vw, 5rem) * -1 - 0.3rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step:nth-child(even)::after {
+  left: calc(clamp(2.5rem, 6vw, 5rem) * -1 - 0.3rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-entry-title {
+  margin-bottom: 0.65rem;
+  color: var(--foreground);
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.9rem, 3vw, 2.7rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step p {
+  max-width: 38rem;
+  font-size: clamp(1.08rem, 1.6vw, 1.3rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+[data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd) p {
+  margin-left: auto;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section[data-section-type="dress_code"] {
+  display: grid;
+  align-items: center;
+}
+
+[data-theme-id="noel-v2"] [data-section-type="dress_code"] .lumiere-section__inner {
+  max-width: 88rem;
+  text-align: center;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-layout {
+  gap: clamp(3rem, 6vw, 5.5rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-header {
+  max-width: 62rem;
+  margin-inline: auto;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-header h2 {
+  max-width: 18ch;
+  margin-inline: auto;
+  font-size: clamp(2.75rem, 5.4vw, 5rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-header > p {
+  max-width: 56rem;
+  margin-inline: auto;
+  color: color-mix(in srgb, var(--foreground) 76%, transparent);
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  font-style: italic;
+  line-height: 1.7;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: start;
+  text-align: left;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-cards:only-child,
+[data-theme-id="noel-v2"] .lumiere-dress-code-palette:only-child {
+  grid-column: 1 / -1;
+  width: min(100%, 52rem);
+  margin-inline: auto;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.4vw, 1.75rem);
+  align-items: start;
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card__index {
+  padding-top: 0.2rem;
+  color: var(--noel-v2-gold);
+  font-family: var(--font-display), serif;
+  font-size: 1.45rem;
+  font-style: italic;
+  line-height: 1;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card__copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card__label {
+  color: color-mix(in srgb, var(--noel-v2-gold) 88%, var(--foreground));
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card__title {
+  color: var(--foreground);
+  font-size: clamp(1.55rem, 2.3vw, 2rem);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-card__description {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  line-height: 1.65;
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-dress-code-card {
+  border: 1px solid #59000f;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-palette__title {
+  color: var(--foreground);
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-palette__description {
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.4rem, 3vw, 2.25rem) 1rem;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-swatch {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-swatch__color {
+  width: clamp(4rem, 7vw, 5.25rem);
+  aspect-ratio: 1;
+  border: 0.42rem solid color-mix(in srgb, var(--surface) 86%, transparent);
+  border-radius: 50%;
+  outline: 1px solid color-mix(in srgb, var(--noel-v2-gold) 58%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-swatch__label {
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.15;
+}
+
+[data-theme-id="noel-v2"] .lumiere-dress-code-swatch__value {
+  color: color-mix(in srgb, var(--noel-v2-gold) 78%, var(--foreground));
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-theme-id="noel-v2"]
+  :is(.lumiere-profile-layout, .lumiere-location-layout, .lumiere-rsvp-layout) {
+  gap: clamp(2.25rem, 7vw, 7rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-layout > h2 {
+  grid-column: 1 / -1;
+}
+
+[data-theme-id="noel-v2"] :is(.lumiere-section-image, .lumiere-map-preview) {
+  border-color: var(--noel-v2-card-border);
+  border-radius: 0;
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 94%, transparent);
+  --map-caption-border: var(--noel-v2-card-border);
+  --map-caption-foreground: var(--foreground);
+  --map-embed-filter: grayscale(0.42) sepia(0.15) saturate(0.68) brightness(0.96) contrast(0.96);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-map-preview {
+  --map-embed-filter: grayscale(0.48) sepia(0.22) saturate(0.62) brightness(0.72) contrast(1.04);
+}
+
+[data-theme-id="noel-v2"] .lumiere-map-caption {
+  border-radius: 0;
+  font-family: var(--font-body), serif;
+}
+
+[data-theme-id="noel-v2"] .lumiere-gallery-grid {
+  gap: clamp(0.8rem, 2vw, 1.6rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-gallery-grid .lumiere-section-image figcaption {
+  border-top: 1px solid color-mix(in srgb, var(--noel-v2-card-border) 58%, transparent);
+  background: var(--surface);
+  font-style: italic;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section[data-section-type="rsvp"] {
+  background: transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2 {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--noel-v2-card-border);
+  border-radius: 0;
+}
+
+[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2::before {
+  content: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2 > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme-id="noel-v2"] .lumiere-section[data-section-type="outro"] {
+  display: grid;
+  min-height: 80dvh;
+  align-items: center;
+  background: transparent;
+}
+
+[data-theme-id="noel-v2"] .lumiere-outro-layout {
+  max-width: 64rem;
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+
+[data-theme-id="noel-v2"] .lumiere-outro-layout::before {
+  width: 4rem;
+  height: 2rem;
+  margin-inline: auto;
+  background:
+    radial-gradient(circle at center, var(--noel-v2-pine) 0 2px, transparent 2.5px),
+    linear-gradient(
+        90deg,
+        transparent,
+        var(--noel-v2-gold) 12% 45%,
+        transparent 45% 55%,
+        var(--noel-v2-gold) 55% 88%,
+        transparent
+      )
+      center / 100% 1px no-repeat;
+  content: "";
+}
+
+[data-theme-id="noel-v2"] .lumiere-outro-layout h2 {
+  max-width: 14ch;
+  margin-inline: auto;
+  font-size: clamp(3rem, 7vw, 6.25rem);
+  line-height: 0.92;
+}
+
+[data-theme-id="noel-v2"] .lumiere-outro-layout p {
+  max-width: 42rem;
+  margin-inline: auto;
+  color: color-mix(in srgb, var(--foreground) 76%, transparent);
+  font-size: clamp(1.1rem, 2vw, 1.42rem);
+  font-style: italic;
+  line-height: 1.75;
+}
+
+[data-theme-id="noel-v2"] .lumiere-guest-panel > div {
+  border-color: var(--noel-v2-card-border);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 22px 64px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-invitation__footer {
+  border-color: color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(
+    .lumiere-section--framed .lumiere-section__inner,
+    .lumiere-detail-item,
+    .lumiere-profile-card,
+    .lumiere-date-panel,
+    .lumiere-map-card,
+    .lumiere-section-image,
+    .lumiere-map-preview,
+    .lumiere-rsvp-card--noel-v2,
+    .lumiere-guest-panel > div
+  ) {
+  border-color: #59000f;
+}
+
+@media (max-width: 1023px) {
+  [data-theme-id="noel-v2"] .lumiere-date-layout,
+  [data-theme-id="noel-v2"] .lumiere-profile-layout,
+  [data-theme-id="noel-v2"] .lumiere-location-layout,
+  [data-theme-id="noel-v2"] .lumiere-rsvp-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-dress-code-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-dress-code-cards,
+  [data-theme-id="noel-v2"] .lumiere-dress-code-palette {
+    width: min(100%, 48rem);
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-theme-id="noel-v2"] .lumiere-story-rail {
+    gap: 3.25rem;
+    padding-left: 2.25rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-story-rail::before {
+    right: auto;
+    left: 0.5rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-story-step,
+  [data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd),
+  [data-theme-id="noel-v2"] .lumiere-story-step:nth-child(even) {
+    width: 100%;
+    min-height: 0;
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd) p {
+    margin-left: 0;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-story-step::after,
+  [data-theme-id="noel-v2"] .lumiere-story-step:nth-child(odd)::after,
+  [data-theme-id="noel-v2"] .lumiere-story-step:nth-child(even)::after {
+    top: 1.45rem;
+    right: auto;
+    left: -2.05rem;
+  }
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="noel-v2"] .lumiere-invitation {
+    font-size: 1rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section--hero {
+    padding: 15.5rem 1.5rem 4.75rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
+    top: 4rem;
+    width: min(calc(100vw - 3rem), 22rem);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-hero-title {
+    font-size: clamp(2.85rem, 14vw, 4.2rem);
+    line-height: 0.92;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-hero-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-hero-fact {
+    min-height: 4.5rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
+    border-top: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
+    border-left: 0;
+  }
+
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
+    inset: max(0.35rem, env(safe-area-inset-top)) 0.35rem max(0.35rem, env(safe-area-inset-bottom));
+    background:
+      var(--noel-v2-edge-horizontal-art) center top / calc(100% - 3rem) 1.85rem no-repeat,
+      var(--noel-v2-edge-horizontal-art) center bottom / calc(100% - 3rem) 1.85rem no-repeat,
+      var(--noel-v2-edge-vertical-art) left center / 1.85rem calc(100% - 3rem) no-repeat,
+      var(--noel-v2-edge-vertical-art) right center / 1.85rem calc(100% - 3rem) no-repeat;
+    opacity: 0.52;
+  }
+
+  [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornaments {
+    opacity: 0.4;
+  }
+
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament,
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+    width: 3.75rem;
+  }
+
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="primary"] {
+    top: 0;
+    left: 0;
+  }
+
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="secondary"] {
+    top: 0;
+    right: 0;
+  }
+
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="tertiary"] {
+    right: 0;
+    bottom: 0;
+    display: block;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section__body h2 {
+    font-size: clamp(2.25rem, 11vw, 3.4rem);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner {
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section:not(.lumiere-section--hero) {
+    padding-block: 4.5rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section__inner {
+    padding-inline: 1.85rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-dress-code-card {
+    grid-template-columns: 2.35rem minmax(0, 1fr);
+    padding: 1.25rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-dress-code-swatches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-section[data-section-type="outro"] {
+    min-height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme-id="noel-v2"] .lumiere-noel-v2-decoration,
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament {
+    animation: none !important;
+    transform-origin: center;
+  }
+}

@@ -61,6 +61,18 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.
 - Dashboard preview: evergreen table scene, cream surface, and restrained seasonal accent.
 
+## Noel v2
+
+- Fit: premium weddings, holiday celebrations, and private events with a formal winter tone.
+- Mood: warm `#faf0e6` linen, Cormorant Garamond, burgundy `#59000f` titles, antique-gold rules, evergreen ink, and generous editorial whitespace.
+- Motion: calm section reveals with light story depth; reduced motion keeps the full composition static.
+- Ornaments: one original watercolor canopy plus a fixed postcard perimeter built from Evergreen Folio's straight pine, holly, berry, and pine-cone watercolor family.
+- Sections: centered heirloom hero, alternating story timeline, open formal-attire palette, editorial venue and gallery, bordered reply folio, and full-height typographic outro.
+- Modes: light uses the linen field and burgundy titles; dark uses deep evergreen, beige titles, and exact burgundy card borders.
+- Ambient media: optional chamber strings or acoustic carols with explicit guest controls.
+- RSVP: formal book-serif fields, clear max-pax and state copy, fine folio borders, and an accessible primary action.
+- Dashboard preview: the watercolor canopy, burgundy title hierarchy, and a story or attire cue must distinguish it from the existing Noel and Evergreen Folio themes.
+
 ## Evergreen Folio
 
 - Fit: Christmas weddings; intentionally not a universal seasonal theme.

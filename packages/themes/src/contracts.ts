@@ -285,6 +285,7 @@ export const themeIds = [
   "premium",
   "kids",
   "noel",
+  "noel-v2",
   "evergreen-folio",
   "editorial-ivory",
   "garden-light",

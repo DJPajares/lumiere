@@ -389,7 +389,26 @@ function defaultContent(sectionType: SectionType, event: EventBlueprintContext) 
   if (sectionType === "dress_code") {
     return {
       description: "Add attire guidance for your guests.",
+      cards: [
+        {
+          label: "For women",
+          title: "Formal attire",
+          description: "Choose an elegant look suited to the celebration.",
+        },
+        {
+          label: "For men",
+          title: "Coat and tie",
+          description: "A polished suit with dress shoes is recommended.",
+        },
+        {
+          label: "Style note",
+          title: "Refined and festive",
+          description: "Use the palette as inspiration and avoid overly casual pieces.",
+        },
+      ],
       palette: [],
+      paletteDescription: "Use these colors as inspiration for your celebration look.",
+      paletteTitle: "A festive celebration palette",
       title: "Dress code",
     };
   }

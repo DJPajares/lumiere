@@ -1397,6 +1397,7 @@ function DetailsFields({ controller }: { controller: SectionFieldController }) {
 }
 
 function DressCodeFields({ controller }: { controller: SectionFieldController }) {
+  const cards = readRecordArray(controller.content.cards);
   const palette = readRecordArray(controller.content.palette);
 
   return (
@@ -1407,6 +1408,73 @@ function DressCodeFields({ controller }: { controller: SectionFieldController })
         label="Description"
         multiline
         path={["description"]}
+        scope="content"
+      />
+      <RepeaterField
+        addLabel="Add attire card"
+        controller={controller}
+        emptyLabel="No attire cards yet."
+        items={cards}
+        label="Attire guidance cards"
+        onAdd={() =>
+          controller.updateContentValue(
+            ["cards"],
+            [
+              ...cards,
+              {
+                label: "For guests",
+                title: "Attire note",
+                description: "Add practical attire guidance for your guests.",
+              },
+            ],
+          )
+        }
+        onMove={(from, to) =>
+          controller.updateContentValue(["cards"], moveArrayItem(cards, from, to))
+        }
+        onRemove={(index) =>
+          controller.updateContentValue(
+            ["cards"],
+            cards.filter((_, itemIndex) => itemIndex !== index),
+          )
+        }
+        renderItem={(_, index) => (
+          <div className="grid gap-3">
+            <TextField
+              controller={controller}
+              label="Card label"
+              path={["cards", index, "label"]}
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Card title"
+              path={["cards", index, "title"]}
+              required
+              scope="content"
+            />
+            <TextField
+              controller={controller}
+              label="Card description"
+              multiline
+              path={["cards", index, "description"]}
+              required
+              scope="content"
+            />
+          </div>
+        )}
+      />
+      <TextField
+        controller={controller}
+        label="Palette title"
+        path={["paletteTitle"]}
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        label="Palette description"
+        multiline
+        path={["paletteDescription"]}
         scope="content"
       />
       <RepeaterField
@@ -2654,7 +2722,10 @@ function PreviewDetails({ content, settings }: { content: JsonObject; settings: 
 }
 
 function PreviewDressCode({ content, settings }: { content: JsonObject; settings: JsonObject }) {
+  const cards = readRecordArray(content.cards);
   const palette = readRecordArray(content.palette);
+  const paletteTitle = readString(content.paletteTitle);
+  const paletteDescription = readString(content.paletteDescription);
   const showSwatches = readBoolean(settings.showSwatches, true);
 
   return (
@@ -2664,6 +2735,33 @@ function PreviewDressCode({ content, settings }: { content: JsonObject; settings
       </h3>
       {readString(content.description) ? (
         <p className="text-sm leading-6">{readString(content.description)}</p>
+      ) : null}
+      {cards.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {cards.map((card, index) => (
+            <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-3" key={index}>
+              {readString(card.label) ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent-strong)]">
+                  {readString(card.label)}
+                </p>
+              ) : null}
+              <p className="mt-2 font-semibold">{readString(card.title) ?? "Attire note"}</p>
+              <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+                {readString(card.description)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {paletteTitle || paletteDescription ? (
+        <div className="grid gap-1">
+          {paletteTitle ? <p className="font-semibold">{paletteTitle}</p> : null}
+          {paletteDescription ? (
+            <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+              {paletteDescription}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {palette.length > 0 ? (
         <div className="flex flex-wrap gap-2">
@@ -2683,9 +2781,9 @@ function PreviewDressCode({ content, settings }: { content: JsonObject; settings
             </span>
           ))}
         </div>
-      ) : (
+      ) : cards.length === 0 ? (
         <PreviewEmpty message="Add palette labels to show attire guidance." />
-      )}
+      ) : null}
     </div>
   );
 }

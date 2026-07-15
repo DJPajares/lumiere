@@ -879,34 +879,96 @@ function DressCodeSection({
 }) {
   const title = readString(content.title) ?? "Dress code";
   const description = readString(content.description);
+  const cards = readRecordArray(content.cards);
   const palette = readRecordArray(content.palette);
+  const paletteTitle = readString(content.paletteTitle);
+  const paletteDescription = readString(content.paletteDescription);
   const showSwatches = readBoolean(settings.showSwatches, true);
 
   return (
-    <div className="grid gap-4">
-      <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
-        {title}
-      </h2>
-      {description ? <p className="text-base leading-7">{description}</p> : null}
-      {palette.length > 0 ? (
-        <div className="flex flex-wrap gap-3">
-          {palette.map((item, index) => (
-            <div
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
-              key={index}
-            >
-              {showSwatches && readString(item.color) ? (
+    <div className="lumiere-dress-code-layout grid gap-8">
+      <header className="lumiere-dress-code-header grid gap-4">
+        <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
+          {title}
+        </h2>
+        {description ? <p className="text-base leading-7">{description}</p> : null}
+      </header>
+
+      <div className="lumiere-dress-code-content grid gap-8">
+        {cards.length > 0 ? (
+          <div className="lumiere-dress-code-cards grid gap-3">
+            {cards.map((card, index) => (
+              <article
+                className="lumiere-dress-code-card grid grid-cols-[2.5rem_minmax(0,1fr)] gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
+                key={index}
+              >
                 <span
                   aria-hidden="true"
-                  className="size-4 rounded-full border border-[var(--border)]"
-                  style={{ backgroundColor: readString(item.color) }}
-                />
-              ) : null}
-              {readString(item.label) ?? "Color"}
-            </div>
-          ))}
-        </div>
-      ) : null}
+                  className="lumiere-dress-code-card__index text-sm font-semibold text-[var(--accent-strong)]"
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="lumiere-dress-code-card__copy grid gap-1">
+                  {readString(card.label) ? (
+                    <p className="lumiere-dress-code-card__label text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent-strong)]">
+                      {readString(card.label)}
+                    </p>
+                  ) : null}
+                  <h3 className="lumiere-display lumiere-dress-code-card__title text-xl font-semibold">
+                    {readString(card.title) ?? "Attire guidance"}
+                  </h3>
+                  <p className="lumiere-dress-code-card__description text-sm leading-6">
+                    {readString(card.description)}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {palette.length > 0 || paletteTitle || paletteDescription ? (
+          <div className="lumiere-dress-code-palette grid gap-5">
+            {paletteTitle || paletteDescription ? (
+              <div className="lumiere-dress-code-palette__header grid gap-2">
+                {paletteTitle ? (
+                  <h3 className="lumiere-display lumiere-dress-code-palette__title">
+                    {paletteTitle}
+                  </h3>
+                ) : null}
+                {paletteDescription ? (
+                  <p className="lumiere-dress-code-palette__description">{paletteDescription}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {palette.length > 0 ? (
+              <div className="lumiere-dress-code-swatches grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {palette.map((item, index) => (
+                  <div
+                    className="lumiere-dress-code-swatch grid justify-items-center gap-2 text-center"
+                    key={index}
+                  >
+                    {showSwatches && readString(item.color) ? (
+                      <span
+                        aria-hidden="true"
+                        className="lumiere-dress-code-swatch__color size-12 rounded-full border border-[var(--border)]"
+                        style={{ backgroundColor: readString(item.color) }}
+                      />
+                    ) : null}
+                    <span className="lumiere-dress-code-swatch__label text-sm">
+                      {readString(item.label) ?? "Color"}
+                    </span>
+                    {readString(item.color) ? (
+                      <span className="lumiere-dress-code-swatch__value text-xs text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+                        {readString(item.color)?.toUpperCase()}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

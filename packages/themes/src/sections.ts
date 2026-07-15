@@ -187,6 +187,18 @@ export const entourageContentSchema = commonContentSchema.extend({
 export const dressCodeContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   description: z.string().trim().max(800).optional(),
+  cards: z
+    .array(
+      z.object({
+        label: z.string().trim().max(80).optional(),
+        title: nonEmptyString.max(160),
+        description: nonEmptyString.max(800),
+      }),
+    )
+    .max(6)
+    .default([]),
+  paletteTitle: z.string().trim().max(160).optional(),
+  paletteDescription: z.string().trim().max(800).optional(),
   palette: z
     .array(
       z.object({
@@ -526,7 +538,7 @@ export const sectionDefinitions = {
   }),
   dress_code: createSectionDefinition("dress_code", {
     label: "Dress Code",
-    description: "Attire guidance with optional labeled color swatches.",
+    description: "Attire guidance cards with an optional labeled color palette.",
     defaultVisibility: "public",
     requiresGuestContext: false,
   }),

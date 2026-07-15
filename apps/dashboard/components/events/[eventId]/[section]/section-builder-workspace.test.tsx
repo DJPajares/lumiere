@@ -28,9 +28,11 @@ describe("SectionBuilderWorkspace", () => {
     expect(screen.getByText(/Preview contract:/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open Introduction editor" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Introduction" })).toBeTruthy();
-    ["Introduction", "Date and Time", "Story", "Location", "RSVP"].forEach((label) => {
-      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
-    });
+    ["Introduction", "Date and Time", "Story", "Dress Code", "Location", "RSVP"].forEach(
+      (label) => {
+        expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+      },
+    );
   });
 
   it("expands one section card from keyboard selection", async () => {
@@ -247,6 +249,17 @@ describe("SectionBuilderWorkspace", () => {
     await user.type(detailsEditor.getAllByLabelText(/^Label/)[1]!, "Dessert");
     await user.clear(detailsEditor.getAllByLabelText(/^Value/)[1]!);
     await user.type(detailsEditor.getAllByLabelText(/^Value/)[1]!, "Cake and coffee at 9 PM.");
+    await user.click(screen.getByRole("button", { name: "Open Dress Code editor" }));
+    const dressCodeEditor = within(screen.getByRole("region", { name: "Dress Code" }));
+
+    await user.click(dressCodeEditor.getByLabelText("Enable Dress Code"));
+    await user.clear(dressCodeEditor.getAllByLabelText("Card title")[0]!);
+    await user.type(dressCodeEditor.getAllByLabelText("Card title")[0]!, "Garden formal");
+    await user.clear(dressCodeEditor.getByLabelText("Palette title"));
+    await user.type(
+      dressCodeEditor.getByLabelText("Palette title"),
+      "A garden celebration palette",
+    );
     await user.click(screen.getByRole("button", { name: "Open Introduction editor" }));
     const reopenedIntroductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
 
@@ -275,6 +288,7 @@ describe("SectionBuilderWorkspace", () => {
       "introduction",
       "rsvp",
       "details",
+      "dress_code",
     ]);
     expect(payload?.sections[1]?.visibility).toBe("guest_only");
     expect(payload?.sections[1]?.content).toMatchObject({
@@ -293,6 +307,10 @@ describe("SectionBuilderWorkspace", () => {
       ],
       title: "Details",
     });
+    expect(payload?.sections[4]?.content).toMatchObject({
+      cards: expect.arrayContaining([expect.objectContaining({ title: "Garden formal" })]),
+      paletteTitle: "A garden celebration palette",
+    });
     expect(payload?.sections[2]?.content).toMatchObject({
       questions: [
         expect.objectContaining({ key: "dietary-notes" }),
@@ -303,6 +321,7 @@ describe("SectionBuilderWorkspace", () => {
     expect(payload?.sections[1]?.sortOrder).toBe(1);
     expect(payload?.sections[2]?.sortOrder).toBe(2);
     expect(payload?.sections[3]?.sortOrder).toBe(3);
+    expect(payload?.sections[4]?.sortOrder).toBe(4);
     expect(updateEvent).toHaveBeenCalledWith("evt_123", {
       rsvpSettings: {
         collectGuestMessage: false,
@@ -431,10 +450,26 @@ const premiumTheme: Theme = {
   eventTypes: ["wedding", "dinner", "private_event"],
   id: "premium",
   metadata: {
-    recommendedSections: ["introduction", "date", "details", "story", "location", "rsvp"],
+    recommendedSections: [
+      "introduction",
+      "date",
+      "details",
+      "story",
+      "dress_code",
+      "location",
+      "rsvp",
+    ],
     requiredSections: ["introduction", "date", "location", "rsvp"],
-    sectionRhythm: ["introduction", "date", "details", "story", "location", "rsvp"],
-    supportedSections: ["introduction", "date", "details", "story", "location", "rsvp"],
+    sectionRhythm: ["introduction", "date", "details", "story", "dress_code", "location", "rsvp"],
+    supportedSections: [
+      "introduction",
+      "date",
+      "details",
+      "story",
+      "dress_code",
+      "location",
+      "rsvp",
+    ],
   },
   name: "Premium",
   supportedModes: ["light", "dark", "toggleable"],
