@@ -19,7 +19,7 @@ export const evergreenFolioTheme = {
       dark: "Candlelit desk",
       light: "Daylight paper",
     },
-    placement: "top-start",
+    placement: "top-end",
     style: "editorial",
   },
   rsvpCopy: {
