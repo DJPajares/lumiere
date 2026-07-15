@@ -1,5 +1,7 @@
 [data-theme-id="evergreen-folio"] {
-  --folio-frame-art: url("/themes/evergreen-folio/ornament/watercolor-evergreen-border.webp");
+  --folio-corner-art: url("/themes/evergreen-folio/ornament/watercolor-corner.webp");
+  --folio-edge-horizontal-art: url("/themes/evergreen-folio/ornament/watercolor-edge-horizontal.webp");
+  --folio-edge-vertical-art: url("/themes/evergreen-folio/ornament/watercolor-edge-vertical.webp");
   --folio-green: #204b32;
   --folio-ink: #27251f;
   --folio-paper: #eee1c6;
@@ -160,39 +162,141 @@
   text-align: center;
 }
 
-/* Artwork is constrained to the perimeter; the center remains a protected copy zone. */
-[data-theme-id="evergreen-folio"] .lumiere-hero-copy::before {
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Corners retain their aspect ratio while the bough tiles repeat along each edge. */
+[data-theme-id="evergreen-folio"] .lumiere-hero-copy > .lumiere-evergreen-folio-ornaments {
+  --folio-corner-size: clamp(8.5rem, 28vw, 13rem);
+  --folio-edge-depth: clamp(3.75rem, 11vw, 5.5rem);
+  --folio-edge-inset: clamp(6.125rem, 20vw, 9.35rem);
   position: absolute;
-  z-index: 0;
+  z-index: 1;
   inset: 0.65rem;
-  background: var(--folio-frame-art) center / 100% 100% no-repeat;
-  content: "";
+  overflow: hidden;
   filter: saturate(0.88) contrast(0.98);
   opacity: 0.94;
   pointer-events: none;
 }
 
-[data-theme-id="evergreen-folio"] .lumiere-hero-copy::after {
+[data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-ornaments span {
   position: absolute;
-  z-index: 1;
-  inset: 16% 16% 18%;
-  background: radial-gradient(
-    ellipse at center,
-    color-mix(in srgb, var(--folio-paper) 98%, transparent) 0 74%,
-    transparent 100%
-  );
-  box-shadow: 0 0 1.25rem 0.85rem color-mix(in srgb, var(--folio-paper) 78%, transparent);
-  content: "";
+  display: block;
   pointer-events: none;
 }
 
-[data-theme-id="evergreen-folio"][data-theme-resolved-mode="dark"] .lumiere-hero-copy::before {
-  filter: saturate(0.78) brightness(0.82) contrast(1.08);
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top-left"],
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top-right"],
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom-right"],
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom-left"] {
+  z-index: 2;
+  width: var(--folio-corner-size);
+  height: var(--folio-corner-size);
+  background: var(--folio-corner-art) center / contain no-repeat;
 }
 
-[data-theme-id="evergreen-folio"] .lumiere-hero-copy > * {
-  position: relative;
-  z-index: 2;
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top-left"] {
+  top: -0.35rem;
+  left: -0.35rem;
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top-right"] {
+  top: -0.35rem;
+  right: -0.35rem;
+  transform: scaleX(-1);
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom-right"] {
+  right: -0.35rem;
+  bottom: -0.35rem;
+  transform: scale(-1);
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom-left"] {
+  bottom: -0.35rem;
+  left: -0.35rem;
+  transform: scaleY(-1);
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top"],
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom"] {
+  z-index: 1;
+  right: var(--folio-edge-inset);
+  left: var(--folio-edge-inset);
+  height: var(--folio-edge-depth);
+  background-image: var(--folio-edge-horizontal-art);
+  background-position: center;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="top"] {
+  top: 0;
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="bottom"] {
+  bottom: 0;
+  transform: scaleY(-1);
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="left"],
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="right"] {
+  z-index: 1;
+  top: var(--folio-edge-inset);
+  bottom: var(--folio-edge-inset);
+  width: var(--folio-edge-depth);
+  background-image: var(--folio-edge-vertical-art);
+  background-position: center;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="left"] {
+  left: -1rem;
+}
+
+[data-theme-id="evergreen-folio"]
+  .lumiere-evergreen-folio-ornaments
+  [data-decoration-position="right"] {
+  right: -1rem;
+  transform: scaleX(-1);
+}
+
+[data-theme-id="evergreen-folio"][data-theme-resolved-mode="dark"]
+  .lumiere-evergreen-folio-ornaments {
+  filter: saturate(0.78) brightness(0.82) contrast(1.08);
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker {
@@ -701,12 +805,11 @@
     padding-inline: 17%;
   }
 
-  [data-theme-id="evergreen-folio"] .lumiere-hero-copy::before {
+  [data-theme-id="evergreen-folio"] .lumiere-hero-copy > .lumiere-evergreen-folio-ornaments {
+    --folio-corner-size: clamp(7.5rem, 36vw, 9.25rem);
+    --folio-edge-depth: clamp(3.25rem, 15vw, 4rem);
+    --folio-edge-inset: clamp(5.4rem, 26vw, 6.65rem);
     inset: 0.5rem;
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-copy::after {
-    inset: 15% 17% 17%;
   }
 
   [data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p {

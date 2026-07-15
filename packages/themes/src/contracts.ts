@@ -66,6 +66,7 @@ export type ThemeRsvpManagerCopy = Partial<
 >;
 
 export type ThemeHeroPresentation = {
+  decorationClassName?: string;
   eyebrowCopy?: string;
   fallbackClassName: string;
   frameClassName: string;

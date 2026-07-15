@@ -19,6 +19,7 @@ export const evergreenFolioRsvpPresentation = {
 
 export const evergreenFolioPresentation = createThemePresentation({
   hero: {
+    decorationClassName: "lumiere-evergreen-folio-ornaments",
     eyebrowCopy: "You are invited to the wedding of",
     pretitleCopy: "Christmas Wedding",
     fallbackClassName: "lumiere-evergreen-folio-fallback",

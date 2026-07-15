@@ -290,6 +290,9 @@ function PublicHero({
         }
       >
         <div className="lumiere-hero-copy grid gap-6">
+          {presentation.decorationClassName ? (
+            <HeroDecorationFrame className={presentation.decorationClassName} />
+          ) : null}
           <div className="lumiere-section__kicker">
             <p className="text-sm font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
               {eyebrow}
@@ -365,6 +368,27 @@ function PublicHero({
 
       {guest ? <GuestContextPanel guest={guest} /> : null}
     </section>
+  );
+}
+
+const heroDecorationPositions = [
+  "top-left",
+  "top",
+  "top-right",
+  "right",
+  "bottom-right",
+  "bottom",
+  "bottom-left",
+  "left",
+] as const;
+
+function HeroDecorationFrame({ className }: { className: string }) {
+  return (
+    <div aria-hidden="true" className={joinClassNames("lumiere-hero-decoration-frame", className)}>
+      {heroDecorationPositions.map((position) => (
+        <span data-decoration-position={position} key={position} />
+      ))}
+    </div>
   );
 }
 
