@@ -438,7 +438,7 @@ function ThemeSelectorContent({
               {compatibleCount} compatible · {incompatibleCount} unavailable for this setup
             </p>
           </div>
-          <div className="grid gap-5 lg:max-w-4xl lg:justify-self-end">
+          <div className="grid min-w-0 gap-5 lg:max-w-4xl lg:justify-self-end">
             <div className="grid gap-4 sm:grid-cols-[auto_minmax(16rem,1fr)] sm:items-end">
               <div className="grid gap-2">
                 <span className="text-sm font-medium" id="theme-gallery-view-label">
@@ -485,8 +485,8 @@ function ThemeSelectorContent({
                 />
               </div>
             </div>
-            <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:border-t sm:border-border sm:pt-4">
-              <p className="col-span-3 hidden text-sm font-medium sm:block">Filter themes</p>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] sm:items-end sm:border-t sm:border-border sm:pt-4">
+              <p className="col-span-full hidden text-sm font-medium sm:block">Filter themes</p>
               <div className="min-w-0">
                 <DashboardSelect
                   id="theme-mode-filter"
@@ -518,7 +518,7 @@ function ThemeSelectorContent({
                 <span className="text-sm font-medium">Theme availability</span>
                 <Button
                   aria-pressed={showIncompatible}
-                  className="h-11 w-full min-w-0"
+                  className="w-full min-w-0"
                   onClick={() => setShowIncompatible((current) => !current)}
                   variant="outline"
                 >
