@@ -14,6 +14,7 @@ import {
   resolveTheme,
   type ThemeCompatibilityResult,
   type ThemeDefinition,
+  type ThemeTokenSet,
 } from "@lumiere/themes";
 import {
   eventThemeUpdateRequestSchema,
@@ -441,8 +442,10 @@ function ThemeSelectorContent({
             className={cn(
               "grid gap-4",
               galleryView === "large" && "md:grid-cols-2 xl:grid-cols-3",
-              galleryView === "compact" && "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4",
-              galleryView === "list" && "grid-cols-1",
+              galleryView === "compact" &&
+                "grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4",
+              galleryView === "list" &&
+                "grid-cols-1 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
             )}
             data-theme-gallery-view={galleryView}
           >
@@ -544,6 +547,25 @@ function ThemeGalleryCard({
       ? "Compatible with fallbacks"
       : "Fully compatible";
 
+  if (view === "list") {
+    return (
+      <ThemeGalleryListItem
+        entry={entry}
+        isActive={isActive}
+        isCurrent={isCurrent}
+        isSaving={isSaving}
+        isSelected={isSelected}
+        modeEntry={modeEntry}
+        onModeChange={setThemeMode}
+        onPreview={onPreview}
+        onUse={onUse}
+        savingThemeId={savingThemeId}
+        statusLabel={statusLabel}
+        themeMode={themeMode}
+      />
+    );
+  }
+
   return (
     <article
       className={cn(
@@ -551,29 +573,25 @@ function ThemeGalleryCard({
         isSelected
           ? "border-primary ring-2 ring-primary/20"
           : "border-border transition-shadow hover:shadow-md",
-        view === "list" && "lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:items-stretch",
       )}
       data-theme-gallery-card={modeEntry.theme.id}
       data-theme-gallery-card-view={view}
     >
-      <div
-        className={cn(
-          "bg-muted/40",
-          view === "compact" ? "p-2" : "p-3",
-          view === "list" && "lg:flex lg:items-center",
-        )}
-      >
+      <div className={cn("bg-muted/40", view === "compact" ? "p-2" : "p-3")}>
         <InviteThemePreviewRenderer
           fallbackReason={modeEntry.fallbackReason}
           mode={toPreviewMode(modeEntry.resolvedMode)}
           theme={modeEntry.previewDefinition}
+          thumbnailSize={view === "compact" ? "compact" : "default"}
           thumbnail
         />
       </div>
-      <div className={cn("grid", view === "compact" ? "gap-3 p-3" : "gap-4 p-4")}>
+      <div className={cn("grid", view === "compact" ? "gap-2 p-2" : "gap-4 p-4")}>
         <div>
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className="text-lg font-semibold">{entry.theme.name}</h3>
+            <h3 className={cn("font-semibold", view === "compact" ? "text-base" : "text-lg")}>
+              {entry.theme.name}
+            </h3>
             <div className="flex flex-wrap gap-1.5">
               {isCurrent ? <Badge>Current</Badge> : null}
               {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
@@ -582,7 +600,7 @@ function ThemeGalleryCard({
           <p
             className={cn(
               "mt-1 text-sm leading-6 text-muted-foreground",
-              view === "compact" && "line-clamp-2",
+              view === "compact" && "hidden sm:line-clamp-2 sm:block",
             )}
           >
             {readThemeSummary(entry.theme)}
@@ -610,12 +628,7 @@ function ThemeGalleryCard({
           </ul>
         ) : null}
 
-        <div
-          className={cn(
-            "grid gap-3 border-t border-border pt-3",
-            view === "list" && "sm:grid-cols-[minmax(12rem,0.8fr)_minmax(12rem,auto)] sm:items-end",
-          )}
-        >
+        <div className={cn("grid gap-3 border-t border-border pt-3")}>
           <DashboardSelect
             disabled={isSaving}
             id={`theme-mode-${entry.theme.id}`}
@@ -656,6 +669,153 @@ function ThemeGalleryCard({
       </div>
     </article>
   );
+}
+
+function ThemeGalleryListItem({
+  entry,
+  isActive,
+  isCurrent,
+  isSaving,
+  isSelected,
+  modeEntry,
+  onModeChange,
+  onPreview,
+  onUse,
+  savingThemeId,
+  statusLabel,
+  themeMode,
+}: {
+  entry: ThemeGalleryEntry;
+  isActive: boolean;
+  isCurrent: boolean;
+  isSaving: boolean;
+  isSelected: boolean;
+  modeEntry: ThemeGalleryEntry;
+  onModeChange: (value: ThemeMode) => void;
+  onPreview: (entry: ThemeGalleryEntry) => void;
+  onUse: (entry: ThemeGalleryEntry) => void;
+  savingThemeId: string | null;
+  statusLabel: string;
+  themeMode: ThemeMode;
+}) {
+  return (
+    <article
+      className={cn(
+        "grid bg-card transition-colors",
+        isSelected ? "bg-primary/5" : "hover:bg-muted/40",
+      )}
+      data-theme-gallery-card={modeEntry.theme.id}
+      data-theme-gallery-card-view="list"
+    >
+      <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(19rem,auto)] sm:items-center sm:gap-5 sm:p-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h3 className="text-base font-semibold">{entry.theme.name}</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {isCurrent ? <Badge>Current</Badge> : null}
+              {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
+              <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
+                {statusLabel}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <ThemeTokenStrip
+              themeName={entry.theme.name}
+              tokens={getThemePreviewTokens(modeEntry)}
+            />
+            <span className="text-xs text-muted-foreground">
+              {entry.theme.supportedModes.length} supported modes
+            </span>
+          </div>
+
+          {modeEntry.reasons.length > 0 ? (
+            <p
+              className={cn(
+                "mt-2 text-xs leading-5",
+                modeEntry.isCompatible ? "text-warning" : "text-destructive",
+              )}
+            >
+              {modeEntry.reasons[0]}
+              {modeEntry.reasons.length > 1 ? ` +${modeEntry.reasons.length - 1} more` : null}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] sm:min-w-[19rem] sm:grid-cols-[minmax(10rem,1fr)_auto] sm:items-end">
+          <DashboardSelect
+            disabled={isSaving}
+            id={`theme-mode-${entry.theme.id}`}
+            label="Theme mode"
+            onValueChange={(value) => onModeChange(value as ThemeMode)}
+            options={entry.theme.supportedModes.map((mode) => ({
+              label: formatMode(mode),
+              value: mode,
+            }))}
+            value={themeMode}
+          />
+          <div className="grid gap-2 min-[420px]:flex min-[420px]:flex-wrap">
+            <Button
+              aria-label={`Use ${entry.theme.name}`}
+              className="min-h-10 w-full min-[420px]:w-auto"
+              disabled={!modeEntry.isCompatible || isSaving || isActive}
+              onClick={() => void onUse(modeEntry)}
+              size="sm"
+            >
+              {savingThemeId === entry.theme.id
+                ? "Applying..."
+                : isActive
+                  ? "Current"
+                  : "Use theme"}
+            </Button>
+            <Button
+              aria-label={`Preview ${entry.theme.name}`}
+              className="min-h-10 w-full min-[420px]:w-auto"
+              disabled={isSaving}
+              onClick={() => onPreview(modeEntry)}
+              size="sm"
+              variant="outline"
+            >
+              Preview
+            </Button>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ThemeTokenStrip({ themeName, tokens }: { themeName: string; tokens: ThemeTokenSet }) {
+  const palette = [
+    ["Background", tokens.background],
+    ["Surface", tokens.surface],
+    ["Accent", tokens.accent],
+    ["Text", tokens.foreground],
+    ["Border", tokens.border],
+  ] as const;
+
+  return (
+    <div
+      aria-label={`${themeName} color tokens`}
+      className="flex shrink-0 items-center gap-1"
+      role="img"
+    >
+      {palette.map(([label, value]) => (
+        <span
+          aria-hidden="true"
+          className="size-5 rounded-full border border-foreground/20 shadow-sm"
+          key={label}
+          style={{ backgroundColor: value }}
+          title={`${label}: ${value}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function getThemePreviewTokens(entry: ThemeGalleryEntry) {
+  return entry.previewDefinition.tokens[toPreviewMode(entry.resolvedMode)];
 }
 
 function ThemeEmptyState({ body, title }: { body: string; title: string }) {

@@ -14,17 +14,20 @@ export function InviteThemePreviewRenderer({
   mode,
   theme,
   thumbnail = false,
+  thumbnailSize = "default",
   viewport = "desktop",
 }: {
   fallbackReason?: string;
   mode: InvitePreviewMode;
   theme: ThemeDefinition;
   thumbnail?: boolean;
+  thumbnailSize?: "compact" | "default";
   viewport?: InvitePreviewViewport;
 }) {
   const tokens = mode === "dark" && theme.tokens.dark ? theme.tokens.dark : theme.tokens.light;
   const sections = theme.previewData.sections.slice(0, thumbnail ? 1 : 3);
   const effects = theme.composition.effects;
+  const compactThumbnail = thumbnail && thumbnailSize === "compact";
 
   return (
     <div
@@ -58,7 +61,13 @@ export function InviteThemePreviewRenderer({
           boxSizing: "border-box",
           color: tokens.foreground,
           fontFamily: theme.typography.css.bodyFamily,
-          minHeight: thumbnail ? "238px" : viewport === "mobile" ? "620px" : "540px",
+          minHeight: thumbnail
+            ? compactThumbnail
+              ? "156px"
+              : "238px"
+            : viewport === "mobile"
+              ? "620px"
+              : "540px",
           overflow: "hidden",
           position: "relative",
         }}
@@ -71,9 +80,21 @@ export function InviteThemePreviewRenderer({
             borderBottom: `1px solid ${tokens.border}`,
             boxSizing: "border-box",
             display: "grid",
-            gap: thumbnail ? "10px" : "18px",
-            minHeight: thumbnail ? "146px" : viewport === "mobile" ? "300px" : "250px",
-            padding: thumbnail ? "18px" : viewport === "mobile" ? "40px 28px" : "46px 54px",
+            gap: thumbnail ? (compactThumbnail ? "8px" : "10px") : "18px",
+            minHeight: thumbnail
+              ? compactThumbnail
+                ? "96px"
+                : "146px"
+              : viewport === "mobile"
+                ? "300px"
+                : "250px",
+            padding: thumbnail
+              ? compactThumbnail
+                ? "12px"
+                : "18px"
+              : viewport === "mobile"
+                ? "40px 28px"
+                : "46px 54px",
             position: "relative",
             textAlign: theme.composition.hero.composition === "centered-media" ? "center" : "left",
             zIndex: 1,
@@ -83,7 +104,7 @@ export function InviteThemePreviewRenderer({
             style={{
               color: tokens.accentStrong,
               fontFamily: theme.typography.css.bodyFamily,
-              fontSize: thumbnail ? "9px" : "11px",
+              fontSize: thumbnail ? (compactThumbnail ? "8px" : "9px") : "11px",
               fontWeight: 700,
               letterSpacing: theme.typography.css.eyebrowLetterSpacing,
               lineHeight: 1.2,
@@ -97,7 +118,13 @@ export function InviteThemePreviewRenderer({
             style={{
               color: tokens.foreground,
               fontFamily: theme.typography.css.displayFamily,
-              fontSize: thumbnail ? "24px" : viewport === "mobile" ? "42px" : "54px",
+              fontSize: thumbnail
+                ? compactThumbnail
+                  ? "18px"
+                  : "24px"
+                : viewport === "mobile"
+                  ? "42px"
+                  : "54px",
               fontWeight: 600,
               letterSpacing: "-0.035em",
               lineHeight: 0.98,

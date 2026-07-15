@@ -66,6 +66,8 @@ describe("ThemeSelectorWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "List themes" }));
     expect(document.querySelector('[data-theme-gallery-view="list"]')).toBeTruthy();
     expect(document.querySelector('[data-theme-gallery-card-view="list"]')).toBeTruthy();
+    expect(document.querySelector('[data-invite-preview-boundary="isolated"]')).toBeNull();
+    expect(screen.getByRole("img", { name: "Premium color tokens" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Preview Premium" }));
     const dialog = await screen.findByRole("dialog", { name: "Premium invite preview" });
