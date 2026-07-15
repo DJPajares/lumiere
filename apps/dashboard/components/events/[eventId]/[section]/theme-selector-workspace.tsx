@@ -1,6 +1,16 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@lumiere/dashboard-ui/components/alert-dialog";
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Grid2X2Icon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
@@ -8,6 +18,7 @@ import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { cn } from "@lumiere/dashboard-ui/utils";
 import {
+  compatibilityThemeModes,
   evaluateThemeCompatibility,
   getTheme,
   isThemeId,
@@ -208,6 +219,7 @@ function ThemeSelectorContent({
   const [galleryViewStorageReady, setGalleryViewStorageReady] = useState(false);
   const [showIncompatible, setShowIncompatible] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
+  const [pendingThemeMode, setPendingThemeMode] = useState<ThemeMode | null>(null);
 
   useEffect(() => {
     setGalleryView(readStoredThemeGalleryView());
@@ -253,8 +265,35 @@ function ThemeSelectorContent({
   );
   const incompatibleCount = galleryEntries.filter((entry) => !entry.isCompatible).length;
   const compatibleCount = galleryEntries.length - incompatibleCount;
+  const activeTheme = state.themes.find((theme) => theme.id === state.values.selectedThemeId);
+  const themeModeOptions = useMemo(
+    () =>
+      compatibilityThemeModes.map((mode) => ({
+        disabled: activeTheme ? !activeTheme.supportedModes.includes(mode) : false,
+        label: formatMode(mode),
+        value: mode,
+      })),
+    [activeTheme],
+  );
+  const pendingThemeEntry = useMemo(() => {
+    if (!pendingThemeMode || !activeTheme) {
+      return null;
+    }
 
-  const applyTheme = async (entry: ThemeGalleryEntry) => {
+    return (
+      buildThemeGalleryEntries({
+        eventType: state.eventType,
+        modeFilter: pendingThemeMode,
+        preferredMode: pendingThemeMode,
+        themes: [activeTheme],
+      })[0] ?? null
+    );
+  }, [activeTheme, pendingThemeMode, state.eventType]);
+
+  const applyTheme = async (
+    entry: ThemeGalleryEntry,
+    successMessage = `${entry.theme.name} is now active.`,
+  ) => {
     if (!entry.isCompatible || state.isSaving) {
       return;
     }
@@ -314,7 +353,7 @@ function ThemeSelectorContent({
               currentThemeId: response.selectedThemeId,
               currentThemeConfig: response.themeConfig,
               fieldErrors: {},
-              formMessage: `${entry.theme.name} is now active.`,
+              formMessage: successMessage,
               isSaving: false,
               savingThemeId: null,
               values: {
@@ -341,6 +380,26 @@ function ThemeSelectorContent({
     }
   };
 
+  const requestThemeModeChange = (value: string) => {
+    const nextMode = value as ThemeMode;
+
+    if (nextMode !== state.values.themeMode && !state.isSaving) {
+      setPendingThemeMode(nextMode);
+    }
+  };
+
+  const confirmThemeModeChange = () => {
+    if (!pendingThemeEntry || !pendingThemeMode) {
+      return;
+    }
+
+    setPendingThemeMode(null);
+    void applyTheme(
+      pendingThemeEntry,
+      `${pendingThemeEntry.theme.name} is now using ${formatMode(pendingThemeMode)} mode.`,
+    );
+  };
+
   return (
     <div className="grid gap-5">
       <EventTabs active="theme" eventId={eventId} />
@@ -352,8 +411,8 @@ function ThemeSelectorContent({
             Choose the invitation for {state.eventTitle}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Compatible themes appear first. Select a mode on a theme card, then use it to apply that
-            invitation immediately.
+            Compatible themes appear first. Choose a theme, then set its shared display mode from
+            the gallery controls.
           </p>
         </div>
 
@@ -372,77 +431,103 @@ function ThemeSelectorContent({
       </section>
 
       <section className="grid gap-4 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid gap-6 lg:grid-cols-[minmax(18rem,0.7fr)_minmax(0,1.3fr)] lg:items-start">
           <div>
             <h3 className="text-lg font-semibold">Theme gallery</h3>
             <p className="mt-1 text-sm text-muted-foreground" role="status">
               {compatibleCount} compatible · {incompatibleCount} unavailable for this setup
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:flex xl:items-end">
-            <div className="grid gap-2 sm:col-span-2 xl:col-span-1">
-              <span className="text-sm font-medium" id="theme-gallery-view-label">
-                Gallery view
-              </span>
-              <ToggleGroup
-                aria-labelledby="theme-gallery-view-label"
-                className="w-full sm:w-fit"
-                onValueChange={(value) => {
-                  const nextView = value[0] as ThemeGalleryView | undefined;
+          <div className="grid gap-5 lg:max-w-4xl lg:justify-self-end">
+            <div className="grid gap-4 sm:grid-cols-[auto_minmax(16rem,1fr)] sm:items-end">
+              <div className="grid gap-2">
+                <span className="text-sm font-medium" id="theme-gallery-view-label">
+                  Gallery view
+                </span>
+                <ToggleGroup
+                  aria-labelledby="theme-gallery-view-label"
+                  className="w-full sm:w-fit"
+                  onValueChange={(value) => {
+                    const nextView = value[0] as ThemeGalleryView | undefined;
 
-                  if (nextView) {
-                    setGalleryView(nextView);
-                  }
-                }}
-                size="sm"
-                spacing={0}
-                value={[galleryView]}
-                variant="outline"
-              >
-                <ToggleGroupItem aria-label="Large theme cards" type="button" value="large">
-                  <LayoutGridIcon data-icon="inline-start" />
-                  Large
-                </ToggleGroupItem>
-                <ToggleGroupItem aria-label="Compact theme cards" type="button" value="compact">
-                  <Grid2X2Icon data-icon="inline-start" />
-                  Compact
-                </ToggleGroupItem>
-                <ToggleGroupItem aria-label="List themes" type="button" value="list">
-                  <ListIcon data-icon="inline-start" />
-                  List
-                </ToggleGroupItem>
-              </ToggleGroup>
+                    if (nextView) {
+                      setGalleryView(nextView);
+                    }
+                  }}
+                  size="sm"
+                  spacing={0}
+                  value={[galleryView]}
+                  variant="outline"
+                >
+                  <ToggleGroupItem aria-label="Large theme cards" type="button" value="large">
+                    <LayoutGridIcon data-icon="inline-start" />
+                    Large
+                  </ToggleGroupItem>
+                  <ToggleGroupItem aria-label="Compact theme cards" type="button" value="compact">
+                    <Grid2X2Icon data-icon="inline-start" />
+                    Compact
+                  </ToggleGroupItem>
+                  <ToggleGroupItem aria-label="List themes" type="button" value="list">
+                    <ListIcon data-icon="inline-start" />
+                    List
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              <div className="grid gap-2 sm:border-l sm:border-border sm:pl-4">
+                <span className="hidden text-sm font-medium sm:block">Invitation setting</span>
+                <DashboardSelect
+                  disabled={state.isSaving}
+                  id="theme-mode"
+                  label="Theme mode"
+                  onValueChange={requestThemeModeChange}
+                  options={themeModeOptions}
+                  value={state.values.themeMode}
+                />
+              </div>
             </div>
-            <DashboardSelect
-              id="theme-mode-filter"
-              label="Mode support"
-              onValueChange={(value) => setModeFilter(value as GalleryModeFilter)}
-              options={[
-                { label: "Any mode", value: "any" },
-                { label: "Light", value: "light" },
-                { label: "Dark", value: "dark" },
-                { label: "System", value: "system" },
-                { label: "Toggleable", value: "toggleable" },
-              ]}
-              value={modeFilter}
-            />
-            <DashboardSelect
-              id="theme-readiness-filter"
-              label="Publish readiness"
-              onValueChange={(value) => setReadinessFilter(value as ReadinessFilter)}
-              options={[
-                { label: "Compatible with fallbacks", value: "all" },
-                { label: "Fully supported only", value: "fully-supported" },
-              ]}
-              value={readinessFilter}
-            />
-            <Button
-              aria-pressed={showIncompatible}
-              onClick={() => setShowIncompatible((current) => !current)}
-              variant="outline"
-            >
-              {showIncompatible ? "Hide incompatible" : `Show incompatible (${incompatibleCount})`}
-            </Button>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:border-t sm:border-border sm:pt-4">
+              <p className="col-span-3 hidden text-sm font-medium sm:block">Filter themes</p>
+              <div className="min-w-0">
+                <DashboardSelect
+                  id="theme-mode-filter"
+                  label="Mode support"
+                  onValueChange={(value) => setModeFilter(value as GalleryModeFilter)}
+                  options={[
+                    { label: "Any mode", value: "any" },
+                    { label: "Light", value: "light" },
+                    { label: "Dark", value: "dark" },
+                    { label: "System", value: "system" },
+                    { label: "Toggleable", value: "toggleable" },
+                  ]}
+                  value={modeFilter}
+                />
+              </div>
+              <div className="min-w-0">
+                <DashboardSelect
+                  id="theme-readiness-filter"
+                  label="Publish readiness"
+                  onValueChange={(value) => setReadinessFilter(value as ReadinessFilter)}
+                  options={[
+                    { label: "Compatible with fallbacks", value: "all" },
+                    { label: "Fully supported only", value: "fully-supported" },
+                  ]}
+                  value={readinessFilter}
+                />
+              </div>
+              <div className="grid min-w-0 gap-2">
+                <span className="text-sm font-medium">Theme availability</span>
+                <Button
+                  aria-pressed={showIncompatible}
+                  className="h-11 w-full min-w-0"
+                  onClick={() => setShowIncompatible((current) => !current)}
+                  variant="outline"
+                >
+                  {showIncompatible
+                    ? "Hide incompatible"
+                    : `Show incompatible (${incompatibleCount})`}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -487,6 +572,41 @@ function ThemeSelectorContent({
           </div>
         )}
       </section>
+
+      <AlertDialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingThemeMode(null);
+          }
+        }}
+        open={Boolean(pendingThemeMode)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Apply {pendingThemeMode ? formatMode(pendingThemeMode) : "new"} mode?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the saved mode for {activeTheme?.name ?? "the active theme"} and
+              apply it to the invitation immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingThemeEntry && !pendingThemeEntry.isCompatible ? (
+            <p className="text-sm text-destructive" role="alert">
+              {pendingThemeEntry.reasons[0] ?? "This mode is not available for the active theme."}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={state.isSaving}>Keep current mode</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={state.isSaving || !pendingThemeEntry?.isCompatible}
+              onClick={confirmThemeModeChange}
+            >
+              Apply mode
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ResponsiveModal
         contentClassName="sm:max-w-6xl"
@@ -541,27 +661,11 @@ function ThemeGalleryCard({
   selectedMode: ThemeMode;
   view: ThemeGalleryView;
 }) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>(entry.resolvedMode);
-  const modeEntry = useMemo(
-    () =>
-      buildThemeGalleryEntries({
-        eventType,
-        modeFilter: themeMode,
-        preferredMode: themeMode,
-        themes: [entry.theme],
-      })[0] ?? entry,
-    [entry, eventType, themeMode],
-  );
+  const isActive = isSelected && entry.resolvedMode === selectedMode;
 
-  useEffect(() => {
-    setThemeMode(entry.resolvedMode);
-  }, [entry.resolvedMode]);
-
-  const isActive = isSelected && themeMode === selectedMode;
-
-  const statusLabel = !modeEntry.isCompatible
+  const statusLabel = !entry.isCompatible
     ? `Not for ${formatEventType(eventType)}`
-    : modeEntry.compatibility?.status === "warning"
+    : entry.compatibility?.status === "warning"
       ? "Compatible with fallbacks"
       : "Fully compatible";
 
@@ -572,13 +676,10 @@ function ThemeGalleryCard({
         isActive={isActive}
         isSaving={isSaving}
         isSelected={isSelected}
-        modeEntry={modeEntry}
-        onModeChange={setThemeMode}
         onPreview={onPreview}
         onUse={onUse}
         savingThemeId={savingThemeId}
         statusLabel={statusLabel}
-        themeMode={themeMode}
       />
     );
   }
@@ -591,14 +692,14 @@ function ThemeGalleryCard({
           ? "border-primary ring-2 ring-primary/20"
           : "border-border transition-shadow hover:shadow-md",
       )}
-      data-theme-gallery-card={modeEntry.theme.id}
+      data-theme-gallery-card={entry.theme.id}
       data-theme-gallery-card-view={view}
     >
       <div className={cn("bg-muted/40", view === "compact" ? "p-2" : "p-3")}>
         <InviteThemePreviewRenderer
-          fallbackReason={modeEntry.fallbackReason}
-          mode={toPreviewMode(modeEntry.resolvedMode)}
-          theme={modeEntry.previewDefinition}
+          fallbackReason={entry.fallbackReason}
+          mode={toPreviewMode(entry.resolvedMode)}
+          theme={entry.previewDefinition}
           thumbnailSize={view === "compact" ? "compact" : "default"}
           thumbnail
         />
@@ -619,63 +720,44 @@ function ThemeGalleryCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
-            {statusLabel}
-          </Badge>
+          <Badge variant={entry.isCompatible ? "secondary" : "destructive"}>{statusLabel}</Badge>
           <Badge variant="outline">{entry.theme.supportedModes.length} modes</Badge>
         </div>
 
-        {modeEntry.reasons.length > 0 ? (
+        {entry.reasons.length > 0 ? (
           <ul
             className={
-              modeEntry.isCompatible
+              entry.isCompatible
                 ? "grid gap-1 rounded-lg bg-warning/10 p-3 text-xs leading-5"
                 : "grid gap-1 rounded-lg bg-destructive/10 p-3 text-xs leading-5 text-destructive"
             }
           >
-            {modeEntry.reasons.slice(0, 3).map((reason) => (
+            {entry.reasons.slice(0, 3).map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
           </ul>
         ) : null}
 
-        <div className={cn("grid gap-3 border-t border-border pt-3")}>
-          <DashboardSelect
+        <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+          <Button
+            aria-label={`Use ${entry.theme.name}`}
+            className="min-h-10 sm:min-w-32"
+            disabled={!entry.isCompatible || isSaving || isActive}
+            onClick={() => void onUse(entry)}
+            size="sm"
+          >
+            {savingThemeId === entry.theme.id ? "Applying..." : isActive ? "Current" : "Use theme"}
+          </Button>
+          <Button
+            aria-label={`Preview ${entry.theme.name}`}
+            className="min-h-10 sm:min-w-28"
             disabled={isSaving}
-            id={`theme-mode-${entry.theme.id}`}
-            label="Theme mode"
-            onValueChange={(value) => setThemeMode(value as ThemeMode)}
-            options={entry.theme.supportedModes.map((mode) => ({
-              label: formatMode(mode),
-              value: mode,
-            }))}
-            value={themeMode}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              aria-label={`Use ${entry.theme.name}`}
-              className="min-h-10 sm:min-w-32"
-              disabled={!modeEntry.isCompatible || isSaving || isActive}
-              onClick={() => void onUse(modeEntry)}
-              size="sm"
-            >
-              {savingThemeId === entry.theme.id
-                ? "Applying..."
-                : isActive
-                  ? "Current"
-                  : "Use theme"}
-            </Button>
-            <Button
-              aria-label={`Preview ${entry.theme.name}`}
-              className="min-h-10 sm:min-w-28"
-              disabled={isSaving}
-              onClick={() => onPreview(modeEntry)}
-              size="sm"
-              variant="outline"
-            >
-              Expand preview
-            </Button>
-          </div>
+            onClick={() => onPreview(entry)}
+            size="sm"
+            variant="outline"
+          >
+            Expand preview
+          </Button>
         </div>
       </div>
     </article>
@@ -687,25 +769,19 @@ function ThemeGalleryListItem({
   isActive,
   isSaving,
   isSelected,
-  modeEntry,
-  onModeChange,
   onPreview,
   onUse,
   savingThemeId,
   statusLabel,
-  themeMode,
 }: {
   entry: ThemeGalleryEntry;
   isActive: boolean;
   isSaving: boolean;
   isSelected: boolean;
-  modeEntry: ThemeGalleryEntry;
-  onModeChange: (value: ThemeMode) => void;
   onPreview: (entry: ThemeGalleryEntry) => void;
   onUse: (entry: ThemeGalleryEntry) => void;
   savingThemeId: string | null;
   statusLabel: string;
-  themeMode: ThemeMode;
 }) {
   return (
     <article
@@ -713,7 +789,7 @@ function ThemeGalleryListItem({
         "grid bg-card transition-colors",
         isSelected ? "bg-primary/5" : "hover:bg-muted/40",
       )}
-      data-theme-gallery-card={modeEntry.theme.id}
+      data-theme-gallery-card={entry.theme.id}
       data-theme-gallery-card-view="list"
     >
       <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(19rem,auto)] sm:items-start sm:gap-5 sm:p-4">
@@ -721,72 +797,52 @@ function ThemeGalleryListItem({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h3 className="text-base font-semibold">{entry.theme.name}</h3>
             <div className="flex flex-wrap gap-1.5">
-              <Badge variant={modeEntry.isCompatible ? "secondary" : "destructive"}>
+              <Badge variant={entry.isCompatible ? "secondary" : "destructive"}>
                 {statusLabel}
               </Badge>
             </div>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <ThemeTokenStrip
-              themeName={entry.theme.name}
-              tokens={getThemePreviewTokens(modeEntry)}
-            />
+            <ThemeTokenStrip themeName={entry.theme.name} tokens={getThemePreviewTokens(entry)} />
             <span className="text-xs text-muted-foreground">
               {entry.theme.supportedModes.length} supported modes
             </span>
           </div>
 
-          {modeEntry.reasons.length > 0 ? (
+          {entry.reasons.length > 0 ? (
             <p
               className={cn(
                 "mt-2 text-xs leading-5",
-                modeEntry.isCompatible ? "text-warning" : "text-destructive",
+                entry.isCompatible ? "text-warning" : "text-destructive",
               )}
             >
-              {modeEntry.reasons[0]}
-              {modeEntry.reasons.length > 1 ? ` +${modeEntry.reasons.length - 1} more` : null}
+              {entry.reasons[0]}
+              {entry.reasons.length > 1 ? ` +${entry.reasons.length - 1} more` : null}
             </p>
           ) : null}
         </div>
 
-        <div className="grid gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] sm:min-w-[19rem] sm:grid-cols-[minmax(10rem,1fr)_auto] sm:items-end">
-          <DashboardSelect
+        <div className="grid gap-2 min-[420px]:flex min-[420px]:flex-wrap min-[420px]:justify-end sm:min-w-[19rem]">
+          <Button
+            aria-label={`Use ${entry.theme.name}`}
+            className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-32"
+            disabled={!entry.isCompatible || isSaving || isActive}
+            onClick={() => void onUse(entry)}
+            size="sm"
+          >
+            {savingThemeId === entry.theme.id ? "Applying..." : isActive ? "Current" : "Use theme"}
+          </Button>
+          <Button
+            aria-label={`Preview ${entry.theme.name}`}
+            className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-28"
             disabled={isSaving}
-            id={`theme-mode-${entry.theme.id}`}
-            label="Theme mode"
-            onValueChange={(value) => onModeChange(value as ThemeMode)}
-            options={entry.theme.supportedModes.map((mode) => ({
-              label: formatMode(mode),
-              value: mode,
-            }))}
-            value={themeMode}
-          />
-          <div className="grid gap-2 min-[420px]:flex min-[420px]:flex-wrap">
-            <Button
-              aria-label={`Use ${entry.theme.name}`}
-              className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-32"
-              disabled={!modeEntry.isCompatible || isSaving || isActive}
-              onClick={() => void onUse(modeEntry)}
-              size="sm"
-            >
-              {savingThemeId === entry.theme.id
-                ? "Applying..."
-                : isActive
-                  ? "Current"
-                  : "Use theme"}
-            </Button>
-            <Button
-              aria-label={`Preview ${entry.theme.name}`}
-              className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-28"
-              disabled={isSaving}
-              onClick={() => onPreview(modeEntry)}
-              size="sm"
-              variant="outline"
-            >
-              Preview
-            </Button>
-          </div>
+            onClick={() => onPreview(entry)}
+            size="sm"
+            variant="outline"
+          >
+            Preview
+          </Button>
         </div>
       </div>
     </article>

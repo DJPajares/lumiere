@@ -32,10 +32,19 @@ describe("ThemeSelectorWorkspace", () => {
     const listThemes = vi.fn<DashboardApiClient["listThemes"]>(async () => ({
       themes: [premiumTheme, kidsTheme],
     }));
+    const updateEventTheme = vi.fn<DashboardApiClient["updateEventTheme"]>(async () => ({
+      selectedThemeId: "premium",
+      theme: premiumTheme,
+      themeConfig: {
+        spacing: "editorial",
+      },
+      themeMode: "dark",
+    }));
 
     renderWithAuth({
       getEventTheme,
       listThemes,
+      updateEventTheme,
     });
 
     expect(screen.getByLabelText("Loading theme settings")).toBeTruthy();
@@ -73,9 +82,28 @@ describe("ThemeSelectorWorkspace", () => {
     expect(premiumCard.querySelectorAll('[data-slot="badge"]')).toHaveLength(1);
 
     cleanup();
-    renderWithAuth({ getEventTheme, listThemes });
+    renderWithAuth({ getEventTheme, listThemes, updateEventTheme });
     await screen.findByRole("heading", { name: "Premium" });
     expect(document.querySelector('[data-theme-gallery-view="list"]')).toBeTruthy();
+
+    const themeModeSelect = screen.getByRole("combobox", { name: "Theme mode" });
+    await user.click(themeModeSelect);
+    await user.click(await screen.findByRole("option", { name: "Dark" }));
+
+    const modeDialog = await screen.findByRole("alertdialog", { name: "Apply Dark mode?" });
+    expect(updateEventTheme).not.toHaveBeenCalled();
+    expect(themeModeSelect.textContent).toContain("Toggleable");
+    await user.click(within(modeDialog).getByRole("button", { name: "Apply mode" }));
+
+    await waitFor(() => expect(updateEventTheme).toHaveBeenCalledTimes(1));
+    expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
+      selectedThemeId: "premium",
+      themeConfig: {
+        spacing: "editorial",
+      },
+      themeMode: "dark",
+    });
+    expect(await screen.findByText("Premium is now using Dark mode.")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Preview Premium" }));
     const dialog = await screen.findByRole("dialog", { name: "Premium invite preview" });
