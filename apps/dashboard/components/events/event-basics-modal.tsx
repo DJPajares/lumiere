@@ -80,6 +80,7 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
     submitEvent.preventDefault();
 
     if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
       setFormState({
         fieldErrors: {},
         formError: "Dashboard API is not configured.",
@@ -94,6 +95,7 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
         const parsed = parseEventUpdateValues(values);
 
         if (!parsed.ok) {
+          toast.error(parsed.formError);
           setFormState({
             fieldErrors: parsed.fieldErrors,
             formError: parsed.formError,
@@ -108,6 +110,7 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
         const parsed = parseEventCreateValues(values);
 
         if (!parsed.ok) {
+          toast.error(parsed.formError);
           setFormState({
             fieldErrors: parsed.fieldErrors,
             formError: parsed.formError,
@@ -128,7 +131,9 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
       onOpenChange(false);
       toast.success(event ? "Event details saved." : "Event created.");
     } catch (error) {
-      setFormState(toEventFormError(error));
+      const formError = toEventFormError(error);
+      setFormState(formError);
+      toast.error(formError.formError);
     } finally {
       setIsSaving(false);
     }

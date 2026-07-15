@@ -222,7 +222,9 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
       setPublishOpen(false);
       toast.success("Invitation published.");
     } catch (error) {
-      setPublicationError(toPublicationError(error));
+      const message = toPublicationError(error);
+      setPublicationError(message);
+      toast.error(message);
     } finally {
       setPublicationPending(null);
     }
@@ -245,7 +247,9 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
       setUnpublishOpen(false);
       toast.success("Invitation unpublished and returned to draft.");
     } catch (error) {
-      setPublicationError(toPublicationError(error));
+      const message = toPublicationError(error);
+      setPublicationError(message);
+      toast.error(message);
     } finally {
       setPublicationPending(null);
     }

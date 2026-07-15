@@ -1,13 +1,10 @@
 "use client";
 
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useDashboardAuth } from "../../auth/dashboard-auth-provider";
-import {
-  DashboardButton,
-  DashboardNotice,
-  DashboardTextInput,
-} from "../ui/dashboard-fields";
+import { DashboardButton, DashboardNotice, DashboardTextInput } from "../ui/dashboard-fields";
 import { readDisplayName } from "./account-settings-workspace";
 
 type ProfileFormState = {
@@ -35,6 +32,7 @@ export function ProfileSettingsWorkspace() {
 
     if (avatarError) {
       setFormState({ avatarError });
+      toast.error(avatarError);
       return;
     }
 
@@ -47,10 +45,12 @@ export function ProfileSettingsWorkspace() {
 
     if (!result.ok) {
       setFormState({ formError: result.error });
+      toast.error(result.error);
       return;
     }
 
     setFormState({ success: "Manager profile saved." });
+    toast.success("Manager profile saved.");
   };
 
   return (

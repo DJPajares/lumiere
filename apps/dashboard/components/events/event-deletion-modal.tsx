@@ -52,12 +52,15 @@ export function EventDeletionModal({
     submitEvent.preventDefault();
 
     if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
       setError("Dashboard API is not configured.");
       return;
     }
 
     if (!confirmed) {
-      setError(`Type ${event.title} exactly to continue.`);
+      const message = `Type ${event.title} exactly to continue.`;
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -73,7 +76,9 @@ export function EventDeletionModal({
       onOpenChange(false);
       toast.success(`${event.title} was moved to Recently deleted.`);
     } catch (requestError) {
-      setError(toFriendlyApiMessage(requestError));
+      const message = toFriendlyApiMessage(requestError);
+      setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }

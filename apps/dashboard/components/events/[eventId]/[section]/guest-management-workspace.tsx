@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import {
   guestGroupMutationRequestSchema,
   type Event,
@@ -137,6 +138,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
           status: "ready",
         }));
       } catch (error) {
+        toast.error(toFriendlyApiMessage(error));
         setState({
           data: null,
           error: toFriendlyApiMessage(error),
@@ -197,7 +199,12 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   };
 
   const submitForm = async () => {
-    if (!apiClient || state.status !== "ready") {
+    if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
+      return;
+    }
+
+    if (state.status !== "ready") {
       return;
     }
 
@@ -206,6 +213,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     if (!parsed.ok) {
       setFormErrors(parsed.errors);
       setActionMessage(null);
+      toast.error(parsed.errors._form ?? "Check the highlighted guest group fields.");
       return;
     }
 
@@ -219,6 +227,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         replaceGuestGroup(response.guestGroup);
         setActionMessage(`${response.guestGroup.label} updated.`);
         setFormOpen(false);
+        toast.success(`${response.guestGroup.label} updated.`);
       } else {
         const response = await apiClient.createGuestGroup(eventId, parsed.input);
         setState((current) =>
@@ -239,9 +248,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         setFormValues(defaultFormValues);
         setActionMessage(`${response.guestGroup.label} created. Invite link ready to copy.`);
         setFormOpen(false);
+        toast.success(`${response.guestGroup.label} created. Invite link ready to copy.`);
       }
     } catch (error) {
       setFormErrors(toFormErrors(error));
+      toast.error(toFriendlyApiMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -271,6 +282,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
   const disableGuestGroup = async (group: GuestGroup) => {
     if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
       return;
     }
 
@@ -295,8 +307,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       );
       setPendingAction(null);
       setActionMessage(`${response.guestGroup.label} disabled. Existing invite access is blocked.`);
+      toast.success(`${response.guestGroup.label} disabled.`);
     } catch (error) {
-      setActionMessage(toFriendlyApiMessage(error));
+      const message = toFriendlyApiMessage(error);
+      setActionMessage(message);
+      toast.error(message);
     } finally {
       setBusyGroupId(null);
     }
@@ -304,6 +319,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
   const regenerateInvite = async (group: GuestGroup) => {
     if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
       return;
     }
 
@@ -315,8 +331,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       replaceGuestGroup(response.guestGroup, response.inviteLink);
       setPendingAction(null);
       setActionMessage(`${response.guestGroup.label} has a new invite link ready to copy.`);
+      toast.success(`${response.guestGroup.label} invite link regenerated.`);
     } catch (error) {
-      setActionMessage(toFriendlyApiMessage(error));
+      const message = toFriendlyApiMessage(error);
+      setActionMessage(message);
+      toast.error(message);
     } finally {
       setBusyGroupId(null);
     }
@@ -326,15 +345,20 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     const inviteLink = state.inviteLinks[group.id];
 
     if (!inviteLink) {
-      setActionMessage("Regenerate this invite link before copying a shareable URL.");
+      const message = "Regenerate this invite link before copying a shareable URL.";
+      setActionMessage(message);
+      toast.warning(message);
       return;
     }
 
     try {
       await navigator.clipboard.writeText(inviteLink);
       setActionMessage(`${group.label} invite link copied.`);
+      toast.success(`${group.label} invite link copied.`);
     } catch {
-      setActionMessage("Clipboard is unavailable. Select the invite URL and copy it manually.");
+      const message = "Clipboard is unavailable. Select the invite URL and copy it manually.";
+      setActionMessage(message);
+      toast.error(message);
     }
   };
 

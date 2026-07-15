@@ -15,6 +15,7 @@ import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Grid2X2Icon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { cn } from "@lumiere/dashboard-ui/utils";
 import {
@@ -299,6 +300,7 @@ function ThemeSelectorContent({
     }
 
     if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
       updateState((current) =>
         current.status === "ready"
           ? {
@@ -319,6 +321,7 @@ function ThemeSelectorContent({
     );
 
     if (!parsed.ok) {
+      toast.error(parsed.formMessage);
       updateState((current) =>
         current.status === "ready"
           ? {
@@ -363,6 +366,7 @@ function ThemeSelectorContent({
             }
           : current,
       );
+      toast.success(successMessage);
     } catch (error) {
       const formError = toThemeFormError(error);
 
@@ -377,6 +381,7 @@ function ThemeSelectorContent({
             }
           : current,
       );
+      toast.error(formError.formMessage);
     }
   };
 
