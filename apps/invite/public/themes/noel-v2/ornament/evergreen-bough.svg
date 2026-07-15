@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 340" fill="none">
+  <defs>
+    <linearGradient id="branch" x1="40" y1="300" x2="618" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#55472f" />
+      <stop offset=".54" stop-color="#786342" />
+      <stop offset="1" stop-color="#a18859" />
+    </linearGradient>
+    <linearGradient id="needle" x1="0" y1="36" x2="7" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173c2c" />
+      <stop offset=".58" stop-color="#41664b" />
+      <stop offset="1" stop-color="#8ba286" />
+    </linearGradient>
+    <linearGradient id="holly" x1="0" y1="22" x2="61" y2="-15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173f2d" />
+      <stop offset=".62" stop-color="#3f6d4b" />
+      <stop offset="1" stop-color="#789678" />
+    </linearGradient>
+    <linearGradient id="mistletoe" x1="0" y1="0" x2="42" y2="-38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5f795d" />
+      <stop offset="1" stop-color="#a4b397" />
+    </linearGradient>
+    <linearGradient id="cone" x1="-22" y1="-25" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a87a43" />
+      <stop offset=".5" stop-color="#704720" />
+      <stop offset="1" stop-color="#3f2817" />
+    </linearGradient>
+    <radialGradient id="berry" cx="0" cy="0" r="1" gradientTransform="translate(-2 -3) rotate(50) scale(11)">
+      <stop stop-color="#db7771" />
+      <stop offset=".38" stop-color="#b44043" />
+      <stop offset="1" stop-color="#79242c" />
+    </radialGradient>
+    <path id="needle-shape" d="M0 0C-2-12-1-25 1-36 5-24 4-11 0 0Z" fill="url(#needle)" />
+    <g id="fir-spray">
+      <path d="M0 2C-1-27 1-68 0-98" stroke="#4f6b50" stroke-width="2.4" stroke-linecap="round" />
+      <use href="#needle-shape" transform="translate(0 -9) rotate(-71) scale(.74)" />
+      <use href="#needle-shape" transform="translate(0 -10) rotate(70) scale(.72)" />
+      <use href="#needle-shape" transform="translate(0 -21) rotate(-66) scale(.8)" />
+      <use href="#needle-shape" transform="translate(0 -22) rotate(65) scale(.78)" />
+      <use href="#needle-shape" transform="translate(0 -34) rotate(-60) scale(.82)" />
+      <use href="#needle-shape" transform="translate(0 -35) rotate(60) scale(.8)" />
+      <use href="#needle-shape" transform="translate(0 -48) rotate(-54) scale(.78)" />
+      <use href="#needle-shape" transform="translate(0 -49) rotate(54) scale(.76)" />
+      <use href="#needle-shape" transform="translate(0 -62) rotate(-47) scale(.7)" />
+      <use href="#needle-shape" transform="translate(0 -63) rotate(47) scale(.68)" />
+      <use href="#needle-shape" transform="translate(0 -77) rotate(-36) scale(.58)" />
+      <use href="#needle-shape" transform="translate(0 -78) rotate(36) scale(.56)" />
+      <use href="#needle-shape" transform="translate(0 -91) scale(.46)" />
+    </g>
+    <path
+      id="holly-leaf"
+      d="M0 0C14-17 33-23 55-18L50-8 64-5 54 4 64 12 49 13 52 25C32 21 14 12 0 0Z"
+      fill="url(#holly)"
+      stroke="#234b35"
+      stroke-width="1.2"
+      stroke-linejoin="round"
+    />
+    <path
+      id="mistletoe-leaf"
+      d="M0 0C4-22 20-39 42-43 43-22 28-5 0 0Z"
+      fill="url(#mistletoe)"
+      stroke="#526f52"
+      stroke-width="1"
+    />
+  </defs>
+
+  <path
+    d="M18 310C142 289 253 236 350 168 442 104 538 60 644 24"
+    stroke="url(#branch)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    opacity=".9"
+  />
+  <path
+    d="M173 273C254 238 314 200 376 153M414 128C471 92 525 65 588 44"
+    stroke="#c2a362"
+    stroke-width="1.1"
+    stroke-linecap="round"
+    opacity=".64"
+  />
+
+  <g opacity=".96">
+    <use href="#fir-spray" transform="translate(57 302) rotate(-58) scale(.62)" />
+    <use href="#fir-spray" transform="translate(89 294) rotate(44) scale(.58)" />
+    <use href="#fir-spray" transform="translate(122 283) rotate(-42) scale(.72)" />
+    <use href="#fir-spray" transform="translate(158 269) rotate(39) scale(.7)" />
+    <use href="#fir-spray" transform="translate(195 252) rotate(-34) scale(.82)" />
+    <use href="#fir-spray" transform="translate(233 231) rotate(37) scale(.8)" />
+    <use href="#fir-spray" transform="translate(270 210) rotate(-28) scale(.88)" />
+    <use href="#fir-spray" transform="translate(309 185) rotate(40) scale(.82)" />
+    <use href="#fir-spray" transform="translate(350 158) rotate(-22) scale(.86)" />
+    <use href="#fir-spray" transform="translate(393 130) rotate(42) scale(.79)" />
+    <use href="#fir-spray" transform="translate(437 104) rotate(-17) scale(.77)" />
+    <use href="#fir-spray" transform="translate(482 79) rotate(45) scale(.69)" />
+    <use href="#fir-spray" transform="translate(527 59) rotate(-12) scale(.64)" />
+    <use href="#fir-spray" transform="translate(571 42) rotate(49) scale(.54)" />
+    <use href="#fir-spray" transform="translate(613 29) rotate(-6) scale(.46)" />
+  </g>
+
+  <g transform="translate(179 259) rotate(-10)">
+    <path d="M2 2 45-18M7 0l-2-30M18-5l13-30" stroke="#57724f" stroke-width="2" stroke-linecap="round" />
+    <use href="#holly-leaf" transform="rotate(-155) scale(.72)" />
+    <use href="#holly-leaf" transform="translate(7 -2) rotate(-66) scale(.67)" />
+    <use href="#holly-leaf" transform="translate(18 -6) rotate(19) scale(.6)" />
+    <g transform="translate(8 -5)" fill="url(#berry)" stroke="#f0d5be" stroke-width=".8">
+      <circle cx="0" cy="0" r="7.2" />
+      <circle cx="12" cy="-5" r="6.1" />
+      <circle cx="9" cy="8" r="5.7" />
+      <circle cx="-6" cy="10" r="4.7" />
+    </g>
+  </g>
+
+  <g transform="translate(486 82) rotate(8)">
+    <path d="M0 0 42-17M8-4 4-29" stroke="#57724f" stroke-width="1.8" stroke-linecap="round" />
+    <use href="#holly-leaf" transform="rotate(166) scale(.56)" />
+    <use href="#holly-leaf" transform="translate(6 -3) rotate(-73) scale(.5)" />
+    <g transform="translate(7 -3)" fill="url(#berry)" stroke="#f0d5be" stroke-width=".75">
+      <circle cx="0" cy="0" r="6.1" />
+      <circle cx="10" cy="-4" r="5.2" />
+      <circle cx="8" cy="7" r="4.8" />
+    </g>
+  </g>
+
+  <g transform="translate(300 194) rotate(-9)">
+    <path d="M0 0C-20-21-37-39-54-58M-26-28l-28 2M-37-42l-8-28" stroke="#71805b" stroke-width="2" stroke-linecap="round" />
+    <use href="#mistletoe-leaf" transform="translate(-26 -27) rotate(168) scale(.68)" />
+    <use href="#mistletoe-leaf" transform="translate(-28 -31) rotate(-74) scale(.65)" />
+    <use href="#mistletoe-leaf" transform="translate(-42 -45) rotate(174) scale(.57)" />
+    <use href="#mistletoe-leaf" transform="translate(-43 -48) rotate(-65) scale(.54)" />
+    <g fill="#f4f0df" stroke="#9da48b" stroke-width=".9">
+      <circle cx="-27" cy="-29" r="5.2" />
+      <circle cx="-36" cy="-35" r="4.4" />
+      <circle cx="-43" cy="-47" r="4" />
+    </g>
+  </g>
+
+  <g transform="translate(372 158) rotate(-17)">
+    <path d="M0-39C-2-28-2-19 0-12" stroke="#685034" stroke-width="2.4" stroke-linecap="round" />
+    <path d="M0-24C20-21 29-3 23 17 17 38 4 50 0 53-5 49-19 37-25 17-31-3-21-21 0-24Z" fill="url(#cone)" stroke="#51341d" stroke-width="1.6" />
+    <g stroke="#c49356" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+      <path d="M-13-13 0-3 13-13M-20-1-6 10 7-1 20 8M-22 13-8 24 5 13 19 24M-17 29-4 39 8 29 15 36M-8 43 0 49 8 42" />
+      <path d="M0-19v16M-6 10 0 17 7 8M-4 38 0 44 5 37" />
+    </g>
+  </g>
+
+  <g fill="#fffaf0" opacity=".84">
+    <circle cx="110" cy="270" r="2.1" />
+    <circle cx="241" cy="214" r="2.5" />
+    <circle cx="333" cy="156" r="1.8" />
+    <circle cx="454" cy="89" r="2.1" />
+    <circle cx="557" cy="47" r="1.7" />
+  </g>
+</svg>

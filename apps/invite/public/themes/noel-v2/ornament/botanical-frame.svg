@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" fill="none">
+  <defs>
+    <linearGradient id="stem" x1="0" y1="0" x2="0" y2="-160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5d482b" />
+      <stop offset=".48" stop-color="#826a3d" />
+      <stop offset="1" stop-color="#a38d5d" />
+    </linearGradient>
+    <linearGradient id="needle" x1="0" y1="0" x2="7" y2="-42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173b29" />
+      <stop offset=".55" stop-color="#3f6848" />
+      <stop offset="1" stop-color="#819675" />
+    </linearGradient>
+    <linearGradient id="holly" x1="0" y1="0" x2="72" y2="-24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16432f" />
+      <stop offset=".55" stop-color="#3f704e" />
+      <stop offset="1" stop-color="#76916d" />
+    </linearGradient>
+    <radialGradient id="berry" cx="0" cy="0" r="1" gradientTransform="translate(-3 -4) rotate(48) scale(14)">
+      <stop stop-color="#e58673" />
+      <stop offset=".38" stop-color="#bf3e3f" />
+      <stop offset="1" stop-color="#7c2028" />
+    </radialGradient>
+    <linearGradient id="cone" x1="-28" y1="-34" x2="28" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b8854a" />
+      <stop offset=".5" stop-color="#7a4b24" />
+      <stop offset="1" stop-color="#452718" />
+    </linearGradient>
+    <filter id="wash" x="-.08" y="-.08" width="1.16" height="1.16" color-interpolation-filters="sRGB">
+      <feTurbulence baseFrequency=".018" numOctaves="2" seed="12" type="fractalNoise" result="grain" />
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="1.4" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <path id="needle-shape" d="M0 0C-6-13-5-30 1-43 10-29 9-12 0 0Z" fill="url(#needle)" />
+    <g id="fir-spray">
+      <path d="M0 5C-2-37 2-104 0-158" stroke="url(#stem)" stroke-width="4" stroke-linecap="round" />
+      <use href="#needle-shape" transform="translate(0 -11) rotate(-72) scale(.82)" />
+      <use href="#needle-shape" transform="translate(0 -12) rotate(71) scale(.78)" />
+      <use href="#needle-shape" transform="translate(0 -28) rotate(-68) scale(.9)" />
+      <use href="#needle-shape" transform="translate(0 -29) rotate(67) scale(.87)" />
+      <use href="#needle-shape" transform="translate(0 -47) rotate(-62) scale(.96)" />
+      <use href="#needle-shape" transform="translate(0 -48) rotate(61) scale(.93)" />
+      <use href="#needle-shape" transform="translate(0 -67) rotate(-56) scale(.92)" />
+      <use href="#needle-shape" transform="translate(0 -68) rotate(55) scale(.89)" />
+      <use href="#needle-shape" transform="translate(0 -88) rotate(-49) scale(.85)" />
+      <use href="#needle-shape" transform="translate(0 -89) rotate(48) scale(.82)" />
+      <use href="#needle-shape" transform="translate(0 -109) rotate(-40) scale(.74)" />
+      <use href="#needle-shape" transform="translate(0 -110) rotate(39) scale(.71)" />
+      <use href="#needle-shape" transform="translate(0 -130) rotate(-29) scale(.62)" />
+      <use href="#needle-shape" transform="translate(0 -131) rotate(28) scale(.59)" />
+      <use href="#needle-shape" transform="translate(0 -150) scale(.48)" />
+    </g>
+    <path
+      id="holly-leaf"
+      d="M0 0C15-20 38-28 65-22L58-10 75-6 63 5 75 17 57 18 61 32C36 28 15 16 0 0Z"
+      fill="url(#holly)"
+      stroke="#214b35"
+      stroke-width="1.5"
+      stroke-linejoin="round"
+    />
+    <g id="berry-cluster" fill="url(#berry)" stroke="#f0d5bc" stroke-width="1">
+      <circle cx="0" cy="0" r="12" />
+      <circle cx="18" cy="-7" r="10" />
+      <circle cx="17" cy="12" r="9" />
+      <circle cx="-5" cy="18" r="8" />
+    </g>
+    <g id="holly-cluster">
+      <path d="M0 0 48-25M5-4 1-46M25-14l19-42" stroke="#5f754d" stroke-width="3" stroke-linecap="round" />
+      <use href="#holly-leaf" transform="rotate(-155) scale(.85)" />
+      <use href="#holly-leaf" transform="translate(8 -4) rotate(-67) scale(.78)" />
+      <use href="#holly-leaf" transform="translate(25 -14) rotate(18) scale(.7)" />
+      <use href="#berry-cluster" transform="translate(11 -8) scale(.82)" />
+    </g>
+    <g id="pine-cone">
+      <path d="M0-46C-2-33-2-24 0-15" stroke="#684d2e" stroke-width="4" stroke-linecap="round" />
+      <path d="M0-29C25-26 37-4 30 22 22 49 6 63 0 67-7 62-24 48-31 22-39-4-27-26 0-29Z" fill="url(#cone)" stroke="#54331d" stroke-width="2" />
+      <g stroke="#ce9a56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+        <path d="M-17-15 0-3 17-15M-26 1-8 15 8 1 26 13M-28 19-10 34 7 19 25 34M-22 39-5 52 11 39 19 48M-11 56 0 64 11 55" />
+        <path d="M0-23v20M-7 15 0 23l8-10M-5 51 0 58l6-8" />
+      </g>
+    </g>
+  </defs>
+
+  <g filter="url(#wash)" opacity=".98">
+    <path d="M36 110C230 48 655 45 864 116M88 52C42 312 42 884 96 1147M812 54C861 329 861 884 806 1151M36 1092C265 1162 637 1160 866 1086" stroke="#7a6540" stroke-width="7" stroke-linecap="round" opacity=".55" />
+
+    <g>
+      <use href="#fir-spray" transform="translate(46 126) rotate(91) scale(1.05)" />
+      <use href="#fir-spray" transform="translate(190 88) rotate(88) scale(.96)" />
+      <use href="#fir-spray" transform="translate(350 92) rotate(94) scale(1.03)" />
+      <use href="#fir-spray" transform="translate(510 80) rotate(88) scale(.96)" />
+      <use href="#fir-spray" transform="translate(664 102) rotate(94) scale(1.08)" />
+      <use href="#fir-spray" transform="translate(854 124) rotate(-91) scale(.78)" />
+
+      <use href="#fir-spray" transform="translate(76 38) rotate(179) scale(1.02)" />
+      <use href="#fir-spray" transform="translate(106 205) rotate(183) scale(.94)" />
+      <use href="#fir-spray" transform="translate(77 370) rotate(178) scale(1.07)" />
+      <use href="#fir-spray" transform="translate(102 548) rotate(184) scale(.92)" />
+      <use href="#fir-spray" transform="translate(74 706) rotate(177) scale(1.06)" />
+      <use href="#fir-spray" transform="translate(103 884) rotate(183) scale(.98)" />
+      <use href="#fir-spray" transform="translate(72 1042) rotate(178) scale(.88)" />
+
+      <use href="#fir-spray" transform="translate(827 1158) rotate(2) scale(1.04)" />
+      <use href="#fir-spray" transform="translate(798 990) rotate(-3) scale(.95)" />
+      <use href="#fir-spray" transform="translate(830 830) rotate(3) scale(1.08)" />
+      <use href="#fir-spray" transform="translate(798 650) rotate(-4) scale(.92)" />
+      <use href="#fir-spray" transform="translate(830 490) rotate(2) scale(1.06)" />
+      <use href="#fir-spray" transform="translate(797 312) rotate(-3) scale(.98)" />
+      <use href="#fir-spray" transform="translate(831 148) rotate(3) scale(.88)" />
+
+      <use href="#fir-spray" transform="translate(52 1085) rotate(89) scale(1.08)" />
+      <use href="#fir-spray" transform="translate(206 1125) rotate(94) scale(.98)" />
+      <use href="#fir-spray" transform="translate(368 1112) rotate(87) scale(1.04)" />
+      <use href="#fir-spray" transform="translate(528 1128) rotate(93) scale(.98)" />
+      <use href="#fir-spray" transform="translate(690 1094) rotate(87) scale(1.08)" />
+    </g>
+
+    <use href="#holly-cluster" transform="translate(120 151) rotate(15) scale(1.05)" />
+    <use href="#holly-cluster" transform="translate(748 145) rotate(98) scale(.95)" />
+    <use href="#holly-cluster" transform="translate(117 1040) rotate(-90) scale(1.12)" />
+    <use href="#holly-cluster" transform="translate(777 1030) rotate(174) scale(1.02)" />
+    <use href="#holly-cluster" transform="translate(89 505) rotate(-58) scale(.72)" />
+    <use href="#holly-cluster" transform="translate(814 674) rotate(123) scale(.72)" />
+    <use href="#holly-cluster" transform="translate(90 350) rotate(-70) scale(.63)" />
+    <use href="#holly-cluster" transform="translate(91 815) rotate(-48) scale(.68)" />
+    <use href="#holly-cluster" transform="translate(811 424) rotate(116) scale(.66)" />
+    <use href="#holly-cluster" transform="translate(814 890) rotate(136) scale(.64)" />
+
+    <use href="#pine-cone" transform="translate(320 124) rotate(-12) scale(.9)" />
+    <use href="#pine-cone" transform="translate(586 1080) rotate(14) scale(1.05)" />
+
+    <g fill="url(#berry)" stroke="#efd1b8" stroke-width="1.2">
+      <circle cx="70" cy="303" r="11" />
+      <circle cx="92" cy="320" r="9" />
+      <circle cx="69" cy="662" r="10" />
+      <circle cx="92" cy="644" r="8" />
+      <circle cx="68" cy="446" r="9" />
+      <circle cx="91" cy="462" r="7" />
+      <circle cx="70" cy="879" r="10" />
+      <circle cx="91" cy="863" r="7" />
+      <circle cx="809" cy="347" r="11" />
+      <circle cx="832" cy="365" r="9" />
+      <circle cx="810" cy="548" r="9" />
+      <circle cx="833" cy="564" r="7" />
+      <circle cx="813" cy="864" r="11" />
+      <circle cx="835" cy="847" r="8" />
+      <circle cx="462" cy="89" r="10" />
+      <circle cx="451" cy="1118" r="11" />
+    </g>
+  </g>
+</svg>

@@ -282,6 +282,7 @@ export const themeIds = [
   "premium",
   "kids",
   "noel",
+  "noel-v2",
   "editorial-ivory",
   "garden-light",
   "modern-minimal",

@@ -61,6 +61,17 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.
 - Dashboard preview: evergreen table scene, cream surface, and restrained seasonal accent.
 
+## Noel V2
+
+- Fit: every event type, with an especially strong read for Christmas weddings, holiday dinners, and formal year-end celebrations.
+- Mood: warm cotton paper, hand-painted evergreen and holly, restrained red berries, pine-cone brown, and traditional forest/red typography.
+- Motion: seasonal section and companion-print reveals only; reduced motion keeps the botanical folio completely static.
+- Ornaments: an original code-native portrait frame with pine needles, holly leaves, berries, and pine cones plus cropped botanical section corners.
+- Sections: centered printed-invitation hero, optional companion portrait, paper-folio details, editorial story/profile/location, matted gallery, crafted RSVP, and formal outro.
+- Ambient media: optional warm acoustic track with guest-controlled playback.
+- RSVP: cotton-paper response folio with double rules, clear attendance state, max pax, host message, and semantic closed/error states.
+- Dashboard preview: portrait botanical paper, formal red title, forest facts, and a distinct “Noel V2” label beside the original Noel.
+
 ## Editorial Ivory
 
 - Fit: weddings, birthdays, dinners, private events, and generic celebrations.

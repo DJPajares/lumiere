@@ -111,6 +111,7 @@ const createExpansionThemeTemplateSpec = (
     | "editorial-ivory"
     | "garden-light"
     | "modern-minimal"
+    | "noel-v2"
     | "porcelain-blue"
     | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
@@ -660,6 +661,32 @@ export const themeTemplateSpecs = {
     namingGuidance:
       "Noel is a generic seasonal name; avoid protected holiday characters, songs, or brand marks.",
   },
+  "noel-v2": createExpansionThemeTemplateSpec("noel-v2", {
+    moodBoardNotes: [
+      "Warm cotton paper, hand-painted pine needles, holly, berries, and pine cones create a formal printed invitation.",
+      "Forest green and restrained Christmas red typography echo traditional stationery without copying a commercial card.",
+      "The tall botanical folio adapts to weddings, dinners, birthdays, launches, and private year-end gatherings.",
+    ],
+    antiSlopConstraints: [
+      "Do not use stock clip art, novelty Christmas icons, glitter fields, or emoji ornamentation.",
+      "Keep the botanical frame outside the reading area and preserve clear type contrast at narrow widths.",
+      "Do not reduce the direction to a cream card with generic green borders; the painted frame and print rhythm are essential.",
+    ],
+    lightGuidance:
+      "Use warm cotton paper, forest ink, formal red display type, and soft tabletop shadows without pure white.",
+    darkGuidance:
+      "Place the same readable cream folio within a deep evergreen candlelit field; surrounding surfaces use ivory text and sage actions.",
+    statusGuidance:
+      "Red and green decoration never carries RSVP meaning alone; every state includes explicit copy and semantic contrast.",
+    reducedMotion:
+      "Remove section and companion-print reveals while preserving the static botanical frame, cotton-paper depth, and type hierarchy.",
+    dashboardRequirements: [
+      "Show the portrait botanical folio, formal red title, and forest fact typography in the theme preview.",
+      "Keep Noel and Noel V2 visibly separate: the original reads as a winter conservatory while V2 reads as printed Christmas stationery.",
+    ],
+    namingGuidance:
+      "Noel V2 identifies Lumiere's second original Noel art direction; avoid protected card makers, illustrators, characters, or holiday brands.",
+  }),
   "editorial-ivory": createExpansionThemeTemplateSpec("editorial-ivory", {
     moodBoardNotes: [
       "Uncoated ivory paper, high-contrast serif headlines, and offset portrait columns.",
