@@ -555,7 +555,7 @@ export const themeTemplateSpecs = {
     eventTypeFit: themeRegistry.noel.supportedEventTypes,
     moodBoardNotes: [
       "Evergreen, candlelight, winter table settings, and warm humanist typography.",
-      "Pearl frost, cold window light, and sculpted evergreen boughs create atmosphere without novelty clutter.",
+      "Pearl frost, warm ivory paper, and sculpted evergreen, holly, and mistletoe boughs create atmosphere without novelty clutter.",
       "Works for Christmas and year-end gatherings without requiring religious imagery.",
       "Adapts the Christmas atmosphere to weddings, birthdays, kids' parties, launches, dinners, and private celebrations.",
     ],

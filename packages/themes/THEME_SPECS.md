@@ -53,9 +53,9 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 ## Noel
 
 - Fit: every event type, including weddings, birthdays, kids parties, holidays, dinners, launches, private events, and generic celebrations.
-- Mood: peaceful winter conservatory, deep evergreen, pearl frost, cold window light, restrained berries, and candle-gold details.
+- Mood: peaceful winter conservatory, deep evergreen candlelight or warm ivory paper, pearl frost, restrained berries, and candle-gold details.
 - Motion: two-depth falling snow, quiet glints, and a seasonal story-depth profile; reduced motion stops all ambient movement.
-- Ornaments: original code-native evergreen boughs, small berry and ribbon cues, and fine folio borders rather than clip art or glitter.
+- Ornaments: original code-native evergreen and mistletoe boughs, sparse holly berries, a single pine-cone accent, small ribbon cues, and fine folio borders rather than clip art or glitter.
 - Sections: asymmetric seasonal hero, arched winter imagery, invitation-folio details, editorial profiles and entourages, story depth, feature gallery, split location, crafted RSVP, and full-width outro.
 - Ambient media: optional warm acoustic track with guest-controlled playback.
 - RSVP: cozy panel with attendance state, max pax, host message, closed/error states that work in light and dark.

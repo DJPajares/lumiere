@@ -1,8 +1,10 @@
 [data-theme-id="noel"] {
   --noel-berry: #a94747;
+  --noel-bough-art: url("/themes/noel/ornament/evergreen-bough.svg");
   --noel-crest-art: url("/themes/noel/ornament/noel-crest-candlelight.svg");
   --noel-gold: #c7a967;
   --noel-ice: #dcebe3;
+  --noel-mistletoe-art: url("/themes/noel/ornament/mistletoe-sprig.svg");
   --noel-shadow: #03110c;
 }
 
@@ -10,7 +12,7 @@
   --noel-berry: #a63f42;
   --noel-crest-art: url("/themes/noel/ornament/noel-crest-snowlight.svg");
   --noel-gold: #9f7d38;
-  --noel-ice: #f8fbf8;
+  --noel-ice: #fffdf8;
   --noel-shadow: #153126;
 }
 
@@ -56,14 +58,14 @@
 
 [data-theme-id="noel"][data-theme-resolved-mode="light"] .lumiere-visual-layer__backdrop {
   background:
-    radial-gradient(circle at 78% 10%, rgba(255, 255, 255, 0.92), transparent 24rem),
+    radial-gradient(circle at 78% 10%, rgba(255, 253, 247, 0.94), transparent 24rem),
     radial-gradient(circle at 6% 74%,
-      color-mix(in srgb, var(--accent) 9%, transparent),
+      color-mix(in srgb, var(--accent) 6%, transparent),
       transparent 28rem),
     linear-gradient(145deg,
-      #f8fbf8,
+      #fffaf0,
       var(--background) 54%,
-      color-mix(in srgb, var(--surface-muted) 66%, var(--background)));
+      #eee5d6);
 }
 
 /* Layered snow uses only transform-free background motion and remains decorative. */
@@ -123,31 +125,43 @@
 [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament {
   width: min(48vw, 38rem);
   aspect-ratio: 2 / 1;
-  background: url("/themes/noel/ornament/evergreen-bough.svg") center / contain no-repeat;
-  filter: drop-shadow(0 12px 28px color-mix(in srgb, var(--noel-shadow) 26%, transparent));
-  opacity: 0.68;
+  background: var(--noel-bough-art) center / contain no-repeat;
+  filter:
+    brightness(1.1)
+    drop-shadow(0 12px 28px color-mix(in srgb, var(--noel-shadow) 22%, transparent));
+  opacity: 0.6;
+}
+
+[data-theme-id="noel"][data-theme-resolved-mode="light"] [data-ornament-set="snowfall"] .lumiere-ornament {
+  filter:
+    saturate(0.88)
+    drop-shadow(0 10px 24px color-mix(in srgb, var(--noel-shadow) 16%, transparent));
 }
 
 [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="primary"] {
   top: -3.5rem;
   right: -5rem;
-  transform: rotate(2deg);
+  transform: rotate(1deg);
 }
 
 [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="secondary"] {
   bottom: -2rem;
   left: -8rem;
-  width: min(38vw, 29rem);
-  opacity: 0.42;
-  transform: scale(-1) rotate(2deg);
+  width: min(30vw, 23rem);
+  aspect-ratio: 7 / 5;
+  background-image: var(--noel-mistletoe-art);
+  opacity: 0.34;
+  transform: scaleX(-1) rotate(5deg);
 }
 
 [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="tertiary"] {
   top: 38%;
-  left: -4rem;
-  width: min(22vw, 17rem);
-  opacity: 0.38;
-  transform: scaleX(-1) rotate(-12deg);
+  left: -6rem;
+  width: min(18vw, 14rem);
+  aspect-ratio: 7 / 5;
+  background-image: var(--noel-mistletoe-art);
+  opacity: 0.2;
+  transform: rotate(-14deg);
 }
 
 [data-theme-id="noel"] .lumiere-section--hero {
@@ -664,16 +678,16 @@
 
   [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="primary"] {
     top: -2.25rem;
-    right: -5.5rem;
-    width: 21rem;
-    opacity: 0.48;
+    right: -6.5rem;
+    width: 20rem;
+    opacity: 0.42;
   }
 
   [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="secondary"] {
     bottom: -3rem;
-    left: -6rem;
-    width: 18rem;
-    opacity: 0.24;
+    left: -7rem;
+    width: 16rem;
+    opacity: 0.2;
   }
 
   [data-theme-id="noel"] [data-ornament-set="snowfall"] .lumiere-ornament[data-ornament-position="tertiary"] {

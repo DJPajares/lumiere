@@ -8,7 +8,7 @@ export const noelTheme = {
   label: "Noel",
   description: "Christmas-inspired invitation for celebrations of every event type.",
   designRead:
-    "A peaceful winter conservatory with sculpted evergreen boughs, drifting snow, pearl frost, and candlelit invitation folios.",
+    "A peaceful winter conservatory with warm ivory paper, sculpted evergreen and mistletoe boughs, drifting snow, and candlelit invitation folios.",
   supportedEventTypes: allEventTypes,
   supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "toggleable",
@@ -47,11 +47,11 @@ export const noelTheme = {
   ],
   tokens: {
     light: {
-      background: "#f1f5f1",
-      foreground: "#172b23",
-      surface: "#fbfcf8",
-      surfaceMuted: "#e2ebe4",
-      border: "#b6c8bb",
+      background: "#f6f0e4",
+      foreground: "#193027",
+      surface: "#fffaf0",
+      surfaceMuted: "#e9e1d2",
+      border: "#c8bca6",
       accent: "#285f48",
       accentStrong: "#143d2d",
       success: "#267054",
@@ -81,7 +81,7 @@ export const noelTheme = {
       mood: "Warm acoustic holiday music with guest-controlled playback.",
     },
     backgroundTreatment:
-      "Deep evergreen and snowy pearl fields with slow falling snow, sculpted boughs, cold window light, and small candle-gold details.",
+      "Deep evergreen candlelight or warm ivory paper with slow falling snow, peripheral mistletoe and holly boughs, pine-cone warmth, and small candle-gold details.",
     effects: noelEffects,
     visualSystem: {
       cardStackPolicy:
@@ -181,7 +181,7 @@ export const noelTheme = {
     },
     motionLevel: "seasonal",
     ornamentStrategy:
-      "Sculpted evergreen boughs, sparse berries, fine ribbon arcs, and layered snow; no clip art, novelty icons, or glitter fields.",
+      "Sculpted evergreen and mistletoe boughs, sparse holly berries, a single pine-cone accent, fine ribbon arcs, and layered snow; no clip art, novelty icons, or glitter fields.",
     rendererSlots: createRendererSlots({ specialized: allInviteSections }),
   },
   dashboardPreview: {
