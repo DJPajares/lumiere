@@ -5,10 +5,12 @@ export type DashboardPublicEnv = {
   supabaseUrl: string;
 };
 
+const defaultDashboardAppName = "Lumiere Dashboard";
+
 export function readDashboardPublicEnv(): DashboardPublicEnv {
   const env = {
     apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "",
-    appName: process.env.NEXT_PUBLIC_APP_NAME?.trim() ?? "",
+    appName: process.env.NEXT_PUBLIC_APP_NAME?.trim() || defaultDashboardAppName,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "",
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "",
   };
