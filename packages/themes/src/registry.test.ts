@@ -853,6 +853,16 @@ describe("theme registry", () => {
     expect(unapprovedProvider.ok).toBe(false);
     expect(incompleteCoordinates.ok).toBe(false);
     expect(
+      validateThemeSection("premium", {
+        ...baseSections[2],
+        content: {
+          venueName: "The Glasshouse",
+          address: "12 Orchard Road, Singapore",
+          mapUrl: "https://maps.google.com/?q=12%20Orchard%20Road%2C%20Singapore",
+        },
+      }).ok,
+    ).toBe(true);
+    expect(
       normalizeLocationContent({
         venueName: "The Glasshouse",
         address: "12 Orchard Road, Singapore",

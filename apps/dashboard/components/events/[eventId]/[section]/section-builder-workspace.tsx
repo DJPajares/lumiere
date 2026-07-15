@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import {
   canDisableBlueprintSection,
   getBlueprintSectionOrder,
@@ -432,35 +433,51 @@ function SectionBuilderContent({
       return;
     }
 
-    const parsed = parseSectionDrafts(state.sections, {
-      event: state.event,
-    });
+    try {
+      const parsed = parseSectionDrafts(state.sections, {
+        event: state.event,
+      });
 
-    if (!parsed.ok) {
+      if (!parsed.ok) {
+        revealFirstSectionError(parsed.sectionErrors);
+        updateState((current) =>
+          current.status === "ready"
+            ? {
+                ...current,
+                formMessage: parsed.formMessage,
+                sectionErrors: parsed.sectionErrors,
+              }
+            : current,
+        );
+        toast.error(parsed.formMessage);
+        return;
+      }
+
+      if (!hasUnsavedChanges) {
+        updateState((current) =>
+          current.status === "ready"
+            ? {
+                ...current,
+                formMessage: "There are no unsaved section changes.",
+                sectionErrors: {},
+              }
+            : current,
+        );
+        toast.info("There are no unsaved section changes.");
+        return;
+      }
+
       updateState((current) =>
         current.status === "ready"
           ? {
               ...current,
-              formMessage: parsed.formMessage,
-              sectionErrors: parsed.sectionErrors,
+              formMessage: null,
+              isSaving: true,
+              sectionErrors: {},
             }
           : current,
       );
-      return;
-    }
 
-    updateState((current) =>
-      current.status === "ready"
-        ? {
-            ...current,
-            formMessage: null,
-            isSaving: true,
-            sectionErrors: {},
-          }
-        : current,
-    );
-
-    try {
       let savedEvent = state.event;
       let sectionDrafts = state.savedSections;
 
@@ -496,8 +513,11 @@ function SectionBuilderContent({
             }
           : current,
       );
+      toast.success("Sections saved.");
     } catch (error) {
-      const formError = toSectionFormError(error);
+      const formError = toSectionFormError(error, state.sections);
+
+      revealFirstSectionError(formError.sectionErrors);
 
       updateState((current) =>
         current.status === "ready"
@@ -509,6 +529,16 @@ function SectionBuilderContent({
             }
           : current,
       );
+      toast.error(formError.formMessage);
+    }
+  };
+
+  const revealFirstSectionError = (sectionErrors: SectionErrorMap) => {
+    const sectionKey = Object.keys(sectionErrors).find((key) => key !== "_form");
+
+    if (sectionKey) {
+      setSelectedSectionKey(sectionKey);
+      setExpandedSectionKey(sectionKey);
     }
   };
 
@@ -918,7 +948,7 @@ function DashboardInviteSectionPreview({
     >
       <div className={previewFrameClassName(composition, density)}>
         <p className="text-xs font-semibold uppercase [letter-spacing:var(--eyebrow-tracking)] text-[var(--accent-strong)]">
-          {definition.label}
+          {readString(content.eyebrow) ?? definition.label}
         </p>
         <PreviewSectionBody
           content={content}
@@ -1230,6 +1260,7 @@ function SectionFieldForm({
           These controls write the same validated section data used by the invite renderers.
         </p>
       </div>
+      <TextField controller={controller} label="Eyebrow" path={["eyebrow"]} scope="content" />
       <SectionContentFields controller={controller} />
       <SectionSettingsFields controller={controller} />
     </fieldset>
@@ -1270,7 +1301,6 @@ function SectionContentFields({ controller }: { controller: SectionFieldControll
 function IntroductionFields({ controller }: { controller: SectionFieldController }) {
   return (
     <div className="grid gap-5">
-      <TextField controller={controller} label="Eyebrow" path={["eyebrow"]} scope="content" />
       <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
       <TextField controller={controller} label="Subtitle" path={["subtitle"]} scope="content" />
       <TextField controller={controller} label="Body" multiline path={["body"]} scope="content" />
@@ -3377,12 +3407,17 @@ function createSectionDrafts({
 }
 
 function normalizeSectionContentForEditor(sectionType: SectionType, content: JsonObject) {
+  const normalizedContent = {
+    ...content,
+    eyebrow: readString(content.eyebrow) ?? getSectionDefinition(sectionType).label,
+  };
+
   if (sectionType !== "story") {
-    return content;
+    return normalizedContent;
   }
 
   return {
-    ...content,
+    ...normalizedContent,
     paragraphs: normalizeStoryParagraphs(content.paragraphs),
   };
 }
@@ -3835,19 +3870,30 @@ function withoutSectionErrors(errors: SectionErrorMap, sectionKey: string) {
   return nextErrors;
 }
 
-function toSectionFormError(error: unknown): {
+function toSectionFormError(
+  error: unknown,
+  sections: SectionDraft[] = [],
+): {
   formMessage: string;
   sectionErrors: SectionErrorMap;
 } {
   if (error instanceof ApiClientError) {
-    const fieldSummary = error.apiError.error.fields?.map((field) => field.message).join(" ");
-    const sectionErrors: SectionErrorMap = fieldSummary
-      ? {
-          _form: {
-            content: fieldSummary,
-          },
-        }
-      : {};
+    const fields = error.apiError.error.fields ?? [];
+    const sectionErrors = fields.reduce<SectionErrorMap>((errors, field) => {
+      const sectionIndex =
+        field.path?.[0] === "sections" && typeof field.path[1] === "number"
+          ? field.path[1]
+          : undefined;
+      const sectionKey =
+        sectionIndex === undefined ? "_form" : (sections[sectionIndex]?.sectionKey ?? "_form");
+      const currentMessage = errors[sectionKey]?.content;
+
+      errors[sectionKey] = {
+        content: currentMessage ? `${currentMessage} ${field.message}` : field.message,
+      };
+
+      return errors;
+    }, {});
 
     return {
       formMessage: error.apiError.error.message,

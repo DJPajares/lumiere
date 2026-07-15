@@ -85,7 +85,11 @@ function sectionBlueprint(
   return {
     allowDisableWhenPublished: options.allowDisableWhenPublished ?? false,
     createDefaultContent:
-      options.createDefaultContent ?? ((event) => defaultContent(sectionType, event)),
+      options.createDefaultContent ??
+      ((event) => ({
+        eyebrow: definition.label,
+        ...defaultContent(sectionType, event),
+      })),
     createDefaultSettings: options.createDefaultSettings ?? (() => defaultSettings(sectionType)),
     defaultEnabled: options.defaultEnabled ?? false,
     defaultLabel: options.defaultLabel ?? definition.label,

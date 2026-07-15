@@ -250,8 +250,8 @@ function PublicHero({
   const content = section?.content ?? {};
   const coverImage = readAsset(content.coverImage);
   const eyebrow =
-    theme.presentation.hero.eyebrowCopy ??
     readString(content.eyebrow) ??
+    theme.presentation.hero.eyebrowCopy ??
     formatEventType(invite.event.eventType);
   const pretitle = theme.presentation.hero.pretitleCopy;
   const title = readString(content.title) ?? invite.event.title;
@@ -467,7 +467,7 @@ function PublicSection({
       <div className={getSectionInnerClassName(composition, density)}>
         <div className="lumiere-section__kicker">
           <p className="lumiere-section__eyebrow text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-            {definition.label}
+            {readString(item.content.eyebrow) ?? definition.label}
           </p>
           <span aria-hidden="true" className="lumiere-section__index">
             {String(index + 2).padStart(2, "0")}

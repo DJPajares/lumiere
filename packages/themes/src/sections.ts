@@ -74,15 +74,18 @@ const commonSettingsSchema = z.object({
   density: z.enum(["compact", "balanced", "spacious"]).default("balanced"),
 });
 
-export const introductionContentSchema = z.object({
+const commonContentSchema = z.object({
   eyebrow: z.string().trim().max(80).optional(),
+});
+
+export const introductionContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   subtitle: z.string().trim().max(240).optional(),
   body: optionalText,
   coverImage: assetSchema.optional(),
 });
 
-export const profileContentSchema = z.object({
+export const profileContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   people: z
     .array(
@@ -97,7 +100,7 @@ export const profileContentSchema = z.object({
     .max(8),
 });
 
-export const dateContentSchema = z.object({
+export const dateContentSchema = commonContentSchema.extend({
   title: z.string().trim().max(120).optional(),
   startsAt: z.string().datetime({ offset: true }),
   endsAt: z.string().datetime({ offset: true }).optional(),
@@ -146,7 +149,7 @@ export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
   });
 }
 
-export const storyContentSchema = z.object({
+export const storyContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   paragraphs: z.array(storyParagraphSchema).min(1).max(8),
   image: assetSchema.optional(),
@@ -154,7 +157,7 @@ export const storyContentSchema = z.object({
 
 export type StoryContent = z.infer<typeof storyContentSchema>;
 
-export const detailsContentSchema = z.object({
+export const detailsContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   items: z
     .array(
@@ -168,7 +171,7 @@ export const detailsContentSchema = z.object({
     .max(12),
 });
 
-export const entourageContentSchema = z.object({
+export const entourageContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   groups: z
     .array(
@@ -181,7 +184,7 @@ export const entourageContentSchema = z.object({
     .max(8),
 });
 
-export const dressCodeContentSchema = z.object({
+export const dressCodeContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   description: z.string().trim().max(800).optional(),
   palette: z
@@ -199,7 +202,7 @@ export const dressCodeContentSchema = z.object({
     .default([]),
 });
 
-const locationBaseContentSchema = z.object({
+const locationBaseContentSchema = commonContentSchema.extend({
   venueName: nonEmptyString.max(180),
   address: nonEmptyString.max(500),
   notes: z.string().trim().max(800).optional(),
@@ -346,11 +349,14 @@ function isAllowedMapEmbedUrl(value: string) {
 
 function isAllowedMapDirectionsUrl(value: string) {
   const url = new URL(value);
+  const isLegacyGoogleMapsSearch =
+    url.hostname === "maps.google.com" && url.pathname === "/" && url.searchParams.has("q");
 
   return (
     isSafeMapUrlBase(url) &&
-    (((url.hostname === "www.google.com" || url.hostname === "maps.google.com") &&
-      url.pathname.startsWith("/maps/")) ||
+    (isLegacyGoogleMapsSearch ||
+      ((url.hostname === "www.google.com" || url.hostname === "maps.google.com") &&
+        url.pathname.startsWith("/maps/")) ||
       (url.hostname === "maps.apple.com" && url.pathname === "/") ||
       (url.hostname === "www.openstreetmap.org" && url.pathname.startsWith("/directions")))
   );
@@ -360,12 +366,12 @@ function isSafeMapUrlBase(url: URL) {
   return url.protocol === "https:" && url.username === "" && url.password === "" && url.port === "";
 }
 
-export const galleryContentSchema = z.object({
+export const galleryContentSchema = commonContentSchema.extend({
   title: z.string().trim().max(160).optional(),
   images: z.array(assetSchema).min(1).max(30),
 });
 
-export const rsvpContentSchema = z.object({
+export const rsvpContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   description: z.string().trim().max(800).optional(),
   submitLabel: z.string().trim().max(80).optional(),
@@ -386,13 +392,13 @@ export const rsvpContentSchema = z.object({
     .default([]),
 });
 
-export const outroContentSchema = z.object({
+export const outroContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   message: z.string().trim().max(1000).optional(),
   image: assetSchema.optional(),
 });
 
-export const customContentSchema = z.object({
+export const customContentSchema = commonContentSchema.extend({
   title: nonEmptyString.max(160),
   blocks: z
     .array(
