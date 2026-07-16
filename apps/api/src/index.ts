@@ -56,11 +56,20 @@ export function startApiServer() {
   );
 }
 
-const isVercelRuntime = process.env.VERCEL === "1" && process.env.NODE_ENV !== "test";
-const vercelApp = isVercelRuntime ? createApiApplication() : undefined;
+type ApiApplication = ReturnType<typeof createApiApplication>;
 
-export default vercelApp;
+let apiApplication: ApiApplication | undefined;
 
-if (!isVercelRuntime && process.env.NODE_ENV !== "test") {
+function getApiApplication() {
+  return (apiApplication ??= createApiApplication());
+}
+
+export default {
+  fetch(request: Request) {
+    return getApiApplication().fetch(request);
+  },
+};
+
+if (process.env.VERCEL !== "1" && process.env.NODE_ENV !== "test") {
   startApiServer();
 }
