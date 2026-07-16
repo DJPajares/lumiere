@@ -394,7 +394,7 @@ function HeroDecorationFrame({ className }: { className: string }) {
 
 function GuestContextPanel({ guest }: { guest: GuestContext }) {
   return (
-    <section className="lumiere-guest-panel mx-auto w-full max-w-5xl px-5 pb-4 sm:px-8 lg:px-12">
+    <section className="lumiere-guest-panel mx-auto w-full max-w-5xl pb-4">
       <div className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
