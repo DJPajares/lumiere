@@ -22,12 +22,12 @@ export const defaultRsvpPresentation = {
   rendererId: "common",
   submitClassName:
     "lumiere-type-control min-h-11 w-full rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "lumiere-type-title",
+  titleClassName: "lumiere-type-name",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialRsvpPresentation = {
   ...defaultRsvpPresentation,
-  titleClassName: "lumiere-type-title text-[var(--foreground)]",
+  titleClassName: "lumiere-type-name text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialLedgerRsvpPresentation = {
@@ -42,14 +42,14 @@ export const playfulRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_20px_64px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-5",
-  titleClassName: "lumiere-type-title",
+  titleClassName: "lumiere-type-name",
 } satisfies ThemeRsvpPresentation;
 
 export const seasonalRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] sm:p-5",
-  titleClassName: "lumiere-type-title",
+  titleClassName: "lumiere-type-name",
 } satisfies ThemeRsvpPresentation;
 
 export function createThemePresentation({

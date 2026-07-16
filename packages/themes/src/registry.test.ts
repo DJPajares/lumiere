@@ -149,7 +149,7 @@ describe("theme registry", () => {
     expect(themeRegistry.kids.presentation.hero.frameClassName).toContain("lumiere-hero--kids");
     expect(themeRegistry.kids.presentation.rsvp.rendererId).toBe("common");
     expect(themeRegistry["lumiere-default"].presentation.rsvp.rendererId).toBe("common");
-    expect(themeRegistry.premium.presentation.rsvp.titleClassName).toContain("lumiere-type-title");
+    expect(themeRegistry.premium.presentation.rsvp.titleClassName).toContain("lumiere-type-name");
     expect(themeRegistry.premium.presentation.rsvp.rendererId).toBe("common");
 
     expect(resolveThemeRsvpCopy(themeRegistry["lumiere-default"])).toEqual(defaultRsvpCopy);

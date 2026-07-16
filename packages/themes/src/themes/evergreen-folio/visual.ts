@@ -12,7 +12,7 @@ export const evergreenFolioRsvpPresentation = {
     "lumiere-type-body min-h-11 rounded-none border-0 border-b border-[var(--border)] bg-transparent px-1 text-[var(--foreground)] focus:outline-none focus:ring-0 focus:border-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
   submitClassName:
     "lumiere-type-control min-h-12 w-full rounded-none border border-[var(--accent)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[4px_4px_0_color-mix(in_srgb,var(--accent)_22%,transparent)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_color-mix(in_srgb,var(--accent)_26%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "lumiere-type-title text-[var(--foreground)]",
+  titleClassName: "lumiere-type-name text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const evergreenFolioPresentation = createThemePresentation({

@@ -13,7 +13,7 @@ export const signatureRsvpPresentation = {
     "lumiere-type-body min-h-11 rounded-none border-0 border-b border-[var(--border)] bg-transparent px-1 text-[var(--foreground)] focus:border-[var(--focus)] focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60",
   submitClassName:
     "lumiere-type-control min-h-12 w-full rounded-[var(--radius-sm)] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_22%,transparent)] transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "lumiere-type-title text-[var(--foreground)]",
+  titleClassName: "lumiere-type-name text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const signaturePresentation = createThemePresentation({

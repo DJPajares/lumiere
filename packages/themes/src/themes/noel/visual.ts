@@ -10,7 +10,7 @@ export const noelRsvpPresentation = {
     "lumiere-type-body min-h-11 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-[var(--foreground)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
   submitClassName:
     "lumiere-type-control min-h-12 w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "lumiere-type-title text-[var(--foreground)]",
+  titleClassName: "lumiere-type-name text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const noelPresentation = createThemePresentation({
