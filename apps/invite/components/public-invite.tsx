@@ -1371,7 +1371,7 @@ function SectionImage({
     >
       <InviteImage
         alt={asset.alt}
-        className={`${aspectClassName} w-full object-cover`}
+        className={`${aspectClassName} h-full w-full object-cover`}
         data-parallax-layer="section-image"
         decoding="async"
         loading="lazy"
