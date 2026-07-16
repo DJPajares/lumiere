@@ -152,7 +152,7 @@
 }
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
-  top: 7rem;
+  top: 5rem;
   right: -1rem;
   left: auto;
   transform-origin: center;
@@ -1089,7 +1089,7 @@
   }
 
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
-    top: 8rem;
+    top: 5rem;
     right: -1rem;
     left: auto;
     width: 16rem;
