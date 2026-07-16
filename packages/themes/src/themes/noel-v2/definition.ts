@@ -97,7 +97,7 @@ export const noelV2Theme = {
       compositionMap: "wedding-editorial",
       imageStrategy:
         "Treat real couple and venue photographs as quiet editorial plates with generous margins; the invitation remains complete without imagery.",
-      motionProfile: "calm",
+      motionProfile: "seasonal",
       parallaxProfile: "story-depth",
     },
     hero: {
@@ -158,7 +158,7 @@ export const noelV2Theme = {
     backdropStrategy:
       "A quiet linen-paper field whose sparse fixed botanicals and restrained drifting snow frame, rather than overlap, the invitation content.",
     fontPairing: { body: "Cormorant Garamond book", display: "Cormorant Garamond display" },
-    motionLevel: "calm",
+    motionLevel: "seasonal",
     ornamentStrategy:
       "One original watercolor canopy plus separate straight pinecone, walnut, and berry branches in the sparse floating-bough rhythm of Noel; no bent corners, glitter, snowfall, or continuous perimeter.",
     rendererSlots: createRendererSlots({ specialized: allInviteSections }),
