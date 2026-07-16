@@ -1,7 +1,16 @@
 import type { Database } from "@lumiere/db";
-import { activityEvents, guestGroups, notifications, rsvpResponses } from "@lumiere/db";
+import {
+  activityEvents,
+  and,
+  desc,
+  eq,
+  guestGroups,
+  isNull,
+  notifications,
+  rsvpResponses,
+  sql,
+} from "@lumiere/db";
 import type { ActivityEvent, EventSummary, Notification } from "@lumiere/types";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { toIsoDateTime } from "./serialization";
 
