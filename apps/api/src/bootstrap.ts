@@ -19,7 +19,7 @@ export function loadApiConfig() {
 }
 
 export function createApiApplication(config = loadApiConfig()) {
-  const client = createPostgresClient(config.DATABASE_URL);
+  const client = createPostgresClient(config.DATABASE_URL, { prepare: false });
   const db = createDatabase(client);
   const authStore = createDrizzleAuthStore(db);
   const dashboardDataStore = createDrizzleDashboardDataStore(db);
