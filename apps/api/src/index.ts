@@ -19,8 +19,7 @@ export function loadApiConfig() {
   }
 }
 
-export function startApiServer() {
-  const config = loadApiConfig();
+export function createApiApplication(config = loadApiConfig()) {
   const client = createPostgresClient(config.DATABASE_URL);
   const db = createDatabase(client);
   const authStore = createDrizzleAuthStore(db);
@@ -30,7 +29,7 @@ export function startApiServer() {
   const publicInviteStore = createDrizzlePublicInviteStore(db);
   const rsvpStore = createDrizzleRsvpStore(db);
   const themeSectionStore = createDrizzleThemeSectionStore(db);
-  const app = createApp({
+  return createApp({
     authStore,
     config,
     dashboardDataStore,
@@ -40,6 +39,11 @@ export function startApiServer() {
     rsvpStore,
     themeSectionStore,
   });
+}
+
+export function startApiServer() {
+  const config = loadApiConfig();
+  const app = createApiApplication(config);
 
   return serve(
     {
@@ -52,6 +56,11 @@ export function startApiServer() {
   );
 }
 
-if (process.env.NODE_ENV !== "test") {
+const isVercelRuntime = process.env.VERCEL === "1" && process.env.NODE_ENV !== "test";
+const vercelApp = isVercelRuntime ? createApiApplication() : undefined;
+
+export default vercelApp;
+
+if (!isVercelRuntime && process.env.NODE_ENV !== "test") {
   startApiServer();
 }

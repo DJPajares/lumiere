@@ -35,7 +35,7 @@ import type { EventStore, PublishingReadiness } from "./events";
 import { toApiEvent } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
-import { loadApiConfig } from "./index";
+import { createApiApplication, loadApiConfig } from "./index";
 import type {
   PublicEventRecord,
   PublicGuestInviteRecord,
@@ -305,6 +305,17 @@ describe("API app", () => {
     });
     expect(response.status).toBe(200);
     expect(response.headers.get("x-request-id")).toBe("request-from-test");
+  });
+
+  it("builds the Vercel-compatible application without starting a server", async () => {
+    const app = createApiApplication(loadTestConfig());
+    const response = await app.request("/health");
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      service: "lumiere-api",
+      status: "ok",
+    });
   });
 
   it("generates request IDs when callers do not provide one", async () => {
