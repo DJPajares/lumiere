@@ -68,7 +68,7 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - Motion: calm section reveals with light story depth; reduced motion keeps the full composition static.
 - Ornaments: one original watercolor canopy, very light Noel-style drifting snow, and three distinct straight watercolor branches—pinecone and holly, walnut and mistletoe, and berry and leaf—distributed at viewport positions; never bend them into corners or a continuous border.
 - Sections: centered heirloom hero, alternating story timeline, open formal-attire palette, editorial venue and gallery, bordered reply folio, and full-height typographic outro.
-- Modes: light uses the linen field and burgundy titles; dark uses deep evergreen, beige titles, and exact burgundy card borders.
+- Modes: light uses the linen field and burgundy titles; dark uses deep evergreen, beige titles, warm-gold card borders, and restrained berry accents.
 - Ambient media: optional chamber strings or acoustic carols with explicit guest controls.
 - RSVP: formal book-serif fields, clear max-pax and state copy, fine folio borders, and an accessible primary action.
 - Dashboard preview: the watercolor canopy, burgundy title hierarchy, and a story or attire cue must distinguish it from the existing Noel and Evergreen Folio themes.

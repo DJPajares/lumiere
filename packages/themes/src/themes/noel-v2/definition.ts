@@ -72,7 +72,7 @@ export const noelV2Theme = {
       foreground: "#faf0e6",
       surface: "#173328",
       surfaceMuted: "#214235",
-      border: "#59000f",
+      border: "#caa96e",
       accent: "#d39a77",
       accentStrong: "#faf0e6",
       success: "#9ac8ab",
@@ -153,7 +153,7 @@ export const noelV2Theme = {
   imageTreatment:
     "Natural, lightly desaturated editorial crops with fine burgundy rules and no frosted glass or heavy shadow.",
   rsvpTreatment:
-    "A formal reply folio with book-serif fields, precise hairlines, burgundy borders at night, and a strong accessible action.",
+    "A formal reply folio with book-serif fields, precise hairlines, antique-gold borders at night, and a strong accessible action.",
   compatibility: {
     backdropStrategy:
       "A quiet linen-paper field whose sparse fixed botanicals and restrained drifting snow frame, rather than overlap, the invitation content.",

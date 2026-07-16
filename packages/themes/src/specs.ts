@@ -676,7 +676,7 @@ export const themeTemplateSpecs = {
     lightGuidance:
       "Use the exact #faf0e6 linen field, #59000f title hierarchy, evergreen body copy, warm translucent folios, and restrained antique-gold rules.",
     darkGuidance:
-      "Use deep evergreen paper, #faf0e6 titles, warm cream copy, and exact #59000f borders on framed cards and reply controls.",
+      "Use deep evergreen paper, #faf0e6 titles, warm cream copy, warm-gold borders on framed cards and reply controls, and restrained berry accents for seasonal color.",
     statusGuidance:
       "Seasonal burgundy and evergreen never carry RSVP meaning alone; preserve explicit state copy and semantic success, warning, and error colors.",
     reducedMotion:

@@ -24,13 +24,15 @@
   --noel-v2-gold: #ac8747;
   --noel-v2-paper: #faf0e6;
   --noel-v2-pine: #1f3b2f;
+  --noel-v2-red-mistletoe-art: url("/themes/noel-v2/ornament/red-mistletoe-sprig.svg");
   --noel-v2-snow: #fffdf8;
   --noel-v2-title: #59000f;
 }
 
 [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] {
-  --noel-v2-card-border: #59000f;
+  --noel-v2-card-border: #caa96e;
   --noel-v2-gold: #caa96e;
+  --noel-v2-pine: #b42336;
   --noel-v2-snow: #faf0e6;
   --noel-v2-title: #faf0e6;
 }
@@ -710,7 +712,7 @@
 }
 
 [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-dress-code-card {
-  border: 1px solid #59000f;
+  border: 1px solid var(--noel-v2-card-border);
 }
 
 [data-theme-id="noel-v2"] .lumiere-dress-code-palette__title {
@@ -870,6 +872,8 @@
 }
 
 [data-theme-id="noel-v2"] .lumiere-guest-panel > div {
+  position: relative;
+  overflow: hidden;
   border-color: var(--noel-v2-card-border);
   border-radius: 0;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -892,7 +896,49 @@
     .lumiere-rsvp-card--noel-v2,
     .lumiere-guest-panel > div
   ) {
-  border-color: #59000f;
+  border-color: var(--noel-v2-card-border);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div) {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::before {
+  position: absolute;
+  top: 0.65rem;
+  right: -0.25rem;
+  z-index: 0;
+  width: 2.35rem;
+  height: 4.5rem;
+  background: var(--noel-v2-red-mistletoe-art) center / contain no-repeat;
+  content: "";
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::after {
+  position: absolute;
+  right: -0.25rem;
+  bottom: 0.65rem;
+  z-index: 0;
+  width: 2.35rem;
+  height: 4.5rem;
+  background: var(--noel-v2-red-mistletoe-art) center / contain no-repeat;
+  content: "";
+  opacity: 0.92;
+  pointer-events: none;
+  transform: scaleY(-1);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)
+  > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (max-width: 1023px) {

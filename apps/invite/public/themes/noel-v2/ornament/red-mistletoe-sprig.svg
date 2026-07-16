@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 320" fill="none">
+  <defs>
+    <linearGradient id="stem" x1="58" y1="318" x2="84" y2="14" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7f6a42" />
+      <stop offset="1" stop-color="#c4a86b" />
+    </linearGradient>
+    <linearGradient id="leaf" x1="18" y1="246" x2="102" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2f5b43" />
+      <stop offset="1" stop-color="#78916e" />
+    </linearGradient>
+    <radialGradient id="berry" cx="0" cy="0" r="1" gradientTransform="translate(-2 -3) rotate(48) scale(10)">
+      <stop stop-color="#e45a63" />
+      <stop offset="0.55" stop-color="#b42336" />
+      <stop offset="1" stop-color="#741b2b" />
+    </radialGradient>
+  </defs>
+
+  <path d="M57 320C62 267 58 222 61 177 65 126 70 77 84 12" stroke="url(#stem)" stroke-width="3" stroke-linecap="round" />
+  <path d="M60 268 29 226M61 223 95 184M63 177 30 139M68 127 100 91M73 80 45 48" stroke="#6d845f" stroke-width="2" stroke-linecap="round" />
+
+  <g fill="url(#leaf)" stroke="#365d45" stroke-width="1">
+    <path d="M31 229C12 226 5 214 4 197 21 199 34 210 31 229Z" />
+    <path d="M92 188C108 176 116 181 119 194 107 201 97 199 92 188Z" />
+    <path d="M31 141C13 137 7 125 8 110 24 113 35 124 31 141Z" />
+    <path d="M98 95C113 84 119 88 120 101 109 108 101 106 98 95Z" />
+    <path d="M45 50C29 45 23 35 25 22 40 25 49 35 45 50Z" />
+  </g>
+
+  <g fill="url(#berry)" stroke="#6f1d2c" stroke-width="1">
+    <circle cx="58" cy="268" r="7" />
+    <circle cx="69" cy="261" r="6" />
+    <circle cx="61" cy="223" r="6.5" />
+    <circle cx="72" cy="217" r="5.5" />
+    <circle cx="63" cy="177" r="6.5" />
+    <circle cx="74" cy="170" r="5.5" />
+    <circle cx="69" cy="127" r="6" />
+    <circle cx="79" cy="121" r="5" />
+  </g>
+</svg>
