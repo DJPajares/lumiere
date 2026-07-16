@@ -1330,7 +1330,7 @@ function DateFields({ controller }: { controller: SectionFieldController }) {
       />
       <TextField
         controller={controller}
-        label="Countdown label"
+        label="Countdown heading"
         path={["countdownLabel"]}
         scope="content"
       />
@@ -2103,7 +2103,8 @@ function SectionSettingsFields({ controller }: { controller: SectionFieldControl
         {controller.section.sectionType === "date" ? (
           <CheckboxField
             controller={controller}
-            label="Show countdown"
+            defaultValue
+            label="Show live countdown"
             path={["showCountdown"]}
             scope="settings"
           />
@@ -2301,11 +2302,13 @@ function SelectField({
 
 function CheckboxField({
   controller,
+  defaultValue = false,
   label,
   path,
   scope,
 }: {
   controller: SectionFieldController;
+  defaultValue?: boolean;
   label: string;
   path: JsonPath;
   scope: FieldScope;
@@ -2314,6 +2317,7 @@ function CheckboxField({
   const value = getJsonBoolean(
     scope === "content" ? controller.content : controller.settings,
     path,
+    defaultValue,
   );
 
   return (
@@ -2674,11 +2678,6 @@ function PreviewDate({
         <h3 className="text-3xl font-semibold [font-family:var(--font-display)]">
           {readString(content.title) ?? "Date and time"}
         </h3>
-        {showCountdown && countdownLabel ? (
-          <p className="w-fit rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-strong)]">
-            {countdownLabel}
-          </p>
-        ) : null}
       </div>
       <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4">
         <p className="text-base leading-7">{displayText ?? formatEventDate(startsAt, timezone)}</p>
@@ -2686,6 +2685,29 @@ function PreviewDate({
           Timezone: {timezone}
         </p>
       </div>
+      {showCountdown ? (
+        <div className="grid gap-3 sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
+            {countdownLabel ?? "Until the occasion"}
+          </p>
+          <div
+            aria-label="Live countdown preview"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+          >
+            {["Days", "Hours", "Minutes", "Seconds"].map((unit) => (
+              <div
+                className="grid min-h-16 content-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-2 py-2 text-center"
+                key={unit}
+              >
+                <strong className="text-lg font-semibold leading-none tabular-nums">—</strong>
+                <span className="mt-1 text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+                  {unit}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3794,10 +3816,10 @@ function getJsonNumber(value: JsonObject, path: JsonPath) {
   return typeof current === "number" ? current : "";
 }
 
-function getJsonBoolean(value: JsonObject, path: JsonPath) {
+function getJsonBoolean(value: JsonObject, path: JsonPath, defaultValue = false) {
   const current = getJsonValue(value, path);
 
-  return typeof current === "boolean" ? current : false;
+  return typeof current === "boolean" ? current : defaultValue;
 }
 
 function fieldId(section: SectionDraft, scope: FieldScope, path: JsonPath) {

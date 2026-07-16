@@ -20,6 +20,7 @@ import type {
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
+import { EventCountdown } from "./event-countdown";
 import { InviteImage } from "./invite-image";
 import { resolveInviteMotionIntensity } from "./invite-motion-config";
 import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
@@ -585,11 +586,6 @@ function DateSection({
         >
           {title}
         </h2>
-        {showCountdown && countdownLabel ? (
-          <p className="w-fit rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
-            {countdownLabel}
-          </p>
-        ) : null}
       </div>
       <div className="lumiere-date-panel rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)]">
         <p className="text-lg leading-8">
@@ -599,6 +595,9 @@ function DateSection({
           Timezone: {timezone}
         </p>
       </div>
+      {showCountdown && startsAt ? (
+        <EventCountdown label={countdownLabel} startsAt={startsAt} />
+      ) : null}
     </div>
   );
 }

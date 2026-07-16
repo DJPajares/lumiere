@@ -490,6 +490,12 @@ function defaultContent(sectionType: SectionType, event: EventBlueprintContext) 
 }
 
 function defaultSettings(sectionType: SectionType) {
+  if (sectionType === "date") {
+    return {
+      showCountdown: true,
+    };
+  }
+
   if (sectionType === "introduction") {
     return {
       density: "spacious",

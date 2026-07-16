@@ -397,6 +397,38 @@
   content: "";
 }
 
+[data-theme-id="signature"] .lumiere-countdown {
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid var(--signature-bronze-soft);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+}
+
+[data-theme-id="signature"] .lumiere-countdown__label {
+  color: var(--signature-ink);
+}
+
+[data-theme-id="signature"] .lumiere-countdown__grid {
+  gap: 0;
+  border-block: 1px solid var(--signature-bronze-soft);
+}
+
+[data-theme-id="signature"] .lumiere-countdown__unit {
+  border-width: 0 1px 0 0;
+  border-color: var(--signature-bronze-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="signature"] .lumiere-countdown__unit:last-child {
+  border-right: 0;
+}
+
+[data-theme-id="signature"] .lumiere-countdown__value {
+  color: var(--signature-ink);
+  font-weight: 400;
+}
+
 [data-theme-id="signature"] .lumiere-story-layout {
   max-width: 66rem;
 }
@@ -656,6 +688,16 @@
     .lumiere-ornament[data-ornament-position="secondary"] {
     left: -11rem;
     width: 17rem;
+  }
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="signature"] .lumiere-countdown__unit:nth-child(2) {
+    border-right: 0;
+  }
+
+  [data-theme-id="signature"] .lumiere-countdown__unit:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--signature-bronze-soft);
   }
 }
 

@@ -485,7 +485,8 @@
 
 [data-theme-id="noel-v2"] .lumiere-date-layout {
   grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
-  gap: clamp(2rem, 8vw, 8rem);
+  column-gap: clamp(2rem, 8vw, 8rem);
+  row-gap: clamp(2.5rem, 5vw, 4.5rem);
   align-items: center;
 }
 
@@ -495,6 +496,39 @@
   border-radius: 0;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown {
+  padding-block: clamp(1.5rem, 3vw, 2.25rem);
+  border-block: 1px solid color-mix(in srgb, var(--noel-v2-gold) 42%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown__label {
+  color: var(--noel-v2-title);
+  letter-spacing: 0.3em;
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown__grid {
+  gap: 0;
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown__unit {
+  min-height: 7rem;
+  border-width: 0;
+  border-right: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown__unit:last-child {
+  border-right: 0;
+}
+
+[data-theme-id="noel-v2"] .lumiere-countdown__value {
+  color: var(--noel-v2-title);
+  font-size: clamp(2.5rem, 6vw, 4.75rem);
+  font-weight: 400;
 }
 
 [data-theme-id="noel-v2"] .lumiere-section[data-section-type="story"] {
@@ -949,6 +983,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  [data-theme-id="noel-v2"] .lumiere-countdown {
+    grid-column: 1;
+  }
+
   [data-theme-id="noel-v2"] .lumiere-dress-code-content {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1023,6 +1061,14 @@
   [data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
     border-top: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
     border-left: 0;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-countdown__unit:nth-child(2) {
+    border-right: 0;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-countdown__unit:nth-child(-n + 2) {
+    border-bottom: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
   }
 
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {

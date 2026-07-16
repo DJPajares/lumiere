@@ -320,6 +320,7 @@ describe("public invite section renderers", () => {
             },
             sectionKey: "when",
             sectionType: "date",
+            settings: { showCountdown: true },
             sortOrder: 1,
           }),
           createSection({
@@ -431,6 +432,29 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Garden aisle at dusk");
     expect(html).toContain("First the quiet hello.");
     expect(html).toContain("Then a life gathered around one table.");
+    expect(html).toContain("Together in 42 days");
+    expect(html).toContain('data-countdown-state="loading"');
+    expect(html).toContain('data-countdown-unit="days"');
+    expect(html).toContain('data-countdown-unit="seconds"');
+
+    const countdownDisabledInvite = createInvite([
+      createSection({
+        content: {
+          countdownLabel: "Until we gather",
+          startsAt: "2030-06-01T10:30:00.000Z",
+          timezone: "Asia/Singapore",
+        },
+        sectionKey: "countdown-disabled",
+        sectionType: "date",
+        settings: { showCountdown: false },
+        sortOrder: 0,
+      }),
+    ]);
+    const countdownDisabledHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: countdownDisabledInvite }),
+    );
+
+    expect(countdownDisabledHtml).not.toContain("data-countdown-state");
 
     const gardenInvite = createInvite([
       createSection({
