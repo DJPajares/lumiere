@@ -9,6 +9,7 @@ export const themeTypographyRoleNames = [
   "body",
   "label",
   "control",
+  "controlIcon",
   "eyebrow",
   "caption",
   "numeric",
@@ -123,6 +124,15 @@ const restrainedRoles: ThemeTypographyRoles = {
     fontWeight: "600",
     letterSpacing: "0em",
     lineHeight: "1.35",
+    textTransform: "none",
+  },
+  controlIcon: {
+    fontFamily: "body",
+    fontSize: "clamp(1.25rem, 2vw, 1.5rem)",
+    fontStyle: "normal",
+    fontWeight: "600",
+    letterSpacing: "0em",
+    lineHeight: "1",
     textTransform: "none",
   },
   eyebrow: {

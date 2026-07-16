@@ -32,3 +32,4 @@ Apply the shared typography roles across every text-bearing invite surface, incl
 
 - 2026-07-16T00:00:00+08:00: Audited remaining invite surfaces and confirmed t87 migrated shared section content but left intro, RSVP, shell controls, countdown, placeholder, map, and semantic theme CSS declarations for this follow-up.
 - 2026-07-16T20:30:00+08:00: Added the pretitle role, migrated all remaining invite and RSVP copy/control surfaces, removed semantic typography declarations from all theme CSS, and retained only font-face/decorative print/ornament typography. Typechecks, 59 invite/theme tests, formatting, boundaries, and the production invite build pass.
+- 2026-07-16T21:05:00+08:00: Added a shared control-icon role and applied it to RSVP +/- buttons so their larger glyphs remain theme-configurable.

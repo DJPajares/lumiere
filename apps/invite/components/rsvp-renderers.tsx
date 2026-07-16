@@ -555,7 +555,7 @@ function CounterButton({
     <button
       {...invitePressFeedbackProps}
       aria-label={label}
-      className="lumiere-type-control grid size-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
+      className="lumiere-type-control-icon grid size-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
       disabled={disabled}
       onClick={onClick}
       type="button"
