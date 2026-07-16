@@ -66,7 +66,7 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - Fit: premium weddings, holiday celebrations, and private events with a formal winter tone.
 - Mood: warm `#faf0e6` linen, Cormorant Garamond, burgundy `#59000f` titles, antique-gold rules, evergreen ink, and generous editorial whitespace.
 - Motion: calm section reveals with light story depth; reduced motion keeps the full composition static.
-- Ornaments: one original watercolor canopy plus three distinct straight watercolor branches—pinecone and holly, walnut and mistletoe, and berry and leaf—distributed at Noel-style viewport positions; never bend them into corners or a continuous border.
+- Ornaments: one original watercolor canopy, very light Noel-style drifting snow, and three distinct straight watercolor branches—pinecone and holly, walnut and mistletoe, and berry and leaf—distributed at viewport positions; never bend them into corners or a continuous border.
 - Sections: centered heirloom hero, alternating story timeline, open formal-attire palette, editorial venue and gallery, bordered reply folio, and full-height typographic outro.
 - Modes: light uses the linen field and burgundy titles; dark uses deep evergreen, beige titles, and exact burgundy card borders.
 - Ambient media: optional chamber strings or acoustic carols with explicit guest controls.

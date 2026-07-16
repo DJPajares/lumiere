@@ -24,24 +24,30 @@
   --noel-v2-gold: #ac8747;
   --noel-v2-paper: #faf0e6;
   --noel-v2-pine: #1f3b2f;
+  --noel-v2-snow: #fffdf8;
   --noel-v2-title: #59000f;
 }
 
 [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] {
   --noel-v2-card-border: #59000f;
   --noel-v2-gold: #caa96e;
+  --noel-v2-snow: #faf0e6;
   --noel-v2-title: #faf0e6;
 }
 
 [data-theme-id="noel-v2"] .lumiere-invitation {
   background:
-    radial-gradient(ellipse at 50% 0%,
+    radial-gradient(
+      ellipse at 50% 0%,
       color-mix(in srgb, var(--surface) 62%, transparent),
-      transparent 38rem),
-    linear-gradient(90deg,
+      transparent 38rem
+    ),
+    linear-gradient(
+      90deg,
       color-mix(in srgb, var(--background) 92%, var(--surface-muted)),
       var(--background) 18% 82%,
-      color-mix(in srgb, var(--background) 92%, var(--surface-muted)));
+      color-mix(in srgb, var(--background) 92%, var(--surface-muted))
+    );
   font-size: 1.08rem;
   font-weight: 400;
   line-height: 1.65;
@@ -49,12 +55,16 @@
 
 [data-theme-id="noel-v2"] .lumiere-visual-layer__backdrop {
   background:
-    repeating-linear-gradient(96deg,
+    repeating-linear-gradient(
+      96deg,
       transparent 0 5.9rem,
-      color-mix(in srgb, var(--foreground) 2.2%, transparent) 5.95rem 6rem),
-    repeating-linear-gradient(2deg,
+      color-mix(in srgb, var(--foreground) 2.2%, transparent) 5.95rem 6rem
+    ),
+    repeating-linear-gradient(
+      2deg,
       transparent 0 4.4rem,
-      color-mix(in srgb, var(--foreground) 1.8%, transparent) 4.45rem 4.5rem),
+      color-mix(in srgb, var(--foreground) 1.8%, transparent) 4.45rem 4.5rem
+    ),
     var(--background);
 }
 
@@ -79,13 +89,65 @@
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
   inset: 0;
   border: 0;
-  background: none;
+  background-color: transparent;
   filter: none;
   opacity: 1;
 }
 
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
+  color: var(--noel-v2-snow);
+  background-image:
+    radial-gradient(circle, currentColor 0 1.1px, transparent 1.8px),
+    radial-gradient(circle, currentColor 0 0.75px, transparent 1.4px),
+    radial-gradient(circle, currentColor 0 1.5px, transparent 2.2px);
+  background-position:
+    1rem -8rem,
+    7rem -15rem,
+    12rem -23rem;
+  background-size:
+    17rem 19rem,
+    24rem 27rem,
+    37rem 41rem;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::before,
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
-  content: none;
+  position: absolute;
+  inset: 0;
+  display: block;
+  content: "";
+  pointer-events: none;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::before {
+  background-image:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--noel-v2-snow) 86%, transparent) 0 2px,
+      transparent 2.8px
+    ),
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--noel-v2-snow) 62%, transparent) 0 1.2px,
+      transparent 2px
+    );
+  background-position:
+    4rem -17rem,
+    18rem -29rem;
+  background-size:
+    31rem 34rem,
+    43rem 47rem;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--noel-v2-snow) 52%, transparent));
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+  background:
+    radial-gradient(circle at 19% 24%, var(--noel-v2-snow) 0 1px, transparent 2px),
+    radial-gradient(circle at 64% 14%, var(--noel-v2-snow) 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 86% 62%, var(--noel-v2-snow) 0 1px, transparent 2px),
+    radial-gradient(circle at 37% 78%, var(--noel-v2-snow) 0 1.4px, transparent 2.4px);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--noel-v2-snow) 62%, transparent));
+  opacity: 0.68;
 }
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament {
@@ -95,11 +157,14 @@
   border-radius: 0;
   background: var(--noel-v2-branch-walnut-art) center / contain no-repeat;
   box-shadow: none;
-  filter: saturate(0.8) contrast(0.94) drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
+  filter: saturate(0.8) contrast(0.94)
+    drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
   opacity: 0.34;
 }
 
-[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="primary"] {
   top: 7rem;
   right: -1rem;
   left: auto;
@@ -107,7 +172,9 @@
   transform: rotate(168deg);
 }
 
-[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="secondary"] {
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="secondary"] {
   top: auto;
   right: auto;
   bottom: -1.5rem;
@@ -119,7 +186,9 @@
   transform: rotate(-8deg);
 }
 
-[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="tertiary"] {
+[data-theme-id="noel-v2"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament[data-ornament-position="tertiary"] {
   top: 44%;
   right: auto;
   bottom: auto;
@@ -131,7 +200,9 @@
   transform: rotate(-9deg);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] [data-ornament-set="botanical"] .lumiere-ornament {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  [data-ornament-set="botanical"]
+  .lumiere-ornament {
   filter: saturate(0.62) brightness(0.78) contrast(1.02);
 }
 
@@ -153,13 +224,15 @@
   padding-block: clamp(13rem, 18vw, 15rem) clamp(5rem, 9vw, 7rem);
   border: 0;
   background:
-    radial-gradient(ellipse at 50% 22%,
+    radial-gradient(
+      ellipse at 50% 22%,
       color-mix(in srgb, var(--surface) 56%, transparent),
-      transparent 34rem),
+      transparent 34rem
+    ),
     transparent;
 }
 
-[data-theme-id="noel-v2"] .lumiere-section--hero>div,
+[data-theme-id="noel-v2"] .lumiere-section--hero > div,
 [data-theme-id="noel-v2"] .lumiere-hero-copy {
   position: static;
 }
@@ -178,12 +251,12 @@
   text-align: center;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-copy>* {
+[data-theme-id="noel-v2"] .lumiere-hero-copy > * {
   position: relative;
   z-index: 2;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-copy>.lumiere-noel-v2-decoration {
+[data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
   position: absolute;
   z-index: 1;
   top: -2rem;
@@ -206,7 +279,9 @@
   filter: saturate(0.82) contrast(0.96);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-noel-v2-decoration [data-decoration-position="top"] {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  .lumiere-noel-v2-decoration
+  [data-decoration-position="top"] {
   filter: saturate(0.7) brightness(0.92) contrast(1.04);
 }
 
@@ -289,7 +364,7 @@
   box-shadow: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-fact+.lumiere-hero-fact {
+[data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
   border-left: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
 }
 
@@ -327,7 +402,7 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-noel-v2-folio>* {
+[data-theme-id="noel-v2"] .lumiere-noel-v2-folio > * {
   position: relative;
   z-index: 1;
 }
@@ -381,14 +456,17 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner>* {
+[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner > * {
   position: relative;
   z-index: 1;
 }
 
-[data-theme-id="noel-v2"] :is(.lumiere-detail-item,
-  .lumiere-profile-card,
-  [data-section-type="entourage"] .lumiere-section__body > div > div > div) {
+[data-theme-id="noel-v2"]
+  :is(
+    .lumiere-detail-item,
+    .lumiere-profile-card,
+    [data-section-type="entourage"] .lumiere-section__body > div > div > div
+  ) {
   border: 0;
   border-radius: 0;
   background: color-mix(in srgb, var(--surface) 56%, transparent);
@@ -435,7 +513,7 @@
   width: 100%;
 }
 
-[data-theme-id="noel-v2"] .lumiere-story-copy>h2 {
+[data-theme-id="noel-v2"] .lumiere-story-copy > h2 {
   max-width: none;
   margin-bottom: clamp(2rem, 5vw, 3.5rem);
   text-align: center;
@@ -478,7 +556,7 @@
   text-align: left;
 }
 
-[data-theme-id="noel-v2"] .lumiere-story-step>span {
+[data-theme-id="noel-v2"] .lumiere-story-step > span {
   display: none;
 }
 
@@ -561,7 +639,7 @@
   font-size: clamp(2.75rem, 5.4vw, 5rem);
 }
 
-[data-theme-id="noel-v2"] .lumiere-dress-code-header>p {
+[data-theme-id="noel-v2"] .lumiere-dress-code-header > p {
   max-width: 56rem;
   margin-inline: auto;
   color: color-mix(in srgb, var(--foreground) 76%, transparent);
@@ -684,11 +762,12 @@
   text-transform: uppercase;
 }
 
-[data-theme-id="noel-v2"] :is(.lumiere-profile-layout, .lumiere-location-layout, .lumiere-rsvp-layout) {
+[data-theme-id="noel-v2"]
+  :is(.lumiere-profile-layout, .lumiere-location-layout, .lumiere-rsvp-layout) {
   gap: clamp(2.25rem, 7vw, 7rem);
 }
 
-[data-theme-id="noel-v2"] .lumiere-profile-layout>h2 {
+[data-theme-id="noel-v2"] .lumiere-profile-layout > h2 {
   grid-column: 1 / -1;
 }
 
@@ -739,7 +818,7 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2>* {
+[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2 > * {
   position: relative;
   z-index: 1;
 }
@@ -762,12 +841,15 @@
   margin-inline: auto;
   background:
     radial-gradient(circle at center, var(--noel-v2-pine) 0 2px, transparent 2.5px),
-    linear-gradient(90deg,
-      transparent,
-      var(--noel-v2-gold) 12% 45%,
-      transparent 45% 55%,
-      var(--noel-v2-gold) 55% 88%,
-      transparent) center / 100% 1px no-repeat;
+    linear-gradient(
+        90deg,
+        transparent,
+        var(--noel-v2-gold) 12% 45%,
+        transparent 45% 55%,
+        var(--noel-v2-gold) 55% 88%,
+        transparent
+      )
+      center / 100% 1px no-repeat;
   content: "";
 }
 
@@ -787,7 +869,7 @@
   line-height: 1.75;
 }
 
-[data-theme-id="noel-v2"] .lumiere-guest-panel>div {
+[data-theme-id="noel-v2"] .lumiere-guest-panel > div {
   border-color: var(--noel-v2-card-border);
   border-radius: 0;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -798,20 +880,22 @@
   border-color: color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-section--framed .lumiere-section__inner,
-  .lumiere-detail-item,
-  .lumiere-profile-card,
-  .lumiere-date-panel,
-  .lumiere-map-card,
-  .lumiere-section-image,
-  .lumiere-map-preview,
-  .lumiere-rsvp-card--noel-v2,
-  .lumiere-guest-panel > div) {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
+  :is(
+    .lumiere-section--framed .lumiere-section__inner,
+    .lumiere-detail-item,
+    .lumiere-profile-card,
+    .lumiere-date-panel,
+    .lumiere-map-card,
+    .lumiere-section-image,
+    .lumiere-map-preview,
+    .lumiere-rsvp-card--noel-v2,
+    .lumiere-guest-panel > div
+  ) {
   border-color: #59000f;
 }
 
 @media (max-width: 1023px) {
-
   [data-theme-id="noel-v2"] .lumiere-date-layout,
   [data-theme-id="noel-v2"] .lumiere-profile-layout,
   [data-theme-id="noel-v2"] .lumiere-location-layout,
@@ -872,7 +956,7 @@
     padding: 11.5rem 1.5rem 4.75rem;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-hero-copy>.lumiere-noel-v2-decoration {
+  [data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
     top: -1.75rem;
     width: min(calc(100vw - 2.5rem), 20rem);
   }
@@ -890,7 +974,7 @@
     min-height: 4.25rem;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-hero-fact+.lumiere-hero-fact {
+  [data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
     border-top: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
     border-left: 0;
   }
@@ -898,11 +982,13 @@
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
     inset: 0;
     border: 0;
-    background: none;
+    background-color: transparent;
     opacity: 1;
   }
 
-  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="primary"] {
     top: 8rem;
     right: -1rem;
     left: auto;
@@ -910,7 +996,9 @@
     opacity: 0.3;
   }
 
-  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="secondary"] {
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="secondary"] {
     top: auto;
     right: auto;
     bottom: -1.25rem;
@@ -919,7 +1007,9 @@
     opacity: 0.18;
   }
 
-  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="tertiary"] {
+  [data-theme-id="noel-v2"]
+    [data-ornament-set="botanical"]
+    .lumiere-ornament[data-ornament-position="tertiary"] {
     top: 47%;
     left: -6rem;
     display: block;
@@ -953,12 +1043,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  [data-theme-id="noel-v2"] .lumiere-rsvp-copy>div:first-child {
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child {
     justify-items: center;
     text-align: center;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-rsvp-copy>div:first-child>p {
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child > p {
     max-width: 30rem;
     margin-inline: auto;
   }
@@ -968,11 +1058,70 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
+    animation: noel-v2-snowfall-near 22s linear infinite;
+  }
 
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::before {
+    animation: noel-v2-snowfall-far 38s linear infinite;
+  }
+
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+    animation: noel-v2-winter-glint 6s ease-in-out infinite alternate;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   [data-theme-id="noel-v2"] .lumiere-noel-v2-decoration,
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament {
     animation: none !important;
     transform-origin: center;
+  }
+
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments,
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::before,
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
+    animation: none !important;
+  }
+}
+
+@keyframes noel-v2-snowfall-near {
+  from {
+    background-position:
+      1rem -19rem,
+      7rem -27rem,
+      12rem -41rem;
+  }
+
+  to {
+    background-position:
+      4rem calc(100dvh + 19rem),
+      2rem calc(100dvh + 27rem),
+      18rem calc(100dvh + 41rem);
+  }
+}
+
+@keyframes noel-v2-snowfall-far {
+  from {
+    background-position:
+      4rem -34rem,
+      18rem -47rem;
+  }
+
+  to {
+    background-position:
+      10rem calc(100dvh + 34rem),
+      12rem calc(100dvh + 47rem);
+  }
+}
+
+@keyframes noel-v2-winter-glint {
+  from {
+    opacity: 0.32;
+  }
+
+  to {
+    opacity: 0.78;
   }
 }

@@ -89,7 +89,7 @@ export const noelV2Theme = {
       mood: "Quiet chamber strings or acoustic carols, always started and stopped by the guest.",
     },
     backgroundTreatment:
-      "Warm #faf0e6 linen by day and deep evergreen paper by night, with different straight watercolor branch variants floating at the top-right, lower-left, and middle edge rather than bending into a border.",
+      "Warm #faf0e6 linen by day and deep evergreen paper by night, with very light drifting snow and different straight watercolor branch variants floating at the top-right, lower-left, and middle edge rather than bending into a border.",
     effects: noelV2Effects,
     visualSystem: {
       cardStackPolicy:
@@ -156,7 +156,7 @@ export const noelV2Theme = {
     "A formal reply folio with book-serif fields, precise hairlines, burgundy borders at night, and a strong accessible action.",
   compatibility: {
     backdropStrategy:
-      "A quiet linen-paper field whose sparse fixed botanicals frame, rather than overlap, the invitation content.",
+      "A quiet linen-paper field whose sparse fixed botanicals and restrained drifting snow frame, rather than overlap, the invitation content.",
     fontPairing: { body: "Cormorant Garamond book", display: "Cormorant Garamond display" },
     motionLevel: "calm",
     ornamentStrategy:
@@ -200,6 +200,7 @@ export const noelV2Theme = {
   accessibilityNotes: [
     "Burgundy and evergreen accents never carry RSVP state without text.",
     "Watercolor ornaments remain outside the main reading column at every viewport size.",
+    "Snowfall stops when reduced motion is requested.",
     "Light and dark title colors retain strong contrast against their paper fields.",
     "All reveal and parallax treatments become static when reduced motion is requested.",
   ],
