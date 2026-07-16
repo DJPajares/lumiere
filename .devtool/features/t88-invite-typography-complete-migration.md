@@ -36,3 +36,4 @@ Apply the shared typography roles across every text-bearing invite surface, incl
 - 2026-07-16T21:10:00+08:00: Restyled the theme mode toggle to rest as a semi-transparent icon-only control and expand its label on hover, focus, or active interaction with reduced-motion-safe transitions.
 - 2026-07-16T21:20:00+08:00: Raised the toggle selectors to theme scope so theme-specific grid and padding rules cannot keep the idle label visible; applied the control-icon role to the mode glyph and verified the production CSS output.
 - 2026-07-16T21:30:00+08:00: Blurred the toggle after selection, corrected border-box dimensions for even icon spacing, removed the inner icon border, and sized expansion from the longest theme mode label.
+- 2026-07-16T21:50:00+08:00: Replaced character-count width estimates with live measurements of both theme labels (including uppercase tracking), then explicitly centered the label line box and verified the invite build.

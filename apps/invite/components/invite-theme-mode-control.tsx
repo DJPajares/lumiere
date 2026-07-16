@@ -42,8 +42,10 @@ export function InviteThemeModeControl({
   variables,
 }: InviteThemeModeControlProps) {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const labelMeasureRef = useRef<HTMLSpanElement | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const [resolvedMode, setResolvedMode] = useState(initialMode);
+  const [measuredLabelWidth, setMeasuredLabelWidth] = useState<number | null>(null);
   const storageKey = useMemo(() => createThemeModeStorageKey(eventKey), [eventKey]);
   const canToggle =
     configuredMode === "toggleable" && Boolean(presentation) && Boolean(variables.dark);
@@ -85,6 +87,33 @@ export function InviteThemeModeControl({
     return () => mediaQuery.removeEventListener("change", syncMode);
   }, [canToggle, configuredMode, needsPrePaintResolution, presentation, storageKey, variables]);
 
+  useEffect(() => {
+    const measureRoot = labelMeasureRef.current;
+
+    if (!measureRoot || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const measureLabels = () => {
+      const width = Math.max(
+        ...Array.from(measureRoot.children, (label) =>
+          Math.ceil(label.getBoundingClientRect().width),
+        ),
+        0,
+      );
+
+      if (width > 0) {
+        setMeasuredLabelWidth(width);
+      }
+    };
+
+    measureLabels();
+    const observer = new ResizeObserver(measureLabels);
+    Array.from(measureRoot.children).forEach((label) => observer.observe(label));
+
+    return () => observer.disconnect();
+  }, [presentation?.labels.dark, presentation?.labels.light]);
+
   if (!needsPrePaintResolution) {
     return null;
   }
@@ -115,7 +144,9 @@ export function InviteThemeModeControl({
     presentation.labels.light.length,
   );
   const modeToggleStyle = {
-    "--mode-toggle-label-width": `${longestLabelLength + 1}ch`,
+    "--mode-toggle-label-width": measuredLabelWidth
+      ? `${measuredLabelWidth}px`
+      : `${longestLabelLength + 1}ch`,
   } as CSSProperties;
   const placementClass = presentation.placement === "top-end" ? "right-4" : "left-4";
   const verticalPlacementClass = hasAmbientAudio ? "top-20 sm:top-4" : "top-4";
@@ -157,6 +188,14 @@ export function InviteThemeModeControl({
             {currentLabel}
           </span>
         </button>
+        <span
+          aria-hidden="true"
+          className="lumiere-theme-mode-control__measure"
+          ref={labelMeasureRef}
+        >
+          <span className="lumiere-type-control">{presentation.labels.dark}</span>
+          <span className="lumiere-type-control">{presentation.labels.light}</span>
+        </span>
       </div>
     </>
   );
