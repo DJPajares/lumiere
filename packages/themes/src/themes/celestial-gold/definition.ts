@@ -166,6 +166,14 @@ export const celestialGoldTheme = {
       displayFamily: '"Cormorant Garamond", Garamond, Didot, Baskerville, ui-serif, serif',
       eyebrowLetterSpacing: "0.28em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.4rem, 9vw, 8.5rem)",
+        letterSpacing: "-0.05em",
+        lineHeight: "0.86",
+      },
+      title: { fontSize: "clamp(3rem, 6.5vw, 6.8rem)", letterSpacing: "-0.045em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

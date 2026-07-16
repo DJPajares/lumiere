@@ -69,6 +69,129 @@ body {
   font-family: var(--font-display), serif;
 }
 
+main[data-theme-id] .lumiere-type-hero {
+  --lumiere-type-font-family: var(--type-hero-font-family);
+  --lumiere-type-font-size: var(--type-hero-font-size);
+  --lumiere-type-font-style: var(--type-hero-font-style);
+  --lumiere-type-font-weight: var(--type-hero-font-weight);
+  --lumiere-type-letter-spacing: var(--type-hero-letter-spacing);
+  --lumiere-type-line-height: var(--type-hero-line-height);
+  --lumiere-type-text-transform: var(--type-hero-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-hero-subtitle {
+  --lumiere-type-font-family: var(--type-hero-subtitle-font-family);
+  --lumiere-type-font-size: var(--type-hero-subtitle-font-size);
+  --lumiere-type-font-style: var(--type-hero-subtitle-font-style);
+  --lumiere-type-font-weight: var(--type-hero-subtitle-font-weight);
+  --lumiere-type-letter-spacing: var(--type-hero-subtitle-letter-spacing);
+  --lumiere-type-line-height: var(--type-hero-subtitle-line-height);
+  --lumiere-type-text-transform: var(--type-hero-subtitle-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-title {
+  --lumiere-type-font-family: var(--type-title-font-family);
+  --lumiere-type-font-size: var(--type-title-font-size);
+  --lumiere-type-font-style: var(--type-title-font-style);
+  --lumiere-type-font-weight: var(--type-title-font-weight);
+  --lumiere-type-letter-spacing: var(--type-title-letter-spacing);
+  --lumiere-type-line-height: var(--type-title-line-height);
+  --lumiere-type-text-transform: var(--type-title-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-name {
+  --lumiere-type-font-family: var(--type-name-font-family);
+  --lumiere-type-font-size: var(--type-name-font-size);
+  --lumiere-type-font-style: var(--type-name-font-style);
+  --lumiere-type-font-weight: var(--type-name-font-weight);
+  --lumiere-type-letter-spacing: var(--type-name-letter-spacing);
+  --lumiere-type-line-height: var(--type-name-line-height);
+  --lumiere-type-text-transform: var(--type-name-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-subtitle {
+  --lumiere-type-font-family: var(--type-subtitle-font-family);
+  --lumiere-type-font-size: var(--type-subtitle-font-size);
+  --lumiere-type-font-style: var(--type-subtitle-font-style);
+  --lumiere-type-font-weight: var(--type-subtitle-font-weight);
+  --lumiere-type-letter-spacing: var(--type-subtitle-letter-spacing);
+  --lumiere-type-line-height: var(--type-subtitle-line-height);
+  --lumiere-type-text-transform: var(--type-subtitle-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-description {
+  --lumiere-type-font-family: var(--type-description-font-family);
+  --lumiere-type-font-size: var(--type-description-font-size);
+  --lumiere-type-font-style: var(--type-description-font-style);
+  --lumiere-type-font-weight: var(--type-description-font-weight);
+  --lumiere-type-letter-spacing: var(--type-description-letter-spacing);
+  --lumiere-type-line-height: var(--type-description-line-height);
+  --lumiere-type-text-transform: var(--type-description-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-body {
+  --lumiere-type-font-family: var(--type-body-font-family);
+  --lumiere-type-font-size: var(--type-body-font-size);
+  --lumiere-type-font-style: var(--type-body-font-style);
+  --lumiere-type-font-weight: var(--type-body-font-weight);
+  --lumiere-type-letter-spacing: var(--type-body-letter-spacing);
+  --lumiere-type-line-height: var(--type-body-line-height);
+  --lumiere-type-text-transform: var(--type-body-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-label {
+  --lumiere-type-font-family: var(--type-label-font-family);
+  --lumiere-type-font-size: var(--type-label-font-size);
+  --lumiere-type-font-style: var(--type-label-font-style);
+  --lumiere-type-font-weight: var(--type-label-font-weight);
+  --lumiere-type-letter-spacing: var(--type-label-letter-spacing);
+  --lumiere-type-line-height: var(--type-label-line-height);
+  --lumiere-type-text-transform: var(--type-label-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-eyebrow {
+  --lumiere-type-font-family: var(--type-eyebrow-font-family);
+  --lumiere-type-font-size: var(--type-eyebrow-font-size);
+  --lumiere-type-font-style: var(--type-eyebrow-font-style);
+  --lumiere-type-font-weight: var(--type-eyebrow-font-weight);
+  --lumiere-type-letter-spacing: var(--type-eyebrow-letter-spacing);
+  --lumiere-type-line-height: var(--type-eyebrow-line-height);
+  --lumiere-type-text-transform: var(--type-eyebrow-text-transform);
+}
+
+main[data-theme-id] .lumiere-type-caption {
+  --lumiere-type-font-family: var(--type-caption-font-family);
+  --lumiere-type-font-size: var(--type-caption-font-size);
+  --lumiere-type-font-style: var(--type-caption-font-style);
+  --lumiere-type-font-weight: var(--type-caption-font-weight);
+  --lumiere-type-letter-spacing: var(--type-caption-letter-spacing);
+  --lumiere-type-line-height: var(--type-caption-line-height);
+  --lumiere-type-text-transform: var(--type-caption-text-transform);
+}
+
+main[data-theme-id]
+  .lumiere-invitation
+  :is(
+    .lumiere-type-hero,
+    .lumiere-type-hero-subtitle,
+    .lumiere-type-title,
+    .lumiere-type-name,
+    .lumiere-type-subtitle,
+    .lumiere-type-description,
+    .lumiere-type-body,
+    .lumiere-type-label,
+    .lumiere-type-eyebrow,
+    .lumiere-type-caption
+  ) {
+  font-family: var(--lumiere-type-font-family);
+  font-size: var(--lumiere-type-font-size);
+  font-style: var(--lumiere-type-font-style);
+  font-weight: var(--lumiere-type-font-weight);
+  line-height: var(--lumiere-type-line-height);
+  letter-spacing: var(--lumiere-type-letter-spacing);
+  text-transform: var(--lumiere-type-text-transform);
+}
+
 .lumiere-section__eyebrow {
   letter-spacing: var(--eyebrow-tracking);
 }

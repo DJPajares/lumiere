@@ -164,6 +164,20 @@ export const noelTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.24em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.55rem, 9.2vw, 8.8rem)",
+        letterSpacing: "-0.052em",
+        lineHeight: "0.86",
+      },
+      heroSubtitle: {
+        fontFamily: "display",
+        fontSize: "clamp(1.25rem, 2.3vw, 1.85rem)",
+        fontStyle: "italic",
+        lineHeight: "1.5",
+      },
+      title: { fontSize: "clamp(2.65rem, 5.6vw, 5.5rem)", letterSpacing: "-0.04em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

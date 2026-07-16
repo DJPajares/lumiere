@@ -6,4 +6,5 @@ export * from "./rsvp-copy";
 export * from "./sections";
 export * from "./specs";
 export * from "./themes";
+export * from "./typography";
 export { defaultRsvpPresentation } from "./theme-shared";

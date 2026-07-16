@@ -162,6 +162,14 @@ export const editorialIvoryTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.24em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.4rem, 10vw, 9.5rem)",
+        letterSpacing: "-0.06em",
+        lineHeight: "0.82",
+      },
+      title: { fontSize: "clamp(2.8rem, 6vw, 6rem)", letterSpacing: "-0.04em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

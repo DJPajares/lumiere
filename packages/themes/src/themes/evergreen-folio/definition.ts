@@ -166,6 +166,20 @@ export const evergreenFolioTheme = {
         '"Cormorant Garamond", Garamond, "Bodoni 72", Didot, "Times New Roman", ui-serif, serif',
       eyebrowLetterSpacing: "0.2em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(2.6rem, 7.4vw, 5.45rem)",
+        letterSpacing: "-0.045em",
+        lineHeight: "0.92",
+        textTransform: "uppercase",
+      },
+      heroSubtitle: {
+        fontFamily: "body",
+        fontSize: "clamp(1rem, 2.6vw, 1.65rem)",
+        lineHeight: "1.45",
+      },
+      title: { fontSize: "clamp(2.65rem, 6vw, 5.8rem)", letterSpacing: "-0.04em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

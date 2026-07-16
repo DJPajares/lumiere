@@ -161,6 +161,20 @@ export const velvetDuskTheme = {
       displayFamily: '"Cormorant Garamond", Garamond, "Bodoni 72", Didot, ui-serif, serif',
       eyebrowLetterSpacing: "0.3em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.5rem, 9.4vw, 9rem)",
+        letterSpacing: "-0.055em",
+        lineHeight: "0.84",
+      },
+      heroSubtitle: {
+        fontFamily: "display",
+        fontSize: "clamp(1.2rem, 2.2vw, 1.7rem)",
+        fontStyle: "italic",
+        lineHeight: "1.45",
+      },
+      title: { fontSize: "clamp(3rem, 6.6vw, 6.8rem)", letterSpacing: "-0.045em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

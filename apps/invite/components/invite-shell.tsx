@@ -1,4 +1,10 @@
-import { resolveTheme, type ThemeDefinition } from "@lumiere/themes";
+import {
+  resolveTheme,
+  resolveThemeTypographyRoles,
+  themeTypographyRoleNames,
+  type ThemeDefinition,
+  type ThemeTypographyStyle,
+} from "@lumiere/themes";
 import type { ThemeMode } from "@lumiere/types";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -66,6 +72,7 @@ function themeToStyle(theme: ThemeDefinition, mode: ResolvedThemeMode): CSSPrope
 
   return {
     ...themeTokensToVariables(tokens),
+    ...themeTypographyToVariables(theme.typography),
     "--eyebrow-tracking": theme?.typography.css.eyebrowLetterSpacing,
     "--font-body": theme?.typography.css.bodyFamily,
     "--font-display": theme?.typography.css.displayFamily,
@@ -75,6 +82,35 @@ function themeToStyle(theme: ThemeDefinition, mode: ResolvedThemeMode): CSSPrope
     colorScheme: mode,
     fontFamily: "var(--font-body)",
   } as CSSProperties;
+}
+
+const typographyStyleProperties = {
+  fontFamily: "font-family",
+  fontSize: "font-size",
+  fontStyle: "font-style",
+  fontWeight: "font-weight",
+  letterSpacing: "letter-spacing",
+  lineHeight: "line-height",
+  textTransform: "text-transform",
+} as const satisfies Record<keyof ThemeTypographyStyle, string>;
+
+function themeTypographyToVariables(typography: ThemeDefinition["typography"]): CSSProperties {
+  const roles = resolveThemeTypographyRoles(typography.scale, typography.roles);
+  const variables: Record<string, string> = {};
+
+  for (const role of themeTypographyRoleNames) {
+    const roleName = role.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`);
+
+    for (const property of Object.keys(
+      typographyStyleProperties,
+    ) as (keyof ThemeTypographyStyle)[]) {
+      const value = roles[role][property];
+      variables[`--type-${roleName}-${typographyStyleProperties[property]}`] =
+        property === "fontFamily" ? `var(--font-${value})` : value;
+    }
+  }
+
+  return variables as CSSProperties;
 }
 
 function themeTokensToVariables(tokens: ThemeDefinition["tokens"]["light"]): ThemeModeVariables {

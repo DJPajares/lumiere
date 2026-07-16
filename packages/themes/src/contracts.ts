@@ -1,4 +1,5 @@
 import type { EventType, SectionType, ThemeMode } from "@lumiere/types";
+import type { ThemeTypographyRoleOverrides, ThemeTypographyScale } from "./typography";
 import type {
   InviteCompositionMapId,
   ThemeMotionKind,
@@ -262,7 +263,8 @@ export type ThemeDefinition = {
       displayFamily: string;
       eyebrowLetterSpacing: string;
     };
-    scale: "restrained" | "editorial" | "playful";
+    roles?: ThemeTypographyRoleOverrides;
+    scale: ThemeTypographyScale;
   };
   imageTreatment: string;
   rsvpTreatment: string;

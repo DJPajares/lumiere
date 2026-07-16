@@ -161,6 +161,15 @@ export const gardenLightTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Charter, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.14em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.5rem, 8vw, 7.5rem)",
+        fontWeight: "400",
+        letterSpacing: "-0.045em",
+        lineHeight: "0.92",
+      },
+      title: { fontSize: "clamp(2.6rem, 5.5vw, 5.4rem)", fontWeight: "400" },
+    },
     scale: "playful",
   },
   imageTreatment:

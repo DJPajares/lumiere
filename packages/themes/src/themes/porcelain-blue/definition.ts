@@ -161,6 +161,14 @@ export const porcelainBlueTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Optima, Palatino, ui-serif, serif',
       eyebrowLetterSpacing: "0.22em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.4rem, 8.5vw, 8.4rem)",
+        letterSpacing: "-0.052em",
+        lineHeight: "0.9",
+      },
+      title: { fontSize: "clamp(2.9rem, 6vw, 6.2rem)", letterSpacing: "-0.04em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

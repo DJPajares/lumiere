@@ -181,6 +181,20 @@ export const premiumTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.22em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(4rem, 10vw, 8.75rem)",
+        fontWeight: "400",
+        letterSpacing: "-0.055em",
+        lineHeight: "0.82",
+      },
+      heroSubtitle: {
+        fontFamily: "display",
+        fontSize: "clamp(1.25rem, 2.2vw, 1.8rem)",
+        lineHeight: "1.45",
+      },
+      title: { fontSize: "clamp(2.8rem, 6vw, 5.75rem)", letterSpacing: "-0.04em" },
+    },
     scale: "editorial",
   },
   imageTreatment: "Large editorial imagery with strong crops and generous whitespace.",

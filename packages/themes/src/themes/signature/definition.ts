@@ -181,6 +181,20 @@ export const signatureTheme = {
       displayFamily: '"Bodoni 72", Didot, "Cormorant Garamond", Iowan Old Style, ui-serif, serif',
       eyebrowLetterSpacing: "0.3em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3.7rem, 9vw, 9rem)",
+        letterSpacing: "-0.06em",
+        lineHeight: "0.84",
+      },
+      heroSubtitle: {
+        fontFamily: "display",
+        fontSize: "clamp(1.25rem, 2.2vw, 1.8rem)",
+        fontStyle: "italic",
+        lineHeight: "1.35",
+      },
+      title: { fontSize: "clamp(3rem, 6.2vw, 6.4rem)", letterSpacing: "-0.045em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

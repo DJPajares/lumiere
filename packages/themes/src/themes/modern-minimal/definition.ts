@@ -161,6 +161,18 @@ export const modernMinimalTheme = {
       displayFamily: '"Manrope Variable", Manrope, "Helvetica Neue", ui-sans-serif, sans-serif',
       eyebrowLetterSpacing: "0.2em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(3rem, 8vw, 8rem)",
+        letterSpacing: "-0.065em",
+        lineHeight: "0.86",
+      },
+      title: {
+        fontSize: "clamp(2.7rem, 6vw, 6.5rem)",
+        letterSpacing: "-0.055em",
+        lineHeight: "0.88",
+      },
+    },
     scale: "restrained",
   },
   imageTreatment:

@@ -121,6 +121,10 @@ export const lumiereDefaultTheme = {
       displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.16em",
     },
+    roles: {
+      hero: { fontSize: "clamp(3.25rem, 8vw, 7.5rem)" },
+      title: { fontSize: "clamp(2.25rem, 5vw, 4.5rem)" },
+    },
     scale: "restrained",
   },
   imageTreatment: "Soft rectangular image slots with reserved aspect ratios.",

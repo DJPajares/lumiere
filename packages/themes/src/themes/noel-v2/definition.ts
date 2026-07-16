@@ -148,6 +148,39 @@ export const noelV2Theme = {
       displayFamily: '"Cormorant Garamond", Garamond, "Times New Roman", ui-serif, serif',
       eyebrowLetterSpacing: "0.32em",
     },
+    roles: {
+      hero: {
+        fontSize: "clamp(2.85rem, 8vw, 6.25rem)",
+        fontWeight: "500",
+        letterSpacing: "-0.045em",
+        lineHeight: "0.9",
+      },
+      heroSubtitle: {
+        fontFamily: "display",
+        fontSize: "clamp(1.35rem, 2.6vw, 2rem)",
+        fontStyle: "italic",
+        lineHeight: "1.35",
+      },
+      title: {
+        fontSize: "clamp(2.25rem, 5vw, 4.75rem)",
+        fontWeight: "500",
+        letterSpacing: "-0.035em",
+        lineHeight: "0.96",
+      },
+      name: {
+        fontSize: "clamp(1.45rem, 2.4vw, 2.5rem)",
+        fontWeight: "600",
+        lineHeight: "1.08",
+      },
+      description: {
+        fontFamily: "display",
+        fontSize: "clamp(1.2rem, 2vw, 1.4rem)",
+        fontStyle: "italic",
+        lineHeight: "1.65",
+      },
+      body: { fontSize: "clamp(1.05rem, 1.4vw, 1.2rem)" },
+      label: { fontSize: "1rem", fontWeight: "600", letterSpacing: "0em" },
+    },
     scale: "editorial",
   },
   imageTreatment:

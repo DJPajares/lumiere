@@ -145,6 +145,10 @@ export const kidsTheme = {
         '"Nunito Variable", Nunito, ui-rounded, "Arial Rounded MT Bold", ui-sans-serif, sans-serif',
       eyebrowLetterSpacing: "0.12em",
     },
+    roles: {
+      hero: { fontSize: "clamp(3.5rem, 8.5vw, 7.75rem)" },
+      title: { fontSize: "clamp(2.5rem, 5.5vw, 5rem)" },
+    },
     scale: "playful",
   },
   imageTreatment: "Bright image slots with rounded corners and simple caption support.",
