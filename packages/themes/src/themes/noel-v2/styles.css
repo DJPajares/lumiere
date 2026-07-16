@@ -17,7 +17,7 @@
 [data-theme-id="noel-v2"] {
   --noel-v2-burgundy: #59000f;
   --noel-v2-branch-berry-art: url("/themes/noel-v2/ornament/watercolor-branch-berry.webp");
-  --noel-v2-branch-pinecone-art: url("/themes/noel-v2/ornament/watercolor-branch-pinecone.webp");
+  --noel-v2-branch-pinecone-art: url("/themes/noel-v2/ornament/watercolor-branch-pinecone-red.webp");
   --noel-v2-branch-walnut-art: url("/themes/noel-v2/ornament/watercolor-branch-walnut.webp");
   --noel-v2-canopy-art: url("/themes/noel-v2/ornament/watercolor-canopy.webp");
   --noel-v2-card-border: #c9ae7d;
@@ -145,7 +145,7 @@
   aspect-ratio: 8 / 3;
   border: 0;
   border-radius: 0;
-  background: var(--noel-v2-branch-walnut-art) center / contain no-repeat;
+  background: var(--noel-v2-branch-pinecone-art) center / contain no-repeat;
   box-shadow: none;
   filter: saturate(0.8) contrast(0.94) drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
   opacity: 0.27;
@@ -166,7 +166,7 @@
   left: -7rem;
   width: min(48vw, 38rem);
   aspect-ratio: 8 / 3;
-  background-image: var(--noel-v2-branch-pinecone-art);
+  background-image: var(--noel-v2-branch-walnut-art);
   opacity: 0.15;
   transform: rotate(-8deg);
 }
