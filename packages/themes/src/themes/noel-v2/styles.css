@@ -39,17 +39,13 @@
 
 [data-theme-id="noel-v2"] .lumiere-invitation {
   background:
-    radial-gradient(
-      ellipse at 50% 0%,
+    radial-gradient(ellipse at 50% 0%,
       color-mix(in srgb, var(--surface) 62%, transparent),
-      transparent 38rem
-    ),
-    linear-gradient(
-      90deg,
+      transparent 38rem),
+    linear-gradient(90deg,
       color-mix(in srgb, var(--background) 92%, var(--surface-muted)),
       var(--background) 18% 82%,
-      color-mix(in srgb, var(--background) 92%, var(--surface-muted))
-    );
+      color-mix(in srgb, var(--background) 92%, var(--surface-muted)));
   font-size: 1.08rem;
   font-weight: 400;
   line-height: 1.65;
@@ -57,16 +53,12 @@
 
 [data-theme-id="noel-v2"] .lumiere-visual-layer__backdrop {
   background:
-    repeating-linear-gradient(
-      96deg,
+    repeating-linear-gradient(96deg,
       transparent 0 5.9rem,
-      color-mix(in srgb, var(--foreground) 2.2%, transparent) 5.95rem 6rem
-    ),
-    repeating-linear-gradient(
-      2deg,
+      color-mix(in srgb, var(--foreground) 2.2%, transparent) 5.95rem 6rem),
+    repeating-linear-gradient(2deg,
       transparent 0 4.4rem,
-      color-mix(in srgb, var(--foreground) 1.8%, transparent) 4.45rem 4.5rem
-    ),
+      color-mix(in srgb, var(--foreground) 1.8%, transparent) 4.45rem 4.5rem),
     var(--background);
 }
 
@@ -93,7 +85,7 @@
   border: 0;
   background-color: transparent;
   filter: none;
-  opacity: 1;
+  opacity: 0.68;
 }
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
@@ -123,16 +115,12 @@
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::before {
   background-image:
-    radial-gradient(
-      circle,
+    radial-gradient(circle,
       color-mix(in srgb, var(--noel-v2-snow) 86%, transparent) 0 2px,
-      transparent 2.8px
-    ),
-    radial-gradient(
-      circle,
+      transparent 2.8px),
+    radial-gradient(circle,
       color-mix(in srgb, var(--noel-v2-snow) 62%, transparent) 0 1.2px,
-      transparent 2px
-    );
+      transparent 2px);
   background-position:
     4rem -17rem,
     18rem -29rem;
@@ -159,14 +147,11 @@
   border-radius: 0;
   background: var(--noel-v2-branch-walnut-art) center / contain no-repeat;
   box-shadow: none;
-  filter: saturate(0.8) contrast(0.94)
-    drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
-  opacity: 0.34;
+  filter: saturate(0.8) contrast(0.94) drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
+  opacity: 0.27;
 }
 
-[data-theme-id="noel-v2"]
-  [data-ornament-set="botanical"]
-  .lumiere-ornament[data-ornament-position="primary"] {
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
   top: 7rem;
   right: -1rem;
   left: auto;
@@ -174,9 +159,7 @@
   transform: rotate(168deg);
 }
 
-[data-theme-id="noel-v2"]
-  [data-ornament-set="botanical"]
-  .lumiere-ornament[data-ornament-position="secondary"] {
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="secondary"] {
   top: auto;
   right: auto;
   bottom: -1.5rem;
@@ -184,13 +167,11 @@
   width: min(48vw, 38rem);
   aspect-ratio: 8 / 3;
   background-image: var(--noel-v2-branch-pinecone-art);
-  opacity: 0.2;
+  opacity: 0.15;
   transform: rotate(-8deg);
 }
 
-[data-theme-id="noel-v2"]
-  [data-ornament-set="botanical"]
-  .lumiere-ornament[data-ornament-position="tertiary"] {
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="tertiary"] {
   top: 44%;
   right: auto;
   bottom: auto;
@@ -198,14 +179,16 @@
   width: min(24vw, 18rem);
   aspect-ratio: 8 / 3;
   background-image: var(--noel-v2-branch-berry-art);
-  opacity: 0.14;
+  opacity: 0.1;
   transform: rotate(-9deg);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  [data-ornament-set="botanical"]
-  .lumiere-ornament {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] [data-ornament-set="botanical"] .lumiere-ornament {
   filter: saturate(0.62) brightness(0.78) contrast(1.02);
+}
+
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] [data-ornament-set="botanical"] .lumiere-ornaments {
+  opacity: 0.5;
 }
 
 [data-theme-id="noel-v2"] [data-theme-mode-control="seasonal"] button {
@@ -226,15 +209,13 @@
   padding-block: clamp(13rem, 18vw, 15rem) clamp(5rem, 9vw, 7rem);
   border: 0;
   background:
-    radial-gradient(
-      ellipse at 50% 22%,
+    radial-gradient(ellipse at 50% 22%,
       color-mix(in srgb, var(--surface) 56%, transparent),
-      transparent 34rem
-    ),
+      transparent 34rem),
     transparent;
 }
 
-[data-theme-id="noel-v2"] .lumiere-section--hero > div,
+[data-theme-id="noel-v2"] .lumiere-section--hero>div,
 [data-theme-id="noel-v2"] .lumiere-hero-copy {
   position: static;
 }
@@ -253,12 +234,12 @@
   text-align: center;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-copy > * {
+[data-theme-id="noel-v2"] .lumiere-hero-copy>* {
   position: relative;
   z-index: 2;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
+[data-theme-id="noel-v2"] .lumiere-hero-copy>.lumiere-noel-v2-decoration {
   position: absolute;
   z-index: 1;
   top: -2rem;
@@ -281,9 +262,7 @@
   filter: saturate(0.82) contrast(0.96);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  .lumiere-noel-v2-decoration
-  [data-decoration-position="top"] {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] .lumiere-noel-v2-decoration [data-decoration-position="top"] {
   filter: saturate(0.7) brightness(0.92) contrast(1.04);
 }
 
@@ -366,7 +345,7 @@
   box-shadow: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
+[data-theme-id="noel-v2"] .lumiere-hero-fact+.lumiere-hero-fact {
   border-left: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
 }
 
@@ -404,7 +383,7 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-noel-v2-folio > * {
+[data-theme-id="noel-v2"] .lumiere-noel-v2-folio>* {
   position: relative;
   z-index: 1;
 }
@@ -458,17 +437,14 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner > * {
+[data-theme-id="noel-v2"] .lumiere-section--framed .lumiere-section__inner>* {
   position: relative;
   z-index: 1;
 }
 
-[data-theme-id="noel-v2"]
-  :is(
-    .lumiere-detail-item,
-    .lumiere-profile-card,
-    [data-section-type="entourage"] .lumiere-section__body > div > div > div
-  ) {
+[data-theme-id="noel-v2"] :is(.lumiere-detail-item,
+  .lumiere-profile-card,
+  [data-section-type="entourage"] .lumiere-section__body > div > div > div) {
   border: 0;
   border-radius: 0;
   background: color-mix(in srgb, var(--surface) 56%, transparent);
@@ -549,7 +525,7 @@
   width: 100%;
 }
 
-[data-theme-id="noel-v2"] .lumiere-story-copy > h2 {
+[data-theme-id="noel-v2"] .lumiere-story-copy>h2 {
   max-width: none;
   margin-bottom: clamp(2rem, 5vw, 3.5rem);
   text-align: center;
@@ -592,7 +568,7 @@
   text-align: left;
 }
 
-[data-theme-id="noel-v2"] .lumiere-story-step > span {
+[data-theme-id="noel-v2"] .lumiere-story-step>span {
   display: none;
 }
 
@@ -675,7 +651,7 @@
   font-size: clamp(2.75rem, 5.4vw, 5rem);
 }
 
-[data-theme-id="noel-v2"] .lumiere-dress-code-header > p {
+[data-theme-id="noel-v2"] .lumiere-dress-code-header>p {
   max-width: 56rem;
   margin-inline: auto;
   color: color-mix(in srgb, var(--foreground) 76%, transparent);
@@ -798,13 +774,53 @@
   text-transform: uppercase;
 }
 
-[data-theme-id="noel-v2"]
-  :is(.lumiere-profile-layout, .lumiere-location-layout, .lumiere-rsvp-layout) {
+[data-theme-id="noel-v2"] :is(.lumiere-profile-layout, .lumiere-location-layout, .lumiere-rsvp-layout) {
   gap: clamp(2.25rem, 7vw, 7rem);
 }
 
-[data-theme-id="noel-v2"] .lumiere-profile-layout > h2 {
+[data-theme-id="noel-v2"] .lumiere-profile-layout>h2 {
   grid-column: 1 / -1;
+  color: var(--noel-v2-title);
+  font-size: clamp(2.35rem, 5vw, 4.25rem);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-card {
+  gap: clamp(0.85rem, 2vw, 1.25rem);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-copy {
+  color: var(--foreground);
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-copy h3 {
+  color: var(--foreground);
+  font-size: clamp(1.4rem, 2.4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-copy>p {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-1 {
+  color: color-mix(in srgb, var(--noel-v2-burgundy) 88%, var(--foreground));
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+[data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-2 {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  font-size: clamp(1.02rem, 2vw, 1.7rem);
+  line-height: 1.7;
+  font-style: italic;
 }
 
 [data-theme-id="noel-v2"] :is(.lumiere-section-image, .lumiere-map-preview) {
@@ -854,7 +870,7 @@
   content: none;
 }
 
-[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2 > * {
+[data-theme-id="noel-v2"] .lumiere-rsvp-card--noel-v2>* {
   position: relative;
   z-index: 1;
 }
@@ -877,15 +893,12 @@
   margin-inline: auto;
   background:
     radial-gradient(circle at center, var(--noel-v2-pine) 0 2px, transparent 2.5px),
-    linear-gradient(
-        90deg,
-        transparent,
-        var(--noel-v2-gold) 12% 45%,
-        transparent 45% 55%,
-        var(--noel-v2-gold) 55% 88%,
-        transparent
-      )
-      center / 100% 1px no-repeat;
+    linear-gradient(90deg,
+      transparent,
+      var(--noel-v2-gold) 12% 45%,
+      transparent 45% 55%,
+      var(--noel-v2-gold) 55% 88%,
+      transparent) center / 100% 1px no-repeat;
   content: "";
 }
 
@@ -905,7 +918,7 @@
   line-height: 1.75;
 }
 
-[data-theme-id="noel-v2"] .lumiere-guest-panel > div {
+[data-theme-id="noel-v2"] .lumiere-guest-panel>div {
   position: relative;
   overflow: hidden;
   border-color: var(--noel-v2-card-border);
@@ -918,29 +931,24 @@
   border-color: color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  :is(
-    .lumiere-section--framed .lumiere-section__inner,
-    .lumiere-detail-item,
-    .lumiere-profile-card,
-    .lumiere-date-panel,
-    .lumiere-map-card,
-    .lumiere-section-image,
-    .lumiere-map-preview,
-    .lumiere-rsvp-card--noel-v2,
-    .lumiere-guest-panel > div
-  ) {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-section--framed .lumiere-section__inner,
+  .lumiere-detail-item,
+  .lumiere-profile-card,
+  .lumiere-date-panel,
+  .lumiere-map-card,
+  .lumiere-section-image,
+  .lumiere-map-preview,
+  .lumiere-rsvp-card--noel-v2,
+  .lumiere-guest-panel > div) {
   border-color: var(--noel-v2-card-border);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div) {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div) {
   position: relative;
   overflow: hidden;
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::before {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::before {
   position: absolute;
   top: 0.65rem;
   right: -0.25rem;
@@ -953,8 +961,7 @@
   pointer-events: none;
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::after {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)::after {
   position: absolute;
   right: -0.25rem;
   bottom: 0.65rem;
@@ -968,14 +975,13 @@
   transform: scaleY(-1);
 }
 
-[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-  :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)
-  > * {
+[data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] :is(.lumiere-noel-v2-folio, .lumiere-rsvp-card--noel-v2, .lumiere-guest-panel > div)>* {
   position: relative;
   z-index: 1;
 }
 
 @media (max-width: 1023px) {
+
   [data-theme-id="noel-v2"] .lumiere-date-layout,
   [data-theme-id="noel-v2"] .lumiere-profile-layout,
   [data-theme-id="noel-v2"] .lumiere-location-layout,
@@ -1033,14 +1039,14 @@
 
 @media (max-width: 639px) {
   [data-theme-id="noel-v2"] .lumiere-invitation {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
 
   [data-theme-id="noel-v2"] .lumiere-section--hero {
     padding: 11.5rem 1.5rem 4.75rem;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
+  [data-theme-id="noel-v2"] .lumiere-hero-copy>.lumiere-noel-v2-decoration {
     top: -1.75rem;
     width: min(calc(100vw - 2.5rem), 20rem);
   }
@@ -1058,7 +1064,7 @@
     min-height: 4.25rem;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
+  [data-theme-id="noel-v2"] .lumiere-hero-fact+.lumiere-hero-fact {
     border-top: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
     border-left: 0;
   }
@@ -1075,38 +1081,57 @@
     inset: 0;
     border: 0;
     background-color: transparent;
-    opacity: 1;
+    opacity: 0.58;
   }
 
-  [data-theme-id="noel-v2"]
-    [data-ornament-set="botanical"]
-    .lumiere-ornament[data-ornament-position="primary"] {
+  [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"] [data-ornament-set="botanical"] .lumiere-ornaments {
+    opacity: 0.42;
+  }
+
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="primary"] {
     top: 8rem;
     right: -1rem;
     left: auto;
     width: 16rem;
-    opacity: 0.3;
+    opacity: 0.22;
   }
 
-  [data-theme-id="noel-v2"]
-    [data-ornament-set="botanical"]
-    .lumiere-ornament[data-ornament-position="secondary"] {
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="secondary"] {
     top: auto;
     right: auto;
     bottom: -1.25rem;
     left: -7rem;
     width: 24rem;
-    opacity: 0.18;
+    opacity: 0.12;
   }
 
-  [data-theme-id="noel-v2"]
-    [data-ornament-set="botanical"]
-    .lumiere-ornament[data-ornament-position="tertiary"] {
+  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament[data-ornament-position="tertiary"] {
     top: 47%;
     left: -6rem;
     display: block;
     width: 14rem;
-    opacity: 0.11;
+    opacity: 0.07;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-profile-layout>h2 {
+    font-size: clamp(2.2rem, 10vw, 3.35rem);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-profile-card {
+    padding: 1.1rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-profile-copy h3 {
+    font-size: clamp(1.45rem, 9vw, 2.5rem);
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-1 {
+    font-size: 1rem;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-2 {
+    font-size: 1.3rem;
+    line-height: 1.5;
   }
 
   [data-theme-id="noel-v2"] .lumiere-section__body h2 {
@@ -1135,12 +1160,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child {
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy>div:first-child {
     justify-items: center;
     text-align: center;
   }
 
-  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child > p {
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy>div:first-child>p {
     max-width: 30rem;
     margin-inline: auto;
   }
@@ -1165,6 +1190,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   [data-theme-id="noel-v2"] .lumiere-noel-v2-decoration,
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament {
     animation: none !important;
