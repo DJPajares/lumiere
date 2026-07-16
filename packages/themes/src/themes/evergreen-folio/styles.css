@@ -554,6 +554,10 @@
   text-align: center;
 }
 
+[data-theme-id="evergreen-folio"] .lumiere-countdown {
+  grid-column: 1;
+}
+
 [data-theme-id="evergreen-folio"] .lumiere-date-layout h2,
 [data-theme-id="evergreen-folio"] .lumiere-outro-layout h2 {
   max-width: 12ch;
