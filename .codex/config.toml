@@ -15,3 +15,7 @@ command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
 env_vars = ["CONTEXT7_API_KEY"]
 startup_timeout_sec = 30
+
+[mcp_servers.21st]
+url = "https://21st.dev/api/mcp"
+bearer_token_env_var = "API_KEY_21ST"
