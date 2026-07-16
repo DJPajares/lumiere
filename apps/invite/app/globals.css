@@ -239,6 +239,64 @@ main[data-theme-id]
   text-transform: var(--lumiere-type-text-transform);
 }
 
+main[data-theme-id] .lumiere-theme-mode-control button {
+  --mode-toggle-icon-column: 1.75rem;
+  --mode-toggle-label-width: 12ch;
+  width: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
+  min-width: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
+  height: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
+  min-height: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
+  grid-template-columns: var(--mode-toggle-icon-column) 0fr;
+  padding: 0.5rem;
+  overflow: hidden;
+  opacity: 0.58;
+  transition:
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    grid-template-columns 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    padding 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms ease;
+}
+
+main[data-theme-id] .lumiere-theme-mode-control__label {
+  display: block;
+  max-width: 0;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-0.35rem);
+  transition:
+    max-width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :active) {
+  width: min(
+    calc(var(--mode-toggle-icon-column) + 0.5rem + var(--mode-toggle-label-width) + 1.5rem + 2px),
+    calc(100vw - 2rem)
+  );
+  min-width: 0;
+  grid-template-columns: var(--mode-toggle-icon-column) minmax(0, 1fr);
+  padding-inline: 0.75rem;
+  opacity: 1;
+}
+
+main[data-theme-id]
+  .lumiere-theme-mode-control
+  button:is(:hover, :focus, :active)
+  .lumiere-theme-mode-control__label {
+  max-width: var(--mode-toggle-label-width);
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :active) {
+  transform: translateY(-1px);
+}
+
 .lumiere-section {
   position: relative;
 }
@@ -1030,6 +1088,12 @@ main[data-theme-id]
 
   .lumiere-ornaments {
     opacity: 0.2;
+  }
+
+  .lumiere-theme-mode-control button,
+  .lumiere-theme-mode-control__label {
+    transition: none !important;
+    transform: none !important;
   }
 }
 

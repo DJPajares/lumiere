@@ -2,6 +2,7 @@
 
 import type { ThemeModeTogglePresentation } from "@lumiere/themes";
 import type { ThemeMode } from "@lumiere/types";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type ResolvedThemeMode = "dark" | "light";
@@ -109,6 +110,13 @@ export function InviteThemeModeControl({
   const currentLabel =
     resolvedMode === "dark" ? presentation.labels.dark : presentation.labels.light;
   const nextLabel = nextMode === "dark" ? presentation.labels.dark : presentation.labels.light;
+  const longestLabelLength = Math.max(
+    presentation.labels.dark.length,
+    presentation.labels.light.length,
+  );
+  const modeToggleStyle = {
+    "--mode-toggle-label-width": `${longestLabelLength + 1}ch`,
+  } as CSSProperties;
   const placementClass = presentation.placement === "top-end" ? "right-4" : "left-4";
   const verticalPlacementClass = hasAmbientAudio ? "top-20 sm:top-4" : "top-4";
 
@@ -120,30 +128,32 @@ export function InviteThemeModeControl({
         ref={scriptRef}
       />
       <div
-        className={`fixed z-50 max-w-[calc(100vw-2rem)] ${placementClass} ${verticalPlacementClass}`}
+        className={`lumiere-theme-mode-control fixed z-50 max-w-[calc(100vw-2rem)] ${placementClass} ${verticalPlacementClass}`}
         data-theme-mode-control={presentation.style}
       >
         <button
           aria-label={`${presentation.labels.control}: switch to ${nextLabel}`}
           aria-pressed={resolvedMode === "dark"}
           className={`lumiere-type-control grid min-h-11 grid-cols-[1.75rem_1fr] items-center gap-2 rounded-full border px-3 py-2 text-left text-[var(--foreground)] backdrop-blur transition-[background-color,border-color,transform] hover:bg-[var(--surface-muted)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none ${controlStyles[presentation.style]}`}
-          onClick={() => {
+          onClick={(event) => {
             const root = buttonRef.current?.closest<HTMLElement>("main[data-theme-id]") ?? null;
 
             writeStoredMode(storageKey, nextMode);
             applyThemeMode(root, nextMode, variables);
             setResolvedMode(nextMode);
+            event.currentTarget.blur();
           }}
           ref={buttonRef}
+          style={modeToggleStyle}
           type="button"
         >
           <span
             aria-hidden="true"
-            className="lumiere-type-label relative grid size-7 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--background)] text-[var(--accent-strong)]"
+            className="lumiere-type-control-icon relative grid size-7 place-items-center rounded-full bg-[color-mix(in_srgb,var(--background)_72%,transparent)] text-[var(--accent-strong)]"
           >
             {resolvedMode === "dark" ? "☾" : "☼"}
           </span>
-          <span aria-live="polite" className="truncate">
+          <span aria-live="polite" className="lumiere-theme-mode-control__label truncate">
             {currentLabel}
           </span>
         </button>
