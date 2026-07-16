@@ -101,6 +101,10 @@ function InvitationFrame({
   const motionIntensity = resolveInviteMotionIntensity(visualSystem.motionProfile);
   const ambientAudio = resolveAmbientAudioConfig(invite, theme);
   const backdropImage = introduction ? readAsset(introduction.content.coverImage) : undefined;
+  const introAnimation = isJsonObject(introduction?.settings.introAnimation)
+    ? introduction.settings.introAnimation
+    : undefined;
+  const introAnimationEnabled = readBoolean(introAnimation?.enabled, true);
 
   return (
     <InviteShell
@@ -110,10 +114,14 @@ function InvitationFrame({
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
-      <InviteIntro
-        eyebrow={`${formatEventType(invite.event.eventType)} invitation`}
-        title={invite.event.title}
-      />
+      {introAnimationEnabled ? (
+        <InviteIntro
+          description={readString(introAnimation?.description)}
+          eyebrow={readString(introAnimation?.eyebrow)}
+          subtitle={readString(introAnimation?.subtitle)}
+          title={readString(introAnimation?.title) ?? invite.event.title}
+        />
+      ) : null}
       <article
         className="lumiere-invitation min-h-[100dvh]"
         data-composition-map={visualSystem.compositionMap}

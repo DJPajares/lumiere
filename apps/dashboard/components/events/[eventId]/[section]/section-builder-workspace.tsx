@@ -1301,11 +1301,80 @@ function SectionContentFields({ controller }: { controller: SectionFieldControll
 function IntroductionFields({ controller }: { controller: SectionFieldController }) {
   return (
     <div className="grid gap-5">
-      <TextField controller={controller} label="Title" path={["title"]} required scope="content" />
-      <TextField controller={controller} label="Subtitle" path={["subtitle"]} scope="content" />
-      <TextField controller={controller} label="Body" multiline path={["body"]} scope="content" />
+      <TextField
+        controller={controller}
+        description="The title shown in the invitation hero."
+        label="Title"
+        path={["title"]}
+        required
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        description="The supporting subtitle shown in the invitation hero."
+        label="Subtitle"
+        path={["subtitle"]}
+        scope="content"
+      />
+      <TextField
+        controller={controller}
+        description="Longer supporting copy for the invitation hero."
+        label="Body"
+        multiline
+        path={["body"]}
+        scope="content"
+      />
       <AssetField controller={controller} label="Cover image" path={["coverImage"]} />
+      <IntroAnimationFields controller={controller} />
     </div>
+  );
+}
+
+function IntroAnimationFields({ controller }: { controller: SectionFieldController }) {
+  return (
+    <fieldset className="grid gap-4 rounded-[var(--radius-md)] border border-[var(--accent)]/35 bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] p-4">
+      <legend className="px-1 text-sm font-semibold">Opening animation</legend>
+      <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+        This copy is independent from the hero content above. The selected theme controls the
+        animation design.
+      </p>
+      <CheckboxField
+        controller={controller}
+        defaultValue
+        label="Enable opening animation"
+        path={["introAnimation", "enabled"]}
+        scope="settings"
+      />
+      <TextField
+        controller={controller}
+        description="Optional short label above the animation title."
+        label="Animation eyebrow"
+        path={["introAnimation", "eyebrow"]}
+        scope="settings"
+      />
+      <TextField
+        controller={controller}
+        description="Optional override; defaults to the event title."
+        label="Animation title"
+        path={["introAnimation", "title"]}
+        scope="settings"
+      />
+      <TextField
+        controller={controller}
+        description="Optional supporting line shown below the animation title."
+        label="Animation subtitle"
+        path={["introAnimation", "subtitle"]}
+        scope="settings"
+      />
+      <TextField
+        controller={controller}
+        description="Optional longer copy for the opening animation."
+        label="Animation description"
+        multiline
+        path={["introAnimation", "description"]}
+        scope="settings"
+      />
+    </fieldset>
   );
 }
 
@@ -2140,6 +2209,7 @@ function SectionSettingsFields({ controller }: { controller: SectionFieldControl
 
 function TextField({
   controller,
+  description,
   label,
   multiline = false,
   path,
@@ -2148,6 +2218,7 @@ function TextField({
   type = "text",
 }: {
   controller: SectionFieldController;
+  description?: ReactNode;
   label: string;
   multiline?: boolean;
   path: JsonPath;
@@ -2167,6 +2238,7 @@ function TextField({
     return (
       <DashboardTextArea
         disabled={controller.disabled}
+        description={description}
         error={error}
         id={id}
         label={label}
@@ -2180,6 +2252,7 @@ function TextField({
   return (
     <DashboardTextInput
       disabled={controller.disabled}
+      description={description}
       error={error}
       id={id}
       label={label}
@@ -2303,12 +2376,14 @@ function SelectField({
 function CheckboxField({
   controller,
   defaultValue = false,
+  description,
   label,
   path,
   scope,
 }: {
   controller: SectionFieldController;
   defaultValue?: boolean;
+  description?: ReactNode;
   label: string;
   path: JsonPath;
   scope: FieldScope;
@@ -2324,6 +2399,7 @@ function CheckboxField({
     <DashboardCheckbox
       checked={value}
       disabled={controller.disabled}
+      description={description}
       id={id}
       label={label}
       onChange={(event) =>
@@ -3606,11 +3682,11 @@ export function parseSectionDrafts(
     return [
       {
         ...(section.id ? { id: section.id } : {}),
-        content: contentResult.data as JsonObject,
+        content: stripUndefinedJsonObject(contentResult.data),
         enabled: true,
         sectionKey: section.sectionKey,
         sectionType: section.sectionType,
-        settings: settingsResult.data as JsonObject,
+        settings: stripUndefinedJsonObject(settingsResult.data),
         sortOrder: index,
         visibility: section.visibility,
       },
@@ -3969,6 +4045,47 @@ function formatJsonText(value: unknown) {
     null,
     2,
   );
+}
+
+function stripUndefinedJsonObject(value: unknown): JsonObject {
+  const stripped = stripUndefinedJsonValue(value);
+
+  return isJsonObject(stripped) ? stripped : {};
+}
+
+function stripUndefinedJsonValue(value: unknown): JsonValue | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefinedJsonValue(item) ?? null);
+  }
+
+  if (isJsonObject(value)) {
+    const result: JsonObject = {};
+
+    Object.entries(value).forEach(([key, item]) => {
+      const stripped = stripUndefinedJsonValue(item);
+
+      if (stripped !== undefined) {
+        result[key] = stripped;
+      }
+    });
+
+    return result;
+  }
+
+  return undefined;
 }
 
 function formatIssues(issues: Array<{ message: string; path: readonly PropertyKey[] }>) {

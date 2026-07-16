@@ -1,4 +1,14 @@
-export function InviteIntro({ eyebrow, title }: { eyebrow: string; title: string }) {
+export function InviteIntro({
+  description,
+  eyebrow,
+  subtitle,
+  title,
+}: {
+  description?: string;
+  eyebrow?: string;
+  subtitle?: string;
+  title: string;
+}) {
   return (
     <div aria-hidden="true" className="lumiere-intro" data-invite-intro="page-load">
       <span className="lumiere-intro__field" />
@@ -11,8 +21,10 @@ export function InviteIntro({ eyebrow, title }: { eyebrow: string; title: string
       <div className="lumiere-intro__center">
         <div className="lumiere-intro__content">
           <span className="lumiere-intro__rule" />
-          <p className="lumiere-intro__eyebrow">{eyebrow}</p>
+          {eyebrow ? <p className="lumiere-intro__eyebrow">{eyebrow}</p> : null}
           <p className="lumiere-intro__title lumiere-display">{title}</p>
+          {subtitle ? <p className="lumiere-intro__subtitle">{subtitle}</p> : null}
+          {description ? <p className="lumiere-intro__description">{description}</p> : null}
         </div>
       </div>
     </div>

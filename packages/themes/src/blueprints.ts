@@ -499,6 +499,9 @@ function defaultSettings(sectionType: SectionType) {
   if (sectionType === "introduction") {
     return {
       density: "spacious",
+      introAnimation: {
+        enabled: true,
+      },
       layout: "editorial",
     };
   }

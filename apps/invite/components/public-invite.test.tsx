@@ -434,6 +434,7 @@ describe("public invite section renderers", () => {
     expect(html).toContain("openstreetmap.org/export/embed.html");
     expect(html).toContain("Garden portrait at golden hour");
     expect(html).toContain("Garden aisle at dusk");
+    expect(html).toContain("Dinner, dancing, and garden lights.");
     expect(html).toContain("First the quiet hello.");
     expect(html).toContain("Then a life gathered around one table.");
     expect(html).toContain("Together in 42 days");

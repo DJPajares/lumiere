@@ -2,12 +2,46 @@ import { sectionTypeSchema, type SectionType } from "@lumiere/types";
 import { z } from "zod";
 
 const nonEmptyString = z.string().trim().min(1);
-const optionalText = z
-  .string()
-  .trim()
-  .max(2000)
-  .optional()
-  .transform((value) => (value === "" ? undefined : value));
+const optionalText = z.preprocess(
+  (value) => (value === null ? undefined : value),
+  z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+);
+const optionalShortText = z.preprocess(
+  (value) => (value === null ? undefined : value),
+  z
+    .string()
+    .trim()
+    .max(240)
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+);
+const optionalEyebrow = z.preprocess(
+  (value) => (value === null ? undefined : value),
+  z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+);
+const optionalTitle = z.preprocess(
+  (value) => (value === null ? undefined : value),
+  z
+    .string()
+    .trim()
+    .max(160)
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+);
+const optionalBoolean = z.preprocess(
+  (value) => (value === null || value === "" ? undefined : value),
+  z.boolean().optional(),
+);
 
 const publicUrlSchema = z
   .string()
@@ -440,6 +474,17 @@ export const sectionContentSchemas = {
 
 export const sectionSettingsSchemas = {
   introduction: commonSettingsSchema.extend({
+    introAnimation: z.preprocess(
+      (value) =>
+        typeof value === "object" && value !== null && !Array.isArray(value) ? value : {},
+      z.object({
+        description: optionalText,
+        enabled: optionalBoolean.default(true),
+        eyebrow: optionalEyebrow,
+        subtitle: optionalShortText,
+        title: optionalTitle,
+      }),
+    ),
     layout: z.enum(["editorial", "split", "centered"]).default("editorial"),
   }),
   profile: commonSettingsSchema.extend({
@@ -502,7 +547,8 @@ const createSectionDefinition = (
 export const sectionDefinitions = {
   introduction: createSectionDefinition("introduction", {
     label: "Introduction",
-    description: "Opening moment with title, supporting copy, and optional cover image.",
+    description:
+      "Opening moment with hero copy, optional cover image, and independent intro animation settings.",
     defaultVisibility: "public",
     requiresGuestContext: false,
   }),
