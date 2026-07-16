@@ -4,9 +4,9 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.activity_events": {
+    "lumiere.activity_events": {
       "name": "activity_events",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -24,7 +24,7 @@
         "actor_type": {
           "name": "actor_type",
           "type": "activity_actor_type",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -37,7 +37,7 @@
         "activity_type": {
           "name": "activity_type",
           "type": "activity_type",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -105,6 +105,7 @@
           "name": "activity_events_event_id_events_id_fk",
           "tableFrom": "activity_events",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -117,9 +118,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_assets": {
+    "lumiere.event_assets": {
       "name": "event_assets",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -195,6 +196,7 @@
           "name": "event_assets_event_id_events_id_fk",
           "tableFrom": "event_assets",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -207,9 +209,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_managers": {
+    "lumiere.event_managers": {
       "name": "event_managers",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -233,7 +235,7 @@
         "role": {
           "name": "role",
           "type": "manager_role",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true,
           "default": "'viewer'"
@@ -304,6 +306,7 @@
           "name": "event_managers_event_id_events_id_fk",
           "tableFrom": "event_managers",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -313,6 +316,7 @@
           "name": "event_managers_user_id_users_id_fk",
           "tableFrom": "event_managers",
           "tableTo": "users",
+          "schemaTo": "lumiere",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -325,9 +329,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_publications": {
+    "lumiere.event_publications": {
       "name": "event_publications",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -344,7 +348,7 @@
         "theme_mode": {
           "name": "theme_mode",
           "type": "theme_mode",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -390,6 +394,7 @@
           "name": "event_publications_event_id_events_id_fk",
           "tableFrom": "event_publications",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -402,9 +407,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_rsvp_settings": {
+    "lumiere.event_rsvp_settings": {
       "name": "event_rsvp_settings",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -433,6 +438,7 @@
           "name": "event_rsvp_settings_event_id_events_id_fk",
           "tableFrom": "event_rsvp_settings",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -445,9 +451,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_section_contents": {
+    "lumiere.event_section_contents": {
       "name": "event_section_contents",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "event_section_id": {
           "name": "event_section_id",
@@ -476,6 +482,7 @@
           "name": "event_section_contents_event_section_id_event_sections_id_fk",
           "tableFrom": "event_section_contents",
           "tableTo": "event_sections",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_section_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -488,9 +495,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_sections": {
+    "lumiere.event_sections": {
       "name": "event_sections",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -508,7 +515,7 @@
         "section_type": {
           "name": "section_type",
           "type": "section_type",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -528,7 +535,7 @@
         "visibility": {
           "name": "visibility",
           "type": "section_visibility",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true,
           "default": "'public'"
@@ -611,6 +618,7 @@
           "name": "event_sections_event_id_events_id_fk",
           "tableFrom": "event_sections",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -623,9 +631,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_theme_settings": {
+    "lumiere.event_theme_settings": {
       "name": "event_theme_settings",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -642,7 +650,7 @@
         "theme_mode": {
           "name": "theme_mode",
           "type": "theme_mode",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true,
           "default": "'system'"
@@ -668,6 +676,7 @@
           "name": "event_theme_settings_event_id_events_id_fk",
           "tableFrom": "event_theme_settings",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -680,9 +689,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.events": {
+    "lumiere.events": {
       "name": "events",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -712,14 +721,14 @@
         "event_type": {
           "name": "event_type",
           "type": "event_type",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
         "status": {
           "name": "status",
           "type": "event_status",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true,
           "default": "'draft'"
@@ -834,6 +843,7 @@
           "name": "events_owner_user_id_users_id_fk",
           "tableFrom": "events",
           "tableTo": "users",
+          "schemaTo": "lumiere",
           "columnsFrom": ["owner_user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -846,9 +856,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.guest_groups": {
+    "lumiere.guest_groups": {
       "name": "guest_groups",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -903,7 +913,7 @@
         "status": {
           "name": "status",
           "type": "guest_group_status",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
@@ -1008,6 +1018,7 @@
           "name": "guest_groups_event_id_events_id_fk",
           "tableFrom": "guest_groups",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1020,9 +1031,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.notifications": {
+    "lumiere.notifications": {
       "name": "notifications",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -1046,7 +1057,7 @@
         "notification_type": {
           "name": "notification_type",
           "type": "notification_type",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -1132,6 +1143,7 @@
           "name": "notifications_event_id_events_id_fk",
           "tableFrom": "notifications",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1141,6 +1153,7 @@
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
           "tableTo": "users",
+          "schemaTo": "lumiere",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1153,9 +1166,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.rsvp_responses": {
+    "lumiere.rsvp_responses": {
       "name": "rsvp_responses",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -1179,7 +1192,7 @@
         "response_status": {
           "name": "response_status",
           "type": "rsvp_status",
-          "typeSchema": "public",
+          "typeSchema": "lumiere",
           "primaryKey": false,
           "notNull": true
         },
@@ -1283,6 +1296,7 @@
           "name": "rsvp_responses_event_id_events_id_fk",
           "tableFrom": "rsvp_responses",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1292,6 +1306,7 @@
           "name": "rsvp_responses_guest_group_id_guest_groups_id_fk",
           "tableFrom": "rsvp_responses",
           "tableTo": "guest_groups",
+          "schemaTo": "lumiere",
           "columnsFrom": ["guest_group_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1304,9 +1319,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.theme_registry_snapshots": {
+    "lumiere.theme_registry_snapshots": {
       "name": "theme_registry_snapshots",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -1376,6 +1391,7 @@
           "name": "theme_registry_snapshots_event_id_events_id_fk",
           "tableFrom": "theme_registry_snapshots",
           "tableTo": "events",
+          "schemaTo": "lumiere",
           "columnsFrom": ["event_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1388,9 +1404,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.users": {
+    "lumiere.users": {
       "name": "users",
-      "schema": "",
+      "schema": "lumiere",
       "columns": {
         "id": {
           "name": "id",
@@ -1473,14 +1489,14 @@
     }
   },
   "enums": {
-    "public.activity_actor_type": {
+    "lumiere.activity_actor_type": {
       "name": "activity_actor_type",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["manager", "guest", "system"]
     },
-    "public.activity_type": {
+    "lumiere.activity_type": {
       "name": "activity_type",
-      "schema": "public",
+      "schema": "lumiere",
       "values": [
         "event_created",
         "event_published",
@@ -1493,14 +1509,14 @@
         "notification_created"
       ]
     },
-    "public.event_status": {
+    "lumiere.event_status": {
       "name": "event_status",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["draft", "published", "archived"]
     },
-    "public.event_type": {
+    "lumiere.event_type": {
       "name": "event_type",
-      "schema": "public",
+      "schema": "lumiere",
       "values": [
         "wedding",
         "birthday",
@@ -1512,29 +1528,29 @@
         "other"
       ]
     },
-    "public.guest_group_status": {
+    "lumiere.guest_group_status": {
       "name": "guest_group_status",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["pending", "opened", "responded", "declined", "disabled"]
     },
-    "public.manager_role": {
+    "lumiere.manager_role": {
       "name": "manager_role",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["owner", "editor", "viewer"]
     },
-    "public.notification_type": {
+    "lumiere.notification_type": {
       "name": "notification_type",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["rsvp_submitted", "rsvp_updated", "guest_opened_invite", "system"]
     },
-    "public.rsvp_status": {
+    "lumiere.rsvp_status": {
       "name": "rsvp_status",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["attending", "not_attending", "maybe"]
     },
-    "public.section_type": {
+    "lumiere.section_type": {
       "name": "section_type",
-      "schema": "public",
+      "schema": "lumiere",
       "values": [
         "introduction",
         "profile",
@@ -1550,18 +1566,20 @@
         "custom"
       ]
     },
-    "public.section_visibility": {
+    "lumiere.section_visibility": {
       "name": "section_visibility",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["public", "guest_only", "hidden"]
     },
-    "public.theme_mode": {
+    "lumiere.theme_mode": {
       "name": "theme_mode",
-      "schema": "public",
+      "schema": "lumiere",
       "values": ["light", "dark", "system", "toggleable"]
     }
   },
-  "schemas": {},
+  "schemas": {
+    "lumiere": "lumiere"
+  },
   "sequences": {},
   "roles": {},
   "policies": {},

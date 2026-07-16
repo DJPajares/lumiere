@@ -1,3 +1,4 @@
+SET search_path TO "lumiere", "public";--> statement-breakpoint
 CREATE TABLE "event_publications" (
 	"event_id" uuid PRIMARY KEY NOT NULL,
 	"selected_theme_id" varchar(120) NOT NULL,
@@ -29,10 +30,10 @@ CREATE TABLE "event_theme_settings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "event_publications" ADD CONSTRAINT "event_publications_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_rsvp_settings" ADD CONSTRAINT "event_rsvp_settings_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_section_contents" ADD CONSTRAINT "event_section_contents_event_section_id_event_sections_id_fk" FOREIGN KEY ("event_section_id") REFERENCES "public"."event_sections"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_theme_settings" ADD CONSTRAINT "event_theme_settings_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_publications" ADD CONSTRAINT "event_publications_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_rsvp_settings" ADD CONSTRAINT "event_rsvp_settings_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_section_contents" ADD CONSTRAINT "event_section_contents_event_section_id_event_sections_id_fk" FOREIGN KEY ("event_section_id") REFERENCES "lumiere"."event_sections"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_theme_settings" ADD CONSTRAINT "event_theme_settings_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 INSERT INTO "event_theme_settings" (
 	"event_id",
 	"selected_theme_id",

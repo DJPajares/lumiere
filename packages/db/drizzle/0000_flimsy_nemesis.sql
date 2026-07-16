@@ -1,15 +1,16 @@
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";--> statement-breakpoint
-CREATE TYPE "public"."activity_actor_type" AS ENUM('manager', 'guest', 'system');--> statement-breakpoint
-CREATE TYPE "public"."activity_type" AS ENUM('event_created', 'event_published', 'section_updated', 'theme_updated', 'guest_group_created', 'guest_invite_opened', 'rsvp_submitted', 'rsvp_updated', 'notification_created');--> statement-breakpoint
-CREATE TYPE "public"."event_status" AS ENUM('draft', 'published', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."event_type" AS ENUM('wedding', 'birthday', 'kids_party', 'holiday', 'dinner', 'launch', 'private_event', 'other');--> statement-breakpoint
-CREATE TYPE "public"."guest_group_status" AS ENUM('pending', 'opened', 'responded', 'declined', 'disabled');--> statement-breakpoint
-CREATE TYPE "public"."manager_role" AS ENUM('owner', 'editor', 'viewer');--> statement-breakpoint
-CREATE TYPE "public"."notification_type" AS ENUM('rsvp_submitted', 'rsvp_updated', 'guest_opened_invite', 'system');--> statement-breakpoint
-CREATE TYPE "public"."rsvp_status" AS ENUM('attending', 'not_attending', 'maybe');--> statement-breakpoint
-CREATE TYPE "public"."section_type" AS ENUM('introduction', 'profile', 'date', 'story', 'details', 'entourage', 'dress_code', 'location', 'gallery', 'rsvp', 'outro', 'custom');--> statement-breakpoint
-CREATE TYPE "public"."section_visibility" AS ENUM('public', 'guest_only', 'hidden');--> statement-breakpoint
-CREATE TYPE "public"."theme_mode" AS ENUM('light', 'dark', 'system', 'toggleable');--> statement-breakpoint
+SET search_path TO "lumiere", "public";--> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "public";--> statement-breakpoint
+CREATE TYPE "lumiere"."activity_actor_type" AS ENUM('manager', 'guest', 'system');--> statement-breakpoint
+CREATE TYPE "lumiere"."activity_type" AS ENUM('event_created', 'event_published', 'section_updated', 'theme_updated', 'guest_group_created', 'guest_invite_opened', 'rsvp_submitted', 'rsvp_updated', 'notification_created');--> statement-breakpoint
+CREATE TYPE "lumiere"."event_status" AS ENUM('draft', 'published', 'archived');--> statement-breakpoint
+CREATE TYPE "lumiere"."event_type" AS ENUM('wedding', 'birthday', 'kids_party', 'holiday', 'dinner', 'launch', 'private_event', 'other');--> statement-breakpoint
+CREATE TYPE "lumiere"."guest_group_status" AS ENUM('pending', 'opened', 'responded', 'declined', 'disabled');--> statement-breakpoint
+CREATE TYPE "lumiere"."manager_role" AS ENUM('owner', 'editor', 'viewer');--> statement-breakpoint
+CREATE TYPE "lumiere"."notification_type" AS ENUM('rsvp_submitted', 'rsvp_updated', 'guest_opened_invite', 'system');--> statement-breakpoint
+CREATE TYPE "lumiere"."rsvp_status" AS ENUM('attending', 'not_attending', 'maybe');--> statement-breakpoint
+CREATE TYPE "lumiere"."section_type" AS ENUM('introduction', 'profile', 'date', 'story', 'details', 'entourage', 'dress_code', 'location', 'gallery', 'rsvp', 'outro', 'custom');--> statement-breakpoint
+CREATE TYPE "lumiere"."section_visibility" AS ENUM('public', 'guest_only', 'hidden');--> statement-breakpoint
+CREATE TYPE "lumiere"."theme_mode" AS ENUM('light', 'dark', 'system', 'toggleable');--> statement-breakpoint
 CREATE TABLE "activity_events" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"event_id" uuid NOT NULL,
@@ -132,18 +133,18 @@ CREATE TABLE "users" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "activity_events" ADD CONSTRAINT "activity_events_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_assets" ADD CONSTRAINT "event_assets_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_managers" ADD CONSTRAINT "event_managers_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_managers" ADD CONSTRAINT "event_managers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "event_sections" ADD CONSTRAINT "event_sections_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "events" ADD CONSTRAINT "events_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "guest_groups" ADD CONSTRAINT "guest_groups_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "rsvp_responses" ADD CONSTRAINT "rsvp_responses_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "rsvp_responses" ADD CONSTRAINT "rsvp_responses_guest_group_id_guest_groups_id_fk" FOREIGN KEY ("guest_group_id") REFERENCES "public"."guest_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "theme_registry_snapshots" ADD CONSTRAINT "theme_registry_snapshots_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_events" ADD CONSTRAINT "activity_events_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_assets" ADD CONSTRAINT "event_assets_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_managers" ADD CONSTRAINT "event_managers_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_managers" ADD CONSTRAINT "event_managers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "lumiere"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_sections" ADD CONSTRAINT "event_sections_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" ADD CONSTRAINT "events_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "lumiere"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "guest_groups" ADD CONSTRAINT "guest_groups_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "lumiere"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rsvp_responses" ADD CONSTRAINT "rsvp_responses_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rsvp_responses" ADD CONSTRAINT "rsvp_responses_guest_group_id_guest_groups_id_fk" FOREIGN KEY ("guest_group_id") REFERENCES "lumiere"."guest_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "theme_registry_snapshots" ADD CONSTRAINT "theme_registry_snapshots_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "lumiere"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "activity_events_event_created_at_idx" ON "activity_events" USING btree ("event_id","created_at");--> statement-breakpoint
 CREATE INDEX "activity_events_event_type_idx" ON "activity_events" USING btree ("event_id","activity_type");--> statement-breakpoint
 CREATE INDEX "event_assets_event_type_idx" ON "event_assets" USING btree ("event_id","asset_type");--> statement-breakpoint

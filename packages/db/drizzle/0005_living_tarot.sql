@@ -1,3 +1,4 @@
+SET search_path TO "lumiere", "public";--> statement-breakpoint
 ALTER TABLE "event_publications" ALTER COLUMN "rsvp_settings_json" SET DEFAULT '{"collectGuestMessage": true, "collectGuestNames": true}'::jsonb;--> statement-breakpoint
 ALTER TABLE "event_rsvp_settings" ALTER COLUMN "settings_json" SET DEFAULT '{"collectGuestMessage": true, "collectGuestNames": true}'::jsonb;--> statement-breakpoint
 UPDATE "event_rsvp_settings"

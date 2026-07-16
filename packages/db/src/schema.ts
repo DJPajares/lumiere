@@ -19,14 +19,15 @@ import {
   index,
   integer,
   jsonb,
-  pgEnum,
-  pgTable,
+  pgSchema,
   text,
   timestamp,
   uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+
+export const lumiereSchema = pgSchema("lumiere");
 
 type JsonObject = Record<string, unknown>;
 
@@ -43,29 +44,50 @@ const createdAtColumn = () =>
 const updatedAtColumn = () =>
   timestamp("updated_at", { mode: "string", withTimezone: true }).notNull().defaultNow();
 
-export const eventStatusEnum = pgEnum("event_status", pgEnumValues(eventStatusSchema.options));
-export const eventTypeEnum = pgEnum("event_type", pgEnumValues(eventTypeSchema.options));
-export const themeModeEnum = pgEnum("theme_mode", pgEnumValues(themeModeSchema.options));
-export const sectionVisibilityEnum = pgEnum(
+export const eventStatusEnum = lumiereSchema.enum(
+  "event_status",
+  pgEnumValues(eventStatusSchema.options),
+);
+export const eventTypeEnum = lumiereSchema.enum(
+  "event_type",
+  pgEnumValues(eventTypeSchema.options),
+);
+export const themeModeEnum = lumiereSchema.enum(
+  "theme_mode",
+  pgEnumValues(themeModeSchema.options),
+);
+export const sectionVisibilityEnum = lumiereSchema.enum(
   "section_visibility",
   pgEnumValues(sectionVisibilitySchema.options),
 );
-export const rsvpStatusEnum = pgEnum("rsvp_status", pgEnumValues(rsvpStatusSchema.options));
-export const managerRoleEnum = pgEnum("manager_role", pgEnumValues(managerRoleSchema.options));
-export const guestGroupStatusEnum = pgEnum(
+export const rsvpStatusEnum = lumiereSchema.enum(
+  "rsvp_status",
+  pgEnumValues(rsvpStatusSchema.options),
+);
+export const managerRoleEnum = lumiereSchema.enum(
+  "manager_role",
+  pgEnumValues(managerRoleSchema.options),
+);
+export const guestGroupStatusEnum = lumiereSchema.enum(
   "guest_group_status",
   pgEnumValues(guestGroupStatusSchema.options),
 );
-export const activityActorTypeEnum = pgEnum(
+export const activityActorTypeEnum = lumiereSchema.enum(
   "activity_actor_type",
   pgEnumValues(activityActorTypeSchema.options),
 );
-export const activityTypeEnum = pgEnum("activity_type", pgEnumValues(activityTypeSchema.options));
-export const notificationTypeEnum = pgEnum(
+export const activityTypeEnum = lumiereSchema.enum(
+  "activity_type",
+  pgEnumValues(activityTypeSchema.options),
+);
+export const notificationTypeEnum = lumiereSchema.enum(
   "notification_type",
   pgEnumValues(notificationTypeSchema.options),
 );
-export const sectionTypeEnum = pgEnum("section_type", pgEnumValues(sectionTypeSchema.options));
+export const sectionTypeEnum = lumiereSchema.enum(
+  "section_type",
+  pgEnumValues(sectionTypeSchema.options),
+);
 
 export const schemaIndexNames = {
   usersSupabaseUserId: "users_supabase_user_id_unique",
@@ -96,7 +118,7 @@ export const schemaIndexNames = {
   themeRegistrySnapshotsEventTheme: "theme_registry_snapshots_event_theme_idx",
 } as const;
 
-export const users = pgTable(
+export const users = lumiereSchema.table(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -112,7 +134,7 @@ export const users = pgTable(
   ],
 );
 
-export const events = pgTable(
+export const events = lumiereSchema.table(
   "events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -149,7 +171,7 @@ export const events = pgTable(
   ],
 );
 
-export const eventSlugAliases = pgTable(
+export const eventSlugAliases = lumiereSchema.table(
   "event_slug_aliases",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -165,7 +187,7 @@ export const eventSlugAliases = pgTable(
   ],
 );
 
-export const eventThemeSettings = pgTable("event_theme_settings", {
+export const eventThemeSettings = lumiereSchema.table("event_theme_settings", {
   eventId: uuid("event_id")
     .primaryKey()
     .references(() => events.id, { onDelete: "cascade" }),
@@ -175,7 +197,7 @@ export const eventThemeSettings = pgTable("event_theme_settings", {
   updatedAt: updatedAtColumn(),
 });
 
-export const eventRsvpSettings = pgTable("event_rsvp_settings", {
+export const eventRsvpSettings = lumiereSchema.table("event_rsvp_settings", {
   eventId: uuid("event_id")
     .primaryKey()
     .references(() => events.id, { onDelete: "cascade" }),
@@ -183,7 +205,7 @@ export const eventRsvpSettings = pgTable("event_rsvp_settings", {
   updatedAt: updatedAtColumn(),
 });
 
-export const eventManagers = pgTable(
+export const eventManagers = lumiereSchema.table(
   "event_managers",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -203,7 +225,7 @@ export const eventManagers = pgTable(
   ],
 );
 
-export const eventSections = pgTable(
+export const eventSections = lumiereSchema.table(
   "event_sections",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -225,7 +247,7 @@ export const eventSections = pgTable(
   ],
 );
 
-export const eventSectionContents = pgTable("event_section_contents", {
+export const eventSectionContents = lumiereSchema.table("event_section_contents", {
   eventSectionId: uuid("event_section_id")
     .primaryKey()
     .references(() => eventSections.id, { onDelete: "cascade" }),
@@ -233,7 +255,7 @@ export const eventSectionContents = pgTable("event_section_contents", {
   updatedAt: updatedAtColumn(),
 });
 
-export const eventPublications = pgTable("event_publications", {
+export const eventPublications = lumiereSchema.table("event_publications", {
   eventId: uuid("event_id")
     .primaryKey()
     .references(() => events.id, { onDelete: "cascade" }),
@@ -257,7 +279,7 @@ export const eventPublications = pgTable("event_publications", {
     .defaultNow(),
 });
 
-export const eventAssets = pgTable(
+export const eventAssets = lumiereSchema.table(
   "event_assets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -273,7 +295,7 @@ export const eventAssets = pgTable(
   (table) => [index(schemaIndexNames.eventAssetsEventType).on(table.eventId, table.assetType)],
 );
 
-export const guestGroups = pgTable(
+export const guestGroups = lumiereSchema.table(
   "guest_groups",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -301,7 +323,7 @@ export const guestGroups = pgTable(
   ],
 );
 
-export const rsvpResponses = pgTable(
+export const rsvpResponses = lumiereSchema.table(
   "rsvp_responses",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -328,7 +350,7 @@ export const rsvpResponses = pgTable(
   ],
 );
 
-export const activityEvents = pgTable(
+export const activityEvents = lumiereSchema.table(
   "activity_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -347,7 +369,7 @@ export const activityEvents = pgTable(
   ],
 );
 
-export const notifications = pgTable(
+export const notifications = lumiereSchema.table(
   "notifications",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -370,7 +392,7 @@ export const notifications = pgTable(
   ],
 );
 
-export const themeRegistrySnapshots = pgTable(
+export const themeRegistrySnapshots = lumiereSchema.table(
   "theme_registry_snapshots",
   {
     id: uuid("id").primaryKey().defaultRandom(),
