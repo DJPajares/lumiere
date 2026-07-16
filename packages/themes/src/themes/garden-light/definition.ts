@@ -157,8 +157,8 @@ export const gardenLightTheme = {
     display: "soft humanist serif",
     body: "open humanist sans",
     css: {
-      bodyFamily: 'Optima, Candara, "Noto Sans", ui-sans-serif, system-ui, sans-serif',
-      displayFamily: 'Charter, "Bitstream Charter", Georgia, ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Charter, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.14em",
     },
     scale: "playful",

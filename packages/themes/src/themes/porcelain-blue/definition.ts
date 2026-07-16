@@ -157,8 +157,8 @@ export const porcelainBlueTheme = {
     display: "soft old-style gallery serif",
     body: "precise neo-grotesk sans",
     css: {
-      bodyFamily: 'Inter, "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, sans-serif',
-      displayFamily: 'Optima, "Iowan Old Style", Palatino, ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Optima, Palatino, ui-serif, serif',
       eyebrowLetterSpacing: "0.22em",
     },
     scale: "editorial",

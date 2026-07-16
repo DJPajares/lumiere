@@ -158,9 +158,8 @@ export const editorialIvoryTheme = {
     display: "high-contrast editorial serif",
     body: "neutral sans",
     css: {
-      bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily: 'Iowan Old Style, Baskerville, "Times New Roman", ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.24em",
     },
     scale: "editorial",

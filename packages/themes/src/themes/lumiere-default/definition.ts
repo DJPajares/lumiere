@@ -114,13 +114,11 @@ export const lumiereDefaultTheme = {
   },
   radius: { sm: "0.5rem", md: "0.75rem", lg: "1rem" },
   typography: {
-    display: "system sans with refined tracking",
-    body: "system sans",
+    display: "warm variable editorial serif",
+    body: "clean variable grotesk",
     css: {
-      bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.16em",
     },
     scale: "restrained",

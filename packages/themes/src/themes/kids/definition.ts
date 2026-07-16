@@ -137,13 +137,12 @@ export const kidsTheme = {
   },
   radius: { sm: "0.75rem", md: "1rem", lg: "1.25rem" },
   typography: {
-    display: "rounded sans display",
-    body: "friendly sans",
+    display: "rounded variable display sans",
+    body: "friendly variable sans",
     css: {
-      bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      bodyFamily: '"Nunito Variable", Nunito, ui-rounded, ui-sans-serif, system-ui, sans-serif',
       displayFamily:
-        'ui-rounded, "Arial Rounded MT Bold", ui-sans-serif, system-ui, -apple-system, sans-serif',
+        '"Nunito Variable", Nunito, ui-rounded, "Arial Rounded MT Bold", ui-sans-serif, sans-serif',
       eyebrowLetterSpacing: "0.12em",
     },
     scale: "playful",

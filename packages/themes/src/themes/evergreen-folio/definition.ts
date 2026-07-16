@@ -161,8 +161,9 @@ export const evergreenFolioTheme = {
     display: "engraved high-contrast roman",
     body: "book serif",
     css: {
-      bodyFamily: 'Baskerville, "Baskerville Old Face", "Times New Roman", Times, ui-serif, serif',
-      displayFamily: '"Bodoni 72", Didot, "Bodoni MT", "Times New Roman", Times, ui-serif, serif',
+      bodyFamily: '"Cormorant Garamond", Garamond, Baskerville, "Times New Roman", ui-serif, serif',
+      displayFamily:
+        '"Cormorant Garamond", Garamond, "Bodoni 72", Didot, "Times New Roman", ui-serif, serif',
       eyebrowLetterSpacing: "0.2em",
     },
     scale: "editorial",

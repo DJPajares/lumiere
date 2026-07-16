@@ -174,12 +174,11 @@ export const premiumTheme = {
   },
   radius: { sm: "0.375rem", md: "0.625rem", lg: "0.875rem" },
   typography: {
-    display: "editorial display serif when selected by theme renderer",
-    body: "legible sans",
+    display: "luminous variable editorial serif",
+    body: "tailored variable sans",
     css: {
-      bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.22em",
     },
     scale: "editorial",

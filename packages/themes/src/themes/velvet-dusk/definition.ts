@@ -157,8 +157,8 @@ export const velvetDuskTheme = {
     display: "dramatic transitional serif",
     body: "quiet humanist sans",
     css: {
-      bodyFamily: 'Avenir, "Gill Sans", ui-sans-serif, system-ui, sans-serif',
-      displayFamily: '"Bodoni 72", Didot, Baskerville, ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Cormorant Garamond", Garamond, "Bodoni 72", Didot, ui-serif, serif',
       eyebrowLetterSpacing: "0.3em",
     },
     scale: "editorial",

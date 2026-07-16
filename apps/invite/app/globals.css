@@ -1,3 +1,6 @@
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/nunito";
 @import "tailwindcss";
 @import "@lumiere/themes/styles.css";
 @source "../../../packages/themes/src";
@@ -63,6 +66,151 @@ body {
 
 .lumiere-display {
   font-family: var(--font-display), serif;
+}
+
+.lumiere-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  color: var(--foreground);
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 34rem
+    ),
+    var(--background);
+  pointer-events: auto;
+  will-change: opacity;
+  animation: lumiere-intro-dismiss 2.8s ease both;
+}
+
+.lumiere-intro::before,
+.lumiere-intro::after {
+  position: absolute;
+  inset-inline: clamp(1.25rem, 5vw, 5rem);
+  height: 1px;
+  background: color-mix(in srgb, var(--border) 72%, transparent);
+  content: "";
+}
+
+.lumiere-intro::before {
+  top: clamp(1.25rem, 5vw, 4rem);
+}
+
+.lumiere-intro::after {
+  bottom: clamp(1.25rem, 5vw, 4rem);
+}
+
+.lumiere-intro__content {
+  display: grid;
+  width: min(86vw, 58rem);
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+  will-change: opacity, transform;
+  animation: lumiere-intro-content 2.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lumiere-intro__rule {
+  width: min(6rem, 24vw);
+  height: 1px;
+  background: var(--accent);
+  transform-origin: center;
+  animation: lumiere-intro-rule 2.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lumiere-intro__eyebrow {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+.lumiere-intro__title {
+  max-width: 14ch;
+  margin: 0;
+  font-size: clamp(2.8rem, 8vw, 7rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+@keyframes lumiere-intro-dismiss {
+  0%,
+  72% {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@keyframes lumiere-intro-content {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0) scale(0.985);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate3d(0, -0.2rem, 0) scale(1.008);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -0.35rem, 0) scale(1.012);
+  }
+}
+
+@keyframes lumiere-intro-rule {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  18% {
+    opacity: 1;
+    transform: scaleX(0.85);
+  }
+
+  72% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleX(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumiere-intro {
+    display: none;
+    animation: none;
+  }
+}
+
+@media print {
+  .lumiere-intro {
+    display: none;
+  }
 }
 
 .lumiere-section__eyebrow {

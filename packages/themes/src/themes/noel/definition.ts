@@ -160,10 +160,8 @@ export const noelTheme = {
     display: "old-style winter serif",
     body: "quiet humanist sans",
     css: {
-      bodyFamily:
-        '"Avenir Next", Avenir, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily:
-        '"Iowan Old Style", "Palatino Linotype", Palatino, Baskerville, Georgia, ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Fraunces Variable", Fraunces, Georgia, ui-serif, serif',
       eyebrowLetterSpacing: "0.24em",
     },
     scale: "editorial",

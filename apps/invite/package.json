@@ -11,6 +11,9 @@
     "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/manrope": "^5.2.8",
+    "@fontsource-variable/nunito": "^5.2.7",
     "@lumiere/api-client": "workspace:*",
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",

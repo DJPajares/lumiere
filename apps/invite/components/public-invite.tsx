@@ -22,6 +22,7 @@ import type {
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
 import { EventCountdown } from "./event-countdown";
 import { InviteImage } from "./invite-image";
+import { InviteIntro } from "./invite-intro";
 import { resolveInviteMotionIntensity } from "./invite-motion-config";
 import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
 import { InviteMotionRuntime } from "./invite-motion-runtime";
@@ -109,6 +110,10 @@ function InvitationFrame({
       mode={invite.themeMode}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
+      <InviteIntro
+        eyebrow={`${formatEventType(invite.event.eventType)} invitation`}
+        title={invite.event.title}
+      />
       <article
         className="lumiere-invitation min-h-[100dvh]"
         data-composition-map={visualSystem.compositionMap}

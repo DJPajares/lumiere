@@ -162,8 +162,8 @@ export const celestialGoldTheme = {
     display: "luminous high-contrast serif",
     body: "clean geometric sans",
     css: {
-      bodyFamily: "Avenir, Montserrat, ui-sans-serif, system-ui, sans-serif",
-      displayFamily: 'Didot, "Bodoni 72", Baskerville, ui-serif, serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Cormorant Garamond", Garamond, Didot, Baskerville, ui-serif, serif',
       eyebrowLetterSpacing: "0.28em",
     },
     scale: "editorial",

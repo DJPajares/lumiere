@@ -154,12 +154,11 @@ export const modernMinimalTheme = {
   },
   radius: { sm: "0", md: "0.125rem", lg: "0.25rem" },
   typography: {
-    display: "modern grotesk sans",
-    body: "neutral system sans",
+    display: "architectural variable grotesk",
+    body: "neutral variable sans",
     css: {
-      bodyFamily:
-        'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      displayFamily: '"Helvetica Neue", Helvetica, Arial, ui-sans-serif, sans-serif',
+      bodyFamily: '"Manrope Variable", Manrope, ui-sans-serif, system-ui, sans-serif',
+      displayFamily: '"Manrope Variable", Manrope, "Helvetica Neue", ui-sans-serif, sans-serif',
       eyebrowLetterSpacing: "0.2em",
     },
     scale: "restrained",
