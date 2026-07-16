@@ -25,6 +25,22 @@
         "PORT"
       ]
     },
+    "@lumiere/config#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@lumiere/db#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@lumiere/themes#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@lumiere/types#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

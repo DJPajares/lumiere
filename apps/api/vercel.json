@@ -6,7 +6,7 @@
   "buildCommand": "cd ../.. && pnpm turbo build --filter=@lumiere/api",
   "functions": {
     "api/[[...route]].ts": {
-      "includeFiles": "../../packages/{config,db,themes,types}/**/*",
+      "includeFiles": "../../packages/{config,db,themes,types}/{package.json,src/**/*}",
       "maxDuration": 30
     }
   },
