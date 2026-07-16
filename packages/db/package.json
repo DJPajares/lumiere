@@ -2,7 +2,6 @@
   "name": "@lumiere/db",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
