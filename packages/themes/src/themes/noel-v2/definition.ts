@@ -89,7 +89,7 @@ export const noelV2Theme = {
       mood: "Quiet chamber strings or acoustic carols, always started and stopped by the guest.",
     },
     backgroundTreatment:
-      "Warm #faf0e6 linen by day and deep evergreen paper by night, framed by a persistent straight-edge pine, holly, berry, and pine-cone watercolor perimeter.",
+      "Warm #faf0e6 linen by day and deep evergreen paper by night, with different straight watercolor branch variants floating at the top-right, lower-left, and middle edge rather than bending into a border.",
     effects: noelV2Effects,
     visualSystem: {
       cardStackPolicy:
@@ -160,7 +160,7 @@ export const noelV2Theme = {
     fontPairing: { body: "Cormorant Garamond book", display: "Cormorant Garamond display" },
     motionLevel: "calm",
     ornamentStrategy:
-      "One original watercolor canopy plus a fixed Evergreen Folio watercolor postcard perimeter; no glitter, snowfall, or repeated section boughs.",
+      "One original watercolor canopy plus separate straight pinecone, walnut, and berry branches in the sparse floating-bough rhythm of Noel; no bent corners, glitter, snowfall, or continuous perimeter.",
     rendererSlots: createRendererSlots({ specialized: allInviteSections }),
   },
   dashboardPreview: {

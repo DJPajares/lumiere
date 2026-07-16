@@ -665,7 +665,7 @@ export const themeTemplateSpecs = {
   "noel-v2": createExpansionThemeTemplateSpec("noel-v2", {
     moodBoardNotes: [
       "Warm #faf0e6 linen paper, Cormorant Garamond, burgundy titles, antique-gold rules, and deep evergreen ink.",
-      "An original watercolor canopy introduces the invitation while straight pine, holly, berry, and pine-cone watercolors form a persistent postcard perimeter.",
+      "An original watercolor canopy introduces the invitation while distinct straight pinecone, walnut, and berry watercolor branches float at Noel-style viewport positions.",
       "Alternating story chapters, circular attire swatches, and a full-height typographic closing create a sophisticated Christmas wedding rhythm.",
     ],
     antiSlopConstraints: [

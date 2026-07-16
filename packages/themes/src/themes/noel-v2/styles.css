@@ -16,11 +16,11 @@
 
 [data-theme-id="noel-v2"] {
   --noel-v2-burgundy: #59000f;
+  --noel-v2-branch-berry-art: url("/themes/noel-v2/ornament/watercolor-branch-berry.webp");
+  --noel-v2-branch-pinecone-art: url("/themes/noel-v2/ornament/watercolor-branch-pinecone.webp");
+  --noel-v2-branch-walnut-art: url("/themes/noel-v2/ornament/watercolor-branch-walnut.webp");
   --noel-v2-canopy-art: url("/themes/noel-v2/ornament/watercolor-canopy.webp");
   --noel-v2-card-border: #c9ae7d;
-  --noel-v2-corner-art: url("/themes/noel-v2/ornament/watercolor-corner.webp");
-  --noel-v2-edge-horizontal-art: url("/themes/noel-v2/ornament/watercolor-edge-horizontal.webp");
-  --noel-v2-edge-vertical-art: url("/themes/noel-v2/ornament/watercolor-edge-vertical.webp");
   --noel-v2-gold: #ac8747;
   --noel-v2-paper: #faf0e6;
   --noel-v2-pine: #1f3b2f;
@@ -85,70 +85,71 @@
 }
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
-  inset: max(0.55rem, env(safe-area-inset-top)) 0.55rem max(0.55rem, env(safe-area-inset-bottom));
-  border: 1px solid color-mix(in srgb, var(--noel-v2-gold) 34%, transparent);
-  background:
-    var(--noel-v2-edge-horizontal-art) center top / calc(100% - 4rem) 2.65rem no-repeat,
-    var(--noel-v2-edge-horizontal-art) center bottom / calc(100% - 4rem) 2.65rem no-repeat,
-    var(--noel-v2-edge-vertical-art) left center / 2.65rem calc(100% - 4rem) no-repeat,
-    var(--noel-v2-edge-vertical-art) right center / 2.65rem calc(100% - 4rem) no-repeat;
-  filter: saturate(0.78) contrast(0.94);
-  opacity: 0.44;
-}
-
-[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament,
-[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
-  width: clamp(4.25rem, 8vw, 7.25rem);
-  aspect-ratio: 1;
+  inset: 0;
   border: 0;
-  border-radius: 0;
-  background: var(--noel-v2-corner-art) left top / contain no-repeat;
-  box-shadow: none;
+  background: none;
+  filter: none;
   opacity: 1;
 }
 
 [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  display: block;
-  content: "";
-  transform: scaleY(-1);
+  content: none;
+}
+
+[data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament {
+  width: min(48vw, 38rem);
+  aspect-ratio: 8 / 3;
+  border: 0;
+  border-radius: 0;
+  background: var(--noel-v2-branch-pinecone-art) center / contain no-repeat;
+  box-shadow: none;
+  filter: saturate(0.8) contrast(0.94)
+    drop-shadow(0 10px 24px color-mix(in srgb, var(--foreground) 12%, transparent));
+  opacity: 0.34;
 }
 
 [data-theme-id="noel-v2"]
   [data-ornament-set="botanical"]
   .lumiere-ornament[data-ornament-position="primary"] {
-  top: 0;
-  left: 0;
-  transform: none;
+  top: 7rem;
+  right: -1rem;
+  left: auto;
+  transform-origin: center;
+  transform: rotate(180deg);
 }
 
 [data-theme-id="noel-v2"]
   [data-ornament-set="botanical"]
   .lumiere-ornament[data-ornament-position="secondary"] {
-  top: 0;
-  right: 0;
-  bottom: auto;
-  left: auto;
-  transform: scaleX(-1);
+  top: auto;
+  right: auto;
+  bottom: -1.5rem;
+  left: -7rem;
+  width: min(34vw, 26rem);
+  aspect-ratio: 8 / 3;
+  background-image: var(--noel-v2-branch-walnut-art);
+  opacity: 0.2;
+  transform: scaleX(-1) rotate(5deg);
 }
 
 [data-theme-id="noel-v2"]
   [data-ornament-set="botanical"]
   .lumiere-ornament[data-ornament-position="tertiary"] {
-  top: auto;
-  right: 0;
-  bottom: 0;
-  left: auto;
-  transform: scale(-1);
+  top: 44%;
+  right: auto;
+  bottom: auto;
+  left: -5rem;
+  width: min(24vw, 18rem);
+  aspect-ratio: 8 / 3;
+  background-image: var(--noel-v2-branch-berry-art);
+  opacity: 0.14;
+  transform: rotate(-9deg);
 }
 
 [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
   [data-ornament-set="botanical"]
-  .lumiere-ornaments {
-  filter: saturate(0.64) brightness(0.88) contrast(1.04);
-  opacity: 0.34;
+  .lumiere-ornament {
+  filter: saturate(0.62) brightness(0.78) contrast(1.02);
 }
 
 [data-theme-id="noel-v2"] [data-theme-mode-control="seasonal"] button {
@@ -166,7 +167,7 @@
 [data-theme-id="noel-v2"] .lumiere-section--hero {
   min-height: 100dvh;
   align-content: start;
-  padding-block: clamp(18rem, 25vw, 20rem) clamp(5rem, 9vw, 7rem);
+  padding-block: clamp(13rem, 18vw, 15rem) clamp(5rem, 9vw, 7rem);
   border: 0;
   background:
     radial-gradient(
@@ -204,9 +205,9 @@
 [data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
   position: absolute;
   z-index: 1;
-  top: clamp(1.25rem, 4.5vw, 3.75rem);
+  top: -2rem;
   left: 50%;
-  width: min(calc(100vw - 4rem), 34rem);
+  width: min(calc(100vw - 3rem), 28rem);
   aspect-ratio: 1898 / 829;
   pointer-events: none;
   transform: translateX(-50%);
@@ -297,13 +298,13 @@
 [data-theme-id="noel-v2"] .lumiere-hero-facts {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
-  margin-top: 1.25rem;
+  margin-top: clamp(1.35rem, 3vw, 2rem);
   border-block: 1px solid color-mix(in srgb, var(--noel-v2-gold) 46%, transparent);
   background: transparent;
 }
 
 [data-theme-id="noel-v2"] .lumiere-hero-fact {
-  min-height: 5.5rem;
+  min-height: 5.25rem;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -328,10 +329,13 @@
 }
 
 [data-theme-id="noel-v2"] .lumiere-noel-v2-folio {
+  display: grid;
+  gap: clamp(1.1rem, 2.5vw, 1.6rem);
   position: relative;
   width: min(100%, 30rem);
   margin-inline: auto;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
+  margin-top: clamp(1.35rem, 3vw, 2.25rem);
+  padding: clamp(1.5rem, 3.5vw, 2.25rem);
   overflow: hidden;
   border-color: color-mix(in srgb, var(--noel-v2-card-border) 56%, transparent);
   border-radius: 0;
@@ -612,7 +616,7 @@
   align-items: start;
   padding: clamp(1.4rem, 3vw, 2rem);
   border: 0;
-  border-radius: 0;
+  border-radius: clamp(0.9rem, 2vw, 1.35rem);
   background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
   box-shadow: 0 18px 42px color-mix(in srgb, var(--foreground) 9%, transparent);
 }
@@ -683,7 +687,7 @@
 
 [data-theme-id="noel-v2"] .lumiere-dress-code-swatch__color {
   width: clamp(4rem, 7vw, 5.25rem);
-  aspect-ratio: 1;
+  height: clamp(4rem, 7vw, 5.25rem);
   border: 0.42rem solid color-mix(in srgb, var(--surface) 86%, transparent);
   border-radius: 50%;
   outline: 1px solid color-mix(in srgb, var(--noel-v2-gold) 58%, transparent);
@@ -895,12 +899,12 @@
   }
 
   [data-theme-id="noel-v2"] .lumiere-section--hero {
-    padding: 15.5rem 1.5rem 4.75rem;
+    padding: 11.5rem 1.5rem 4.75rem;
   }
 
   [data-theme-id="noel-v2"] .lumiere-hero-copy > .lumiere-noel-v2-decoration {
-    top: 4rem;
-    width: min(calc(100vw - 3rem), 22rem);
+    top: -1.75rem;
+    width: min(calc(100vw - 2.5rem), 20rem);
   }
 
   [data-theme-id="noel-v2"] .lumiere-hero-title {
@@ -913,7 +917,7 @@
   }
 
   [data-theme-id="noel-v2"] .lumiere-hero-fact {
-    min-height: 4.5rem;
+    min-height: 4.25rem;
   }
 
   [data-theme-id="noel-v2"] .lumiere-hero-fact + .lumiere-hero-fact {
@@ -922,46 +926,41 @@
   }
 
   [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments {
-    inset: max(0.35rem, env(safe-area-inset-top)) 0.35rem max(0.35rem, env(safe-area-inset-bottom));
-    background:
-      var(--noel-v2-edge-horizontal-art) center top / calc(100% - 3rem) 1.85rem no-repeat,
-      var(--noel-v2-edge-horizontal-art) center bottom / calc(100% - 3rem) 1.85rem no-repeat,
-      var(--noel-v2-edge-vertical-art) left center / 1.85rem calc(100% - 3rem) no-repeat,
-      var(--noel-v2-edge-vertical-art) right center / 1.85rem calc(100% - 3rem) no-repeat;
-    opacity: 0.52;
-  }
-
-  [data-theme-id="noel-v2"][data-theme-resolved-mode="dark"]
-    [data-ornament-set="botanical"]
-    .lumiere-ornaments {
-    opacity: 0.4;
-  }
-
-  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornament,
-  [data-theme-id="noel-v2"] [data-ornament-set="botanical"] .lumiere-ornaments::after {
-    width: 3.75rem;
+    inset: 0;
+    border: 0;
+    background: none;
+    opacity: 1;
   }
 
   [data-theme-id="noel-v2"]
     [data-ornament-set="botanical"]
     .lumiere-ornament[data-ornament-position="primary"] {
-    top: 0;
-    left: 0;
+    top: 8rem;
+    right: -1rem;
+    left: auto;
+    width: 20rem;
+    opacity: 0.3;
   }
 
   [data-theme-id="noel-v2"]
     [data-ornament-set="botanical"]
     .lumiere-ornament[data-ornament-position="secondary"] {
-    top: 0;
-    right: 0;
+    top: auto;
+    right: auto;
+    bottom: -1.25rem;
+    left: -7rem;
+    width: 16rem;
+    opacity: 0.18;
   }
 
   [data-theme-id="noel-v2"]
     [data-ornament-set="botanical"]
     .lumiere-ornament[data-ornament-position="tertiary"] {
-    right: 0;
-    bottom: 0;
+    top: 47%;
+    left: -6rem;
     display: block;
+    width: 14rem;
+    opacity: 0.11;
   }
 
   [data-theme-id="noel-v2"] .lumiere-section__body h2 {
@@ -988,6 +987,16 @@
 
   [data-theme-id="noel-v2"] .lumiere-dress-code-swatches {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child {
+    justify-items: center;
+    text-align: center;
+  }
+
+  [data-theme-id="noel-v2"] .lumiere-rsvp-copy > div:first-child > p {
+    max-width: 30rem;
+    margin-inline: auto;
   }
 
   [data-theme-id="noel-v2"] .lumiere-section[data-section-type="outro"] {
