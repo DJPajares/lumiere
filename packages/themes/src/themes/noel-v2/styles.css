@@ -811,14 +811,14 @@
 
 [data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-1 {
   color: color-mix(in srgb, var(--noel-v2-burgundy) 88%, var(--foreground));
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.4;
 }
 
 [data-theme-id="noel-v2"] .lumiere-profile-copy>p.mt-2 {
   color: color-mix(in srgb, var(--foreground) 88%, transparent);
-  font-size: clamp(1.02rem, 2vw, 1.7rem);
+  font-size: clamp(1.02rem, 2vw, 1.4rem);
   line-height: 1.7;
   font-style: italic;
 }
