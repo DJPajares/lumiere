@@ -1,8 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@lumiere/api",
   "functions": {
-    "src/index.ts": {
-      "includeFiles": "../../packages/{config,db,themes,types}/**/*"
+    "api/[[...route]].ts": {
+      "includeFiles": "../../packages/{config,db,themes,types}/**/*",
+      "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [{ "source": "/:path*", "destination": "/api/:path*" }]
 }
