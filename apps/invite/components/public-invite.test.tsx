@@ -387,6 +387,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-ambient-audio-controls="external-controls"');
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain('data-invite-intro="page-load"');
+    expect(html).toContain('class="lumiere-intro__field"');
+    expect(html).toContain('class="lumiere-intro__center"');
+    expect(html).toContain("lumiere-intro__shape--4");
     expect(html).toContain('data-composition-map="wedding-editorial"');
     expect(html).toContain('data-motion-profile="immersive"');
     expect(html).toContain('data-motion-intensity="high"');
