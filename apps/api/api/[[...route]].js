@@ -1,1 +1,1 @@
-module.exports = require("../dist/vercel.cjs").default;
+module.exports.fetch = require("../dist/vercel.cjs").fetch;

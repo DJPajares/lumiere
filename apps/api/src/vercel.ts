@@ -5,4 +5,4 @@ import app from "./index";
 
 const vercelApp = new Hono().route("/api", app);
 
-export default handle(vercelApp);
+export const fetch = handle(vercelApp);
