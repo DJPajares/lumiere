@@ -27,6 +27,7 @@ export type InviteCompositionMapId =
   | "minimal-modern"
   | "neutral-basic"
   | "porcelain-gallery"
+  | "signature-suite"
   | "velvet-afterglow"
   | "wedding-editorial";
 
@@ -342,6 +343,7 @@ export const expansionInviteCompositionMaps: Record<
   | "gardenLight"
   | "modernMinimal"
   | "porcelainBlue"
+  | "signature"
   | "velvetDusk",
   InviteCompositionMap
 > = {
@@ -563,6 +565,52 @@ export const expansionInviteCompositionMaps: Record<
         composition: "editorial-split",
         motion: "section-reveal",
         note: "Use a ledger-like reply beside the closing invitation copy, never a detached utility card.",
+        section: "rsvp",
+      },
+    ],
+  },
+  signature: {
+    eventTypes: [
+      "wedding",
+      "birthday",
+      "kids_party",
+      "dinner",
+      "launch",
+      "holiday",
+      "private_event",
+      "other",
+    ],
+    id: "signature-suite",
+    name: "Signature Suite Rhythm",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open through an architectural aperture with one confident title and an optional portrait plate.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "timeline-reveal",
+        note: "Turn the event sequence into a continuous bronze-thread itinerary rather than a row of cards.",
+        section: "story",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Present people, attire, and practical details as paired leaves from one invitation suite.",
+        section: "profile",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Hang one statement image beside a collected supporting pair with discreet caption rails.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Close with a concierge reply ledger and a composed sign-off rather than a detached form card.",
         section: "rsvp",
       },
     ],

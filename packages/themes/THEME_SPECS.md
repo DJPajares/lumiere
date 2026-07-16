@@ -73,6 +73,18 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - RSVP: formal book-serif fields, clear max-pax and state copy, fine folio borders, and an accessible primary action.
 - Dashboard preview: the watercolor canopy, burgundy title hierarchy, and a story or attire cue must distinguish it from the existing Noel and Evergreen Folio themes.
 
+## Signature
+
+- Fit: every event type, from weddings and milestone birthdays to kids parties, dinners, launches, holidays, private events, and generic celebrations.
+- Mood: warm vellum and aubergine ink by day; pearl type on aubergine-black lacquer by night; brushed bronze is reserved for fine structural cues.
+- Signature elements: one continuous abstract bronze thread, an architectural hero aperture, chapter tabs, salon-hung imagery, an arrival dossier, and a circular sign-off seal.
+- Sections: aperture-led split hero, full-width occasion leaf, continuous-thread story, portrait leaves, material-library attire, salon gallery, split arrival dossier, concierge guest ledger, and signed closing.
+- Motion: immersive hero-and-media depth with restrained thread drift; reduced motion keeps the full invitation suite static and removes overlaps.
+- Ambient media: optional instrumental music, room tone, or a host-selected track with explicit guest controls and no audible autoplay.
+- RSVP: a concierge ledger with party and reserved-place facts, tailored rule fields, explicit semantic states, and one decisive action.
+- Dashboard preview: the aperture, aubergine title, bronze thread, and either a chapter tab or concierge ledger must be visible; a luxury-colored card alone is not sufficient.
+- Anti-slop: no metallic gradients, literal signatures, brand-like monograms, generic glass panels, or event-specific icons that weaken universal use.
+
 ## Evergreen Folio
 
 - Fit: Christmas weddings; intentionally not a universal seasonal theme.

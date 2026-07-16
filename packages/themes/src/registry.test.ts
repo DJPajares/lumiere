@@ -39,6 +39,7 @@ const expansionThemeIds = [
   "celestial-gold",
   "velvet-dusk",
   "porcelain-blue",
+  "signature",
 ] as const;
 
 const baseSections = [
@@ -112,15 +113,21 @@ const baseSections = [
 ] as const;
 
 describe("theme registry", () => {
-  it("exports the initial themes and six-direction expansion pack", () => {
+  it("exports the initial themes, expansion pack, and signature theme", () => {
     expect(availableThemeIds).toEqual([
       "lumiere-default",
       "premium",
       "kids",
       "noel",
       "noel-v2",
+      "signature",
       "evergreen-folio",
-      ...expansionThemeIds,
+      "editorial-ivory",
+      "garden-light",
+      "modern-minimal",
+      "celestial-gold",
+      "velvet-dusk",
+      "porcelain-blue",
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
@@ -912,7 +919,11 @@ describe("theme registry", () => {
 
   it("filters themes by event type", () => {
     expect(getThemesForEventType("holiday").map((theme) => theme.id)).toContain("noel");
-    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual(["kids", "noel"]);
+    expect(getThemesForEventType("kids_party").map((theme) => theme.id)).toEqual([
+      "kids",
+      "noel",
+      "signature",
+    ]);
     expect(
       compatibilityEventTypes.every(
         (eventType) =>

@@ -23,6 +23,7 @@ describe("public invite section renderers", () => {
       ["celestial-gold", "celestial-evening", "lumiere-hero--celestial-gold"],
       ["velvet-dusk", "velvet-afterglow", "lumiere-hero--velvet-dusk"],
       ["porcelain-blue", "porcelain-gallery", "lumiere-hero--porcelain-blue"],
+      ["signature", "signature-suite", "lumiere-hero--signature"],
     ] as const;
     const signatures = directions.map(([themeId, compositionMap, heroClassName]) => {
       const invite = createInvite([
@@ -166,6 +167,20 @@ describe("public invite section renderers", () => {
             "full-bleed",
           ],
           "themeId": "porcelain-blue",
+        },
+        {
+          "backdrop": "texture",
+          "compositionMap": "signature-suite",
+          "frame": "double-line",
+          "heroClassName": "lumiere-hero--signature",
+          "imageTreatment": "natural",
+          "mode": "light",
+          "ornament": "signature-thread",
+          "sectionCompositions": [
+            "full-bleed",
+            "timeline",
+          ],
+          "themeId": "signature",
         },
       ]
     `);

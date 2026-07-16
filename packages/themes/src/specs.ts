@@ -114,6 +114,7 @@ const createExpansionThemeTemplateSpec = (
     | "modern-minimal"
     | "noel-v2"
     | "porcelain-blue"
+    | "signature"
     | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
 ): ThemeTemplateSpec => {
@@ -687,6 +688,32 @@ export const themeTemplateSpecs = {
     ],
     namingGuidance:
       "Noel v2 is a project-owned evolution; do not use third-party invitation names, copy, logos, monograms, or protected holiday artwork.",
+  }),
+  signature: createExpansionThemeTemplateSpec("signature", {
+    moodBoardNotes: [
+      "Warm vellum, aubergine ink, brushed bronze, and lacquered midnight surfaces form a complete private-salon invitation suite.",
+      "An architectural hero aperture, chapter tabs, and one continuous abstract signature thread create identity without tying the theme to one occasion.",
+      "Salon-hung imagery, an arrival dossier, and a concierge guest ledger make practical sections feel ceremonial and composed.",
+    ],
+    antiSlopConstraints: [
+      "Do not turn the bronze thread into a literal ribbon, handwritten signature, logo, crest, or event-specific symbol.",
+      "Avoid generic gold luxury gradients, glass cards, stacked feature panels, and fashion- or hospitality-brand imitation.",
+      "Keep the architectural aperture and chapter tabs outside the reading flow; they may frame hierarchy but never replace it.",
+    ],
+    lightGuidance:
+      "Use warm vellum, near-black aubergine copy, paper-white surfaces, and brushed bronze only for threads, keylines, and chapter cues.",
+    darkGuidance:
+      "Use aubergine-black lacquer, pearl copy, muted plum surfaces, and a brighter bronze signal without pure black or metallic gradients.",
+    statusGuidance:
+      "Aubergine and bronze remain decorative; response states always use explicit copy and dedicated success, warning, and error colors.",
+    reducedMotion:
+      "Stop thread drift, portrait depth, timeline reveals, and gallery offsets while retaining the static aperture, ledger, and chapter hierarchy.",
+    dashboardRequirements: [
+      "Show the architectural aperture, warm vellum, aubergine title, and one bronze signature-thread cue.",
+      "Include a chapter tab plus either the salon gallery or concierge ledger so the preview reads as a suite rather than a luxury color swatch.",
+    ],
+    namingGuidance:
+      "Signature is a project-owned descriptive name; avoid luxury houses, stationers, hotels, venues, and recognizable monograms.",
   }),
   "evergreen-folio": createExpansionThemeTemplateSpec("evergreen-folio", {
     moodBoardNotes: [

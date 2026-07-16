@@ -121,6 +121,7 @@ export type ThemeOrnamentSet =
   | "editorial-rules"
   | "none"
   | "porcelain-rings"
+  | "signature-thread"
   | "snowfall";
 
 export type ThemeDividerStyle = "dotted" | "hairline" | "luminous" | "none" | "short-rule";
@@ -286,6 +287,7 @@ export const themeIds = [
   "kids",
   "noel",
   "noel-v2",
+  "signature",
   "evergreen-folio",
   "editorial-ivory",
   "garden-light",

@@ -8,6 +8,7 @@ import { lumiereDefaultThemeModule } from "./lumiere-default";
 import { modernMinimalThemeModule } from "./modern-minimal";
 import { noelThemeModule } from "./noel";
 import { noelV2ThemeModule } from "./noel-v2";
+import { signatureThemeModule } from "./signature";
 import { evergreenFolioThemeModule } from "./evergreen-folio";
 import { porcelainBlueThemeModule } from "./porcelain-blue";
 import { premiumThemeModule } from "./premium";
@@ -22,6 +23,7 @@ export * from "./lumiere-default";
 export * from "./modern-minimal";
 export * from "./noel";
 export * from "./noel-v2";
+export * from "./signature";
 export * from "./evergreen-folio";
 export * from "./porcelain-blue";
 export * from "./premium";
@@ -33,6 +35,7 @@ export const themeModuleRegistry = {
   kids: kidsThemeModule,
   noel: noelThemeModule,
   "noel-v2": noelV2ThemeModule,
+  signature: signatureThemeModule,
   "evergreen-folio": evergreenFolioThemeModule,
   "editorial-ivory": editorialIvoryThemeModule,
   "garden-light": gardenLightThemeModule,
