@@ -21,13 +21,13 @@ type InviteThemeModeControlProps = {
 
 const controlStyles: Record<ThemeModeTogglePresentation["style"], string> = {
   celestial:
-    "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] uppercase tracking-[0.16em] shadow-[0_12px_40px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
+    "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] shadow-[0_12px_40px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
   editorial:
-    "rounded-none border-[var(--foreground)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] uppercase tracking-[0.18em] shadow-none",
+    "rounded-none border-[var(--foreground)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] shadow-none",
   organic:
     "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--border)_78%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
   seasonal:
-    "border-[color-mix(in_srgb,var(--accent)_42%,var(--border))] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] tracking-[0.08em] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_15%,transparent)]",
+    "border-[color-mix(in_srgb,var(--accent)_42%,var(--border))] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_15%,transparent)]",
   "soft-pill":
     "border-[color-mix(in_srgb,var(--border)_78%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
 };
@@ -126,7 +126,7 @@ export function InviteThemeModeControl({
         <button
           aria-label={`${presentation.labels.control}: switch to ${nextLabel}`}
           aria-pressed={resolvedMode === "dark"}
-          className={`grid min-h-11 grid-cols-[1.75rem_1fr] items-center gap-2 rounded-full border px-3 py-2 text-left text-xs font-semibold text-[var(--foreground)] backdrop-blur transition-[background-color,border-color,transform] hover:bg-[var(--surface-muted)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none ${controlStyles[presentation.style]}`}
+          className={`lumiere-type-control grid min-h-11 grid-cols-[1.75rem_1fr] items-center gap-2 rounded-full border px-3 py-2 text-left text-[var(--foreground)] backdrop-blur transition-[background-color,border-color,transform] hover:bg-[var(--surface-muted)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none ${controlStyles[presentation.style]}`}
           onClick={() => {
             const root = buttonRef.current?.closest<HTMLElement>("main[data-theme-id]") ?? null;
 
@@ -139,7 +139,7 @@ export function InviteThemeModeControl({
         >
           <span
             aria-hidden="true"
-            className="relative grid size-7 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--background)] text-base leading-none text-[var(--accent-strong)]"
+            className="lumiere-type-label relative grid size-7 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--background)] text-[var(--accent-strong)]"
           >
             {resolvedMode === "dark" ? "☾" : "☼"}
           </span>

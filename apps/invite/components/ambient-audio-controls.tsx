@@ -131,7 +131,7 @@ export function AmbientAudioControls({ audio, context, themeId }: AmbientAudioCo
       />
       <button
         aria-label={`${isPlaying ? "Pause" : "Play"} ${audio.title}`}
-        className="grid min-h-12 grid-cols-[2.25rem_1fr] items-center gap-2 rounded-full px-2.5 py-1.5 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]"
+        className="lumiere-type-control grid min-h-12 grid-cols-[2.25rem_1fr] items-center gap-2 rounded-full px-2.5 py-1.5 text-left text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]"
         onClick={togglePlayback}
         type="button"
       >
@@ -142,12 +142,12 @@ export function AmbientAudioControls({ audio, context, themeId }: AmbientAudioCo
           {isPlaying ? "II" : "Play"}
         </span>
         <span className="min-w-0 pr-2">
-          <span className="block truncate text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
+          <span className="lumiere-type-label block truncate text-[var(--accent-strong)]">
             {audio.label}
           </span>
           <span
             aria-live="polite"
-            className="block truncate text-xs text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
+            className="lumiere-type-caption block truncate text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
           >
             {statusLabel}
           </span>

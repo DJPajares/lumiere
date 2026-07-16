@@ -71,10 +71,6 @@
 
 [data-theme-id="porcelain-blue"] .lumiere-hero-title {
   max-width: 13ch;
-  font-size: clamp(4rem, 8.5vw, 8.4rem);
-  font-weight: 400;
-  line-height: 0.9;
-  letter-spacing: -0.052em;
 }
 
 [data-theme-id="porcelain-blue"] .lumiere-hero-subtitle,
@@ -113,11 +109,6 @@
 
 [data-theme-id="porcelain-blue"] .lumiere-section__body h2 {
   max-width: 12ch;
-  font-family: var(--font-display), serif;
-  font-size: clamp(2.9rem, 6vw, 6.2rem);
-  font-weight: 400;
-  line-height: 0.94;
-  letter-spacing: -0.04em;
 }
 
 [data-theme-id="porcelain-blue"] .lumiere-detail-grid,
@@ -171,12 +162,6 @@
   box-shadow: 0 14px 34px color-mix(in srgb, var(--porcelain-ink) 14%, transparent);
 }
 
-[data-theme-id="porcelain-blue"] .lumiere-map-caption__venue {
-  font-family: var(--font-display), serif;
-  font-size: 1.05rem;
-  font-weight: 500;
-}
-
 [data-theme-id="porcelain-blue"] .lumiere-section[data-section-type="rsvp"] {
   background:
     linear-gradient(
@@ -195,10 +180,6 @@
 @media (max-width: 639px) {
   [data-theme-id="porcelain-blue"] .lumiere-invitation {
     background: var(--background);
-  }
-
-  [data-theme-id="porcelain-blue"] .lumiere-hero-title {
-    font-size: clamp(3.4rem, 16.5vw, 5.3rem);
   }
 
   [data-theme-id="porcelain-blue"] .lumiere-hero-media::after {

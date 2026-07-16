@@ -21,10 +21,16 @@ export function InviteIntro({
       <div className="lumiere-intro__center">
         <div className="lumiere-intro__content">
           <span className="lumiere-intro__rule" />
-          {eyebrow ? <p className="lumiere-intro__eyebrow">{eyebrow}</p> : null}
-          <p className="lumiere-intro__title lumiere-display">{title}</p>
-          {subtitle ? <p className="lumiere-intro__subtitle">{subtitle}</p> : null}
-          {description ? <p className="lumiere-intro__description">{description}</p> : null}
+          {eyebrow ? (
+            <p className="lumiere-intro__eyebrow lumiere-type-eyebrow">{eyebrow}</p>
+          ) : null}
+          <p className="lumiere-intro__title lumiere-type-hero">{title}</p>
+          {subtitle ? (
+            <p className="lumiere-intro__subtitle lumiere-type-hero-subtitle">{subtitle}</p>
+          ) : null}
+          {description ? (
+            <p className="lumiere-intro__description lumiere-type-description">{description}</p>
+          ) : null}
         </div>
       </div>
     </div>

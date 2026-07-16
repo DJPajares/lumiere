@@ -206,10 +206,6 @@
 
 [data-theme-id="signature"] .lumiere-hero-pretitle {
   color: var(--signature-bronze);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
 }
 
 [data-theme-id="signature"] .lumiere-section__index {
@@ -226,18 +222,10 @@
 [data-theme-id="signature"] .lumiere-hero-title {
   max-width: 10ch;
   color: var(--foreground);
-  font-size: clamp(4.3rem, 9vw, 9rem);
-  font-weight: 400;
-  line-height: 0.84;
-  letter-spacing: -0.06em;
 }
 
 [data-theme-id="signature"] .lumiere-hero-subtitle {
   max-width: 34rem;
-  font-family: var(--font-display), serif;
-  font-size: clamp(1.25rem, 2.2vw, 1.8rem);
-  font-style: italic;
-  line-height: 1.35;
 }
 
 [data-theme-id="signature"] .lumiere-hero-body {
@@ -345,17 +333,10 @@
 [data-theme-id="signature"] .lumiere-section__eyebrow,
 [data-theme-id="signature"] .lumiere-section__kicker p {
   color: var(--signature-ink);
-  font-size: 0.66rem;
-  letter-spacing: 0.3em;
 }
 
 [data-theme-id="signature"] .lumiere-section__body h2 {
   max-width: 11ch;
-  font-family: var(--font-display), serif;
-  font-size: clamp(3rem, 6.2vw, 6.4rem);
-  font-weight: 400;
-  line-height: 0.9;
-  letter-spacing: -0.045em;
 }
 
 [data-theme-id="signature"] .lumiere-section--full-bleed,
@@ -426,7 +407,6 @@
 
 [data-theme-id="signature"] .lumiere-countdown__value {
   color: var(--signature-ink);
-  font-weight: 400;
 }
 
 [data-theme-id="signature"] .lumiere-story-layout {
@@ -461,7 +441,6 @@
 
 [data-theme-id="signature"] .lumiere-story-entry-title {
   color: var(--signature-ink);
-  letter-spacing: 0.16em;
 }
 
 [data-theme-id="signature"] .lumiere-dress-code-content {
@@ -519,8 +498,6 @@
 
 [data-theme-id="signature"] .lumiere-location-copy a {
   border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
 }
 
 [data-theme-id="signature"] .lumiere-map-preview {
@@ -538,12 +515,6 @@
   border-radius: 0;
   padding: 0.9rem 1rem;
   box-shadow: none;
-}
-
-[data-theme-id="signature"] .lumiere-map-caption__venue {
-  font-family: var(--font-display), serif;
-  font-size: 1rem;
-  font-weight: 500;
 }
 
 [data-theme-id="signature"] .lumiere-section[data-section-type="rsvp"] {
@@ -659,10 +630,6 @@
 
   [data-theme-id="signature"] .lumiere-hero-copy {
     padding: 3.5rem 1rem;
-  }
-
-  [data-theme-id="signature"] .lumiere-hero-title {
-    font-size: clamp(3.7rem, 17vw, 5.7rem);
   }
 
   [data-theme-id="signature"] .lumiere-hero-fact + .lumiere-hero-fact {

@@ -28,20 +28,12 @@
 
 .lumiere-map-caption__venue {
   overflow: hidden;
-  font-family: var(--font-display), sans-serif;
-  font-size: 0.95rem;
-  font-weight: 650;
-  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lumiere-map-caption__attribution {
   width: fit-content;
-  font-size: 0.58rem;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   opacity: 0.64;
 }
 

@@ -5,14 +5,12 @@ export const noelRsvpPresentation = {
   ...seasonalRsvpPresentation,
   cardClassName:
     "lumiere-rsvp-card--noel grid gap-4 border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-4 shadow-[0_32px_100px_color-mix(in_srgb,var(--background)_46%,transparent)] backdrop-blur-xl sm:p-6",
-  eyebrowClassName:
-    "text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]",
+  eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   inputClassName:
-    "min-h-11 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-sm text-[var(--foreground)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
+    "lumiere-type-body min-h-11 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-[var(--foreground)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
   submitClassName:
-    "min-h-12 w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName:
-    "lumiere-display text-3xl font-normal leading-tight tracking-[-0.02em] text-[var(--foreground)] sm:text-4xl",
+    "lumiere-type-control min-h-12 w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+  titleClassName: "lumiere-type-title text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const noelPresentation = createThemePresentation({

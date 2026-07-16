@@ -177,6 +177,7 @@ export const noelTheme = {
         lineHeight: "1.5",
       },
       title: { fontSize: "clamp(2.65rem, 5.6vw, 5.5rem)", letterSpacing: "-0.04em" },
+      control: { letterSpacing: "0.12em", textTransform: "uppercase" },
     },
     scale: "editorial",
   },

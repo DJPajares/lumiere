@@ -164,6 +164,7 @@ export const modernMinimalTheme = {
     roles: {
       hero: {
         fontSize: "clamp(3rem, 8vw, 8rem)",
+        fontWeight: "650",
         letterSpacing: "-0.065em",
         lineHeight: "0.86",
       },

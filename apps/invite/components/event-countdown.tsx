@@ -64,11 +64,11 @@ export function EventCountdown({ label, startsAt }: { label?: string; startsAt: 
       data-countdown-state={countdown?.status ?? "loading"}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="lumiere-countdown__label text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent-strong)]">
+        <p className="lumiere-countdown__label lumiere-type-eyebrow text-[var(--accent-strong)]">
           {heading}
         </p>
         <time
-          className="text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
+          className="lumiere-type-caption text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]"
           dateTime={startsAt}
         >
           {countdown?.status === "elapsed" ? "The occasion has arrived" : "Counting down"}
@@ -86,10 +86,10 @@ export function EventCountdown({ label, startsAt }: { label?: string; startsAt: 
             data-countdown-unit={key}
             key={key}
           >
-            <strong className="lumiere-countdown__value lumiere-display text-3xl font-semibold leading-none tabular-nums sm:text-4xl">
+            <strong className="lumiere-countdown__value lumiere-type-numeric tabular-nums">
               {countdown ? String(countdown[key]).padStart(2, "0") : "—"}
             </strong>
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+            <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
               {unitLabel}
             </span>
           </div>

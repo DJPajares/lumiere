@@ -165,15 +165,15 @@ function InvitationFrame({
         ) : (
           <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-12">
             <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-6">
-              <h2 className="text-xl font-semibold">{emptyTitle}</h2>
-              <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+              <h2 className="lumiere-type-subtitle">{emptyTitle}</h2>
+              <p className="lumiere-type-description mt-2 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
                 {emptyBody}
               </p>
             </section>
           </div>
         )}
 
-        <footer className="lumiere-invitation__footer px-5 pb-10 pt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12 text-center">
+        <footer className="lumiere-invitation__footer lumiere-type-caption px-5 pb-10 pt-3 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)] sm:px-8 lg:px-12 text-center">
           <p>Powered by {process.env.NEXT_PUBLIC_APP_NAME}™</p>
         </footer>
       </article>
@@ -232,17 +232,15 @@ function InvitationUnavailable({
 }) {
   return (
     <InviteShell context={context}>
-      <section className="grid min-h-[100dvh] place-items-center px-5 py-10 sm:px-8">
+      <section className="lumiere-invite-surface grid min-h-[100dvh] place-items-center px-5 py-10 sm:px-8">
         <div className="grid max-w-xl gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_14%,transparent)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-            {label}
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+          <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">{label}</p>
+          <h1 className="lumiere-type-title">{title}</h1>
+          <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {message}
           </p>
-          <p className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] px-4 py-3 text-sm">
-            Requested event: <span className="font-semibold">{eventSlug}</span>
+          <p className="lumiere-type-body rounded-[var(--radius-md)] bg-[var(--surface-muted)] px-4 py-3">
+            Requested event: <span className="lumiere-type-label">{eventSlug}</span>
           </p>
         </div>
       </section>
@@ -309,13 +307,15 @@ function PublicHero({
           ) : null}
           <div className="lumiere-section__kicker">
             <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">{eyebrow}</p>
-            <span aria-hidden="true" className="lumiere-section__index">
+            <span aria-hidden="true" className="lumiere-section__index lumiere-type-label">
               01
             </span>
           </div>
           <div className="grid gap-4">
-            {pretitle ? <p className="lumiere-display lumiere-hero-pretitle">{pretitle}</p> : null}
-            <h1 className="lumiere-display lumiere-hero-title lumiere-type-hero max-w-3xl text-balance">
+            {pretitle ? (
+              <p className="lumiere-hero-pretitle lumiere-type-pretitle">{pretitle}</p>
+            ) : null}
+            <h1 className="lumiere-hero-title lumiere-type-hero max-w-3xl text-balance">
               <InviteMaskedText>{title}</InviteMaskedText>
             </h1>
             {subtitle ? (
@@ -329,7 +329,7 @@ function PublicHero({
               </p>
             ) : null}
           </div>
-          <dl className="lumiere-hero-facts grid gap-3 text-sm sm:grid-cols-3">
+          <dl className="lumiere-hero-facts grid gap-3 sm:grid-cols-3">
             <HeroFact
               label="When"
               value={formatEventDate(invite.event.startsAt, invite.event.timezone)}
@@ -363,7 +363,7 @@ function PublicHero({
         ) : (
           <aside className={presentation.fallbackClassName} data-parallax-layer="hero-media">
             <p className="lumiere-type-label text-[var(--accent-strong)]">Public details</p>
-            <h2 className="lumiere-display lumiere-type-subtitle">{invite.event.title}</h2>
+            <h2 className="lumiere-type-subtitle">{invite.event.title}</h2>
             <div className="grid gap-3">
               <DetailLine
                 label="Date"
@@ -410,7 +410,7 @@ function GuestContextPanel({ guest }: { guest: GuestContext }) {
       <div className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
         <div>
           <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">Guest invitation</p>
-          <h2 className="lumiere-display lumiere-type-subtitle mt-2">{guest.guestGroup.label}</h2>
+          <h2 className="lumiere-type-subtitle mt-2">{guest.guestGroup.label}</h2>
           <p className="lumiere-type-caption mt-2 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             This private link is prepared for your guest group. Please do not forward it outside
             your party.
@@ -477,7 +477,7 @@ function PublicSection({
           <p className="lumiere-section__eyebrow lumiere-type-eyebrow text-[var(--accent-strong)]">
             {readString(item.content.eyebrow) ?? definition.label}
           </p>
-          <span aria-hidden="true" className="lumiere-section__index">
+          <span aria-hidden="true" className="lumiere-section__index lumiere-type-label">
             {String(index + 2).padStart(2, "0")}
           </span>
         </div>
@@ -587,7 +587,7 @@ function DateSection({
   return (
     <div className="lumiere-date-layout grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
       <div className="grid gap-3">
-        <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+        <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
       </div>
@@ -621,7 +621,7 @@ function DetailsSection({
 
   return (
     <div className="lumiere-details-layout grid gap-4">
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
       {items.length > 0 ? (
@@ -672,7 +672,7 @@ function LocationSection({
   return (
     <div className="lumiere-location-layout grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
       <div className="lumiere-location-copy grid gap-3">
-        <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+        <h2 className="lumiere-type-title" id={titleId}>
           {venueName}
         </h2>
         {address ? <p className="lumiere-type-body">{address}</p> : null}
@@ -684,7 +684,7 @@ function LocationSection({
         {directionsUrl ? (
           <a
             {...invitePressFeedbackProps}
-            className="inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+            className="lumiere-type-control inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
             href={directionsUrl}
             rel="noopener noreferrer"
             target="_blank"
@@ -730,7 +730,7 @@ function StorySection({
       )}
     >
       <div className="lumiere-story-copy grid gap-4">
-        <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+        <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
         <div
@@ -753,10 +753,10 @@ function StorySection({
               {paragraph.title ? (
                 <h3
                   className={joinClassNames(
-                    "lumiere-story-entry-title lumiere-type-subtitle",
+                    "lumiere-story-entry-title",
                     isTimeline
-                      ? "text-sm uppercase tracking-[0.12em] text-[var(--accent-strong)]"
-                      : "text-lg leading-7",
+                      ? "lumiere-type-eyebrow text-[var(--accent-strong)]"
+                      : "lumiere-type-subtitle",
                   )}
                 >
                   {paragraph.title}
@@ -794,7 +794,7 @@ function ProfileSection({
         resolvedLayout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4",
       )}
     >
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
       {people.length > 0 ? (
@@ -850,7 +850,7 @@ function EntourageSection({
 
   return (
     <div className="lumiere-gallery-layout grid gap-4">
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
       {groups.length > 0 ? (
@@ -891,7 +891,7 @@ function DressCodeSection({
   return (
     <div className="lumiere-dress-code-layout grid gap-8">
       <header className="lumiere-dress-code-header grid gap-4">
-        <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+        <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
         {description ? <p className="lumiere-type-description">{description}</p> : null}
@@ -907,7 +907,7 @@ function DressCodeSection({
               >
                 <span
                   aria-hidden="true"
-                  className="lumiere-dress-code-card__index text-sm font-semibold text-[var(--accent-strong)]"
+                  className="lumiere-dress-code-card__index lumiere-type-numeric text-[var(--accent-strong)]"
                 >
                   {String(index + 1).padStart(2, "0")}
                 </span>
@@ -917,7 +917,7 @@ function DressCodeSection({
                       {readString(card.label)}
                     </p>
                   ) : null}
-                  <h3 className="lumiere-display lumiere-dress-code-card__title lumiere-type-subtitle">
+                  <h3 className="lumiere-dress-code-card__title lumiere-type-subtitle">
                     {readString(card.title) ?? "Attire guidance"}
                   </h3>
                   <p className="lumiere-dress-code-card__description lumiere-type-description">
@@ -934,7 +934,7 @@ function DressCodeSection({
             {paletteTitle || paletteDescription ? (
               <div className="lumiere-dress-code-palette__header grid gap-2">
                 {paletteTitle ? (
-                  <h3 className="lumiere-display lumiere-dress-code-palette__title lumiere-type-subtitle">
+                  <h3 className="lumiere-dress-code-palette__title lumiere-type-subtitle">
                     {paletteTitle}
                   </h3>
                 ) : null}
@@ -963,7 +963,7 @@ function DressCodeSection({
                       {readString(item.label) ?? "Color"}
                     </span>
                     {readString(item.color) ? (
-                      <span className="lumiere-dress-code-swatch__value text-xs text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+                      <span className="lumiere-dress-code-swatch__value lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
                         {readString(item.color)?.toUpperCase()}
                       </span>
                     ) : null}
@@ -996,7 +996,7 @@ function GallerySection({
 
   return (
     <div className="grid gap-4">
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
       {images.length > 0 ? (
@@ -1026,7 +1026,7 @@ function GallerySection({
           </div>
         </div>
       ) : (
-        <div className="grid aspect-[3/2] place-items-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-5 text-center text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+        <div className="lumiere-type-caption grid aspect-[3/2] place-items-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-5 text-center text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
           Gallery images will appear here once the host adds them.
         </div>
       )}
@@ -1068,14 +1068,14 @@ function RsvpSection({
     <div className="lumiere-rsvp-layout flex flex-col gap-5">
       <div className="lumiere-rsvp-copy grid gap-4">
         <div className="grid justify-items-center gap-3 text-center">
-          <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+          <h2 className="lumiere-type-title" id={titleId}>
             {copy.sectionTitle}
           </h2>
           <p className="lumiere-type-description max-w-2xl text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
             {copy.sectionDescription}
           </p>
           {!submitContext && requireGuestToken ? (
-            <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            <p className="lumiere-type-description rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
               {copy.guestLinkRequired}
             </p>
           ) : null}
@@ -1087,17 +1087,19 @@ function RsvpSection({
               submitContext ? "hidden lg:grid" : "grid"
             }`}
           >
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">
+            <p className="lumiere-type-label text-[var(--accent-strong)]">
               {copy.questionGroupTitle}
             </p>
-            <ul className="grid gap-2 text-sm leading-6">
+            <ul className="lumiere-type-body grid gap-2">
               {questions.map((question, index) => (
                 <li
                   className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
                   key={readString(question.key) ?? index}
                 >
-                  <span className="font-medium">{readString(question.label) ?? "Question"}</span>
-                  <span className="ml-2 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+                  <span className="lumiere-type-label">
+                    {readString(question.label) ?? "Question"}
+                  </span>
+                  <span className="lumiere-type-caption ml-2 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
                     {question.required === true ? "Required" : "Optional"}
                   </span>
                 </li>
@@ -1148,7 +1150,7 @@ function OutroSection({
       )}
     >
       <div className="grid gap-4">
-        <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+        <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
         {message ? <p className="lumiere-type-description">{message}</p> : null}
@@ -1164,7 +1166,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
 
   return (
     <div className="grid gap-4">
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
       {blocks.length > 0 ? (
@@ -1186,7 +1188,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
 function GenericSection({ content, titleId }: { content: JsonObject; titleId: string }) {
   return (
     <div className="grid gap-3">
-      <h2 className="lumiere-display lumiere-type-title" id={titleId}>
+      <h2 className="lumiere-type-title" id={titleId}>
         {readString(content.title) ?? "Event detail"}
       </h2>
       {readString(content.body) ? (
@@ -1288,10 +1290,10 @@ function MapPreview({
             }`}
           />
         ) : null}
-        <figcaption className="lumiere-map-caption absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-xs text-[var(--foreground)] shadow-sm backdrop-blur">
-          <span className="lumiere-map-caption__venue font-semibold">{venueName}</span>
+        <figcaption className="lumiere-map-caption lumiere-type-caption absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-[var(--foreground)] shadow-sm backdrop-blur">
+          <span className="lumiere-map-caption__venue lumiere-type-name">{venueName}</span>
           <a
-            className="lumiere-map-caption__attribution underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
+            className="lumiere-map-caption__attribution lumiere-type-label underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
             href="https://www.openstreetmap.org/copyright"
             rel="noopener noreferrer"
             target="_blank"
@@ -1312,21 +1314,19 @@ function MapPreview({
       data-map-state="fallback"
     >
       <div className="lumiere-map-card w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-strong)]">
-          Location
-        </p>
-        <p className="mt-2 font-semibold">{venueName}</p>
+        <p className="lumiere-type-label text-[var(--accent-strong)]">Location</p>
+        <p className="lumiere-type-name mt-2">{venueName}</p>
         {address ? (
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          <p className="lumiere-type-description mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
             {address}
           </p>
         ) : (
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          <p className="lumiere-type-description mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
             Address to be announced.
           </p>
         )}
         {directionsUrl ? (
-          <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+          <p className="lumiere-type-caption mt-3 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
             Directions open in your preferred map experience.
           </p>
         ) : null}

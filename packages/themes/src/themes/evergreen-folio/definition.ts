@@ -167,6 +167,13 @@ export const evergreenFolioTheme = {
       eyebrowLetterSpacing: "0.2em",
     },
     roles: {
+      pretitle: {
+        fontSize: "clamp(2.1rem, 6.5vw, 4.8rem)",
+        fontWeight: "400",
+        letterSpacing: "-0.035em",
+        lineHeight: "0.93",
+        textTransform: "uppercase",
+      },
       hero: {
         fontSize: "clamp(2.6rem, 7.4vw, 5.45rem)",
         letterSpacing: "-0.045em",
@@ -178,7 +185,12 @@ export const evergreenFolioTheme = {
         fontSize: "clamp(1rem, 2.6vw, 1.65rem)",
         lineHeight: "1.45",
       },
-      title: { fontSize: "clamp(2.65rem, 6vw, 5.8rem)", letterSpacing: "-0.04em" },
+      title: {
+        fontSize: "clamp(2.65rem, 6vw, 5.8rem)",
+        letterSpacing: "-0.04em",
+        textTransform: "uppercase",
+      },
+      control: { letterSpacing: "0.16em", textTransform: "uppercase" },
     },
     scale: "editorial",
   },

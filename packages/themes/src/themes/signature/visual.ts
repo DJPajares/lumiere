@@ -5,17 +5,15 @@ export const signatureRsvpPresentation = {
   ...editorialLedgerRsvpPresentation,
   cardClassName:
     "lumiere-rsvp-card--signature grid overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_97%,transparent)] shadow-[0_32px_100px_color-mix(in_srgb,var(--foreground)_14%,transparent)]",
-  counterValueClassName: "lumiere-display text-2xl font-medium leading-none",
-  eyebrowClassName:
-    "text-[0.66rem] font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]",
+  counterValueClassName: "lumiere-type-numeric",
+  eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   fieldLabelClassName:
-    "text-[0.66rem] font-semibold uppercase tracking-[0.2em] text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]",
+    "lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]",
   inputClassName:
-    "min-h-11 rounded-none border-0 border-b border-[var(--border)] bg-transparent px-1 text-base text-[var(--foreground)] focus:border-[var(--focus)] focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60",
+    "lumiere-type-body min-h-11 rounded-none border-0 border-b border-[var(--border)] bg-transparent px-1 text-[var(--foreground)] focus:border-[var(--focus)] focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60",
   submitClassName:
-    "min-h-12 w-full rounded-[var(--radius-sm)] border border-[var(--accent)] bg-[var(--accent)] px-5 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_22%,transparent)] transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName:
-    "lumiere-display text-3xl font-medium leading-[0.98] tracking-[-0.03em] text-[var(--foreground)] sm:text-4xl",
+    "lumiere-type-control min-h-12 w-full rounded-[var(--radius-sm)] border border-[var(--accent)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_16px_42px_color-mix(in_srgb,var(--accent)_22%,transparent)] transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60",
+  titleClassName: "lumiere-type-title text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const signaturePresentation = createThemePresentation({

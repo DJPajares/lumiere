@@ -1,14 +1,17 @@
 export const themeTypographyRoleNames = [
   "hero",
   "heroSubtitle",
+  "pretitle",
   "title",
   "name",
   "subtitle",
   "description",
   "body",
   "label",
+  "control",
   "eyebrow",
   "caption",
+  "numeric",
 ] as const;
 
 export type ThemeTypographyRoleName = (typeof themeTypographyRoleNames)[number];
@@ -49,6 +52,15 @@ const restrainedRoles: ThemeTypographyRoles = {
     letterSpacing: "0em",
     lineHeight: "1.55",
     textTransform: "none",
+  },
+  pretitle: {
+    fontFamily: "display",
+    fontSize: "clamp(1rem, 2vw, 1.5rem)",
+    fontStyle: "normal",
+    fontWeight: "500",
+    letterSpacing: "0.02em",
+    lineHeight: "1.2",
+    textTransform: "uppercase",
   },
   title: {
     fontFamily: "display",
@@ -104,6 +116,15 @@ const restrainedRoles: ThemeTypographyRoles = {
     lineHeight: "1.4",
     textTransform: "none",
   },
+  control: {
+    fontFamily: "body",
+    fontSize: "0.875rem",
+    fontStyle: "normal",
+    fontWeight: "600",
+    letterSpacing: "0em",
+    lineHeight: "1.35",
+    textTransform: "none",
+  },
   eyebrow: {
     fontFamily: "body",
     fontSize: "0.75rem",
@@ -120,6 +141,15 @@ const restrainedRoles: ThemeTypographyRoles = {
     fontWeight: "400",
     letterSpacing: "0em",
     lineHeight: "1.5",
+    textTransform: "none",
+  },
+  numeric: {
+    fontFamily: "display",
+    fontSize: "clamp(2rem, 4vw, 4rem)",
+    fontStyle: "normal",
+    fontWeight: "600",
+    letterSpacing: "-0.02em",
+    lineHeight: "1",
     textTransform: "none",
   },
 };

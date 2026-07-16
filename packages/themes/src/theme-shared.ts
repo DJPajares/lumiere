@@ -13,22 +13,21 @@ const heroFallbackBaseClassName =
 export const defaultRsvpPresentation = {
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] backdrop-blur sm:p-5",
-  counterValueClassName: "text-xl font-semibold leading-none",
-  eyebrowClassName: "text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)]",
+  counterValueClassName: "lumiere-type-numeric text-[var(--foreground)]",
+  eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   fieldLabelClassName:
-    "text-xs font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
+    "lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
   inputClassName:
-    "min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
+    "lumiere-type-body min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-60",
   rendererId: "common",
   submitClassName:
-    "min-h-11 w-full rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
-  titleClassName: "text-2xl font-light tracking-tight sm:text-3xl",
+    "lumiere-type-control min-h-11 w-full rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_24%,transparent)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+  titleClassName: "lumiere-type-title",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialRsvpPresentation = {
   ...defaultRsvpPresentation,
-  titleClassName:
-    "font-serif text-2xl font-light tracking-[-0.01em] text-[var(--foreground)] sm:text-3xl",
+  titleClassName: "lumiere-type-title text-[var(--foreground)]",
 } satisfies ThemeRsvpPresentation;
 
 export const editorialLedgerRsvpPresentation = {
@@ -43,14 +42,14 @@ export const playfulRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_20px_64px_color-mix(in_srgb,var(--accent)_16%,transparent)] sm:p-5",
-  titleClassName: "text-2xl font-semibold tracking-tight sm:text-3xl",
+  titleClassName: "lumiere-type-title",
 } satisfies ThemeRsvpPresentation;
 
 export const seasonalRsvpPresentation = {
   ...defaultRsvpPresentation,
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-muted)_74%,var(--surface)))] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] sm:p-5",
-  titleClassName: "font-serif text-2xl font-light tracking-tight sm:text-3xl",
+  titleClassName: "lumiere-type-title",
 } satisfies ThemeRsvpPresentation;
 
 export function createThemePresentation({

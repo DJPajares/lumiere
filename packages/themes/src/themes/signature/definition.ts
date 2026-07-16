@@ -182,6 +182,14 @@ export const signatureTheme = {
       eyebrowLetterSpacing: "0.3em",
     },
     roles: {
+      pretitle: {
+        fontFamily: "body",
+        fontSize: "0.68rem",
+        fontWeight: "600",
+        letterSpacing: "0.34em",
+        lineHeight: "1.5",
+        textTransform: "uppercase",
+      },
       hero: {
         fontSize: "clamp(3.7rem, 9vw, 9rem)",
         letterSpacing: "-0.06em",
@@ -194,6 +202,7 @@ export const signatureTheme = {
         lineHeight: "1.35",
       },
       title: { fontSize: "clamp(3rem, 6.2vw, 6.4rem)", letterSpacing: "-0.045em" },
+      control: { letterSpacing: "0.22em", textTransform: "uppercase" },
     },
     scale: "editorial",
   },

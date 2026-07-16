@@ -113,18 +113,14 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
     >
       <header className="grid gap-4 border-b border-[var(--border)] px-4 py-5 sm:px-5 sm:py-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <RsvpHeader contract={contract} />
-        <dl className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-4 text-sm lg:border-t-0 lg:border-l lg:pl-5 lg:pt-0">
+        <dl className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-4 lg:border-t-0 lg:border-l lg:pl-5 lg:pt-0">
           <div>
-            <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-              Party
-            </dt>
-            <dd className="mt-2 font-medium">{contract.context.guestGroup.label}</dd>
+            <dt className="lumiere-type-label text-[var(--accent-strong)]">Party</dt>
+            <dd className="lumiere-type-body mt-2">{contract.context.guestGroup.label}</dd>
           </div>
           <div>
-            <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-              Reserved
-            </dt>
-            <dd className="mt-2 font-medium">
+            <dt className="lumiere-type-label text-[var(--accent-strong)]">Reserved</dt>
+            <dd className="lumiere-type-body mt-2">
               {contract.context.guestGroup.maxPax} {contract.copy.guestLabelPlural.toLowerCase()}
             </dd>
           </div>
@@ -204,7 +200,7 @@ function RsvpConfirmation({
       >
         <div
           aria-hidden="true"
-          className="grid size-14 place-items-center rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--accent)_52%,var(--border))] text-2xl text-[var(--accent-strong)]"
+          className="grid size-14 place-items-center rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--accent)_52%,var(--border))] text-[var(--accent-strong)]"
         >
           <svg className="size-6" fill="none" viewBox="0 0 24 24">
             <path d="m6 12 4 4 8-9" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
@@ -213,16 +209,15 @@ function RsvpConfirmation({
         <div className="grid max-w-lg gap-3" role="status">
           <p className={contract.presentation.eyebrowClassName}>{contract.copy.successTitle}</p>
           <h3 className={contract.presentation.titleClassName}>
-            {isAttending ? "Wonderful" : "Thank you"},{" "}
-            <em className="font-normal">{contract.context.guestGroup.label}</em>
+            {isAttending ? "Wonderful" : "Thank you"}, <em>{contract.context.guestGroup.label}</em>
           </h3>
-          <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] sm:text-base">
+          <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {description}
           </p>
         </div>
         <button
           {...invitePressFeedbackProps}
-          className="min-h-11 w-full max-w-[14rem] rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-5 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
+          className="lumiere-type-control min-h-11 w-full max-w-[14rem] rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-5 text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
           onClick={contract.actions.editReply}
           type="button"
         >
@@ -241,7 +236,7 @@ function RsvpHeader({ contract }: { contract: RsvpRendererContract }) {
         <span className="opacity-80">{contract.copy.greetingPrefix} </span>
         {contract.context.guestGroup.label}
       </h3>
-      <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+      <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
         {contract.reservedSeatsCopy}
       </p>
     </div>
@@ -256,13 +251,11 @@ function RsvpFeedback({ contract }: { contract: RsvpRendererContract }) {
           className="relative overflow-hidden rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--success)_42%,var(--border))] bg-[color-mix(in_srgb,var(--success)_12%,var(--surface))] p-4 text-center"
           role="status"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--success)]">
-            {contract.copy.successTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+          <p className="lumiere-type-eyebrow text-[var(--success)]">{contract.copy.successTitle}</p>
+          <p className="lumiere-type-subtitle mt-2 text-[var(--foreground)]">
             {contract.copy.successDescription}
           </p>
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+          <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
             {formatRsvpStatus(contract.submittedResponse.responseStatus)}
             {contract.submittedResponse.attendeeCount > 0
               ? `, ${contract.submittedResponse.attendeeCount} ${
@@ -282,7 +275,7 @@ function RsvpFeedback({ contract }: { contract: RsvpRendererContract }) {
 
       {contract.errors.form ? (
         <p
-          className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--error)_44%,var(--border))] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-sm leading-6 text-[var(--error)]"
+          className="lumiere-type-description rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--error)_44%,var(--border))] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-4 py-3 text-[var(--error)]"
           role="alert"
         >
           {contract.errors.form}
@@ -290,7 +283,7 @@ function RsvpFeedback({ contract }: { contract: RsvpRendererContract }) {
       ) : null}
 
       {contract.flags.isUpdatingExistingReply ? (
-        <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+        <p className="lumiere-type-description rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
           {contract.copy.updateNotice}
         </p>
       ) : null}
@@ -349,7 +342,7 @@ function AttendanceControls({ contract }: { contract: RsvpRendererContract }) {
               <span className={contract.presentation.counterValueClassName}>
                 {contract.formState.attendeeCount}
               </span>
-              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+              <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
                 {contract.formState.attendeeCount === 1
                   ? contract.copy.guestLabelSingular
                   : contract.copy.guestLabelPlural}
@@ -395,16 +388,16 @@ function DetailsControls({
       onToggle={(event) => contract.actions.setDetailsOpen(event.currentTarget.open)}
       open={contract.details.isOpen}
     >
-      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-(--accent-strong) focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
+      <summary className="lumiere-type-control flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-(--accent-strong) focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span>{contract.details.label}</span>
           {isOptional ? (
-            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_52%,transparent)]">
+            <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_52%,transparent)]">
               Optional
             </span>
           ) : null}
         </span>
-        <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+        <span className="lumiere-type-label shrink-0 text-[color-mix(in_srgb,var(--foreground)_54%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] focus:text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
           {contract.details.isOpen
             ? contract.copy.detailsCloseLabel
             : contract.copy.detailsOpenLabel}
@@ -419,7 +412,7 @@ function DetailsControls({
             </p>
             {contract.formState.guestNames.map((name, index) => (
               <label className="grid gap-2" htmlFor={`guestName-${index}`} key={index}>
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+                <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
                   {contract.copy.guestNameLabel} {index + 1}
                 </span>
                 <input
@@ -451,7 +444,7 @@ function DetailsControls({
               <p className={contract.presentation.fieldLabelClassName}>
                 {contract.copy.questionGroupTitle}
               </p>
-              <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+              <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
                 {contract.copy.questionGroupDescription}
               </p>
             </div>
@@ -480,7 +473,7 @@ function DetailsControls({
             <textarea
               aria-describedby={contract.errors.message ? "rsvp-message-error" : undefined}
               aria-invalid={Boolean(contract.errors.message)}
-              className={`${contract.presentation.inputClassName} min-h-24 py-3 leading-6`}
+              className={`${contract.presentation.inputClassName} min-h-24 py-3`}
               disabled={contract.flags.isLocked || contract.flags.isSubmitting}
               id="rsvp-message"
               onChange={(event) => contract.actions.setMessage(event.currentTarget.value)}
@@ -518,9 +511,9 @@ function ReplyStatusPanel({ copy, tone }: { copy: ReplyStatusCopy; tone: ReplyTo
   return (
     <section className={replyStatusClassName(tone)} aria-live="polite">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] opacity-70">{copy.meta}</p>
-        <p className="mt-2 text-xl font-semibold">{copy.title}</p>
-        <p className="mt-1 text-sm leading-6 opacity-75">{copy.body}</p>
+        <p className="lumiere-type-eyebrow opacity-70">{copy.meta}</p>
+        <p className="lumiere-type-subtitle mt-2">{copy.title}</p>
+        <p className="lumiere-type-caption mt-1 opacity-75">{copy.body}</p>
       </div>
       <span
         aria-hidden="true"
@@ -536,10 +529,10 @@ function RecoveryNotice({ canRetry, state }: { canRetry: boolean; state: RsvpRec
       className="grid gap-2 rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--warning)_42%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_84%,transparent)]"
       role="alert"
     >
-      <p className="font-semibold">{state.title}</p>
-      <p className="text-sm leading-6">{state.body}</p>
+      <p className="lumiere-type-subtitle">{state.title}</p>
+      <p className="lumiere-type-description">{state.body}</p>
       {canRetry ? (
-        <p className="text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+        <p className="lumiere-type-caption text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
           Your answers are still here. Review the highlighted fields, then try again.
         </p>
       ) : null}
@@ -562,7 +555,7 @@ function CounterButton({
     <button
       {...invitePressFeedbackProps}
       aria-label={label}
-      className="grid size-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] text-xl font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
+      className="lumiere-type-control grid size-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-35"
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -591,8 +584,8 @@ function RsvpStatusOption({
     <label
       className={
         checked
-          ? "grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-[var(--accent-contrast)] shadow-sm transition"
-          : "grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] px-3 py-2 text-center text-sm font-semibold text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
+          ? "lumiere-type-control grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] bg-[var(--accent)] px-3 py-2 text-center text-[var(--accent-contrast)] shadow-sm transition"
+          : "lumiere-type-control grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-sm)] px-3 py-2 text-center text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] transition hover:bg-[var(--surface-muted)]"
       }
     >
       <input
@@ -634,7 +627,7 @@ function QuestionField({
         <textarea
           aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
-          className={`${inputClassName} min-h-24 py-3 leading-6`}
+          className={`${inputClassName} min-h-24 py-3`}
           disabled={isDisabled}
           id={inputId}
           onChange={(event) => onChange(event.currentTarget.value)}
@@ -681,7 +674,7 @@ function QuestionField({
         <div className="grid gap-2">
           {question.options.map((option) => (
             <label
-              className="flex min-h-10 items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="lumiere-type-body flex min-h-10 items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
               key={option}
             >
               <input
@@ -726,7 +719,7 @@ function QuestionField({
 
 function QuestionLabel({ question }: { question: RsvpQuestion }) {
   return (
-    <span className="text-sm font-semibold">
+    <span className="lumiere-type-label">
       {question.label}
       {question.required ? (
         <span className="ml-1 text-[var(--accent-strong)]" aria-label="required">
@@ -739,7 +732,7 @@ function QuestionLabel({ question }: { question: RsvpQuestion }) {
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
-    <p className="text-sm leading-6 text-[var(--error)]" id={id}>
+    <p className="lumiere-type-caption text-[var(--error)]" id={id}>
       {message}
     </p>
   ) : null;

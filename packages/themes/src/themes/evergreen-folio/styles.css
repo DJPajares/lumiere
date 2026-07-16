@@ -76,9 +76,6 @@
   padding: 0.3rem 0.65rem 0.3rem 0.35rem;
   border-color: color-mix(in srgb, var(--border) 76%, transparent);
   background: color-mix(in srgb, var(--background) 90%, transparent);
-  font-family: var(--font-body), serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--folio-walnut) 26%, transparent);
 }
 
@@ -86,7 +83,6 @@
   width: 1.5rem;
   height: 1.5rem;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
-  font-size: 0.8rem;
 }
 
 [data-theme-id="evergreen-folio"][data-theme-resolved-mode="dark"]
@@ -311,11 +307,6 @@
   max-width: 23rem;
   margin-inline: auto;
   color: var(--folio-ink);
-  font-family: var(--font-body), serif;
-  font-size: clamp(0.68rem, 1.25vw, 0.8rem);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  line-height: 1.5;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p::before,
@@ -331,41 +322,24 @@
   max-width: 10ch;
   margin-inline: auto;
   color: var(--folio-red);
-  font-size: clamp(2.8rem, 6.5vw, 4.8rem);
-  font-weight: 400;
-  line-height: 0.93;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-title {
   max-width: 10ch;
   margin-inline: auto;
   color: var(--folio-green);
-  font-size: clamp(3.15rem, 7.4vw, 5.45rem);
-  font-weight: 400;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-subtitle {
   max-width: 27rem;
   margin-inline: auto;
   color: var(--folio-green);
-  font-family: var(--font-body), serif;
-  font-size: clamp(1.2rem, 2.6vw, 1.65rem);
-  font-style: normal;
-  line-height: 1.45;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-body {
   max-width: 29rem;
   margin-inline: auto;
   color: color-mix(in srgb, var(--folio-ink) 78%, transparent);
-  font-family: var(--font-body), serif;
-  font-size: 0.95rem;
-  line-height: 1.6;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-facts {
@@ -391,15 +365,10 @@
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-fact dt {
   color: var(--folio-red);
-  font-size: 0.65rem;
-  letter-spacing: 0.18em;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-hero-fact dd {
   color: var(--folio-ink);
-  font-family: var(--font-body), serif;
-  font-size: 1rem;
-  line-height: 1.35;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-fallback {
@@ -440,9 +409,6 @@
   border: 0;
   background: transparent;
   color: var(--folio-ink);
-  font-family: var(--font-body), serif;
-  font-size: 0.85rem;
-  font-style: italic;
   text-align: center;
 }
 
@@ -473,24 +439,16 @@
 
 [data-theme-id="evergreen-folio"] .lumiere-section__eyebrow {
   color: var(--accent-strong);
-  font-family: var(--font-body), serif;
-  font-size: 0.67rem;
-  letter-spacing: 0.2em;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-section__index {
   display: inline;
   color: color-mix(in srgb, var(--foreground) 44%, transparent);
-  font-family: var(--font-body), serif;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-section__body h2 {
   max-width: 12ch;
   color: var(--foreground);
-  font-size: clamp(2.9rem, 6vw, 5.8rem);
-  font-weight: 400;
-  line-height: 0.94;
-  letter-spacing: -0.04em;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner {
@@ -563,7 +521,6 @@
   max-width: 12ch;
   margin-inline: auto;
   color: var(--accent-strong);
-  text-transform: uppercase;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-date-panel {
@@ -574,11 +531,6 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-}
-
-[data-theme-id="evergreen-folio"] .lumiere-date-panel p:first-child {
-  font-family: var(--font-display), serif;
-  font-size: clamp(1.55rem, 3vw, 2.2rem);
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-detail-grid {
@@ -640,9 +592,6 @@
 
 [data-theme-id="evergreen-folio"] .lumiere-story-step p {
   max-width: 44rem;
-  font-family: var(--font-body), serif;
-  font-size: clamp(1.14rem, 2vw, 1.4rem);
-  line-height: 1.75;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-profile-layout,
@@ -687,17 +636,8 @@
   backdrop-filter: blur(7px);
 }
 
-[data-theme-id="evergreen-folio"] .lumiere-map-caption__venue {
-  font-family: var(--font-body), serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
 [data-theme-id="evergreen-folio"] .lumiere-map-caption__attribution {
-  font-style: italic;
-  letter-spacing: 0.04em;
   text-align: right;
-  text-transform: none;
 }
 
 [data-theme-id="evergreen-folio"] .lumiere-section-image img,
@@ -726,9 +666,6 @@
 [data-theme-id="evergreen-folio"] .lumiere-gallery-grid .lumiere-section-image figcaption {
   border: 0;
   background: transparent;
-  font-family: var(--font-body), serif;
-  font-size: 0.85rem;
-  font-style: italic;
   text-align: center;
 }
 
@@ -817,7 +754,6 @@
 
 [data-theme-id="evergreen-folio"] .lumiere-invitation__footer {
   border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  font-family: var(--font-body), serif;
 }
 
 @media (max-width: 1023px) {
@@ -856,29 +792,6 @@
     inset: 0.5rem;
   }
 
-  [data-theme-id="evergreen-folio"] .lumiere-hero-copy .lumiere-section__kicker p {
-    font-size: 0.6rem;
-    letter-spacing: 0.14em;
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-pretitle {
-    font-size: clamp(2.3rem, 11vw, 3.45rem);
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-title {
-    font-size: clamp(2.6rem, 12vw, 3.8rem);
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-subtitle {
-    font-size: clamp(1rem, 4.8vw, 1.32rem);
-    line-height: 1.4;
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-body {
-    font-size: 0.84rem;
-    line-height: 1.55;
-  }
-
   [data-theme-id="evergreen-folio"] .lumiere-hero-fact {
     padding: 0.82rem 0.25rem;
   }
@@ -889,10 +802,6 @@
 
   [data-theme-id="evergreen-folio"] .lumiere-evergreen-folio-print img {
     min-height: 27rem;
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-section__body h2 {
-    font-size: clamp(2.65rem, 13vw, 4.3rem);
   }
 
   [data-theme-id="evergreen-folio"] .lumiere-section--framed .lumiere-section__inner {
@@ -911,18 +820,6 @@
     min-height: max(46rem, calc(100dvh - 4.8rem));
     padding-block: 10.5rem 11rem;
     padding-inline: 18%;
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-pretitle {
-    font-size: clamp(2.1rem, 10.5vw, 2.85rem);
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-title {
-    font-size: clamp(2.35rem, 11.5vw, 3.15rem);
-  }
-
-  [data-theme-id="evergreen-folio"] .lumiere-hero-fact dd {
-    font-size: 0.88rem;
   }
 }
 

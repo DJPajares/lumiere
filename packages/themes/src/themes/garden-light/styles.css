@@ -23,10 +23,6 @@
 
 [data-theme-id="garden-light"] .lumiere-hero-title {
   max-width: 13ch;
-  font-size: clamp(3.8rem, 8vw, 7.5rem);
-  font-weight: 400;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
 }
 
 [data-theme-id="garden-light"] .lumiere-hero-subtitle,
@@ -60,13 +56,6 @@
     var(--surface-muted);
 }
 
-[data-theme-id="garden-light"] .lumiere-section__body h2 {
-  font-family: var(--font-display), serif;
-  font-size: clamp(2.6rem, 5.5vw, 5.4rem);
-  font-weight: 400;
-  line-height: 0.96;
-}
-
 [data-theme-id="garden-light"] .lumiere-section-image,
 [data-theme-id="garden-light"] .lumiere-map-preview {
   border-radius: var(--radius-lg) var(--radius-lg) calc(var(--radius-lg) * 2)
@@ -96,12 +85,6 @@
   border-radius: var(--radius-lg) var(--radius-lg) calc(var(--radius-lg) * 1.25)
     calc(var(--radius-lg) * 1.25);
   box-shadow: 0 14px 34px color-mix(in srgb, var(--foreground) 10%, transparent);
-}
-
-[data-theme-id="garden-light"] .lumiere-map-caption__venue {
-  font-family: var(--font-display), serif;
-  font-size: 1.05rem;
-  font-weight: 500;
 }
 
 [data-theme-id="garden-light"] .lumiere-story-rail {

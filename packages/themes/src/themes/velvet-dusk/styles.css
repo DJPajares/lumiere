@@ -83,18 +83,10 @@
 
 [data-theme-id="velvet-dusk"] .lumiere-hero-title {
   max-width: 9ch;
-  font-size: clamp(4.2rem, 9.4vw, 9rem);
-  font-weight: 400;
-  line-height: 0.84;
-  letter-spacing: -0.055em;
 }
 
 [data-theme-id="velvet-dusk"] .lumiere-hero-subtitle {
   max-width: 30rem;
-  font-family: var(--font-display), serif;
-  font-size: clamp(1.2rem, 2.2vw, 1.7rem);
-  font-style: italic;
-  line-height: 1.45;
 }
 
 [data-theme-id="velvet-dusk"] .lumiere-hero-media {
@@ -133,11 +125,6 @@
 
 [data-theme-id="velvet-dusk"] .lumiere-section__body h2 {
   max-width: 10ch;
-  font-family: var(--font-display), serif;
-  font-size: clamp(3rem, 6.6vw, 6.8rem);
-  font-weight: 400;
-  line-height: 0.88;
-  letter-spacing: -0.045em;
 }
 
 [data-theme-id="velvet-dusk"] .lumiere-story-rail {
@@ -191,12 +178,6 @@
   box-shadow: 0 18px 46px color-mix(in srgb, var(--velvet-shadow) 72%, transparent);
 }
 
-[data-theme-id="velvet-dusk"] .lumiere-map-caption__venue {
-  font-family: var(--font-display), serif;
-  font-size: 1.05rem;
-  font-weight: 500;
-}
-
 [data-theme-id="velvet-dusk"] .lumiere-section[data-section-type="rsvp"] {
   background:
     linear-gradient(
@@ -210,10 +191,6 @@
 @media (max-width: 639px) {
   [data-theme-id="velvet-dusk"] .lumiere-section--hero::before {
     inset: 0.7rem;
-  }
-
-  [data-theme-id="velvet-dusk"] .lumiere-hero-title {
-    font-size: clamp(3.5rem, 17vw, 5.5rem);
   }
 }
 
