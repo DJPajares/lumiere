@@ -29,6 +29,7 @@ Lumiere is a full-stack multi-event invitation and RSVP platform with two Next.j
 - Start with the lowest-order `todo` task whose dependencies are complete.
 - Do not start tasks blocked by `depends_on`.
 - Update task status and append concise progress notes.
+- Only create a new task or update when specifically asked
 
 ## Task Statuses
 
