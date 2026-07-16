@@ -902,12 +902,12 @@ function DressCodeSection({
           <div className="lumiere-dress-code-cards grid gap-3">
             {cards.map((card, index) => (
               <article
-                className="lumiere-dress-code-card grid grid-cols-[2.5rem_minmax(0,1fr)] gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
+                className="lumiere-dress-code-card grid grid-cols-[max-content_minmax(0,1fr)] gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4"
                 key={index}
               >
                 <span
                   aria-hidden="true"
-                  className="lumiere-dress-code-card__index lumiere-type-numeric text-[var(--accent-strong)]"
+                  className="lumiere-dress-code-card__index lumiere-type-name text-[var(--accent-strong)]"
                 >
                   {String(index + 1).padStart(2, "0")}
                 </span>

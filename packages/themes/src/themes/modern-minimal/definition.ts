@@ -140,7 +140,7 @@ export const modernMinimalTheme = {
         motion: "section-reveal",
       },
       rsvp: {
-        composition: "editorial-split",
+        composition: "full-bleed",
         density: "compact",
         motion: "section-reveal",
       },

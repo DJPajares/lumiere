@@ -139,8 +139,8 @@ export const porcelainBlueTheme = {
         motion: "media-reveal",
       },
       rsvp: {
-        composition: "editorial-split",
-        density: "spacious",
+        composition: "full-bleed",
+        density: "balanced",
         layout: "reply-ledger",
         motion: "section-reveal",
       },

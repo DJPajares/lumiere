@@ -97,7 +97,7 @@ main[data-theme-id] .lumiere-type-pretitle {
 
 main[data-theme-id] .lumiere-type-title {
   --lumiere-type-font-family: var(--type-title-font-family);
-  --lumiere-type-font-size: var(--type-title-font-size);
+  --lumiere-type-font-size: min(var(--type-title-font-size), clamp(1.875rem, 3.8vw, 3.75rem));
   --lumiere-type-font-style: var(--type-title-font-style);
   --lumiere-type-font-weight: var(--type-title-font-weight);
   --lumiere-type-letter-spacing: var(--type-title-letter-spacing);

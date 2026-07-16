@@ -158,8 +158,8 @@ export const signatureTheme = {
         motion: "media-reveal",
       },
       rsvp: {
-        composition: "editorial-split",
-        density: "spacious",
+        composition: "full-bleed",
+        density: "balanced",
         layout: "concierge-ledger",
         motion: "section-reveal",
       },

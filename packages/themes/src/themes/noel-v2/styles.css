@@ -1072,7 +1072,7 @@
   }
 
   [data-theme-id="noel-v2"] .lumiere-dress-code-card {
-    grid-template-columns: 2.35rem minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr);
     padding: 1.25rem;
   }
 

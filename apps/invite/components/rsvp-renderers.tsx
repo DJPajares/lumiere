@@ -131,7 +131,7 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       contract.recoveryState ||
       contract.errors.form ||
       contract.flags.isUpdatingExistingReply ? (
-        <div className="grid gap-3 px-4 pt-4 sm:px-5">
+        <div className="grid gap-3 px-4 py-4 sm:px-5">
           <RsvpFeedback contract={contract} />
         </div>
       ) : null}
@@ -139,9 +139,7 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       <div className="grid border-y border-[var(--border)]">
         <section
           aria-label="Attendance"
-          className={`grid content-start gap-5 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-4 py-5 sm:px-5 lg:py-6 ${
-            contract.flags.isResponding ? "sm:grid-cols-2" : ""
-          }`}
+          className="grid content-start gap-5 bg-[color-mix(in_srgb,var(--surface-muted)_56%,transparent)] px-4 py-5 sm:px-5 lg:py-6"
         >
           <AttendanceControls contract={contract} />
         </section>
@@ -156,7 +154,7 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
       </div>
 
       <div className="grid gap-4 px-4 py-5 sm:px-5">
-        <div className="w-full sm:max-w-xs">
+        <div className="mx-auto w-full sm:max-w-xs">
           <SubmitAction contract={contract} />
         </div>
         {!contract.flags.isUpdatingExistingReply ? (
