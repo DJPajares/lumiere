@@ -1060,13 +1060,13 @@ function RsvpSection({
   const submitContext = guest && guestToken ? { guest, guestToken } : null;
 
   return (
-    <div className="lumiere-rsvp-layout grid gap-5 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+    <div className="lumiere-rsvp-layout flex flex-col gap-5">
       <div className="lumiere-rsvp-copy grid gap-4">
-        <div className="grid gap-3">
+        <div className="grid justify-items-center gap-3 text-center">
           <h2 className="lumiere-display text-3xl font-semibold tracking-tight" id={titleId}>
             {copy.sectionTitle}
           </h2>
-          <p className="text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
+          <p className="max-w-2xl text-base leading-7 text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
             {copy.sectionDescription}
           </p>
           {!submitContext && requireGuestToken ? (
@@ -1103,7 +1103,7 @@ function RsvpSection({
       </div>
 
       {submitContext && (
-        <div className="w-full max-w-2xl lg:justify-self-end">
+        <div className="mx-auto w-full max-w-2xl">
           <RsvpForm
             copy={copy}
             eventSlug={eventSlug}
