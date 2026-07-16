@@ -5,7 +5,7 @@ export const noelV2RsvpPresentation = {
   ...seasonalRsvpPresentation,
   cardClassName:
     "lumiere-rsvp-card--noel-v2 grid gap-5 border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] p-5 shadow-[0_28px_80px_color-mix(in_srgb,var(--foreground)_10%,transparent)] sm:p-8",
-  counterValueClassName: "lumiere-type-numeric",
+  counterValueClassName: "lumiere-type-name",
   eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   fieldLabelClassName:
     "lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]",

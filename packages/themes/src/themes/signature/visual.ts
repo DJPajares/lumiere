@@ -5,7 +5,7 @@ export const signatureRsvpPresentation = {
   ...editorialLedgerRsvpPresentation,
   cardClassName:
     "lumiere-rsvp-card--signature grid overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_97%,transparent)] shadow-[0_32px_100px_color-mix(in_srgb,var(--foreground)_14%,transparent)]",
-  counterValueClassName: "lumiere-type-numeric",
+  counterValueClassName: "lumiere-type-name",
   eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   fieldLabelClassName:
     "lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]",

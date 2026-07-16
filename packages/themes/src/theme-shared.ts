@@ -13,7 +13,7 @@ const heroFallbackBaseClassName =
 export const defaultRsvpPresentation = {
   cardClassName:
     "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-4 shadow-[0_24px_72px_color-mix(in_srgb,var(--accent)_14%,transparent)] backdrop-blur sm:p-5",
-  counterValueClassName: "lumiere-type-numeric text-[var(--foreground)]",
+  counterValueClassName: "lumiere-type-name text-[var(--foreground)]",
   eyebrowClassName: "lumiere-type-eyebrow text-[var(--accent-strong)]",
   fieldLabelClassName:
     "lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
