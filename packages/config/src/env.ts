@@ -13,7 +13,7 @@ const appUrl = nonEmptyString.url("Must be a valid URL");
 
 const apiEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
-  PORT: z.coerce.number().int().positive().max(65535),
+  PORT: z.coerce.number().int().positive().max(65535).default(4000),
   DATABASE_URL: nonEmptyString,
   SUPABASE_URL: appUrl,
   SUPABASE_SERVICE_ROLE_KEY: nonEmptyString,

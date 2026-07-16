@@ -35,7 +35,7 @@ import type { EventStore, PublishingReadiness } from "./events";
 import { toApiEvent } from "./events";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
-import { createApiApplication, loadApiConfig } from "./index";
+import { createApiApplication, loadApiConfig } from "./bootstrap";
 import type {
   PublicEventRecord,
   PublicGuestInviteRecord,
