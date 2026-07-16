@@ -11,7 +11,7 @@
     },
     "@lumiere/api#build": {
       "dependsOn": ["^build"],
-      "outputs": [],
+      "outputs": ["dist/**"],
       "env": [
         "DASHBOARD_APP_BASE_URL",
         "INVITE_TOKEN_SECRET",

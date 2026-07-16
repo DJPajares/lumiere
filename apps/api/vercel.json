@@ -5,8 +5,8 @@
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm turbo build --filter=@lumiere/api",
   "functions": {
-    "api/[[...route]].ts": {
-      "includeFiles": "../../packages/{config,db,themes,types}/{package.json,src/**/*}",
+    "api/[[...route]].js": {
+      "includeFiles": "dist/vercel.cjs",
       "maxDuration": 30
     }
   },
