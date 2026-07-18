@@ -130,9 +130,17 @@ describe("GuestManagementWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "New guest group" }));
     await screen.findByRole("dialog", { name: "Create guest group" });
     await user.type(screen.getByLabelText("Group label"), "New Table");
+    await user.type(screen.getByLabelText("Member 1"), "Mina Tan");
+    await user.type(screen.getByLabelText("Member 2"), "Alex Tan");
     await user.click(screen.getByRole("button", { name: "Create guest group" }));
 
     await waitFor(() => expect(createGuestGroup).toHaveBeenCalledTimes(1));
+    expect(createGuestGroup).toHaveBeenCalledWith(
+      "evt_123",
+      expect.objectContaining({
+        members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
+      }),
+    );
     expect(await screen.findByDisplayValue(inviteLink)).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
@@ -141,12 +149,18 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByText("New Table invite link copied.")).toBeTruthy();
   });
 
-  it("edits guest capacity, names, notes, and invite status in the responsive modal", async () => {
+  it("migrates a legacy contact into automatic member fields while editing", async () => {
     const user = userEvent.setup();
     const updatedGroup: GuestGroup = {
       ...guestGroup,
-      contactName: "Mina, Alex, and Jamie",
       maxPax: 5,
+      members: [
+        { id: "member_1", name: "Mina Tan", sortOrder: 0 },
+        { id: "member_2", name: "Alex Tan", sortOrder: 1 },
+        { id: "member_3", name: "Jamie Tan", sortOrder: 2 },
+        { id: "member_4", name: "Nora Tan", sortOrder: 3 },
+        { id: "member_5", name: "Sam Tan", sortOrder: 4 },
+      ],
       notes: "Seat near the stage.",
       status: "opened",
     };
@@ -165,14 +179,15 @@ describe("GuestManagementWorkspace", () => {
     const editTrigger = screen.getByRole("button", { name: "Edit Tan Family" });
     await user.click(editTrigger);
     expect(await screen.findByRole("dialog", { name: "Edit Tan Family" })).toBeTruthy();
+    expect(screen.queryByLabelText("Guest names / contact (legacy)")).toBeNull();
+    expect((screen.getByLabelText("Member 1") as HTMLInputElement).value).toBe("Mina Tan");
 
     await user.clear(screen.getByLabelText("Max pax"));
     await user.type(screen.getByLabelText("Max pax"), "5");
-    await user.clear(screen.getByLabelText("Guest names / contact (legacy)"));
-    await user.type(
-      screen.getByLabelText("Guest names / contact (legacy)"),
-      "Mina, Alex, and Jamie",
-    );
+    await user.type(screen.getByLabelText("Member 2"), "Alex Tan");
+    await user.type(screen.getByLabelText("Member 3"), "Jamie Tan");
+    await user.type(screen.getByLabelText("Member 4"), "Nora Tan");
+    await user.type(screen.getByLabelText("Member 5"), "Sam Tan");
     await user.clear(screen.getByLabelText("Notes"));
     await user.type(screen.getByLabelText("Notes"), "Seat near the stage.");
     await user.click(screen.getByLabelText("Invite status"));
@@ -184,8 +199,15 @@ describe("GuestManagementWorkspace", () => {
         "evt_123",
         "guest_1",
         expect.objectContaining({
-          contactName: "Mina, Alex, and Jamie",
+          contactName: "Mina Tan",
           maxPax: 5,
+          members: [
+            { name: "Mina Tan" },
+            { name: "Alex Tan" },
+            { name: "Jamie Tan" },
+            { name: "Nora Tan" },
+            { name: "Sam Tan" },
+          ],
           notes: "Seat near the stage.",
           status: "opened",
         }),
@@ -196,19 +218,22 @@ describe("GuestManagementWorkspace", () => {
     expect(document.activeElement).toBe(editTrigger);
   });
 
-  it("adds, reorders, and removes structured guest members before saving", async () => {
+  it("automatically matches member fields to max pax without manual controls", async () => {
     const user = userEvent.setup();
     const updateGuestGroup = vi.fn<DashboardApiClient["updateGuestGroup"]>(async () => ({
       guestGroup: {
         ...guestGroup,
         members: [
-          { id: "member_2", name: "Alex Tan", sortOrder: 0 },
-          { id: "member_1", name: "Mina Tan", sortOrder: 1 },
+          { id: "member_1", name: "Mina Tan", sortOrder: 0 },
+          { id: "member_2", name: "Alex Tan", sortOrder: 1 },
+          { id: "member_3", name: "Jamie Tan", sortOrder: 2 },
         ],
+        maxPax: 3,
       },
     }));
     const structuredGroup: GuestGroup = {
       ...guestGroup,
+      maxPax: 2,
       members: [
         { id: "member_1", name: "Mina Tan", sortOrder: 0 },
         { id: "member_2", name: "Alex Tan", sortOrder: 1 },
@@ -226,10 +251,18 @@ describe("GuestManagementWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "Edit Tan Family" }));
     await screen.findByRole("dialog", { name: "Edit Tan Family" });
 
-    await user.click(screen.getByRole("button", { name: "Move Mina Tan down" }));
-    await user.click(screen.getByRole("button", { name: "Add member" }));
+    expect(screen.queryByRole("button", { name: "Add member" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Move .* (up|down)/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Remove/ })).toBeNull();
+
+    await user.clear(screen.getByLabelText("Max pax"));
+    await user.type(screen.getByLabelText("Max pax"), "4");
     await user.type(screen.getByLabelText("Member 3"), "Jamie Tan");
-    await user.click(screen.getByRole("button", { name: "Remove Jamie Tan" }));
+    await user.type(screen.getByLabelText("Member 4"), "Nora Tan");
+
+    await user.clear(screen.getByLabelText("Max pax"));
+    await user.type(screen.getByLabelText("Max pax"), "3");
+    expect(screen.queryByLabelText("Member 4")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Save guest group" }));
 
     await waitFor(() =>
@@ -238,9 +271,11 @@ describe("GuestManagementWorkspace", () => {
         "guest_1",
         expect.objectContaining({
           members: [
-            { id: "member_2", name: "Alex Tan" },
             { id: "member_1", name: "Mina Tan" },
+            { id: "member_2", name: "Alex Tan" },
+            { name: "Jamie Tan" },
           ],
+          maxPax: 3,
         }),
       ),
     );
@@ -261,9 +296,7 @@ describe("GuestManagementWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "New guest group" }));
     await screen.findByRole("dialog", { name: "Create guest group" });
     await user.type(screen.getByLabelText("Group label"), "Family table");
-    await user.click(screen.getByRole("button", { name: "Add member" }));
     await user.type(screen.getByLabelText("Member 1"), "Mina Tan");
-    await user.click(screen.getByRole("button", { name: "Add member" }));
     await user.type(screen.getByLabelText("Member 2"), " mina tan ");
     await user.click(screen.getByRole("button", { name: "Create guest group" }));
 
