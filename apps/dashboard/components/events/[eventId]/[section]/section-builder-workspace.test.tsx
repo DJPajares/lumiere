@@ -64,6 +64,30 @@ describe("SectionBuilderWorkspace", () => {
     expect(document.activeElement).toBe(editStory);
   });
 
+  it("configures whether guests can interact with the location map", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth(createApiClientStub());
+
+    await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Location"));
+    await user.click(screen.getByRole("button", { name: "Edit Location" }));
+
+    const locationEditor = within(screen.getByRole("region", { name: "Location" }));
+    const showMapPreview = locationEditor.getByLabelText("Show map preview");
+    const allowMapInteraction = locationEditor.getByLabelText(/^Allow map interaction/);
+
+    expect((showMapPreview as HTMLInputElement).checked).toBe(true);
+    expect((allowMapInteraction as HTMLInputElement).checked).toBe(false);
+    expect(document.querySelector('[data-map-interaction="preview-only"]')).toBeTruthy();
+
+    await user.click(allowMapInteraction);
+
+    expect((allowMapInteraction as HTMLInputElement).checked).toBe(true);
+    expect(document.querySelector('[data-map-interaction="interactive"]')).toBeTruthy();
+    expect(locationEditor.getByText(/pan and zoom inside the embedded map/)).toBeTruthy();
+  });
+
   it("shows validation for enabled sections with missing required fields", async () => {
     const user = userEvent.setup();
     const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({

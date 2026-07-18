@@ -20,6 +20,7 @@ import type {
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
+import { DeferredMapPreview } from "./deferred-map-preview";
 import { EventCountdown } from "./event-countdown";
 import { InviteImage } from "./invite-image";
 import { InviteIntro } from "./invite-intro";
@@ -667,6 +668,7 @@ function LocationSection({
   const directionsUrl = location?.directionsUrl;
   const embedUrl = location?.embedUrl;
   const notes = location?.notes ?? readString(content.notes);
+  const allowMapInteraction = readBoolean(settings.allowMapInteraction, false);
   const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
@@ -694,8 +696,9 @@ function LocationSection({
         ) : null}
       </div>
       {showMapPreview ? (
-        <MapPreview
+        <DeferredMapPreview
           address={address}
+          allowInteraction={allowMapInteraction}
           directionsUrl={directionsUrl}
           embedUrl={embedUrl}
           presentation={mapPresentation}
@@ -1231,108 +1234,6 @@ function EmptySectionMessage({ message }: { message: string }) {
     <p className="lumiere-type-caption rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
       {message}
     </p>
-  );
-}
-
-function MapPreview({
-  address,
-  directionsUrl,
-  embedUrl,
-  presentation,
-  venueName,
-}: {
-  address: string | undefined;
-  directionsUrl: string | undefined;
-  embedUrl: string | undefined;
-  presentation: ThemeDefinition["composition"]["map"];
-  venueName: string;
-}) {
-  const aspectClassName = {
-    landscape: "aspect-[4/3]",
-    portrait: "aspect-[4/5] sm:aspect-[4/3] lg:aspect-[4/5]",
-    wide: "aspect-[4/3] sm:aspect-[16/10]",
-  }[presentation.aspect];
-  const frameClassName = {
-    celestial:
-      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_48%,var(--border))]",
-    editorial: "rounded-none border-[var(--foreground)]",
-    minimal: "rounded-none border-[var(--foreground)] shadow-none",
-    organic:
-      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_32%,var(--border))]",
-    playful: "rounded-[calc(var(--radius-lg)*1.35)] border-[var(--accent)]",
-    seasonal:
-      "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_42%,var(--border))]",
-    soft: "rounded-[var(--radius-lg)] border-[var(--border)]",
-  }[presentation.frame];
-
-  if (embedUrl) {
-    return (
-      <figure
-        className={`lumiere-map-preview relative grid min-h-64 overflow-hidden border bg-[var(--surface-muted)] shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] ${aspectClassName} ${frameClassName}`}
-        data-map-aspect={presentation.aspect}
-        data-map-frame={presentation.frame}
-        data-map-overlay={presentation.overlay}
-        data-map-state="embedded"
-      >
-        <iframe
-          className="lumiere-map-embed absolute inset-0 size-full border-0"
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-          src={embedUrl}
-          title={`Map showing ${venueName}`}
-        />
-        {presentation.overlay !== "none" ? (
-          <span
-            aria-hidden="true"
-            className={`lumiere-map-overlay pointer-events-none absolute inset-0 ${
-              presentation.overlay === "soft-vignette"
-                ? "bg-[radial-gradient(circle_at_center,transparent_48%,color-mix(in_srgb,var(--background)_38%,transparent))]"
-                : "bg-[color-mix(in_srgb,var(--accent)_7%,transparent)] mix-blend-multiply"
-            }`}
-          />
-        ) : null}
-        <figcaption className="lumiere-map-caption lumiere-type-caption absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2 text-[var(--foreground)] shadow-sm backdrop-blur">
-          <span className="lumiere-map-caption__venue lumiere-type-name">{venueName}</span>
-          <a
-            className="lumiere-map-caption__attribution lumiere-type-label underline decoration-[var(--border)] underline-offset-4 hover:decoration-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
-            href="https://www.openstreetmap.org/copyright"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            © OpenStreetMap contributors
-          </a>
-        </figcaption>
-      </figure>
-    );
-  }
-
-  return (
-    <div
-      className={`lumiere-map-preview grid min-h-64 place-items-end overflow-hidden border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-4 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] ${aspectClassName} ${frameClassName}`}
-      data-map-aspect={presentation.aspect}
-      data-map-frame={presentation.frame}
-      data-map-overlay={presentation.overlay}
-      data-map-state="fallback"
-    >
-      <div className="lumiere-map-card w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-        <p className="lumiere-type-label text-[var(--accent-strong)]">Location</p>
-        <p className="lumiere-type-name mt-2">{venueName}</p>
-        {address ? (
-          <p className="lumiere-type-description mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-            {address}
-          </p>
-        ) : (
-          <p className="lumiere-type-description mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-            Address to be announced.
-          </p>
-        )}
-        {directionsUrl ? (
-          <p className="lumiere-type-caption mt-3 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
-            Directions open in your preferred map experience.
-          </p>
-        ) : null}
-      </div>
-    </div>
   );
 }
 

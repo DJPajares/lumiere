@@ -13,6 +13,7 @@ describe("public invite section renderers", () => {
   afterEach(() => {
     document.body.replaceChildren();
     window.localStorage.clear();
+    vi.unstubAllGlobals();
   });
 
   it("renders a distinct public hero and composition signature for every expansion theme", async () => {
@@ -424,14 +425,15 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-motion-kind="gallery-drift"');
     expect(html).toContain('data-motion-kind="media-reveal"');
     expect(html).toContain('data-section-renderer="section.gallery"');
-    expect(html).toContain('data-map-state="embedded"');
+    expect(html).toContain('data-map-state="deferred"');
+    expect(html).toContain('data-map-load="viewport-or-action"');
     expect(html).toContain('data-map-frame="editorial"');
-    expect(html).toContain('loading="lazy"');
-    expect(html).toContain('title="Map showing Emerald Gardens"');
+    expect(html).not.toContain("<iframe");
+    expect(html).toContain("Load map preview");
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).toContain("Open directions");
-    expect(html).toContain("openstreetmap.org/export/embed.html");
+    expect(html).not.toContain("openstreetmap.org/export/embed.html");
     expect(html).toContain("Garden portrait at golden hour");
     expect(html).toContain("Garden aisle at dusk");
     expect(html).toContain("Dinner, dancing, and garden lights.");
@@ -481,6 +483,145 @@ describe("public invite section renderers", () => {
 
     expect(gardenHtml).toContain('data-map-frame="organic"');
     expect(gardenHtml).toContain('data-map-aspect="landscape"');
+  });
+
+  it("defers the persisted-coordinate map until its bounded preview approaches the viewport", async () => {
+    let observerCallback: IntersectionObserverCallback | undefined;
+    let observerInstance: IntersectionObserver | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    class MockIntersectionObserver implements IntersectionObserver {
+      readonly root = null;
+      readonly rootMargin = "320px 0px";
+      readonly scrollMargin = "0px";
+      readonly thresholds = [0.01];
+      disconnect = disconnect;
+      observe = observe;
+      takeRecords = vi.fn(() => []);
+      unobserve = vi.fn();
+
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        observerCallback = callback;
+        observerInstance = this;
+        expect(options).toMatchObject({
+          rootMargin: "320px 0px",
+          threshold: 0.01,
+        });
+      }
+    }
+    const fetchMock = vi.fn();
+    const invite = createInvite([
+      createSection({
+        content: {
+          address: "18 Marina Gardens Drive, Singapore 018953",
+          latitude: 1.2816,
+          longitude: 103.8636,
+          venueName: "Emerald Gardens",
+        },
+        sectionKey: "venue",
+        sectionType: "location",
+        sortOrder: 0,
+      }),
+    ]);
+    const container = document.createElement("div");
+    const root = createRoot(container);
+
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+    vi.stubGlobal("fetch", fetchMock);
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    document.body.append(container);
+
+    await act(() => root.render(createElement(PublicInvitation, { invite })));
+
+    const preview = container.querySelector<HTMLElement>('[data-map-state="deferred"]');
+    const directions = container.querySelector<HTMLAnchorElement>(".lumiere-location-copy a[href]");
+
+    expect(preview).toBeTruthy();
+    if (!preview) {
+      throw new Error("Expected the deferred map preview to render.");
+    }
+    expect(preview?.textContent).toContain("Emerald Gardens");
+    expect(preview?.textContent).toContain("18 Marina Gardens Drive, Singapore 018953");
+    expect(preview.dataset.mapInteraction).toBe("preview-only");
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(preview.querySelector("button")?.textContent).toContain("Load map preview");
+    expect(observe).toHaveBeenCalledWith(preview);
+    expect(directions?.target).toBe("_blank");
+    expect(directions?.rel).toBe("noopener noreferrer");
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await act(() => {
+      observerCallback?.(
+        [
+          {
+            isIntersecting: true,
+            target: preview,
+          } as unknown as IntersectionObserverEntry,
+        ],
+        observerInstance!,
+      );
+    });
+
+    const iframe = container.querySelector<HTMLIFrameElement>("iframe");
+    const embedUrl = new URL(iframe?.src ?? "https://invalid.example");
+
+    expect(disconnect).toHaveBeenCalled();
+    expect(iframe?.getAttribute("loading")).toBe("lazy");
+    expect(iframe?.tabIndex).toBe(-1);
+    expect(iframe?.className).toContain("pointer-events-none");
+    expect(iframe?.className).toContain("-top-20");
+    expect(iframe?.className).toContain("-left-12");
+    expect(iframe?.title).toBe("Map showing Emerald Gardens");
+    expect(embedUrl.hostname).toBe("www.openstreetmap.org");
+    expect(embedUrl.pathname).toBe("/export/embed.html");
+    expect(embedUrl.searchParams.get("marker")).toBe("1.2816,103.8636");
+    expect(embedUrl.searchParams.get("bbox")).toBe("103.8576,1.2771,103.8696,1.2861");
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await act(() => root.unmount());
+
+    const interactiveInvite = createInvite([
+      createSection({
+        content: {
+          address: "18 Marina Gardens Drive, Singapore 018953",
+          latitude: 1.2816,
+          longitude: 103.8636,
+          venueName: "Emerald Gardens",
+        },
+        sectionKey: "interactive-venue",
+        sectionType: "location",
+        settings: { allowMapInteraction: true },
+        sortOrder: 0,
+      }),
+    ]);
+    const interactiveContainer = document.createElement("div");
+    const interactiveRoot = createRoot(interactiveContainer);
+
+    document.body.append(interactiveContainer);
+    await act(() =>
+      interactiveRoot.render(createElement(PublicInvitation, { invite: interactiveInvite })),
+    );
+
+    const interactivePreview = interactiveContainer.querySelector<HTMLElement>(
+      '[data-map-state="deferred"]',
+    );
+
+    expect(interactivePreview?.dataset.mapInteraction).toBe("interactive");
+    const loadMapButton = interactivePreview?.querySelector<HTMLButtonElement>("button");
+    expect(loadMapButton).toBeTruthy();
+    await act(() => loadMapButton?.click());
+
+    const interactiveIframe = interactiveContainer.querySelector<HTMLIFrameElement>("iframe");
+
+    expect(interactiveIframe?.tabIndex).toBe(0);
+    expect(interactiveIframe?.className).not.toContain("pointer-events-none");
+    expect(interactiveIframe?.className).not.toContain("-top-20");
+    expect(interactiveIframe?.className).toContain("inset-0");
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await act(() => interactiveRoot.unmount());
   });
 
   it("respects section settings for columns, density, variants, and swatches", () => {

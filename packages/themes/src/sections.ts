@@ -375,12 +375,18 @@ export function buildOpenStreetMapEmbedUrl(latitude: number, longitude: number) 
       latitude - latitudeDelta,
       longitude + longitudeDelta,
       latitude + latitudeDelta,
-    ].join(","),
+    ]
+      .map(formatMapCoordinate)
+      .join(","),
   );
   url.searchParams.set("layer", "mapnik");
   url.searchParams.set("marker", `${latitude},${longitude}`);
 
   return url.toString();
+}
+
+function formatMapCoordinate(value: number) {
+  return Number(value.toFixed(6)).toString();
 }
 
 function isAllowedMapEmbedUrl(value: string) {
@@ -506,6 +512,7 @@ export const sectionSettingsSchemas = {
     showSwatches: z.boolean().default(true),
   }),
   location: commonSettingsSchema.extend({
+    allowMapInteraction: z.boolean().default(false),
     showMapPreview: z.boolean().default(true),
   }),
   gallery: commonSettingsSchema.extend({

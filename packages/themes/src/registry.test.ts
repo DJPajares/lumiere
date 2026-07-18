@@ -272,6 +272,18 @@ describe("theme registry", () => {
     });
 
     expect(legacyDressCode).toMatchObject({ cards: [] });
+    expect(sectionDefinitions.location.settingsSchema.parse({})).toMatchObject({
+      allowMapInteraction: false,
+      showMapPreview: true,
+    });
+    expect(
+      sectionDefinitions.location.settingsSchema.parse({
+        allowMapInteraction: true,
+      }),
+    ).toMatchObject({
+      allowMapInteraction: true,
+      showMapPreview: true,
+    });
   });
 
   it("defines event-type section blueprints for wedding and birthday defaults", () => {
@@ -898,6 +910,36 @@ describe("theme registry", () => {
       }),
     ).toMatchObject({
       directionsUrl: expect.stringContaining("https://www.google.com/maps/dir/"),
+    });
+
+    const coordinateLocation = normalizeLocationContent({
+      address: "12 Orchard Road, Singapore",
+      latitude: 1.3048,
+      longitude: 103.8318,
+      venueName: "The Glasshouse",
+    });
+    const coordinateEmbedUrl = new URL(coordinateLocation?.embedUrl ?? "https://invalid.example");
+    const coordinateDirectionsUrl = new URL(
+      coordinateLocation?.directionsUrl ?? "https://invalid.example",
+    );
+
+    expect(coordinateEmbedUrl.hostname).toBe("www.openstreetmap.org");
+    expect(coordinateEmbedUrl.pathname).toBe("/export/embed.html");
+    expect(coordinateEmbedUrl.searchParams.get("bbox")).toBe("103.8258,1.3003,103.8378,1.3093");
+    expect(coordinateEmbedUrl.searchParams.get("marker")).toBe("1.3048,103.8318");
+    expect(coordinateDirectionsUrl.searchParams.get("destination")).toBe("1.3048,103.8318");
+
+    const approvedEmbedUrl =
+      "https://www.openstreetmap.org/export/embed.html?bbox=103.8%2C1.2%2C103.9%2C1.3&layer=mapnik";
+
+    expect(
+      normalizeLocationContent({
+        address: "12 Orchard Road, Singapore",
+        embedUrl: approvedEmbedUrl,
+        venueName: "The Glasshouse",
+      }),
+    ).toMatchObject({
+      embedUrl: approvedEmbedUrl,
     });
   });
 

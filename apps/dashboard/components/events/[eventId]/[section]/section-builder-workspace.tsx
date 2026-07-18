@@ -2228,8 +2228,18 @@ function SectionSettingsFields({ controller }: { controller: SectionFieldControl
         {controller.section.sectionType === "location" ? (
           <CheckboxField
             controller={controller}
+            defaultValue
             label="Show map preview"
             path={["showMapPreview"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "location" ? (
+          <CheckboxField
+            controller={controller}
+            description="Allow guests to pan and zoom inside the embedded map."
+            label="Allow map interaction"
+            path={["allowMapInteraction"]}
             scope="settings"
           />
         ) : null}
@@ -2985,6 +2995,7 @@ function PreviewLocation({ content, settings }: { content: JsonObject; settings:
   const location = normalizeLocationContent(content);
   const directionsUrl = location?.directionsUrl;
   const embedUrl = location?.embedUrl;
+  const allowMapInteraction = readBoolean(settings.allowMapInteraction, false);
   const showMapPreview = readBoolean(settings.showMapPreview, true);
 
   return (
@@ -3007,12 +3018,20 @@ function PreviewLocation({ content, settings }: { content: JsonObject; settings:
         <div
           className="grid min-h-40 place-items-end rounded-[var(--radius-md)] border border-[var(--border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-muted)_88%,transparent),color-mix(in_srgb,var(--accent)_18%,var(--surface)))] p-3"
           data-map-state={embedUrl ? "embedded" : "fallback"}
+          data-map-interaction={allowMapInteraction ? "interactive" : "preview-only"}
         >
           <div className="w-full rounded-[var(--radius-sm)] bg-[var(--surface)] p-3 text-sm">
             <p className="font-semibold">{venueName}</p>
             <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
               {address ?? "Address to be announced."}
             </p>
+            {embedUrl ? (
+              <p className="mt-2 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
+                {allowMapInteraction
+                  ? "Guests can pan and zoom this map."
+                  : "Guests see a fixed map preview without zoom controls."}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
