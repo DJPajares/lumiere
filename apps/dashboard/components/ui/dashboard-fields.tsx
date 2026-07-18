@@ -35,7 +35,7 @@ import {
 } from "react";
 
 export const dashboardInputClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--foreground)_42%,transparent)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] disabled:opacity-70";
+  "min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--foreground)_42%,transparent)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] disabled:opacity-70";
 
 export const dashboardTextAreaClassName = `${dashboardInputClassName} min-h-28 resize-y leading-6`;
 
@@ -277,7 +277,7 @@ export function DashboardSelect({
           aria-describedby={describedBy}
           aria-invalid={error ? true : ariaInvalid}
           aria-label={ariaLabel}
-          className={cx("h-11 w-full px-3", selectClassName)}
+          className={cx("h-11 w-full bg-[var(--surface)] px-3", selectClassName)}
           id={inputId}
         >
           <SelectValue placeholder={loading ? "Loading options..." : placeholder} />
@@ -370,7 +370,7 @@ export function DashboardCombobox({
           aria-describedby={describedBy}
           aria-invalid={error ? true : ariaInvalid}
           aria-label={ariaLabel}
-          className={cx("h-11 w-full", inputClassName)}
+          className={cx("h-11 w-full bg-[var(--surface)]", inputClassName)}
           disabled={disabled || loading}
           id={inputId}
           placeholder={loading ? "Loading options..." : placeholder}

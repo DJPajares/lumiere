@@ -99,7 +99,7 @@ export function EventDatePicker({
       aria-invalid={ariaInvalid}
       aria-label={ariaLabel}
       aria-required={ariaRequired}
-      className="w-full justify-start gap-2 border-border px-3 font-normal motion-reduce:transition-none"
+      className="w-full justify-start gap-2 border-border bg-[var(--surface)] px-3 font-normal motion-reduce:transition-none"
       disabled={disabled}
       id={id}
       type="button"
@@ -195,7 +195,7 @@ export function EventTimePicker({
         aria-invalid={ariaInvalid}
         aria-label={ariaLabel}
         aria-required={ariaRequired}
-        className="h-11 w-full justify-start gap-2 px-3 motion-reduce:transition-none"
+        className="h-11 w-full justify-start gap-2 bg-[var(--surface)] px-3 motion-reduce:transition-none"
         id={id}
       >
         <TimePickerIcon />

@@ -938,7 +938,7 @@ function GuestGroupForm({
         <textarea
           aria-describedby={errors.notes ? "guest-notes-error" : undefined}
           aria-invalid={errors.notes ? true : undefined}
-          className="min-h-24 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+          className="min-h-24 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
           id="guest-notes"
           onChange={(event) => onUpdate("notes", event.target.value)}
           value={values.notes}
@@ -1466,7 +1466,7 @@ function TextField({
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? true : undefined}
-        className="min-h-10 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+        className="min-h-10 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
         id={inputId}
         inputMode={inputMode}
         max={max}
