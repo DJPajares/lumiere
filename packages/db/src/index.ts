@@ -7,6 +7,7 @@ export {
   eq,
   getTableColumns,
   gt,
+  inArray,
   isNotNull,
   isNull,
   ne,

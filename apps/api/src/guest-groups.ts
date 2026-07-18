@@ -1,12 +1,13 @@
 import type { Database } from "@lumiere/db";
-import { and, desc, eq, guestGroups, sql } from "@lumiere/db";
-import type { GuestGroup, GuestGroupMutation } from "@lumiere/types";
+import { and, asc, desc, eq, guestGroupMembers, guestGroups, inArray, sql } from "@lumiere/db";
+import type { GuestGroup, GuestGroupMember, GuestGroupMutation } from "@lumiere/types";
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
 import { ApiHttpError } from "./errors";
 import { toIsoDateTime } from "./serialization";
 
 type GuestGroupRow = typeof guestGroups.$inferSelect;
+type GuestGroupMemberRow = typeof guestGroupMembers.$inferSelect;
 
 export type InviteTokenRecord = {
   inviteCode: string;
@@ -43,27 +44,42 @@ export type GeneratedInvite = InviteTokenRecord & {
 export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => ({
   async createGuestGroup(eventId, input, invite) {
     return withInviteConflictHandling(async () => {
-      const [guestGroup] = await db
-        .insert(guestGroups)
-        .values({
-          contactEmail: input.contactEmail,
-          contactName: input.contactName,
-          eventId,
-          inviteCode: invite.inviteCode,
-          inviteTokenEncrypted: invite.inviteTokenEncrypted,
-          inviteTokenHash: invite.inviteTokenHash,
-          label: input.label,
-          maxPax: input.maxPax,
-          notes: input.notes,
-          status: input.status ?? "pending",
-        })
-        .returning();
+      const result = await db.transaction(async (tx) => {
+        const [guestGroup] = await tx
+          .insert(guestGroups)
+          .values({
+            contactEmail: input.contactEmail,
+            contactName: input.contactName,
+            eventId,
+            inviteCode: invite.inviteCode,
+            inviteTokenEncrypted: invite.inviteTokenEncrypted,
+            inviteTokenHash: invite.inviteTokenHash,
+            label: input.label,
+            maxPax: input.maxPax,
+            notes: input.notes,
+            status: input.status ?? "pending",
+          })
+          .returning();
 
-      if (!guestGroup) {
-        throw new ApiHttpError("INTERNAL_ERROR", "Unable to create guest group");
-      }
+        if (!guestGroup) {
+          throw new ApiHttpError("INTERNAL_ERROR", "Unable to create guest group");
+        }
 
-      return toApiGuestGroup(guestGroup);
+        if (input.members && input.members.length > 0) {
+          await tx.insert(guestGroupMembers).values(
+            input.members.map((member, sortOrder) => ({
+              guestGroupId: guestGroup.id,
+              name: member.name,
+              sortOrder,
+            })),
+          );
+        }
+
+        return guestGroup;
+      });
+
+      const members = await listGuestGroupMembers(db, result.id);
+      return toApiGuestGroup(result, members);
     });
   },
 
@@ -77,7 +93,9 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
       .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
       .returning();
 
-    return guestGroup ? toApiGuestGroup(guestGroup) : null;
+    return guestGroup
+      ? toApiGuestGroup(guestGroup, await listGuestGroupMembers(db, guestGroup.id))
+      : null;
   },
 
   async listGuestGroups(eventId) {
@@ -87,8 +105,22 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
       .where(eq(guestGroups.eventId, eventId))
       .orderBy(desc(guestGroups.createdAt));
 
+    const memberRows = rows.length
+      ? await db
+          .select()
+          .from(guestGroupMembers)
+          .where(
+            inArray(
+              guestGroupMembers.guestGroupId,
+              rows.map((row) => row.id),
+            ),
+          )
+          .orderBy(asc(guestGroupMembers.sortOrder), asc(guestGroupMembers.createdAt))
+      : [];
+    const membersByGroup = groupMembersByGroupId(memberRows);
+
     return rows.map((row) => ({
-      ...toApiGuestGroup(row),
+      ...toApiGuestGroup(row, membersByGroup.get(row.id) ?? []),
       ...(row.inviteTokenEncrypted ? { inviteTokenEncrypted: row.inviteTokenEncrypted } : {}),
     }));
   },
@@ -108,26 +140,73 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
         .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
         .returning();
 
-      return guestGroup ? toApiGuestGroup(guestGroup) : null;
+      return guestGroup
+        ? toApiGuestGroup(guestGroup, await listGuestGroupMembers(db, guestGroup.id))
+        : null;
     });
   },
 
   async updateGuestGroup(eventId, groupId, input) {
-    const [guestGroup] = await db
-      .update(guestGroups)
-      .set({
-        contactEmail: input.contactEmail,
-        contactName: input.contactName,
-        label: input.label,
-        maxPax: input.maxPax,
-        notes: input.notes,
-        ...(input.status ? { status: input.status } : {}),
-        updatedAt: sql`now()`,
-      })
-      .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
-      .returning();
+    const result = await db.transaction(async (tx) => {
+      const existingMembers = await tx
+        .select({ id: guestGroupMembers.id })
+        .from(guestGroupMembers)
+        .where(eq(guestGroupMembers.guestGroupId, groupId));
 
-    return guestGroup ? toApiGuestGroup(guestGroup) : null;
+      if (input.members === undefined && existingMembers.length > input.maxPax) {
+        throw new ApiHttpError(
+          "VALIDATION_ERROR",
+          "Maximum party size cannot be lower than the number of named members",
+          {
+            fields: [
+              {
+                message: "Increase max pax or remove named members before saving",
+                path: ["maxPax"],
+              },
+            ],
+          },
+        );
+      }
+
+      const [guestGroup] = await tx
+        .update(guestGroups)
+        .set({
+          contactEmail: input.contactEmail,
+          contactName: input.contactName,
+          label: input.label,
+          maxPax: input.maxPax,
+          notes: input.notes,
+          ...(input.status ? { status: input.status } : {}),
+          updatedAt: sql`now()`,
+        })
+        .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
+        .returning();
+
+      if (!guestGroup) {
+        return null;
+      }
+
+      if (input.members !== undefined) {
+        const existingMemberIds = new Set(existingMembers.map((member) => member.id));
+
+        await tx.delete(guestGroupMembers).where(eq(guestGroupMembers.guestGroupId, groupId));
+
+        if (input.members.length > 0) {
+          await tx.insert(guestGroupMembers).values(
+            input.members.map((member, sortOrder) => ({
+              ...(member.id && existingMemberIds.has(member.id) ? { id: member.id } : {}),
+              guestGroupId: groupId,
+              name: member.name,
+              sortOrder,
+            })),
+          );
+        }
+      }
+
+      return guestGroup;
+    });
+
+    return result ? toApiGuestGroup(result, await listGuestGroupMembers(db, result.id)) : null;
   },
 });
 
@@ -185,7 +264,10 @@ const encryptInviteToken = (token: string, secret: string) => {
   ].join(".");
 };
 
-export const toApiGuestGroup = (guestGroup: GuestGroupRow): GuestGroup => ({
+export const toApiGuestGroup = (
+  guestGroup: GuestGroupRow,
+  members: GuestGroupMemberRow[] = [],
+): GuestGroup => ({
   contactEmail: guestGroup.contactEmail ?? undefined,
   contactName: guestGroup.contactName ?? undefined,
   createdAt: toIsoDateTime(guestGroup.createdAt),
@@ -194,10 +276,36 @@ export const toApiGuestGroup = (guestGroup: GuestGroupRow): GuestGroup => ({
   inviteCode: guestGroup.inviteCode,
   label: guestGroup.label,
   lastOpenedAt: guestGroup.lastOpenedAt ? toIsoDateTime(guestGroup.lastOpenedAt) : undefined,
+  members: members.map(toApiGuestGroupMember),
   maxPax: guestGroup.maxPax,
   notes: guestGroup.notes ?? undefined,
   status: guestGroup.status,
   updatedAt: toIsoDateTime(guestGroup.updatedAt),
+});
+
+const listGuestGroupMembers = async (db: Database, guestGroupId: string) =>
+  db
+    .select()
+    .from(guestGroupMembers)
+    .where(eq(guestGroupMembers.guestGroupId, guestGroupId))
+    .orderBy(asc(guestGroupMembers.sortOrder), asc(guestGroupMembers.createdAt));
+
+const groupMembersByGroupId = (members: GuestGroupMemberRow[]) => {
+  const grouped = new Map<string, GuestGroupMemberRow[]>();
+
+  for (const member of members) {
+    const group = grouped.get(member.guestGroupId) ?? [];
+    group.push(member);
+    grouped.set(member.guestGroupId, group);
+  }
+
+  return grouped;
+};
+
+const toApiGuestGroupMember = (member: GuestGroupMemberRow): GuestGroupMember => ({
+  id: member.id,
+  name: member.name,
+  sortOrder: member.sortOrder,
 });
 
 const withInviteConflictHandling = async <TValue>(operation: () => Promise<TValue>) => {

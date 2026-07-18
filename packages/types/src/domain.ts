@@ -244,10 +244,25 @@ export const eventThemeUpdateSchema = z.object({
 export type EventThemeUpdateInput = z.input<typeof eventThemeUpdateSchema>;
 export type EventThemeUpdate = z.output<typeof eventThemeUpdateSchema>;
 
+export const guestGroupMemberSchema = z.object({
+  id: idSchema,
+  name: nonEmptyStringSchema.max(160),
+  sortOrder: z.number().int().min(0).max(49),
+});
+export type GuestGroupMember = z.infer<typeof guestGroupMemberSchema>;
+
+export const guestGroupMemberMutationSchema = z.object({
+  id: idSchema.optional(),
+  name: nonEmptyStringSchema.max(160),
+});
+export type GuestGroupMemberMutationInput = z.input<typeof guestGroupMemberMutationSchema>;
+export type GuestGroupMemberMutation = z.output<typeof guestGroupMemberMutationSchema>;
+
 export const guestGroupSchema = z.object({
   id: idSchema,
   eventId: idSchema,
   label: nonEmptyStringSchema.max(160),
+  members: z.array(guestGroupMemberSchema).max(50).optional(),
   contactName: z.string().trim().max(160).optional(),
   contactEmail: z.string().trim().email().optional(),
   maxPax: z.number().int().min(1).max(50),
@@ -261,14 +276,54 @@ export const guestGroupSchema = z.object({
 });
 export type GuestGroup = z.infer<typeof guestGroupSchema>;
 
-export const guestGroupMutationSchema = z.object({
-  label: nonEmptyStringSchema.max(160),
-  contactName: z.string().trim().max(160).optional(),
-  contactEmail: z.string().trim().email().optional(),
-  maxPax: z.number().int().min(1).max(50),
-  status: guestGroupStatusSchema.optional(),
-  notes: optionalTextSchema,
-});
+export const guestGroupMutationSchema = z
+  .object({
+    label: nonEmptyStringSchema.max(160),
+    contactName: z.string().trim().max(160).optional(),
+    contactEmail: z.string().trim().email().optional(),
+    maxPax: z.number().int().min(1).max(50),
+    members: z.array(guestGroupMemberMutationSchema).max(50).optional(),
+    status: guestGroupStatusSchema.optional(),
+    notes: optionalTextSchema,
+  })
+  .superRefine((value, context) => {
+    if (!value.members) return;
+
+    if (value.members.length > value.maxPax) {
+      context.addIssue({
+        code: "custom",
+        path: ["members"],
+        message: "Named members cannot exceed the group's maximum party size",
+      });
+    }
+
+    const names = new Map<string, number>();
+    const memberIds = new Set<string>();
+
+    value.members.forEach((member, index) => {
+      if (member.id && memberIds.has(member.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["members", index, "id"],
+          message: "Member records must be unique",
+        });
+      }
+      if (member.id) memberIds.add(member.id);
+
+      const normalizedName = member.name.toLocaleLowerCase();
+      const firstIndex = names.get(normalizedName);
+
+      if (firstIndex !== undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["members", index, "name"],
+          message: `Member name duplicates row ${firstIndex + 1}`,
+        });
+      } else {
+        names.set(normalizedName, index);
+      }
+    });
+  });
 export type GuestGroupMutationInput = z.input<typeof guestGroupMutationSchema>;
 export type GuestGroupMutation = z.output<typeof guestGroupMutationSchema>;
 

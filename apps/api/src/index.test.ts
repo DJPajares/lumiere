@@ -1898,6 +1898,7 @@ describe("API app", () => {
         contactName: "Mina Tan",
         label: "Tan Family",
         maxPax: 4,
+        members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
         notes: "Window table",
       }),
       headers: {
@@ -1923,6 +1924,7 @@ describe("API app", () => {
         contactName: "Mina Tan",
         label: "Tan Family",
         maxPax: 4,
+        members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
         notes: "Window table",
       },
       expect.objectContaining({
@@ -1998,6 +2000,10 @@ describe("API app", () => {
         contactName: "Mina Tan",
         label: "Tan and Lee Family",
         maxPax: 5,
+        members: [
+          { id: "member_2", name: "Alex Tan" },
+          { id: "member_1", name: "Mina Tan" },
+        ],
         notes: "Window table",
         status: "opened",
       }),
@@ -2017,6 +2023,10 @@ describe("API app", () => {
       contactName: "Mina Tan",
       label: "Tan and Lee Family",
       maxPax: 5,
+      members: [
+        { id: "member_2", name: "Alex Tan" },
+        { id: "member_1", name: "Mina Tan" },
+      ],
       notes: "Window table",
       status: "opened",
     });

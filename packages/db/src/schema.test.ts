@@ -30,6 +30,7 @@ import {
   eventTypeEnum,
   eventThemeSettings,
   guestGroups,
+  guestGroupMembers,
   guestGroupStatusEnum,
   managerRoleEnum,
   notifications,
@@ -59,6 +60,7 @@ describe("database schema", () => {
         eventPublications,
         eventAssets,
         guestGroups,
+        guestGroupMembers,
         rsvpResponses,
         activityEvents,
         notifications,
@@ -76,6 +78,7 @@ describe("database schema", () => {
       "event_publications",
       "event_assets",
       "guest_groups",
+      "guest_group_members",
       "rsvp_responses",
       "activity_events",
       "notifications",
@@ -90,6 +93,7 @@ describe("database schema", () => {
     const sectionColumns = getTableColumns(eventSections);
     const contentColumns = getTableColumns(eventSectionContents);
     const guestGroupColumns = getTableColumns(guestGroups);
+    const guestGroupMemberColumns = getTableColumns(guestGroupMembers);
 
     expect(eventColumns).not.toHaveProperty("selectedThemeId");
     expect(eventColumns).not.toHaveProperty("rsvpSettingsJson");
@@ -109,6 +113,11 @@ describe("database schema", () => {
     expect(guestGroupColumns).toMatchObject({
       maxPax: expect.anything(),
       status: expect.anything(),
+    });
+    expect(guestGroupMemberColumns).toMatchObject({
+      guestGroupId: expect.anything(),
+      name: expect.anything(),
+      sortOrder: expect.anything(),
     });
     expect(getTableColumns(eventPublications)).toHaveProperty("sectionsJson");
   });
@@ -141,6 +150,8 @@ describe("database schema", () => {
       eventsOwnerDeletedAt: "events_owner_deleted_at_idx",
       eventsOwnerUserId: "events_owner_user_id_idx",
       guestGroupsInviteTokenHash: "guest_groups_invite_token_hash_unique",
+      guestGroupMembersGroupId: "guest_group_members_group_id_idx",
+      guestGroupMembersGroupSort: "guest_group_members_group_sort_unique",
       rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",
       activityEventsEventCreatedAt: "activity_events_event_created_at_idx",
     });

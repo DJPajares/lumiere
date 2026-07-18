@@ -108,6 +108,8 @@ export const schemaIndexNames = {
   guestGroupsInviteCode: "guest_groups_invite_code_unique",
   guestGroupsEventId: "guest_groups_event_id_idx",
   guestGroupsEventStatus: "guest_groups_event_status_idx",
+  guestGroupMembersGroupSort: "guest_group_members_group_sort_unique",
+  guestGroupMembersGroupId: "guest_group_members_group_id_idx",
   rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",
   rsvpResponsesEventStatus: "rsvp_responses_event_status_idx",
   rsvpResponsesGuestGroupId: "rsvp_responses_guest_group_id_idx",
@@ -323,6 +325,27 @@ export const guestGroups = lumiereSchema.table(
   ],
 );
 
+export const guestGroupMembers = lumiereSchema.table(
+  "guest_group_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    guestGroupId: uuid("guest_group_id")
+      .notNull()
+      .references(() => guestGroups.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn(),
+  },
+  (table) => [
+    uniqueIndex(schemaIndexNames.guestGroupMembersGroupSort).on(
+      table.guestGroupId,
+      table.sortOrder,
+    ),
+    index(schemaIndexNames.guestGroupMembersGroupId).on(table.guestGroupId),
+  ],
+);
+
 export const rsvpResponses = lumiereSchema.table(
   "rsvp_responses",
   {
@@ -507,7 +530,15 @@ export const guestGroupsRelations = relations(guestGroups, ({ one, many }) => ({
     fields: [guestGroups.eventId],
     references: [events.id],
   }),
+  members: many(guestGroupMembers),
   rsvpResponses: many(rsvpResponses),
+}));
+
+export const guestGroupMembersRelations = relations(guestGroupMembers, ({ one }) => ({
+  guestGroup: one(guestGroups, {
+    fields: [guestGroupMembers.guestGroupId],
+    references: [guestGroups.id],
+  }),
 }));
 
 export const rsvpResponsesRelations = relations(rsvpResponses, ({ one }) => ({
@@ -572,7 +603,9 @@ export const schema = {
   eventThemeSettingsRelations,
   eventTypeEnum,
   guestGroups,
+  guestGroupMembers,
   guestGroupsRelations,
+  guestGroupMembersRelations,
   guestGroupStatusEnum,
   managerRoleEnum,
   notifications,

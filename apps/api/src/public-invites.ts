@@ -10,6 +10,7 @@ import {
   eventSlugAliases,
   events,
   getTableColumns,
+  guestGroupMembers,
   guestGroups,
   isNull,
   or,
@@ -110,6 +111,15 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       return "disabled";
     }
 
+    const memberRows = await db
+      .select({
+        name: guestGroupMembers.name,
+        sortOrder: guestGroupMembers.sortOrder,
+      })
+      .from(guestGroupMembers)
+      .where(eq(guestGroupMembers.guestGroupId, guestGroup.id))
+      .orderBy(asc(guestGroupMembers.sortOrder), asc(guestGroupMembers.createdAt));
+
     const [rsvpResponse] = await db
       .select({
         responseStatus: rsvpResponses.responseStatus,
@@ -123,6 +133,7 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       guest: {
         guestGroup: {
           label: guestGroup.label,
+          members: memberRows,
           maxPax: guestGroup.maxPax,
           status: guestGroup.status,
         },

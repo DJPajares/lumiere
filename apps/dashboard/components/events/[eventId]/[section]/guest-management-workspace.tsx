@@ -1,11 +1,24 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { Button } from "@lumiere/dashboard-ui/components/button";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@lumiere/dashboard-ui/components/field";
+import { Input } from "@lumiere/dashboard-ui/components/input";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import {
   guestGroupMutationRequestSchema,
   type Event,
   type GuestGroup,
+  type GuestGroupMemberMutationInput,
   type GuestGroupMutationRequest,
   type GuestGroupStatus,
 } from "@lumiere/types";
@@ -41,12 +54,15 @@ type FormValues = {
   contactEmail: string;
   contactName: string;
   label: string;
+  members: GuestGroupMemberMutationInput[];
   maxPax: string;
   notes: string;
   status: string;
 };
 
-type FormErrors = Partial<Record<keyof FormValues | "_form", string>>;
+type FormErrors = Partial<Record<keyof FormValues | "_form", string>> & {
+  memberNames?: Record<number, string>;
+};
 
 type PendingAction = {
   groupId: string;
@@ -57,6 +73,7 @@ const defaultFormValues: FormValues = {
   contactEmail: "",
   contactName: "",
   label: "",
+  members: [],
   maxPax: "2",
   notes: "",
   status: "pending",
@@ -173,6 +190,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       contactEmail: group.contactEmail ?? "",
       contactName: group.contactName ?? "",
       label: group.label,
+      members: (group.members ?? []).map(({ id, name }) => ({ id, name })),
       maxPax: String(group.maxPax),
       notes: group.notes ?? "",
       status: group.status,
@@ -193,6 +211,64 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     setFormErrors((current) => {
       const nextErrors = { ...current };
       delete nextErrors[field];
+      delete nextErrors._form;
+      return nextErrors;
+    });
+  };
+
+  const updateMember = (index: number, name: string) => {
+    setFormValues((current) => ({
+      ...current,
+      members: current.members.map((member, memberIndex) =>
+        memberIndex === index ? { ...member, name } : member,
+      ),
+    }));
+    clearMemberErrors(index);
+  };
+
+  const addMember = () => {
+    setFormValues((current) => ({
+      ...current,
+      members: [...current.members, { name: "" }],
+    }));
+    clearMemberErrors();
+  };
+
+  const removeMember = (index: number) => {
+    setFormValues((current) => ({
+      ...current,
+      members: current.members.filter((_, memberIndex) => memberIndex !== index),
+    }));
+    clearMemberErrors();
+  };
+
+  const moveMember = (index: number, direction: -1 | 1) => {
+    setFormValues((current) => {
+      const targetIndex = index + direction;
+
+      if (targetIndex < 0 || targetIndex >= current.members.length) {
+        return current;
+      }
+
+      const members = [...current.members];
+      [members[index], members[targetIndex]] = [members[targetIndex], members[index]];
+      return { ...current, members };
+    });
+    clearMemberErrors();
+  };
+
+  const clearMemberErrors = (index?: number) => {
+    setFormErrors((current) => {
+      const nextErrors = { ...current };
+
+      delete nextErrors.members;
+      if (index === undefined) {
+        delete nextErrors.memberNames;
+      } else if (nextErrors.memberNames) {
+        const memberNames = { ...nextErrors.memberNames };
+        delete memberNames[index];
+        nextErrors.memberNames = memberNames;
+      }
       delete nextErrors._form;
       return nextErrors;
     });
@@ -463,11 +539,15 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       >
         {({ requestClose }) => (
           <GuestGroupForm
+            onAddMember={addMember}
             editingGroup={editingGroup}
             errors={formErrors}
             onCancel={requestClose}
+            onMoveMember={moveMember}
             onSubmit={() => void submitForm()}
+            onRemoveMember={removeMember}
             onUpdate={updateField}
+            onUpdateMember={updateMember}
             submitting={submitting}
             values={formValues}
           />
@@ -546,17 +626,25 @@ function GuestSummary({ guestGroups }: { guestGroups: GuestGroup[] }) {
 function GuestGroupForm({
   editingGroup,
   errors,
+  onAddMember,
   onCancel,
+  onMoveMember,
+  onRemoveMember,
   onSubmit,
   onUpdate,
+  onUpdateMember,
   submitting,
   values,
 }: {
   editingGroup?: GuestGroup;
   errors: FormErrors;
+  onAddMember: () => void;
   onCancel: () => void;
+  onMoveMember: (index: number, direction: -1 | 1) => void;
+  onRemoveMember: (index: number) => void;
   onSubmit: () => void;
   onUpdate: (field: keyof FormValues, value: string) => void;
+  onUpdateMember: (index: number, name: string) => void;
   submitting: boolean;
   values: FormValues;
 }) {
@@ -592,7 +680,7 @@ function GuestGroupForm({
         />
         <TextField
           error={errors.contactName}
-          label="Guest names / contact"
+          label="Guest names / contact (legacy)"
           onChange={(value) => onUpdate("contactName", value)}
           value={values.contactName}
         />
@@ -604,6 +692,90 @@ function GuestGroupForm({
           value={values.contactEmail}
         />
       </div>
+
+      <FieldSet className="rounded-[var(--radius-md)] border border-border bg-muted/30 p-4">
+        <FieldLegend variant="label">Named members</FieldLegend>
+        <FieldDescription>
+          Add one name per person when the invite should let guests select their attendees. Named
+          members count toward the {values.maxPax || "configured"} pax limit.
+          {editingGroup && !values.members.length && values.contactName
+            ? " This older group still has combined contact text above; it remains editable until you add structured names."
+            : ""}
+        </FieldDescription>
+        <FieldGroup className="gap-3">
+          {values.members.map((member, index) => {
+            const error = errors.memberNames?.[index];
+            const memberId = `guest-member-${index}`;
+            const memberLabel = member.name.trim() || `member ${index + 1}`;
+
+            return (
+              <Field
+                data-invalid={Boolean(error)}
+                key={member.id ?? memberId}
+                orientation="responsive"
+              >
+                <FieldContent>
+                  <FieldLabel htmlFor={memberId}>Member {index + 1}</FieldLabel>
+                  <Input
+                    aria-describedby={error ? `${memberId}-error` : undefined}
+                    aria-invalid={Boolean(error)}
+                    id={memberId}
+                    onChange={(event) => onUpdateMember(index, event.target.value)}
+                    placeholder="Full name"
+                    value={member.name}
+                  />
+                  {error ? <FieldError id={`${memberId}-error`}>{error}</FieldError> : null}
+                </FieldContent>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    aria-label={`Move ${memberLabel} up`}
+                    disabled={index === 0}
+                    onClick={() => onMoveMember(index, -1)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <span aria-hidden="true">↑</span>
+                  </Button>
+                  <Button
+                    aria-label={`Move ${memberLabel} down`}
+                    disabled={index === values.members.length - 1}
+                    onClick={() => onMoveMember(index, 1)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <span aria-hidden="true">↓</span>
+                  </Button>
+                  <Button
+                    aria-label={`Remove ${memberLabel}`}
+                    onClick={() => onRemoveMember(index)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <span aria-hidden="true">×</span>
+                  </Button>
+                </div>
+              </Field>
+            );
+          })}
+        </FieldGroup>
+        {errors.members ? <FieldError>{errors.members}</FieldError> : null}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button
+            disabled={values.members.length >= Number(values.maxPax || 0)}
+            onClick={onAddMember}
+            type="button"
+            variant="outline"
+          >
+            Add member
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {values.members.length} of {values.maxPax || "—"} named
+          </p>
+        </div>
+      </FieldSet>
 
       {editingGroup ? (
         <DashboardSelect
@@ -714,9 +886,18 @@ function GuestGroupList({
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
                   {group.maxPax} max pax
-                  {group.contactName ? ` · ${group.contactName}` : ""}
+                  {group.members?.length
+                    ? ` · ${group.members.length} named member${group.members.length === 1 ? "" : "s"}`
+                    : group.contactName
+                      ? ` · ${group.contactName}`
+                      : ""}
                   {group.contactEmail ? ` · ${group.contactEmail}` : ""}
                 </p>
+                {group.members?.length ? (
+                  <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                    {group.members.map((member) => member.name).join(" · ")}
+                  </p>
+                ) : null}
                 {group.notes ? (
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
                     {group.notes}
@@ -940,6 +1121,7 @@ function parseGuestGroupForm(values: FormValues):
     contactName: emptyToUndefined(values.contactName),
     label: values.label,
     maxPax,
+    members: values.members,
     notes: values.notes,
     status: values.status,
   });
@@ -955,6 +1137,20 @@ function parseGuestGroupForm(values: FormValues):
 
   for (const issue of result.error.issues) {
     const field = issue.path[0];
+
+    if (field === "members") {
+      const memberIndex = issue.path[1];
+
+      if (typeof memberIndex === "number" && issue.path[2] === "name") {
+        errors.memberNames = {
+          ...errors.memberNames,
+          [memberIndex]: issue.message,
+        };
+      } else {
+        errors.members = issue.message;
+      }
+      continue;
+    }
 
     if (typeof field === "string" && isFormField(field)) {
       errors[field] = issue.message;
@@ -1015,6 +1211,7 @@ function isFormField(value: string): value is keyof FormValues {
     value === "contactEmail" ||
     value === "contactName" ||
     value === "label" ||
+    value === "members" ||
     value === "maxPax" ||
     value === "notes" ||
     value === "status"

@@ -168,8 +168,11 @@ describe("GuestManagementWorkspace", () => {
 
     await user.clear(screen.getByLabelText("Max pax"));
     await user.type(screen.getByLabelText("Max pax"), "5");
-    await user.clear(screen.getByLabelText("Guest names / contact"));
-    await user.type(screen.getByLabelText("Guest names / contact"), "Mina, Alex, and Jamie");
+    await user.clear(screen.getByLabelText("Guest names / contact (legacy)"));
+    await user.type(
+      screen.getByLabelText("Guest names / contact (legacy)"),
+      "Mina, Alex, and Jamie",
+    );
     await user.clear(screen.getByLabelText("Notes"));
     await user.type(screen.getByLabelText("Notes"), "Seat near the stage.");
     await user.click(screen.getByLabelText("Invite status"));
@@ -191,6 +194,82 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByText("Tan Family updated.")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.activeElement).toBe(editTrigger);
+  });
+
+  it("adds, reorders, and removes structured guest members before saving", async () => {
+    const user = userEvent.setup();
+    const updateGuestGroup = vi.fn<DashboardApiClient["updateGuestGroup"]>(async () => ({
+      guestGroup: {
+        ...guestGroup,
+        members: [
+          { id: "member_2", name: "Alex Tan", sortOrder: 0 },
+          { id: "member_1", name: "Mina Tan", sortOrder: 1 },
+        ],
+      },
+    }));
+    const structuredGroup: GuestGroup = {
+      ...guestGroup,
+      members: [
+        { id: "member_1", name: "Mina Tan", sortOrder: 0 },
+        { id: "member_2", name: "Alex Tan", sortOrder: 1 },
+      ],
+    };
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [structuredGroup] })),
+        updateGuestGroup,
+      }),
+    );
+
+    await screen.findByText("Mina Tan · Alex Tan");
+    await user.click(screen.getByRole("button", { name: "Edit Tan Family" }));
+    await screen.findByRole("dialog", { name: "Edit Tan Family" });
+
+    await user.click(screen.getByRole("button", { name: "Move Mina Tan down" }));
+    await user.click(screen.getByRole("button", { name: "Add member" }));
+    await user.type(screen.getByLabelText("Member 3"), "Jamie Tan");
+    await user.click(screen.getByRole("button", { name: "Remove Jamie Tan" }));
+    await user.click(screen.getByRole("button", { name: "Save guest group" }));
+
+    await waitFor(() =>
+      expect(updateGuestGroup).toHaveBeenCalledWith(
+        "evt_123",
+        "guest_1",
+        expect.objectContaining({
+          members: [
+            { id: "member_2", name: "Alex Tan" },
+            { id: "member_1", name: "Mina Tan" },
+          ],
+        }),
+      ),
+    );
+  });
+
+  it("shows inline validation for blank and duplicate member rows", async () => {
+    const user = userEvent.setup();
+    const createGuestGroup = vi.fn<DashboardApiClient["createGuestGroup"]>();
+
+    renderWithAuth(
+      createApiClientStub({
+        createGuestGroup,
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [] })),
+      }),
+    );
+
+    await screen.findByText("No guest groups yet");
+    await user.click(screen.getByRole("button", { name: "New guest group" }));
+    await screen.findByRole("dialog", { name: "Create guest group" });
+    await user.type(screen.getByLabelText("Group label"), "Family table");
+    await user.click(screen.getByRole("button", { name: "Add member" }));
+    await user.type(screen.getByLabelText("Member 1"), "Mina Tan");
+    await user.click(screen.getByRole("button", { name: "Add member" }));
+    await user.type(screen.getByLabelText("Member 2"), " mina tan ");
+    await user.click(screen.getByRole("button", { name: "Create guest group" }));
+
+    expect(createGuestGroup).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Member 2").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("Member name duplicates row 1")).toBeTruthy();
   });
 
   it("confirms before regenerating an invite link", async () => {

@@ -20,21 +20,33 @@ const userId = "00000000-0000-4000-8000-000000000001";
 
 describe("API serialization", () => {
   it("serializes guest group database timestamps as shared API datetimes", () => {
-    const guestGroup = toApiGuestGroup({
-      contactEmail: null,
-      contactName: null,
-      createdAt: "2026-07-08 03:00:00+00",
-      eventId,
-      id: guestGroupId,
-      inviteCode: "invite-code",
-      inviteTokenHash: "hash",
-      label: "Tan Family",
-      lastOpenedAt: "2026-07-08 04:00:00+00",
-      maxPax: 4,
-      notes: null,
-      status: "pending",
-      updatedAt: "2026-07-08 05:00:00+00",
-    } as Parameters<typeof toApiGuestGroup>[0]);
+    const guestGroup = toApiGuestGroup(
+      {
+        contactEmail: null,
+        contactName: null,
+        createdAt: "2026-07-08 03:00:00+00",
+        eventId,
+        id: guestGroupId,
+        inviteCode: "invite-code",
+        inviteTokenHash: "hash",
+        label: "Tan Family",
+        lastOpenedAt: "2026-07-08 04:00:00+00",
+        maxPax: 4,
+        notes: null,
+        status: "pending",
+        updatedAt: "2026-07-08 05:00:00+00",
+      } as Parameters<typeof toApiGuestGroup>[0],
+      [
+        {
+          createdAt: "2026-07-08 03:01:00+00",
+          guestGroupId,
+          id: "00000000-0000-4000-8000-000000000302",
+          name: "Mina Tan",
+          sortOrder: 0,
+          updatedAt: "2026-07-08 03:01:00+00",
+        },
+      ] as Parameters<typeof toApiGuestGroup>[1],
+    );
 
     expect(guestGroupsResponseSchema.parse({ guestGroups: [guestGroup] })).toEqual({
       guestGroups: [
@@ -42,6 +54,13 @@ describe("API serialization", () => {
           createdAt: "2026-07-08T03:00:00.000Z",
           lastOpenedAt: "2026-07-08T04:00:00.000Z",
           updatedAt: "2026-07-08T05:00:00.000Z",
+          members: [
+            {
+              id: "00000000-0000-4000-8000-000000000302",
+              name: "Mina Tan",
+              sortOrder: 0,
+            },
+          ],
         }),
       ],
     });

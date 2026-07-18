@@ -280,6 +280,15 @@ export type PublicEventResponse = z.infer<typeof publicEventResponseSchema>;
 export const publicGuestContextSchema = z.object({
   guestGroup: z.object({
     label: guestGroupSchema.shape.label,
+    members: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(160),
+          sortOrder: z.number().int().min(0).max(49),
+        }),
+      )
+      .max(50)
+      .optional(),
     maxPax: guestGroupSchema.shape.maxPax,
     status: guestGroupSchema.shape.status,
   }),

@@ -128,6 +128,34 @@ describe("shared schemas", () => {
     ).toThrow();
   });
 
+  it("validates ordered guest members against capacity and duplicate names", () => {
+    expect(
+      guestGroupMutationSchema.parse({
+        label: "Family table",
+        maxPax: 2,
+        members: [{ name: " Mina Tan " }, { name: "Alex Tan" }],
+      }),
+    ).toMatchObject({
+      members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
+    });
+
+    expect(() =>
+      guestGroupMutationSchema.parse({
+        label: "Family table",
+        maxPax: 1,
+        members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
+      }),
+    ).toThrow("maximum party size");
+
+    expect(() =>
+      guestGroupMutationSchema.parse({
+        label: "Family table",
+        maxPax: 2,
+        members: [{ name: "Mina Tan" }, { name: " mina tan " }],
+      }),
+    ).toThrow("duplicates");
+  });
+
   it("validates RSVP attendee rules", () => {
     expect(() =>
       rsvpSubmissionSchema.parse({
