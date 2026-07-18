@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import type { ActivityEvent, Event, GuestGroup, RsvpResponse } from "@lumiere/types";
-import { cleanup, render, screen } from "@testing-library/react";
+import type { ActivityEvent, Event, EventSummary, GuestGroup, RsvpResponse } from "@lumiere/types";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -15,6 +15,7 @@ import { ResponsesActivityWorkspace } from "./responses-activity-workspace";
 describe("ResponsesActivityWorkspace", () => {
   afterEach(() => {
     cleanup();
+    window.history.replaceState({}, "", "/events/evt_123/responses");
   });
 
   it("lists response rows and filters by RSVP state", async () => {
@@ -28,6 +29,9 @@ describe("ResponsesActivityWorkspace", () => {
     expect(screen.getByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeTruthy();
     expect(screen.getByText("2 pax")).toBeTruthy();
     expect(screen.getByText("Mina Tan, Alex Tan")).toBeTruthy();
+    expect(screen.getByText("2 named members")).toBeTruthy();
+    expect(screen.getByText("Auntie Joy")).toBeTruthy();
+    expect(screen.getByText("1 legacy RSVP name")).toBeTruthy();
     expect(screen.getByText("Pending Cousins")).toBeTruthy();
     expect(screen.getByText("Old Vendor List")).toBeTruthy();
 
@@ -46,6 +50,55 @@ describe("ResponsesActivityWorkspace", () => {
 
     expect(screen.getByText("Old Vendor List")).toBeTruthy();
     expect(screen.getByText("Invite access disabled.")).toBeTruthy();
+  });
+
+  it("switches between URL-persisted detailed and grouped views without refetching", async () => {
+    const user = userEvent.setup();
+    const getEventSummary = vi.fn(async () => ({ summary: eventSummary }));
+    const listEventResponses = vi.fn(async () => ({
+      responses: [tanResponse, declinedResponse, maybeResponse],
+    }));
+    const listGuestGroups = vi.fn(async () => ({
+      guestGroups: [tanGroup, leeGroup, maybeGroup, pendingGroup, disabledGroup],
+    }));
+    window.history.replaceState({}, "", "/events/evt_123/responses?source=dashboard&view=grouped");
+
+    renderWithAuth(
+      createApiClientStub({
+        getEventSummary,
+        listEventResponses,
+        listGuestGroups,
+      }),
+      "responses",
+    );
+
+    const grouped = await screen.findByLabelText("Responses grouped by status");
+    expect(within(grouped).getByRole("region", { name: "Attending" })).toBeTruthy();
+    expect(within(grouped).getByRole("region", { name: "Not attending" })).toBeTruthy();
+    expect(within(grouped).getByRole("region", { name: "Maybe" })).toBeTruthy();
+    expect(within(grouped).getByRole("region", { name: "Pending" })).toBeTruthy();
+    expect(within(grouped).getByRole("region", { name: "Disabled" })).toBeTruthy();
+    expect(within(grouped).getByText("Auntie Joy")).toBeTruthy();
+    expect(window.location.search).toBe("?source=dashboard&view=grouped");
+
+    await user.click(screen.getByRole("button", { name: "Detailed" }));
+
+    expect(screen.queryByLabelText("Responses grouped by status")).toBeNull();
+    expect(window.location.search).toBe("?source=dashboard");
+
+    await user.click(screen.getByRole("button", { name: "Grouped" }));
+
+    expect(await screen.findByLabelText("Responses grouped by status")).toBeTruthy();
+    expect(window.location.search).toBe("?source=dashboard&view=grouped");
+    expect(getEventSummary).toHaveBeenCalledOnce();
+    expect(listEventResponses).toHaveBeenCalledOnce();
+    expect(listGuestGroups).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole("button", { name: "Not attending" }));
+    const filteredGrouped = screen.getByLabelText("Responses grouped by status");
+    expect(within(filteredGrouped).getByRole("region", { name: "Not attending" })).toBeTruthy();
+    expect(within(filteredGrouped).queryByRole("region", { name: "Attending" })).toBeNull();
+    expect(within(filteredGrouped).getByText("Sorry to miss it.")).toBeTruthy();
   });
 
   it("shows response and activity empty states", async () => {
@@ -133,11 +186,14 @@ function createApiClientStub(
   overrides: Partial<DashboardApiClient> = {},
 ): Partial<DashboardApiClient> {
   return {
+    getEventSummary: vi.fn(async () => ({ summary: eventSummary })),
     getEvent: vi.fn(async () => ({ access: ownerAccess, event: dashboardEvent })),
     listEventActivity: vi.fn(async () => ({ activity: [rsvpActivity, declinedActivity] })),
-    listEventResponses: vi.fn(async () => ({ responses: [tanResponse, declinedResponse] })),
+    listEventResponses: vi.fn(async () => ({
+      responses: [tanResponse, declinedResponse, maybeResponse],
+    })),
     listGuestGroups: vi.fn(async () => ({
-      guestGroups: [tanGroup, leeGroup, pendingGroup, disabledGroup],
+      guestGroups: [tanGroup, leeGroup, maybeGroup, pendingGroup, disabledGroup],
     })),
     ...overrides,
   };
@@ -180,6 +236,10 @@ const tanGroup: GuestGroup = {
   inviteCode: "tan-code",
   label: "Tan Family",
   maxPax: 4,
+  members: [
+    { id: "member_mina", name: "Mina Tan", sortOrder: 0 },
+    { id: "member_alex", name: "Alex Tan", sortOrder: 1 },
+  ],
   status: "responded",
   updatedAt: "2030-01-01T00:00:00.000Z",
 };
@@ -202,6 +262,17 @@ const pendingGroup: GuestGroup = {
   label: "Pending Cousins",
   maxPax: 5,
   status: "pending",
+};
+
+const maybeGroup: GuestGroup = {
+  ...tanGroup,
+  contactName: "Auntie Joy",
+  id: "guest_maybe",
+  inviteCode: "maybe-code",
+  label: "Joy and Family",
+  maxPax: 2,
+  members: [],
+  status: "responded",
 };
 
 const disabledGroup: GuestGroup = {
@@ -281,4 +352,26 @@ const declinedResponse: RsvpResponse = {
   responseStatus: "not_attending",
   submittedAt: "2030-05-02T12:00:00.000Z",
   updatedAt: "2030-05-02T12:00:00.000Z",
+};
+
+const maybeResponse: RsvpResponse = {
+  ...tanResponse,
+  attendeeCount: 1,
+  guestGroupId: "guest_maybe",
+  guestNames: ["Auntie Joy"],
+  id: "response_maybe",
+  message: "We may be able to join.",
+  responseStatus: "maybe",
+  submittedAt: "2030-05-03T12:00:00.000Z",
+  updatedAt: "2030-05-03T12:00:00.000Z",
+};
+
+const eventSummary: EventSummary = {
+  attending: { groups: 1, pax: 2 },
+  maybe: { groups: 1, pax: 1 },
+  notAttending: { groups: 1, pax: 0 },
+  pending: { groups: 1, pax: 5 },
+  totalGroups: 4,
+  totalInvitedPax: 13,
+  totalRespondedPax: 3,
 };

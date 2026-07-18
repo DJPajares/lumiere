@@ -1,9 +1,14 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { Badge } from "@lumiere/dashboard-ui/components/badge";
+import { LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
+import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import type {
   ActivityEvent,
   Event,
+  EventSummary,
   GuestGroup,
   GuestGroupStatus,
   JsonValue,
@@ -16,12 +21,14 @@ import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
 
 type WorkspaceMode = "activity" | "responses";
+type ResponseViewMode = "detailed" | "grouped";
 
 type ResponsesActivityData = {
   activity: ActivityEvent[];
   event: Event;
   guestGroups: GuestGroup[];
   responses: RsvpResponse[];
+  summary: EventSummary | null;
 };
 
 type ResponsesActivityState =
@@ -44,9 +51,14 @@ type ResponseRow = {
   attendeeCount: number | null;
   guestGroup: GuestGroup;
   message: string;
-  responseStatus: ResponseFilter | "responded";
-  selectedAttendees: string[];
+  responseStatus: Exclude<ResponseFilter, "all"> | "responded";
+  selectedAttendees: ResponseAttendee[];
   submittedAt: string | null;
+};
+
+type ResponseAttendee = {
+  kind: "legacy" | "named_member";
+  name: string;
 };
 
 const responseFilters: Array<{ label: string; value: ResponseFilter }> = [
@@ -56,6 +68,22 @@ const responseFilters: Array<{ label: string; value: ResponseFilter }> = [
   { label: "Maybe", value: "maybe" },
   { label: "Pending", value: "pending" },
   { label: "Disabled", value: "disabled" },
+];
+
+const responseGroups: Array<{
+  emptyLabel: string;
+  label: string;
+  value: Exclude<ResponseFilter, "all">;
+}> = [
+  { emptyLabel: "No attending responses.", label: "Attending", value: "attending" },
+  {
+    emptyLabel: "No guests have declined.",
+    label: "Not attending",
+    value: "not_attending",
+  },
+  { emptyLabel: "No maybe responses.", label: "Maybe", value: "maybe" },
+  { emptyLabel: "No guest groups are waiting for a response.", label: "Pending", value: "pending" },
+  { emptyLabel: "No guest groups are disabled.", label: "Disabled", value: "disabled" },
 ];
 
 export function ResponsesActivityWorkspace({
@@ -73,6 +101,19 @@ export function ResponsesActivityWorkspace({
     status: "loading",
   });
   const [filter, setFilter] = useState<ResponseFilter>("all");
+  const [responseViewMode, setResponseViewMode] = useState<ResponseViewMode>(() =>
+    readResponseViewMode(),
+  );
+
+  useEffect(() => {
+    if (mode !== "responses") {
+      return;
+    }
+
+    const syncViewFromUrl = () => setResponseViewMode(readResponseViewMode());
+    window.addEventListener("popstate", syncViewFromUrl);
+    return () => window.removeEventListener("popstate", syncViewFromUrl);
+  }, [mode]);
 
   const loadWorkspace = useCallback(
     async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
@@ -101,19 +142,27 @@ export function ResponsesActivityWorkspace({
       );
 
       try {
-        const [eventResponse, guestGroupsResponse, activityResponse, responsesResponse] =
-          await Promise.all([
-            apiClient.getEvent(eventId),
-            mode === "responses"
-              ? apiClient.listGuestGroups(eventId)
-              : Promise.resolve({ guestGroups: [] }),
-            mode === "activity"
-              ? apiClient.listEventActivity(eventId)
-              : Promise.resolve({ activity: [] }),
-            mode === "responses"
-              ? apiClient.listEventResponses(eventId)
-              : Promise.resolve({ responses: [] }),
-          ]);
+        const [
+          eventResponse,
+          guestGroupsResponse,
+          activityResponse,
+          responsesResponse,
+          summaryResponse,
+        ] = await Promise.all([
+          apiClient.getEvent(eventId),
+          mode === "responses"
+            ? apiClient.listGuestGroups(eventId)
+            : Promise.resolve({ guestGroups: [] }),
+          mode === "activity"
+            ? apiClient.listEventActivity(eventId)
+            : Promise.resolve({ activity: [] }),
+          mode === "responses"
+            ? apiClient.listEventResponses(eventId)
+            : Promise.resolve({ responses: [] }),
+          mode === "responses"
+            ? apiClient.getEventSummary(eventId)
+            : Promise.resolve({ summary: null }),
+        ]);
 
         setState({
           data: {
@@ -121,6 +170,7 @@ export function ResponsesActivityWorkspace({
             event: eventResponse.event,
             guestGroups: guestGroupsResponse.guestGroups,
             responses: responsesResponse.responses,
+            summary: summaryResponse.summary,
           },
           error: null,
           isRefreshing: false,
@@ -216,7 +266,13 @@ export function ResponsesActivityWorkspace({
           filter={filter}
           guestGroups={readyState.data.guestGroups}
           onFilterChange={setFilter}
+          onViewModeChange={(viewMode) => {
+            setResponseViewMode(viewMode);
+            writeResponseViewMode(viewMode);
+          }}
           responses={readyState.data.responses}
+          summary={readyState.data.summary}
+          viewMode={responseViewMode}
         />
       ) : (
         <ActivityView activity={readyState.data.activity} />
@@ -229,12 +285,18 @@ function ResponsesView({
   filter,
   guestGroups,
   onFilterChange,
+  onViewModeChange,
   responses,
+  summary,
+  viewMode,
 }: {
   filter: ResponseFilter;
   guestGroups: GuestGroup[];
   onFilterChange: (filter: ResponseFilter) => void;
+  onViewModeChange: (viewMode: ResponseViewMode) => void;
   responses: RsvpResponse[];
+  summary: EventSummary | null;
+  viewMode: ResponseViewMode;
 }) {
   const rows = useMemo(
     () => buildResponseRows({ guestGroups, responses }),
@@ -253,19 +315,57 @@ function ResponsesView({
             recent activity window.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2" aria-label="Response filters">
+      </div>
+
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <ToggleGroup
+          aria-label="Response filters"
+          className="w-full flex-wrap xl:w-fit"
+          onValueChange={(value) => {
+            const nextFilter = value[0];
+            if (isResponseFilter(nextFilter)) {
+              onFilterChange(nextFilter);
+            }
+          }}
+          size="lg"
+          value={[filter]}
+          variant="outline"
+        >
           {responseFilters.map((item) => (
-            <button
-              aria-pressed={filter === item.value}
-              className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-pressed:bg-[var(--surface-muted)] aria-pressed:text-[var(--accent-strong)]"
+            <ToggleGroupItem
+              className="flex-1 sm:flex-none"
               key={item.value}
-              onClick={() => onFilterChange(item.value)}
               type="button"
+              value={item.value}
             >
               {item.label}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
+
+        <ToggleGroup
+          aria-label="Response view"
+          className="w-full sm:w-fit"
+          onValueChange={(value) => {
+            const nextViewMode = value[0];
+            if (nextViewMode === "detailed" || nextViewMode === "grouped") {
+              onViewModeChange(nextViewMode);
+            }
+          }}
+          size="lg"
+          spacing={0}
+          value={[viewMode]}
+          variant="outline"
+        >
+          <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="detailed">
+            <ListIcon data-icon="inline-start" />
+            Detailed
+          </ToggleGroupItem>
+          <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="grouped">
+            <LayoutGridIcon data-icon="inline-start" />
+            Grouped
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {rows.length === 0 ? (
@@ -279,7 +379,16 @@ function ResponsesView({
           body="Try another response state to review the rest of the guest list."
         />
       ) : (
-        <ResponseTable rows={filteredRows} />
+        <>
+          <p className="text-sm text-muted-foreground" role="status">
+            Showing {filteredRows.length} of {rows.length} guest groups.
+          </p>
+          {viewMode === "detailed" ? (
+            <ResponseTable rows={filteredRows} />
+          ) : (
+            <GroupedResponses filter={filter} rows={filteredRows} summary={summary} />
+          )}
+        </>
       )}
     </section>
   );
@@ -313,16 +422,10 @@ function ResponseTable({ rows }: { rows: ResponseRow[] }) {
             </div>
             <div>
               <MobileLabel>Attending guests</MobileLabel>
-              <p>{row.attendeeCount === null ? "-" : `${row.attendeeCount} pax`}</p>
-              {row.selectedAttendees.length > 0 ? (
-                <p className="mt-1 leading-5 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-                  {row.selectedAttendees.join(", ")}
-                </p>
-              ) : row.attendeeCount && row.attendeeCount > 0 ? (
-                <p className="mt-1 text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-                  Names not collected
-                </p>
-              ) : null}
+              <AttendeeDetails
+                attendeeCount={row.attendeeCount}
+                attendees={row.selectedAttendees}
+              />
             </div>
             <div>
               <MobileLabel>Submitted</MobileLabel>
@@ -335,6 +438,118 @@ function ResponseTable({ rows }: { rows: ResponseRow[] }) {
           </article>
         ))}
       </div>
+    </div>
+  );
+}
+
+function GroupedResponses({
+  filter,
+  rows,
+  summary,
+}: {
+  filter: ResponseFilter;
+  rows: ResponseRow[];
+  summary: EventSummary | null;
+}) {
+  const visibleGroups =
+    filter === "all" ? responseGroups : responseGroups.filter((group) => group.value === filter);
+
+  return (
+    <div
+      aria-label="Responses grouped by status"
+      className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3"
+    >
+      {visibleGroups.map((group) => {
+        const groupRows = rows.filter((row) => responseGroupForRow(row) === group.value);
+        const groupCount = responseGroupCount(group.value, groupRows.length, summary);
+
+        return (
+          <section
+            aria-labelledby={`response-group-${group.value}`}
+            className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] p-4"
+            key={group.value}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold" id={`response-group-${group.value}`}>
+                {group.label}
+              </h3>
+              <Badge variant="outline">
+                {groupCount} {groupCount === 1 ? "group" : "groups"}
+              </Badge>
+            </div>
+
+            {groupRows.length === 0 ? (
+              <p className="text-sm leading-6 text-muted-foreground">{group.emptyLabel}</p>
+            ) : (
+              <div className="grid gap-3">
+                {groupRows.map((row) => (
+                  <ResponseCard key={row.guestGroup.id} row={row} />
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResponseCard({ row }: { row: ResponseRow }) {
+  return (
+    <article className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 text-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="font-semibold">{row.guestGroup.label}</h4>
+          <p className="mt-1 text-muted-foreground">Maximum {row.guestGroup.maxPax} pax</p>
+        </div>
+        <StatusBadge status={row.responseStatus} />
+      </div>
+
+      <AttendeeDetails attendeeCount={row.attendeeCount} attendees={row.selectedAttendees} />
+
+      <div>
+        <p className="font-medium">Message</p>
+        <p className="mt-1 leading-6 text-muted-foreground">{row.message}</p>
+      </div>
+
+      <p className="text-muted-foreground">
+        {row.submittedAt ? `Submitted ${formatDateTime(row.submittedAt)}` : "Not submitted"}
+      </p>
+    </article>
+  );
+}
+
+function AttendeeDetails({
+  attendeeCount,
+  attendees,
+}: {
+  attendeeCount: number | null;
+  attendees: ResponseAttendee[];
+}) {
+  const legacyCount = attendees.filter((attendee) => attendee.kind === "legacy").length;
+  const namedMemberCount = attendees.length - legacyCount;
+  const attendeeSources = [
+    namedMemberCount > 0
+      ? `${namedMemberCount} named ${namedMemberCount === 1 ? "member" : "members"}`
+      : null,
+    legacyCount > 0 ? `${legacyCount} legacy RSVP ${legacyCount === 1 ? "name" : "names"}` : null,
+  ].filter((value): value is string => Boolean(value));
+
+  return (
+    <div>
+      <p>{attendeeCount === null ? "No attendee count" : `${attendeeCount} pax`}</p>
+      {attendees.length > 0 ? (
+        <>
+          <p className="mt-1 leading-5 text-muted-foreground">
+            {attendees.map((attendee) => attendee.name).join(", ")}
+          </p>
+          {attendeeSources.length > 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">{attendeeSources.join(" · ")}</p>
+          ) : null}
+        </>
+      ) : attendeeCount && attendeeCount > 0 ? (
+        <p className="mt-1 text-muted-foreground">Names not collected</p>
+      ) : null}
     </div>
   );
 }
@@ -401,7 +616,7 @@ function buildResponseRows({
         guestGroup: group,
         message: response?.message ?? "Invite access disabled.",
         responseStatus: "disabled",
-        selectedAttendees: response?.guestNames ?? [],
+        selectedAttendees: resolveResponseAttendees(group, response?.guestNames ?? []),
         submittedAt: response?.submittedAt ?? null,
       };
     }
@@ -412,7 +627,7 @@ function buildResponseRows({
         guestGroup: group,
         message: response.message ?? "No message included.",
         responseStatus: response.responseStatus,
-        selectedAttendees: response.guestNames,
+        selectedAttendees: resolveResponseAttendees(group, response.guestNames),
         submittedAt: response.submittedAt,
       };
     }
@@ -439,20 +654,52 @@ function buildResponseRows({
   });
 }
 
+function resolveResponseAttendees(group: GuestGroup, names: string[]): ResponseAttendee[] {
+  const namedMembers = new Set(
+    (group.members ?? []).map((member) => normalizeAttendeeName(member.name)),
+  );
+
+  return names.map((name) => ({
+    kind: namedMembers.has(normalizeAttendeeName(name)) ? "named_member" : "legacy",
+    name,
+  }));
+}
+
+function normalizeAttendeeName(name: string) {
+  return name.trim().toLocaleLowerCase();
+}
+
+function responseGroupForRow(row: ResponseRow): Exclude<ResponseFilter, "all"> {
+  return row.responseStatus === "responded" ? "pending" : row.responseStatus;
+}
+
+function responseGroupCount(
+  group: Exclude<ResponseFilter, "all">,
+  fallbackCount: number,
+  summary: EventSummary | null,
+) {
+  if (!summary || group === "disabled") {
+    return fallbackCount;
+  }
+
+  if (group === "not_attending") {
+    return summary.notAttending.groups;
+  }
+
+  return summary[group].groups;
+}
+
 function WorkspaceLoading({ label }: { label: string }) {
   return (
     <section
       aria-label={label}
       className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
     >
-      <div className="h-5 w-44 animate-pulse rounded-full bg-[var(--surface-muted)]" />
-      <div className="h-8 w-80 max-w-full animate-pulse rounded-full bg-[var(--surface-muted)]" />
+      <Skeleton className="h-5 w-44" />
+      <Skeleton className="h-8 w-80 max-w-full" />
       <div className="grid gap-3">
         {[0, 1, 2].map((item) => (
-          <div
-            className="h-20 animate-pulse rounded-[var(--radius-md)] bg-[var(--surface-muted)]"
-            key={item}
-          />
+          <Skeleton className="h-20" key={item} />
         ))}
       </div>
     </section>
@@ -471,30 +718,25 @@ function EmptyState({ body, title }: { body: string; title: string }) {
 }
 
 function StatusBadge({ status }: { status: ResponseRow["responseStatus"] }) {
-  const className =
-    status === "disabled"
-      ? "border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,transparent)] text-[var(--error)]"
-      : status === "attending"
-        ? "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]"
-        : status === "maybe"
-          ? "border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-[color-mix(in_srgb,var(--warning)_72%,var(--foreground))]"
-          : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--foreground)]";
-
   return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}
+    <Badge
+      variant={
+        status === "disabled"
+          ? "destructive"
+          : status === "attending"
+            ? "default"
+            : status === "maybe"
+              ? "secondary"
+              : "outline"
+      }
     >
       {formatResponseStatus(status)}
-    </span>
+    </Badge>
   );
 }
 
 function ActivityTypeBadge({ activityType }: { activityType: ActivityEvent["activityType"] }) {
-  return (
-    <span className="w-fit rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-xs font-semibold">
-      {activityType.replaceAll("_", " ")}
-    </span>
-  );
+  return <Badge variant="outline">{activityType.replaceAll("_", " ")}</Badge>;
 }
 
 function MobileLabel({ children }: { children: string }) {
@@ -597,6 +839,38 @@ function formatDateTime(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function isResponseFilter(value: string | undefined): value is ResponseFilter {
+  return responseFilters.some((filter) => filter.value === value);
+}
+
+function readResponseViewMode(): ResponseViewMode {
+  if (typeof window === "undefined") {
+    return "detailed";
+  }
+
+  return new URLSearchParams(window.location.search).get("view") === "grouped"
+    ? "grouped"
+    : "detailed";
+}
+
+function writeResponseViewMode(viewMode: ResponseViewMode) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  if (viewMode === "detailed") {
+    params.delete("view");
+  } else {
+    params.set("view", viewMode);
+  }
+
+  const queryString = params.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
+  window.history.replaceState(window.history.state, "", nextUrl);
 }
 
 function toFriendlyApiMessage(error: unknown) {
