@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Event } from "@lumiere/types";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  DashboardAuthProvider,
+  type DashboardApiClient,
+  type DashboardAuthContextValue,
+} from "../auth/dashboard-auth-provider";
 import { DashboardTopNavigation } from "./dashboard-top-navigation";
 
 vi.mock("next/navigation", () => ({
@@ -152,6 +158,34 @@ describe("DashboardTopNavigation", () => {
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
   });
 
+  it("switches events while preserving the current workspace route", async () => {
+    const user = userEvent.setup();
+    const listEvents = vi.fn(async () => ({
+      events: [springDinner, autumnLaunch],
+    }));
+
+    render(
+      <DashboardAuthProvider value={createNavigationAuthValue({ listEvents })}>
+        <DashboardTopNavigation activePath={`/events/${springDinner.id}/responses`} />
+      </DashboardAuthProvider>,
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Switch event, ${springDinner.title}`,
+      }),
+    );
+
+    const eventPicker = screen.getByRole("dialog", { name: "Switch event" });
+    const currentEvent = within(eventPicker).getByRole("button", { name: /Spring Dinner/ });
+    const nextEvent = within(eventPicker).getByRole("button", { name: /Autumn Launch/ });
+
+    expect(currentEvent.getAttribute("aria-current")).toBe("page");
+    expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/responses`);
+    expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/responses`);
+    expect(listEvents).toHaveBeenCalledOnce();
+  });
+
   it("closes open mobile navigation when the viewport crosses into tablet width", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event" />);
@@ -253,3 +287,55 @@ function installMatchMedia() {
     },
   };
 }
+
+function createNavigationAuthValue(
+  apiClient: Partial<DashboardApiClient>,
+): DashboardAuthContextValue {
+  return {
+    apiClient: apiClient as DashboardApiClient,
+    errorMessage: null,
+    getAccessToken: async () => "manager-token",
+    session: {
+      access_token: "manager-token",
+      user: {
+        email: "manager@example.com",
+      },
+    } as DashboardAuthContextValue["session"],
+    signIn: async () => ({ ok: true }),
+    signOut: async () => ({ ok: true }),
+    signUp: async () => ({ ok: true, requiresEmailConfirmation: false }),
+    status: "authenticated",
+    updateProfile: async () => ({ ok: true }),
+    user: {
+      email: "manager@example.com",
+    } as DashboardAuthContextValue["user"],
+  };
+}
+
+const springDinner: Event = {
+  createdAt: "2030-01-01T00:00:00.000Z",
+  eventType: "dinner",
+  id: "event-spring",
+  ownerUserId: "manager-1",
+  publicSettings: {},
+  rsvpSettings: {
+    collectGuestMessage: true,
+    collectGuestNames: true,
+  },
+  slug: "spring-dinner",
+  startsAt: "2030-06-01T10:30:00.000Z",
+  status: "published",
+  themeConfig: {},
+  themeMode: "system",
+  timezone: "Asia/Singapore",
+  title: "Spring Dinner",
+  updatedAt: "2030-01-01T00:00:00.000Z",
+};
+
+const autumnLaunch: Event = {
+  ...springDinner,
+  eventType: "launch",
+  id: "event-autumn",
+  slug: "autumn-launch",
+  title: "Autumn Launch",
+};

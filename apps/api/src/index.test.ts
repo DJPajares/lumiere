@@ -1402,6 +1402,212 @@ describe("API app", () => {
     expect(listResponses).toHaveBeenCalledWith(eventId);
   });
 
+  it("isolates manager workspace data across two events and different collaborator roles", async () => {
+    const secondEventId = "00000000-0000-4000-8000-000000000102";
+    const secondManager: LocalUser = {
+      ...localUser,
+      displayName: "Eli Collaborator",
+      email: "eli@example.com",
+      id: "00000000-0000-4000-8000-000000000002",
+      supabaseUserId: "supabase-collaborator-id",
+    };
+    const secondEvent: Event = {
+      ...baseEvent,
+      id: secondEventId,
+      ownerUserId: secondManager.id,
+      slug: "autumn-launch",
+      title: "Autumn Launch",
+    };
+    const secondGuestGroup: GuestGroup = {
+      ...baseGuestGroup,
+      contactName: "Owen Lim",
+      eventId: secondEventId,
+      id: "00000000-0000-4000-8000-000000000302",
+      inviteCode: "autumncode01",
+      label: "Orchid Partners",
+    };
+    const secondResponse: RsvpResponse = {
+      ...baseRsvpResponse,
+      eventId: secondEventId,
+      guestGroupId: secondGuestGroup.id,
+      guestNames: ["Owen Lim"],
+      id: "00000000-0000-4000-8000-000000000402",
+    };
+    const secondSection: EventSection = {
+      ...baseSection,
+      content: { title: "Autumn Launch" },
+      eventId: secondEventId,
+      id: "00000000-0000-4000-8000-000000000202",
+    };
+    const secondActivity: ActivityEvent = {
+      ...activityEvent,
+      actorId: secondGuestGroup.id,
+      eventId: secondEventId,
+      id: "00000000-0000-4000-8000-000000000503",
+      metadata: { guestGroupLabel: secondGuestGroup.label },
+    };
+    const secondNotification: Notification = {
+      ...notification,
+      eventId: secondEventId,
+      id: "00000000-0000-4000-8000-000000000602",
+      message: "Orchid Partners submitted an RSVP for Autumn Launch.",
+      userId: localUser.id,
+    };
+    const secondSummary: EventSummary = {
+      attending: { groups: 1, pax: 1 },
+      maybe: { groups: 0, pax: 0 },
+      notAttending: { groups: 0, pax: 0 },
+      pending: { groups: 0, pax: 0 },
+      totalGroups: 1,
+      totalInvitedPax: 4,
+      totalRespondedPax: 1,
+    };
+    const usersBySupabaseId = new Map([
+      [localUser.supabaseUserId, localUser],
+      [secondManager.supabaseUserId, secondManager],
+    ]);
+    const roleMatrix = new Map<string, ManagerRole>([
+      [`${localUser.id}:${eventId}`, "owner"],
+      [`${localUser.id}:${secondEventId}`, "viewer"],
+      [`${secondManager.id}:${eventId}`, "editor"],
+      [`${secondManager.id}:${secondEventId}`, "owner"],
+    ]);
+    const observedAccess: Array<{ eventId: string; role: ManagerRole; userId: string }> = [];
+    const findEventAccess = vi.fn<AuthStore["findEventAccess"]>(
+      async (requestedEventId, userId) => {
+        if (![eventId, secondEventId].includes(requestedEventId)) {
+          return { eventFound: false };
+        }
+
+        const role = roleMatrix.get(`${userId}:${requestedEventId}`);
+        if (role) {
+          observedAccess.push({ eventId: requestedEventId, role, userId });
+        }
+
+        return {
+          access: role ? { eventId: requestedEventId, role, userId } : null,
+          eventFound: true,
+        };
+      },
+    );
+    const authStore: AuthStore = {
+      findEventAccess,
+      upsertUserProfile: vi.fn(async (input) => {
+        const user = usersBySupabaseId.get(input.supabaseUserId);
+        if (!user) throw new Error("Unexpected manager identity");
+        return { ...user, displayName: input.displayName, email: input.email };
+      }),
+    };
+    const listGuestGroups = vi.fn<GuestGroupStore["listGuestGroups"]>(async (requestedEventId) =>
+      requestedEventId === eventId ? [baseGuestGroup] : [secondGuestGroup],
+    );
+    const listSections = vi.fn<ThemeSectionStore["listSections"]>(async (requestedEventId) =>
+      requestedEventId === eventId ? [baseSection] : [secondSection],
+    );
+    const getEventSummary = vi.fn<DashboardDataStore["getEventSummary"]>(
+      async (requestedEventId) => (requestedEventId === eventId ? eventSummary : secondSummary),
+    );
+    const listActivity = vi.fn<DashboardDataStore["listActivity"]>(async (requestedEventId) =>
+      requestedEventId === eventId ? [activityEvent] : [secondActivity],
+    );
+    const listResponses = vi.fn<DashboardDataStore["listResponses"]>(async (requestedEventId) =>
+      requestedEventId === eventId ? [baseRsvpResponse] : [secondResponse],
+    );
+    const listNotifications = vi.fn<DashboardDataStore["listNotifications"]>(
+      async (requestedEventId, userId) =>
+        requestedEventId === eventId
+          ? [{ ...notification, userId }]
+          : [{ ...secondNotification, userId }],
+    );
+    const guestGroupStore: GuestGroupStore = {
+      ...createTestGuestGroupStore().guestGroupStore,
+      listGuestGroups,
+    };
+    const themeSectionStore: ThemeSectionStore = {
+      ...createTestThemeSectionStore().themeSectionStore,
+      listSections,
+    };
+    const dashboardDataStore: DashboardDataStore = {
+      dismissNotification: vi.fn(async () => true),
+      getEventSummary,
+      listActivity,
+      listNotifications,
+      listResponses,
+      markAllNotificationsRead: vi.fn(async () => 0),
+      markNotificationRead: vi.fn(async () => null),
+    };
+    const { eventStore } = createTestEventStore({
+      events: [baseEvent, secondEvent],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+      eventStore,
+      guestGroupStore,
+      themeSectionStore,
+    });
+    const ownerHeaders = {
+      authorization: `Bearer ${createSupabaseToken()}`,
+    };
+    const collaboratorHeaders = {
+      authorization: `Bearer ${createSupabaseToken({
+        email: secondManager.email,
+        sub: secondManager.supabaseUserId,
+        user_metadata: { name: secondManager.displayName },
+      })}`,
+    };
+    const loadWorkspace = async (requestedEventId: string, headers: HeadersInit) => {
+      const responses = await Promise.all([
+        app.request(`/events/${requestedEventId}/guest-groups`, { headers }),
+        app.request(`/events/${requestedEventId}/responses`, { headers }),
+        app.request(`/events/${requestedEventId}/sections`, { headers }),
+        app.request(`/events/${requestedEventId}/notifications`, { headers }),
+        app.request(`/events/${requestedEventId}/summary`, { headers }),
+        app.request(`/events/${requestedEventId}/activity`, { headers }),
+      ]);
+
+      expect(responses.map((response) => response.status)).toEqual([200, 200, 200, 200, 200, 200]);
+      return Promise.all(responses.map((response) => response.json()));
+    };
+
+    const firstEventPayloads = await loadWorkspace(eventId, ownerHeaders);
+    const secondEventPayloads = await loadWorkspace(secondEventId, ownerHeaders);
+    const firstEventJson = JSON.stringify(firstEventPayloads);
+    const secondEventJson = JSON.stringify(secondEventPayloads);
+
+    expect(firstEventJson).toContain(eventId);
+    expect(firstEventJson).toContain("Tan Family");
+    expect(firstEventJson).not.toContain(secondEventId);
+    expect(firstEventJson).not.toContain("Orchid Partners");
+    expect(secondEventJson).toContain(secondEventId);
+    expect(secondEventJson).toContain("Orchid Partners");
+    expect(secondEventJson).not.toContain(eventId);
+    expect(secondEventJson).not.toContain("Tan Family");
+
+    const editorSummary = await app.request(`/events/${eventId}/summary`, {
+      headers: collaboratorHeaders,
+    });
+    const ownerSummary = await app.request(`/events/${secondEventId}/summary`, {
+      headers: collaboratorHeaders,
+    });
+
+    expect(editorSummary.status).toBe(200);
+    expect(ownerSummary.status).toBe(200);
+    expect(observedAccess).toEqual(
+      expect.arrayContaining([
+        { eventId, role: "owner", userId: localUser.id },
+        { eventId: secondEventId, role: "viewer", userId: localUser.id },
+        { eventId, role: "editor", userId: secondManager.id },
+        { eventId: secondEventId, role: "owner", userId: secondManager.id },
+      ]),
+    );
+    expect(listGuestGroups).toHaveBeenCalledWith(eventId);
+    expect(listGuestGroups).toHaveBeenCalledWith(secondEventId);
+    expect(listNotifications).toHaveBeenCalledWith(eventId, localUser.id);
+    expect(listNotifications).toHaveBeenCalledWith(secondEventId, localUser.id);
+  });
+
   it("exports filtered guest data for an authorized viewer and records the download", async () => {
     const { authStore } = createTestAuthStore({
       access: roleAccess("viewer"),

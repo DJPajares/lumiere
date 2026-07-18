@@ -73,12 +73,20 @@ describe("ResponsesActivityWorkspace", () => {
     );
 
     const grouped = await screen.findByLabelText("Responses grouped by status");
-    expect(within(grouped).getByRole("region", { name: "Attending" })).toBeTruthy();
-    expect(within(grouped).getByRole("region", { name: "Not attending" })).toBeTruthy();
-    expect(within(grouped).getByRole("region", { name: "Maybe" })).toBeTruthy();
-    expect(within(grouped).getByRole("region", { name: "Pending" })).toBeTruthy();
+    const attendingGroup = within(grouped).getByRole("region", { name: "Attending" });
+    const declinedGroup = within(grouped).getByRole("region", { name: "Not attending" });
+    const maybeGroupRegion = within(grouped).getByRole("region", { name: "Maybe" });
+    const pendingGroupRegion = within(grouped).getByRole("region", { name: "Pending" });
+
+    expect(within(attendingGroup).getByText("1 group")).toBeTruthy();
+    expect(within(declinedGroup).getByText("1 group")).toBeTruthy();
+    expect(within(maybeGroupRegion).getByText("1 group")).toBeTruthy();
+    expect(within(pendingGroupRegion).getByText("1 group")).toBeTruthy();
     expect(within(grouped).getByRole("region", { name: "Disabled" })).toBeTruthy();
+    expect(within(attendingGroup).getByText("Mina Tan, Alex Tan")).toBeTruthy();
+    expect(within(attendingGroup).getByText("2 named members")).toBeTruthy();
     expect(within(grouped).getByText("Auntie Joy")).toBeTruthy();
+    expect(within(maybeGroupRegion).getByText("1 legacy RSVP name")).toBeTruthy();
     expect(window.location.search).toBe("?source=dashboard&view=grouped");
 
     await user.click(screen.getByRole("button", { name: "Detailed" }));

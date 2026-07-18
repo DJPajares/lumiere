@@ -112,12 +112,19 @@ describe("GuestManagementWorkspace", () => {
     expect(window.location.search).toBe("");
   });
 
-  it("downloads the current search and status filters for view-only managers", async () => {
+  it("downloads CSV and XLSX data with current filters for view-only managers", async () => {
     const user = userEvent.setup();
-    const downloadGuestData = vi.fn(async () => ({
-      blob: new Blob(["guest export"], { type: "text/csv" }),
-      filename: "spring-dinner-guest-data-2030-01-01.csv",
-    }));
+    const downloadGuestData = vi.fn<DashboardApiClient["downloadGuestData"]>(
+      async (_eventId, input) => ({
+        blob: new Blob(["guest export"], {
+          type:
+            input.format === "csv"
+              ? "text/csv"
+              : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        filename: `spring-dinner-guest-data-2030-01-01.${input.format}`,
+      }),
+    );
     const createObjectURL = vi.fn(() => "blob:guest-export");
     const revokeObjectURL = vi.fn();
     const clickDownload = vi
@@ -171,6 +178,23 @@ describe("GuestManagementWorkspace", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:guest-export");
     expect(
       await screen.findByText("spring-dinner-guest-data-2030-01-01.csv is ready."),
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    await user.click(screen.getByRole("button", { name: "XLSX" }));
+    await user.click(screen.getByRole("button", { name: "Download XLSX" }));
+
+    await waitFor(() =>
+      expect(downloadGuestData).toHaveBeenLastCalledWith("evt_123", {
+        format: "xlsx",
+        q: "tan",
+        scope: "filtered",
+        status: "responded",
+      }),
+    );
+    expect(clickDownload).toHaveBeenCalledTimes(2);
+    expect(
+      await screen.findByText("spring-dinner-guest-data-2030-01-01.xlsx is ready."),
     ).toBeTruthy();
   });
 
