@@ -99,6 +99,15 @@ export function LoginForm() {
       <Button className="min-h-11 w-full" disabled={isSubmitting} size="lg" type="submit">
         {isSubmitting ? "Signing in" : "Sign in"}
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        New to Lumiere?{" "}
+        <Link
+          className="font-medium text-foreground underline underline-offset-4"
+          href={buildAuthHref("/signup", redirectTo)}
+        >
+          Create manager account
+        </Link>
+      </p>
       <Link
         className={buttonVariants({ className: "min-h-11 w-full", size: "lg", variant: "link" })}
         href="/"
@@ -107,6 +116,10 @@ export function LoginForm() {
       </Link>
     </form>
   );
+}
+
+function buildAuthHref(path: string, redirectTo: string) {
+  return redirectTo === "/" ? path : `${path}?redirectTo=${encodeURIComponent(redirectTo)}`;
 }
 
 function toSafeRedirect(value: string | null) {

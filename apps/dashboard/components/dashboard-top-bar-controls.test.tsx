@@ -321,6 +321,7 @@ function renderControls({
     } as DashboardAuthContextValue["session"],
     signIn: async () => ({ ok: true }),
     signOut,
+    signUp: async () => ({ ok: true, requiresEmailConfirmation: false }),
     status: "authenticated",
     updateProfile: async () => ({ ok: true }),
     user,

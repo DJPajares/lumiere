@@ -21,6 +21,7 @@ import LoginPage from "../app/login/page";
 import DashboardHome from "../app/page";
 import AccountSettingsPage from "../app/settings/page";
 import ProfileSettingsPage from "../app/settings/profile/page";
+import SignupPage from "../app/signup/page";
 
 const { redirect, routerReplace } = vi.hoisted(() => ({
   redirect: vi.fn(),
@@ -132,6 +133,46 @@ describe("dashboard routes", () => {
     expect(routerReplace).toHaveBeenCalledWith("/events/demo-event/content");
   });
 
+  it("creates a manager account and handles email confirmation", async () => {
+    const html = renderWithAuth(createElement(SignupPage), unauthenticatedAuthValue);
+    const user = userEvent.setup();
+    const signUp = vi.fn(async () => ({
+      ok: true as const,
+      requiresEmailConfirmation: true,
+    }));
+
+    expect(html).toContain("Create manager account");
+    expect(html).toContain("Manager name");
+    expect(html).toContain("Confirm password");
+
+    window.history.replaceState({}, "", "/signup?redirectTo=/events/demo-event/settings");
+    render(
+      createElement(DashboardAuthProvider, {
+        value: { ...unauthenticatedAuthValue, signUp },
+        children: createElement(SignupPage),
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Create manager account" }));
+    expect(screen.getByRole("alert").textContent).toContain("Complete all manager account fields.");
+
+    await user.type(screen.getByLabelText("Manager name"), " Eva Hernandez ");
+    await user.type(screen.getByLabelText("Manager email"), " eva@example.com ");
+    await user.type(screen.getByLabelText("Password"), "correct horse battery staple");
+    await user.type(screen.getByLabelText("Confirm password"), "correct horse battery staple");
+    await user.click(screen.getByRole("button", { name: "Create manager account" }));
+
+    expect(signUp).toHaveBeenCalledWith({
+      displayName: "Eva Hernandez",
+      email: "eva@example.com",
+      password: "correct horse battery staple",
+    });
+    expect(screen.getByRole("status").textContent).toContain("Check your email");
+    expect(screen.getByRole("link", { name: "Back to sign in" }).getAttribute("href")).toBe(
+      "/login?redirectTo=%2Fevents%2Fdemo-event%2Fsettings",
+    );
+  });
+
   it("redirects the redundant event index to Home", () => {
     EventsPage();
 
@@ -238,6 +279,7 @@ const authenticatedAuthValue: DashboardAuthContextValue = {
   } as DashboardAuthContextValue["session"],
   signIn: async () => ({ ok: true }),
   signOut: async () => ({ ok: true }),
+  signUp: async () => ({ ok: true, requiresEmailConfirmation: false }),
   status: "authenticated",
   updateProfile: async () => ({ ok: true }),
   user: {

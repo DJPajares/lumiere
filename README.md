@@ -121,7 +121,7 @@ NEXT_PUBLIC_APP_NAME=Lumiere Dashboard
 ### Where Env Values Come From
 
 Local development can use local Postgres or Docker Postgres for app data, while
-the dashboard still uses Supabase Auth for manager sign-in. Production uses the
+the dashboard uses Supabase Auth for manager signup and sign-in. Production uses the
 deployed API/apps and a production Postgres connection string, usually Supabase
 Postgres.
 
@@ -184,6 +184,14 @@ Copy the result and paste it in `SUPABASE_JWKS`
 Only `NEXT_PUBLIC_` variables are exposed to browsers. Do not put service role
 keys, database URLs, JWT secrets, or invite token secrets in invite/dashboard
 client env files.
+
+Manager accounts can be created at `/signup`. Enable email signup in the Supabase
+Auth provider settings and allow `<DASHBOARD_APP_BASE_URL>/login` as an auth redirect
+URL. When email confirmation is enabled, the dashboard asks the manager to confirm
+the address before signing in; otherwise Supabase starts the session immediately.
+The API mirrors the authenticated Supabase profile into the local `users` table on
+the manager's first authenticated API request, so Lumiere does not store or process
+manager passwords in Hono.
 
 ## Local Setup
 

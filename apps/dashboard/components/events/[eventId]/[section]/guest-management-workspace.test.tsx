@@ -390,6 +390,7 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
     } as DashboardAuthContextValue["session"],
     signIn: async () => ({ ok: true }),
     signOut: async () => ({ ok: true }),
+    signUp: async () => ({ ok: true, requiresEmailConfirmation: false }),
     status: "authenticated",
     updateProfile: async () => ({ ok: true }),
     user: {

@@ -34,7 +34,9 @@ describe("ProfileSettingsWorkspace", () => {
 
   it("shows local URL validation and Supabase update failures", async () => {
     const user = userEvent.setup();
-    const updateProfile = vi.fn(async () => ({ error: "Profile update failed.", ok: false }) as const);
+    const updateProfile = vi.fn(
+      async () => ({ error: "Profile update failed.", ok: false }) as const,
+    );
 
     renderProfile(updateProfile);
 
@@ -49,9 +51,7 @@ describe("ProfileSettingsWorkspace", () => {
   });
 });
 
-function renderProfile(
-  updateProfile: DashboardAuthContextValue["updateProfile"],
-) {
+function renderProfile(updateProfile: DashboardAuthContextValue["updateProfile"]) {
   const authValue: DashboardAuthContextValue = {
     apiClient: null,
     errorMessage: null,
@@ -65,6 +65,7 @@ function renderProfile(
     } as unknown as DashboardAuthContextValue["session"],
     signIn: async () => ({ ok: true }),
     signOut: async () => ({ ok: true }),
+    signUp: async () => ({ ok: true, requiresEmailConfirmation: false }),
     status: "authenticated",
     updateProfile,
     user: {

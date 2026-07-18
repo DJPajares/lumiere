@@ -21,9 +21,18 @@ export type DashboardAuthStatus = "authenticated" | "error" | "loading" | "unaut
 
 export type AuthActionResult = { ok: true } | { error: string; ok: false };
 
+export type SignUpActionResult =
+  { ok: true; requiresEmailConfirmation: boolean } | { error: string; ok: false };
+
 export type DashboardProfileInput = {
   avatarUrl: string;
   displayName: string;
+};
+
+export type DashboardSignUpInput = {
+  displayName: string;
+  email: string;
+  password: string;
 };
 
 export type DashboardApiClient = ReturnType<typeof createDashboardApiClient>;
@@ -35,6 +44,7 @@ export type DashboardAuthContextValue = {
   session: Session | null;
   signIn: (input: { email: string; password: string }) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
+  signUp: (input: DashboardSignUpInput) => Promise<SignUpActionResult>;
   status: DashboardAuthStatus;
   updateProfile: (input: DashboardProfileInput) => Promise<AuthActionResult>;
   user: User | null;
@@ -178,6 +188,56 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
     return { ok: true };
   }, [dependencies.errorMessage, dependencies.supabase, session]);
 
+  const signUp = useCallback(
+    async ({ displayName, email, password }: DashboardSignUpInput): Promise<SignUpActionResult> => {
+      if (!dependencies.supabase) {
+        const message = dependencies.errorMessage ?? "Dashboard auth is not configured.";
+        setErrorMessage(message);
+        setStatus("error");
+
+        return { error: message, ok: false };
+      }
+
+      const normalizedDisplayName = displayName.trim();
+
+      if (!normalizedDisplayName) {
+        return { error: "Enter the manager name shown in the dashboard.", ok: false };
+      }
+
+      setErrorMessage(null);
+      setStatus("loading");
+
+      const { data, error } = await dependencies.supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            display_name: normalizedDisplayName,
+            full_name: normalizedDisplayName,
+          },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (error) {
+        const message = toFriendlyAuthError(error.message);
+        setErrorMessage(message);
+        setStatus("unauthenticated");
+
+        return { error: message, ok: false };
+      }
+
+      setSession(data.session);
+      setStatus(data.session ? "authenticated" : "unauthenticated");
+
+      return {
+        ok: true,
+        requiresEmailConfirmation: !data.session,
+      };
+    },
+    [dependencies.errorMessage, dependencies.supabase],
+  );
+
   const updateProfile = useCallback(
     async ({ avatarUrl, displayName }: DashboardProfileInput): Promise<AuthActionResult> => {
       if (!dependencies.supabase) {
@@ -240,6 +300,7 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
       session,
       signIn,
       signOut,
+      signUp,
       status,
       updateProfile,
       user: session?.user ?? null,
@@ -251,6 +312,7 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
       session,
       signIn,
       signOut,
+      signUp,
       status,
       updateProfile,
     ],
@@ -279,6 +341,14 @@ export function toFriendlyAuthError(error: unknown) {
     return "Confirm this manager email before signing in.";
   }
 
+  if (normalized.includes("user already registered")) {
+    return "A manager account already exists for this email. Sign in instead.";
+  }
+
+  if (normalized.includes("signup") && normalized.includes("disabled")) {
+    return "New manager account signup is disabled in Supabase Auth.";
+  }
+
   if (normalized.includes("network") || normalized.includes("fetch")) {
     return "Unable to reach Supabase Auth. Check the connection and try again.";
   }
@@ -293,6 +363,7 @@ const missingProviderValue: DashboardAuthContextValue = {
   session: null,
   signIn: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   signOut: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
+  signUp: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   status: "error",
   updateProfile: async () => ({ error: "Dashboard auth is not mounted.", ok: false }),
   user: null,
