@@ -88,6 +88,53 @@ describe("SectionBuilderWorkspace", () => {
     expect(locationEditor.getByText(/pan and zoom inside the embedded map/)).toBeTruthy();
   });
 
+  it("preserves spaces and commas while editing entourage names", async () => {
+    const user = userEvent.setup();
+    const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
+      event: {
+        ...dashboardEvent,
+        eventType: "wedding",
+      },
+    }));
+    const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
+      selectedThemeId: "premium",
+      theme: {
+        ...premiumTheme,
+        eventTypes: ["wedding"],
+        metadata: {
+          recommendedSections: ["introduction", "date", "entourage", "location", "rsvp"],
+          requiredSections: ["introduction", "date", "location", "rsvp"],
+          sectionRhythm: ["introduction", "date", "entourage", "location", "rsvp"],
+          supportedSections: ["introduction", "date", "entourage", "location", "rsvp"],
+        },
+      },
+      themeConfig: {},
+      themeMode: "toggleable",
+    }));
+
+    renderWithAuth(createApiClientStub({ getEvent, getEventTheme }));
+
+    await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Entourage"));
+    await user.click(screen.getByRole("button", { name: "Edit Entourage" }));
+
+    const entourageEditor = within(screen.getByRole("region", { name: "Entourage" }));
+    const namesInput = entourageEditor.getByLabelText("Names") as HTMLTextAreaElement;
+
+    expect(entourageEditor.getByText(/Use Profile when each person needs a role/)).toBeTruthy();
+
+    await user.clear(namesInput);
+    await user.type(namesInput, "Jamie Lee, Alex Cruz{Enter}Morgan Reyes");
+
+    expect(namesInput.value).toBe("Jamie Lee, Alex Cruz\nMorgan Reyes");
+
+    await user.tab();
+
+    expect(namesInput.value).toBe("Jamie Lee, Alex Cruz, Morgan Reyes");
+    expect(screen.getAllByText("Jamie Lee, Alex Cruz, Morgan Reyes").length).toBeGreaterThan(0);
+  });
+
   it("shows validation for enabled sections with missing required fields", async () => {
     const user = userEvent.setup();
     const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({

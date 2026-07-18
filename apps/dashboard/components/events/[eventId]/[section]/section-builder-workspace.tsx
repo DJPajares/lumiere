@@ -1635,6 +1635,7 @@ function EntourageFields({ controller }: { controller: SectionFieldController })
       <RepeaterField
         addLabel="Add group"
         controller={controller}
+        description="Group people by role or relationship, such as wedding party, sponsors, hosts, or helpers. Use Profile when each person needs a role, bio, or portrait."
         emptyLabel="No groups yet."
         items={groups}
         label="Entourage groups"
@@ -1657,7 +1658,8 @@ function EntourageFields({ controller }: { controller: SectionFieldController })
           <div className="grid gap-3">
             <TextField
               controller={controller}
-              label="Group label"
+              description="Examples: Wedding party, Sponsors, Hosts, or Helpers."
+              label="Group name"
               path={["groups", index, "label"]}
               required
               scope="content"
@@ -2473,26 +2475,34 @@ function CommaListField({
 }) {
   const id = fieldId(controller.section, "content", path);
   const values = readStringArray(getJsonValue(controller.content, path));
+  const serializedValues = values.join(", ");
+  const [draftValue, setDraftValue] = useState(serializedValues);
+  const [isEditing, setIsEditing] = useState(false);
   const error = controller.fieldError("content", path);
 
+  useEffect(() => {
+    if (!isEditing) {
+      setDraftValue(serializedValues);
+    }
+  }, [isEditing, serializedValues]);
+
   return (
-    <DashboardTextInput
-      description="Separate values with commas."
+    <DashboardTextArea
+      description="Enter one person per line, or separate people with commas. Full names can include spaces."
       disabled={controller.disabled}
       error={error}
       id={id}
       label={label}
-      onChange={(event) =>
-        controller.updateContentValue(
-          path,
-          event.target.value
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-        )
-      }
+      onBlur={() => setIsEditing(false)}
+      onChange={(event) => {
+        const nextDraftValue = event.target.value;
+
+        setDraftValue(nextDraftValue);
+        controller.updateContentValue(path, parseCommaList(nextDraftValue));
+      }}
+      onFocus={() => setIsEditing(true)}
       required={required}
-      value={values.join(", ")}
+      value={draftValue}
     />
   );
 }
@@ -4016,6 +4026,13 @@ function readStringArray(value: JsonValue | undefined) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function parseCommaList(value: string) {
+  return value
+    .split(/,|\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function readRecordArray(value: JsonValue | undefined) {
