@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@lumiere/dashboard-ui/components/button";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import type { Event } from "@lumiere/types";
 import { useEffect, useState, type FormEvent } from "react";
@@ -155,6 +156,20 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
       onDiscard={reset}
       onOpenChange={onOpenChange}
       open={open}
+      footer={({ requestClose }) => (
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button disabled={isSaving} onClick={requestClose} type="button" variant="outline">
+            {event ? "Cancel changes" : "Cancel"}
+          </Button>
+          <Button
+            disabled={isSaving || (mode === "edit" && !dirty)}
+            form={event ? `edit-event-${event.id}` : "create-event"}
+            type="submit"
+          >
+            {isSaving ? "Saving..." : event ? "Save event" : "Create event"}
+          </Button>
+        </div>
+      )}
       title={event ? `Edit ${event.title}` : "Create event"}
     >
       <EventBasicsForm
@@ -163,10 +178,8 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
         formState={formState}
         isSaving={isSaving}
         mode={mode}
-        onCancel={mode === "edit" ? reset : undefined}
         onFieldChange={updateField}
         onSubmit={submit}
-        submitLabel={event ? "Save event" : "Create event"}
         values={values}
       />
     </ResponsiveModal>

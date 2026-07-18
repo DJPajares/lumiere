@@ -14,7 +14,6 @@ import type { FormEvent } from "react";
 
 import type { DashboardApiClient } from "../../auth/dashboard-auth-provider";
 import {
-  DashboardButton,
   DashboardCombobox,
   DashboardNotice,
   DashboardSelect,
@@ -62,11 +61,9 @@ export type EventBasicsFormProps = {
   formState: EventFormState;
   isSaving: boolean;
   mode: "create" | "edit";
-  onCancel?: () => void;
   onFieldChange: (field: EventFormField, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   statusMessage?: string | null;
-  submitLabel: string;
   values: EventBasicsFormValues;
 };
 
@@ -92,11 +89,9 @@ export function EventBasicsForm({
   formState,
   isSaving,
   mode,
-  onCancel,
   onFieldChange,
   onSubmit,
   statusMessage,
-  submitLabel,
   values,
 }: EventBasicsFormProps) {
   const disabled = isSaving;
@@ -204,21 +199,6 @@ export function EventBasicsForm({
         onChange={(event) => onFieldChange("venueAddress", event.target.value)}
         value={values.venueAddress}
       />
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <DashboardButton
-          disabled={disabled || (mode === "edit" && !dirty)}
-          variant="primary"
-          type="submit"
-        >
-          {isSaving ? "Saving..." : submitLabel}
-        </DashboardButton>
-        {onCancel ? (
-          <DashboardButton disabled={disabled || !dirty} onClick={onCancel}>
-            Cancel changes
-          </DashboardButton>
-        ) : null}
-      </div>
     </form>
   );
 }

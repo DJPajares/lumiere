@@ -686,6 +686,27 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
               : "Create one private invite for a household, table, or guest group."
           }
           dirty={JSON.stringify(formValues) !== JSON.stringify(baselineValues)}
+          footer={({ requestClose }) => (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                disabled={
+                  submitting || JSON.stringify(formValues) === JSON.stringify(baselineValues)
+                }
+                onClick={requestClose}
+                type="button"
+                variant="outline"
+              >
+                Cancel changes
+              </Button>
+              <Button disabled={submitting} onClick={() => void submitForm()} type="button">
+                {submitting
+                  ? "Saving..."
+                  : editingGroup
+                    ? "Save guest group"
+                    : "Create guest group"}
+              </Button>
+            </div>
+          )}
           onDiscard={() => {
             setFormValues(baselineValues);
             setFormErrors({});
@@ -698,11 +719,8 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
             <GuestGroupForm
               editingGroup={editingGroup}
               errors={formErrors}
-              onCancel={requestClose}
-              onSubmit={() => void submitForm()}
               onUpdate={updateField}
               onUpdateMember={updateMember}
-              submitting={submitting}
               values={formValues}
             />
           )}
@@ -712,7 +730,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       <ResponsiveModal
         description="Download guest groups and RSVP details without invite credentials or internal IDs."
         footer={({ requestClose }) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button disabled={exporting} onClick={requestClose} type="button" variant="outline">
               Cancel
             </Button>
@@ -911,10 +929,13 @@ function GuestGroupFilters({
         </Button>
       </div>
 
-      <FieldGroup className="grid gap-4 lg:grid-cols-[minmax(18rem,2fr)_minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)]">
-        <Field>
-          <FieldLabel htmlFor="guest-group-search">Search guest groups</FieldLabel>
+      <FieldGroup className="grid items-start gap-4 lg:grid-cols-[minmax(18rem,2fr)_minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)]">
+        <Field className="items-start">
+          <FieldLabel className="font-semibold leading-normal" htmlFor="guest-group-search">
+            Search guest groups
+          </FieldLabel>
           <Input
+            className="h-11"
             id="guest-group-search"
             onChange={(event) => onUpdate({ query: event.target.value })}
             placeholder="Search by group, member, email, or invite code"
@@ -1005,20 +1026,14 @@ function GuestGroupViewControls({
 function GuestGroupForm({
   editingGroup,
   errors,
-  onCancel,
-  onSubmit,
   onUpdate,
   onUpdateMember,
-  submitting,
   values,
 }: {
   editingGroup?: GuestGroup;
   errors: FormErrors;
-  onCancel: () => void;
-  onSubmit: () => void;
   onUpdate: (field: TextFormField, value: string) => void;
   onUpdateMember: (index: number, name: string) => void;
-  submitting: boolean;
   values: FormValues;
 }) {
   return (
@@ -1115,15 +1130,6 @@ function GuestGroupForm({
         />
         {errors.notes ? <FieldError id="guest-notes-error">{errors.notes}</FieldError> : null}
       </Field>
-
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={submitting} onClick={onSubmit} size="lg" type="button">
-          {submitting ? "Saving..." : editingGroup ? "Save guest group" : "Create guest group"}
-        </Button>
-        <Button onClick={onCancel} size="lg" type="button" variant="outline">
-          Cancel
-        </Button>
-      </div>
     </div>
   );
 }
