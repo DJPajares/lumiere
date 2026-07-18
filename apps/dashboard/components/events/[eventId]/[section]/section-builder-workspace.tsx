@@ -56,6 +56,7 @@ import {
   eventLocalDateTimeToIso,
   isCompleteEventLocalDateTime,
 } from "../../../ui/event-date-time-picker";
+import { ResponsiveModal } from "../../../ui/responsive-modal";
 
 type JsonObject = Record<string, JsonValue>;
 
@@ -278,9 +279,7 @@ function SectionBuilderContent({
   const [selectedSectionKey, setSelectedSectionKey] = useState(
     () => state.sections[0]?.sectionKey ?? "",
   );
-  const [expandedSectionKey, setExpandedSectionKey] = useState(
-    () => state.sections[0]?.sectionKey ?? "",
-  );
+  const [editingSectionKey, setEditingSectionKey] = useState<string | null>(null);
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
   const [rsvpSettings, setRsvpSettings] = useState<RsvpFieldSettings>(() => ({
     collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
@@ -293,11 +292,9 @@ function SectionBuilderContent({
   const selectedPreview =
     previewModels.find((model) => model.section.sectionKey === selectedSectionKey) ??
     previewModels[0];
-  const selectedPreviewIndex = selectedPreview
-    ? previewModels.findIndex(
-        (model) => model.section.sectionKey === selectedPreview.section.sectionKey,
-      )
-    : -1;
+  const editingPreview = editingSectionKey
+    ? previewModels.find((model) => model.section.sectionKey === editingSectionKey)
+    : undefined;
   const nextSuggestedSection = getNextSuggestedSection(previewModels);
   const changedSectionKeys = useMemo(
     () => getDirtySectionKeys(state.sections, state.savedSections),
@@ -331,16 +328,18 @@ function SectionBuilderContent({
     }
   }, [previewModels, selectedSectionKey]);
 
+  useEffect(() => {
+    if (
+      editingSectionKey &&
+      !previewModels.some((model) => model.section.sectionKey === editingSectionKey)
+    ) {
+      setEditingSectionKey(null);
+    }
+  }, [editingSectionKey, previewModels]);
+
   const openSectionEditor = (sectionKey: string) => {
     setSelectedSectionKey(sectionKey);
-    setExpandedSectionKey((currentSectionKey) =>
-      currentSectionKey === sectionKey ? "" : sectionKey,
-    );
-  };
-
-  const expandSectionEditor = (sectionKey: string) => {
-    setSelectedSectionKey(sectionKey);
-    setExpandedSectionKey(sectionKey);
+    setEditingSectionKey(sectionKey);
   };
 
   const updateSection = (sectionKey: string, updates: Partial<SectionDraft>) => {
@@ -363,17 +362,7 @@ function SectionBuilderContent({
     );
   };
 
-  const cancelChanges = () => {
-    if (!hasUnsavedChanges) {
-      return;
-    }
-
-    if (
-      !window.confirm("Discard all unsaved section changes and return to the last saved draft?")
-    ) {
-      return;
-    }
-
+  const discardChanges = () => {
     updateState((current) =>
       current.status === "ready"
         ? {
@@ -388,6 +377,47 @@ function SectionBuilderContent({
       collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
       collectGuestNames: state.event.rsvpSettings.collectGuestNames,
     });
+  };
+
+  const discardSectionChanges = (sectionKey: string) => {
+    updateState((current) => {
+      if (current.status !== "ready") {
+        return current;
+      }
+
+      const savedSection = current.savedSections.find(
+        (section) => section.sectionKey === sectionKey,
+      );
+
+      if (!savedSection) {
+        return current;
+      }
+
+      return {
+        ...current,
+        formMessage: null,
+        sectionErrors: withoutSectionErrors(current.sectionErrors, sectionKey),
+        sections: current.sections.map((section) =>
+          section.sectionKey === sectionKey ? { ...savedSection } : section,
+        ),
+      };
+    });
+
+    if (sectionKey === rsvpSectionKey) {
+      setRsvpSettings({
+        collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
+        collectGuestNames: state.event.rsvpSettings.collectGuestNames,
+      });
+    }
+  };
+
+  const cancelChanges = () => {
+    if (
+      !hasUnsavedChanges ||
+      window.confirm("Discard all unsaved section changes and return to the last saved draft?")
+    ) {
+      discardChanges();
+    }
   };
 
   const moveSection = (sectionKey: string, direction: -1 | 1) => {
@@ -423,7 +453,7 @@ function SectionBuilderContent({
     });
   };
 
-  const saveSections = async () => {
+  const saveSections = async (): Promise<boolean> => {
     if (!apiClient) {
       updateState((current) =>
         current.status === "ready"
@@ -434,7 +464,7 @@ function SectionBuilderContent({
             }
           : current,
       );
-      return;
+      return false;
     }
 
     try {
@@ -454,7 +484,7 @@ function SectionBuilderContent({
             : current,
         );
         toast.error(parsed.formMessage);
-        return;
+        return false;
       }
 
       if (!hasUnsavedChanges) {
@@ -468,7 +498,7 @@ function SectionBuilderContent({
             : current,
         );
         toast.info("There are no unsaved section changes.");
-        return;
+        return true;
       }
 
       updateState((current) =>
@@ -518,6 +548,7 @@ function SectionBuilderContent({
           : current,
       );
       toast.success("Sections saved.");
+      return true;
     } catch (error) {
       const formError = toSectionFormError(error, state.sections);
 
@@ -534,6 +565,7 @@ function SectionBuilderContent({
           : current,
       );
       toast.error(formError.formMessage);
+      return false;
     }
   };
 
@@ -542,7 +574,7 @@ function SectionBuilderContent({
 
     if (sectionKey) {
       setSelectedSectionKey(sectionKey);
-      setExpandedSectionKey(sectionKey);
+      setEditingSectionKey(sectionKey);
     }
   };
 
@@ -551,7 +583,7 @@ function SectionBuilderContent({
       return;
     }
 
-    expandSectionEditor(nextSuggestedSection.section.sectionKey);
+    setSelectedSectionKey(nextSuggestedSection.section.sectionKey);
     updateSection(nextSuggestedSection.section.sectionKey, {
       enabled: true,
     });
@@ -648,30 +680,18 @@ function SectionBuilderContent({
       </section>
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] xl:items-start">
-        <fieldset className="contents" disabled={!canEdit}>
-          <legend className="sr-only">
-            {canEdit ? "Event section controls" : "Event section controls are view only"}
-          </legend>
-          <SectionOrderPanel
-            canSave={canEdit && !state.isSaving}
-            dirtySectionKeys={dirtySectionKeys}
-            expandedSectionKey={expandedSectionKey}
-            isSaving={state.isSaving}
-            models={previewModels}
-            moveSection={moveSection}
-            onCancel={cancelChanges}
-            onOpen={openSectionEditor}
-            onSave={() => void saveSections()}
-            sectionErrors={state.sectionErrors}
-            selectedSectionKey={selectedPreview?.section.sectionKey}
-            selectedSectionIndex={selectedPreviewIndex}
-            updateSection={updateSection}
-            rsvpSettings={rsvpSettings}
-            updateRsvpSetting={(key, value) =>
-              setRsvpSettings((current) => ({ ...current, [key]: value }))
-            }
-          />
-        </fieldset>
+        <SectionOrderPanel
+          canEdit={canEdit}
+          dirtySectionKeys={dirtySectionKeys}
+          isSaving={state.isSaving}
+          models={previewModels}
+          moveSection={moveSection}
+          onEdit={openSectionEditor}
+          onSelect={setSelectedSectionKey}
+          sectionErrors={state.sectionErrors}
+          selectedSectionKey={selectedPreview?.section.sectionKey}
+          updateSection={updateSection}
+        />
 
         <SectionPreviewPanel
           event={state.event}
@@ -681,42 +701,83 @@ function SectionBuilderContent({
           theme={state.theme}
         />
       </div>
+
+      {editingPreview ? (
+        <ResponsiveModal
+          contentClassName="sm:max-w-4xl"
+          description="Update this section’s invite content. Changes appear in the dedicated preview as you edit."
+          dirty={dirtySectionKeys.has(editingPreview.section.sectionKey)}
+          onDiscard={() => discardSectionChanges(editingPreview.section.sectionKey)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingSectionKey(null);
+            }
+          }}
+          open
+          title={`Edit ${getSectionDefinition(editingPreview.section.sectionType).label}`}
+        >
+          {({ requestClose }) => (
+            <fieldset disabled={!canEdit || state.isSaving}>
+              <legend className="sr-only">
+                {canEdit
+                  ? `${getSectionDefinition(editingPreview.section.sectionType).label} editor`
+                  : `${getSectionDefinition(editingPreview.section.sectionType).label} editor is view only`}
+              </legend>
+              <SectionEditor
+                canSave={canEdit && !state.isSaving}
+                errors={{
+                  ...editingPreview.errors,
+                  ...(state.sectionErrors[editingPreview.section.sectionKey] ?? {}),
+                }}
+                isDirty={dirtySectionKeys.has(editingPreview.section.sectionKey)}
+                isSaving={state.isSaving}
+                onCancel={requestClose}
+                onSave={() => {
+                  void saveSections().then((saved) => {
+                    if (saved) {
+                      setEditingSectionKey(null);
+                    }
+                  });
+                }}
+                requirement={editingPreview.requirement}
+                rsvpSettings={rsvpSettings}
+                section={editingPreview.section}
+                statusLabel={editingPreview.statusLabel}
+                updateSection={updateSection}
+                updateRsvpSetting={(key, value) =>
+                  setRsvpSettings((current) => ({ ...current, [key]: value }))
+                }
+              />
+            </fieldset>
+          )}
+        </ResponsiveModal>
+      ) : null}
     </div>
   );
 }
 
 function SectionOrderPanel({
-  canSave,
+  canEdit,
   dirtySectionKeys,
-  expandedSectionKey,
   isSaving,
   models,
   moveSection,
-  onCancel,
-  onOpen,
-  onSave,
-  rsvpSettings,
+  onEdit,
+  onSelect,
   sectionErrors,
   selectedSectionKey,
-  selectedSectionIndex,
   updateSection,
-  updateRsvpSetting,
 }: {
-  canSave: boolean;
+  canEdit: boolean;
   dirtySectionKeys: Set<string>;
-  expandedSectionKey?: string;
   isSaving: boolean;
   models: SectionPreviewModel[];
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
-  onCancel: () => void;
-  onOpen: (sectionKey: string) => void;
-  onSave: () => void;
-  rsvpSettings: RsvpFieldSettings;
+  onEdit: (sectionKey: string) => void;
+  onSelect: (sectionKey: string) => void;
   sectionErrors: SectionErrorMap;
   selectedSectionKey?: string;
-  selectedSectionIndex: number;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
-  updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   return (
     <section
@@ -727,8 +788,9 @@ function SectionOrderPanel({
         <p className="text-sm font-semibold text-[var(--accent-strong)]">Preview order</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight">Sections in invite order</h2>
         <p className="mt-2 max-w-prose text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          Open a section card to edit its fields beside the live preview. Statuses update before
-          save so invalid fields, hidden content, and guest-only sections are visible early.
+          Select a section to inspect its live preview, or use Edit to open its content fields.
+          Statuses update before save so invalid fields, hidden content, and guest-only sections are
+          visible early.
         </p>
       </div>
 
@@ -736,8 +798,11 @@ function SectionOrderPanel({
         {models.map((model, index) => {
           const definition = getSectionDefinition(model.section.sectionType);
           const isSelected = selectedSectionKey === model.section.sectionKey;
-          const isExpanded = expandedSectionKey === model.section.sectionKey;
           const isDirty = dirtySectionKeys.has(model.section.sectionKey);
+          const errors = {
+            ...model.errors,
+            ...(sectionErrors[model.section.sectionKey] ?? {}),
+          };
 
           return (
             <li className="min-w-0" key={model.section.sectionKey}>
@@ -750,11 +815,10 @@ function SectionOrderPanel({
               >
                 <button
                   aria-current={isSelected ? "true" : undefined}
-                  aria-expanded={isExpanded}
-                  aria-label={`Open ${definition.label} editor`}
+                  aria-label={`Preview ${definition.label}`}
                   className="grid min-w-0 w-full gap-3 p-3 text-left transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]"
                   data-section-card-key={model.section.sectionKey}
-                  onClick={() => onOpen(model.section.sectionKey)}
+                  onClick={() => onSelect(model.section.sectionKey)}
                   type="button"
                 >
                   <span className="flex min-w-0 items-start justify-between gap-3">
@@ -784,32 +848,75 @@ function SectionOrderPanel({
                   </span>
                 </button>
 
-                {isExpanded ? (
-                  <div className="border-t border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-                    <SectionEditor
-                      errors={{
-                        ...model.errors,
-                        ...(sectionErrors[model.section.sectionKey] ?? {}),
-                      }}
-                      isDirty={isDirty}
-                      isFirst={selectedSectionIndex === 0}
-                      isLast={selectedSectionIndex === models.length - 1}
-                      isSaving={isSaving}
-                      moveSection={moveSection}
-                      onCancel={onCancel}
-                      onSave={onSave}
-                      requirement={model.requirement}
-                      rsvpSettings={rsvpSettings}
-                      section={model.section}
-                      canDisable={model.canDisable}
-                      disableLockReason={model.disableLockReason}
-                      statusLabel={model.statusLabel}
-                      updateSection={updateSection}
-                      updateRsvpSetting={updateRsvpSetting}
-                      canSave={canSave}
-                    />
+                <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-3 sm:grid-cols-2 sm:p-4">
+                  <DashboardCheckbox
+                    aria-label={`Enable ${definition.label}`}
+                    checked={model.section.enabled}
+                    description={
+                      model.disableLockReason ??
+                      "Disabled sections are omitted from the saved invite config."
+                    }
+                    disabled={!canEdit || isSaving || (model.section.enabled && !model.canDisable)}
+                    id={`${model.section.sectionKey}-enabled`}
+                    label="Enabled"
+                    onChange={(event) => {
+                      if (!event.target.checked && !model.canDisable) {
+                        return;
+                      }
+                      updateSection(model.section.sectionKey, {
+                        enabled: event.target.checked,
+                      });
+                    }}
+                  />
+
+                  <DashboardSelect
+                    aria-label={`${definition.label} visibility`}
+                    disabled={!canEdit || isSaving || !model.section.enabled}
+                    error={
+                      errors.visibility
+                        ? `Visibility for ${definition.label}: ${errors.visibility}`
+                        : undefined
+                    }
+                    id={`${model.section.sectionKey}-visibility`}
+                    label="Visibility"
+                    onValueChange={(value) =>
+                      updateSection(model.section.sectionKey, {
+                        visibility: value as SectionVisibility,
+                      })
+                    }
+                    options={visibilityOptions}
+                    value={model.section.visibility}
+                  />
+
+                  <div className="flex flex-wrap gap-2 sm:col-span-2">
+                    <button
+                      aria-label={`${definition.label} move up`}
+                      className={secondaryButtonClassName}
+                      disabled={!canEdit || isSaving || index === 0}
+                      onClick={() => moveSection(model.section.sectionKey, -1)}
+                      type="button"
+                    >
+                      Move up
+                    </button>
+                    <button
+                      aria-label={`${definition.label} move down`}
+                      className={secondaryButtonClassName}
+                      disabled={!canEdit || isSaving || index === models.length - 1}
+                      onClick={() => moveSection(model.section.sectionKey, 1)}
+                      type="button"
+                    >
+                      Move down
+                    </button>
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60 sm:ml-auto"
+                      disabled={isSaving}
+                      onClick={() => onEdit(model.section.sectionKey)}
+                      type="button"
+                    >
+                      Edit {definition.label}
+                    </button>
                   </div>
-                ) : null}
+                </div>
               </article>
             </li>
           );
@@ -1024,15 +1131,10 @@ function PreviewSectionBody({
 }
 
 function SectionEditor({
-  canDisable,
   canSave,
-  disableLockReason,
   errors,
   isDirty,
-  isFirst,
-  isLast,
   isSaving,
-  moveSection,
   onCancel,
   onSave,
   requirement,
@@ -1042,15 +1144,10 @@ function SectionEditor({
   updateSection,
   updateRsvpSetting,
 }: {
-  canDisable: boolean;
   canSave: boolean;
-  disableLockReason?: string;
   errors: SectionErrors;
   isDirty: boolean;
-  isFirst: boolean;
-  isLast: boolean;
   isSaving: boolean;
-  moveSection: (sectionKey: string, direction: -1 | 1) => void;
   onCancel: () => void;
   onSave: () => void;
   requirement: SectionBlueprintRequirement;
@@ -1092,90 +1189,28 @@ function SectionEditor({
             {definition.description}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            aria-label={`${definition.label} move up`}
-            className={secondaryButtonClassName}
-            disabled={isFirst}
-            onClick={() => moveSection(section.sectionKey, -1)}
-            type="button"
-          >
-            Move up
-          </button>
-          <button
-            aria-label={`${definition.label} move down`}
-            className={secondaryButtonClassName}
-            disabled={isLast}
-            onClick={() => moveSection(section.sectionKey, 1)}
-            type="button"
-          >
-            Move down
-          </button>
-        </div>
       </div>
 
       <div className="grid gap-6">
-        <div className="grid gap-4 lg:grid-cols-[minmax(15rem,1fr)_minmax(15rem,1fr)]">
-          <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-            <p className="text-sm font-semibold">Editor actions</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={!canSave}
-                onClick={onSave}
-                type="button"
-              >
-                {isSaving ? "Saving..." : "Save sections"}
-              </button>
-              <button
-                className={secondaryButtonClassName}
-                disabled={!isDirty || isSaving}
-                onClick={onCancel}
-                type="button"
-              >
-                Cancel changes
-              </button>
-            </div>
-          </div>
-
-          <DashboardCheckbox
-            aria-label={`Enable ${definition.label}`}
-            checked={section.enabled}
-            description={
-              disableLockReason ?? "Disabled sections are omitted from the saved invite config."
-            }
-            disabled={section.enabled && !canDisable}
-            id={`${section.sectionKey}-enabled`}
-            label="Enabled"
-            onChange={(event) => {
-              if (!event.target.checked && !canDisable) {
-                return;
-              }
-              updateSection(section.sectionKey, {
-                enabled: event.target.checked,
-              });
-            }}
-          />
-
-          <div className="lg:col-span-2">
-            <DashboardSelect
-              aria-label={`${definition.label} visibility`}
-              disabled={!section.enabled}
-              error={
-                hasVisibilityError
-                  ? `Visibility for ${definition.label}: ${errors.visibility}`
-                  : undefined
-              }
-              id={`${section.sectionKey}-visibility`}
-              label="Visibility"
-              onValueChange={(value) =>
-                updateSection(section.sectionKey, {
-                  visibility: value as SectionVisibility,
-                })
-              }
-              options={visibilityOptions}
-              value={section.visibility}
-            />
+        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+          <p className="text-sm font-semibold">Editor actions</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!canSave}
+              onClick={onSave}
+              type="button"
+            >
+              {isSaving ? "Saving..." : "Save sections"}
+            </button>
+            <button
+              className={secondaryButtonClassName}
+              disabled={!isDirty || isSaving}
+              onClick={onCancel}
+              type="button"
+            >
+              Cancel changes
+            </button>
           </div>
         </div>
 

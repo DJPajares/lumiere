@@ -26,8 +26,8 @@ describe("SectionBuilderWorkspace", () => {
     expect(screen.getByText("Live preview")).toBeTruthy();
     expect(screen.getByText("Recommended next section")).toBeTruthy();
     expect(screen.getByText(/Preview contract:/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Open Introduction editor" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "Introduction" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit Introduction" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
     ["Introduction", "Date and Time", "Story", "Dress Code", "Location", "RSVP"].forEach(
       (label) => {
         expect(screen.getAllByText(label).length).toBeGreaterThan(0);
@@ -35,30 +35,25 @@ describe("SectionBuilderWorkspace", () => {
     );
   });
 
-  it("expands one section card from keyboard selection", async () => {
+  it("opens a labeled section dialog from the keyboard and restores focus", async () => {
     const user = userEvent.setup();
 
     renderWithAuth(createApiClientStub());
 
     await screen.findByText("Configure content for Spring Dinner");
-    expect(screen.getByRole("region", { name: "Introduction" })).toBeTruthy();
+    const editStory = screen.getByRole("button", { name: "Edit Story" });
 
-    const storyCard = screen.getByRole("button", { name: "Open Story editor" });
-
-    storyCard.focus();
+    editStory.focus();
     await user.keyboard("{Enter}");
 
+    expect(await screen.findByRole("dialog", { name: "Edit Story" })).toBeTruthy();
     const storyEditor = screen.getByRole("region", { name: "Story" });
 
     expect(storyEditor).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
-    expect(storyCard.getAttribute("aria-expanded")).toBe("true");
-    expect(document.activeElement).toBe(storyCard);
-
-    await user.keyboard("{Enter}");
-
-    expect(screen.queryByRole("region", { name: "Story" })).toBeNull();
-    expect(storyCard.getAttribute("aria-expanded")).toBe("false");
+    await user.click(screen.getByRole("button", { name: "Close Edit Story" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit Story" })).toBeNull());
+    expect(document.activeElement).toBe(editStory);
   });
 
   it("shows validation for enabled sections with missing required fields", async () => {
@@ -70,10 +65,11 @@ describe("SectionBuilderWorkspace", () => {
     renderWithAuth(createApiClientStub({ listEventSections }));
 
     await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Story"));
+    await user.click(screen.getByRole("button", { name: "Edit Story" }));
     const storyEditor = within(screen.getByRole("region", { name: "Story" }));
     const legacyBody = storyEditor.getByLabelText("Paragraph body") as HTMLTextAreaElement;
 
-    await user.click(storyEditor.getByLabelText("Enable Story"));
     expect(legacyBody.value).toBe("A legacy paragraph without a title.");
 
     await user.type(storyEditor.getByLabelText("Paragraph title (optional)"), "First chapter");
@@ -131,7 +127,6 @@ describe("SectionBuilderWorkspace", () => {
       screen.getByText("Required sections stay enabled once the event is no longer a draft."),
     ).toBeTruthy();
     expect((screen.getByLabelText("Enable Introduction") as HTMLInputElement).disabled).toBe(true);
-    await userEvent.click(screen.getByRole("button", { name: "Open Story editor" }));
     expect((screen.getByLabelText("Enable Story") as HTMLInputElement).disabled).toBe(false);
   });
 
@@ -165,34 +160,37 @@ describe("SectionBuilderWorkspace", () => {
 
   it("shows dirty state and confirms before canceling unsaved edits", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm");
 
     renderWithAuth(createApiClientStub());
 
     await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Introduction"));
+    await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
 
-    await user.click(introductionEditor.getByLabelText("Enable Introduction"));
     await user.clear(introductionEditor.getByLabelText(/^Title/));
     await user.type(introductionEditor.getByLabelText(/^Title/), "Unsaved Supper");
 
     expect(screen.getAllByText("Unsaved").length).toBeGreaterThan(0);
 
-    confirm.mockReturnValueOnce(false);
     await user.click(introductionEditor.getByRole("button", { name: "Cancel changes" }));
+    expect(
+      await screen.findByRole("alertdialog", { name: "Discard unsaved changes?" }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Keep editing" }));
 
     expect((introductionEditor.getByLabelText(/^Title/) as HTMLInputElement).value).toBe(
       "Unsaved Supper",
     );
 
-    confirm.mockReturnValueOnce(true);
     await user.click(introductionEditor.getByRole("button", { name: "Cancel changes" }));
-
-    expect((introductionEditor.getByLabelText(/^Title/) as HTMLInputElement).value).toBe(
-      "Spring Dinner",
+    await user.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Introduction" })).toBeNull(),
     );
 
-    confirm.mockRestore();
+    await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Spring Dinner");
   });
 
   it("saves typed field edits, repeatable content, visibility, and accessible reordering", async () => {
@@ -233,28 +231,33 @@ describe("SectionBuilderWorkspace", () => {
     );
 
     await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Introduction"));
+    await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
-
-    await user.click(introductionEditor.getByLabelText("Enable Introduction"));
     await user.clear(introductionEditor.getByLabelText(/^Title/));
     await user.type(introductionEditor.getByLabelText(/^Title/), "Garden Supper");
-    await user.click(screen.getByRole("button", { name: "Open Date and Time editor" }));
-    const dateEditor = within(screen.getByRole("region", { name: "Date and Time" }));
+    await user.click(introductionEditor.getByRole("button", { name: "Save sections" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Introduction" })).toBeNull(),
+    );
 
-    await user.click(dateEditor.getByLabelText("Enable Date and Time"));
-    await user.click(screen.getByRole("button", { name: "Open Details editor" }));
+    await user.click(screen.getByLabelText("Enable Date and Time"));
+    await user.click(screen.getByLabelText("Enable Details"));
+    await user.click(screen.getByRole("button", { name: "Edit Details" }));
     const detailsEditor = within(screen.getByRole("region", { name: "Details" }));
 
-    await user.click(detailsEditor.getByLabelText("Enable Details"));
     await user.click(detailsEditor.getByRole("button", { name: "Add schedule item" }));
     await user.clear(detailsEditor.getAllByLabelText(/^Label/)[1]!);
     await user.type(detailsEditor.getAllByLabelText(/^Label/)[1]!, "Dessert");
     await user.clear(detailsEditor.getAllByLabelText(/^Value/)[1]!);
     await user.type(detailsEditor.getAllByLabelText(/^Value/)[1]!, "Cake and coffee at 9 PM.");
-    await user.click(screen.getByRole("button", { name: "Open Dress Code editor" }));
+    await user.click(detailsEditor.getByRole("button", { name: "Save sections" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit Details" })).toBeNull());
+
+    await user.click(screen.getByLabelText("Enable Dress Code"));
+    await user.click(screen.getByRole("button", { name: "Edit Dress Code" }));
     const dressCodeEditor = within(screen.getByRole("region", { name: "Dress Code" }));
 
-    await user.click(dressCodeEditor.getByLabelText("Enable Dress Code"));
     await user.clear(dressCodeEditor.getAllByLabelText("Card title")[0]!);
     await user.type(dressCodeEditor.getAllByLabelText("Card title")[0]!, "Garden formal");
     await user.clear(dressCodeEditor.getByLabelText("Palette title"));
@@ -262,28 +265,32 @@ describe("SectionBuilderWorkspace", () => {
       dressCodeEditor.getByLabelText("Palette title"),
       "A garden celebration palette",
     );
-    await user.click(screen.getByRole("button", { name: "Open Introduction editor" }));
-    const reopenedIntroductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
+    await user.click(dressCodeEditor.getByRole("button", { name: "Save sections" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Dress Code" })).toBeNull(),
+    );
 
-    reopenedIntroductionEditor.getByLabelText("Introduction visibility").focus();
+    screen.getByLabelText("Introduction visibility").focus();
     await user.keyboard("{ArrowDown}");
     await user.click(screen.getByRole("option", { name: "Guest-only" }));
-    await user.click(screen.getByRole("button", { name: "Open Date and Time editor" }));
     await user.click(screen.getByRole("button", { name: "Date and Time move up" }));
-    await user.click(screen.getByRole("button", { name: "Open RSVP editor" }));
+    await user.click(screen.getByLabelText("Enable RSVP"));
+    await user.click(screen.getByRole("button", { name: "RSVP move up" }));
+    await user.click(screen.getByRole("button", { name: "RSVP move up" }));
+    await user.click(screen.getByRole("button", { name: "RSVP move up" }));
+    await user.click(screen.getByRole("button", { name: "Edit RSVP" }));
     const rsvpEditor = within(screen.getByRole("region", { name: "RSVP" }));
 
-    await user.click(rsvpEditor.getByLabelText("Enable RSVP"));
     await user.click(rsvpEditor.getByRole("switch", { name: /Guest names/ }));
     await user.click(rsvpEditor.getByRole("switch", { name: /Guest message/ }));
     await user.click(rsvpEditor.getByRole("switch", { name: /Dietary requirements/ }));
     await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
-    await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);
+    await user.click(rsvpEditor.getByRole("button", { name: "Save sections" }));
 
-    await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(4));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
 
-    const payload = updateEventSections.mock.calls[0]?.[1];
+    const payload = updateEventSections.mock.calls.at(-1)?.[1];
 
     expect(payload?.sections.map((section) => section.sectionType)).toEqual([
       "date",

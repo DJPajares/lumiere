@@ -1,13 +1,13 @@
 ---
 id: 't95-dashboard-content-detail-modal'
-status: 'backlog'
+status: 'done'
 priority: 'medium'
 assignee: null
 epic: 'dashboard-content'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T13:12:11+08:00'
-completedAt: null
+modified: '2026-07-18T16:13:17+08:00'
+completedAt: '2026-07-18T16:13:17+08:00'
 labels: ['dashboard', 'content', 'dialog', 'ux']
 depends_on: ['t62-dashboard-responsive-modal-workflows']
 order: 'a95'
@@ -31,13 +31,13 @@ Move the existing per-section editor from inline expansion into the established 
 
 ## Acceptance
 
-- [ ] Each section row has a clear Edit action that opens its existing editor controls.
-- [ ] Desktop opens a shadcn/Base UI dialog and mobile uses the established responsive drawer pattern.
-- [ ] The modal reuses the current schema-driven fields and keeps the developer JSON editor as the existing advanced fallback.
-- [ ] Saving updates the card preview without a full-page refresh.
-- [ ] Closing with unsaved section changes uses the established dirty-close confirmation and does not discard edits silently.
-- [ ] Section order, enablement, visibility, validation reveal, and sticky preview behavior remain available outside the modal.
-- [ ] Keyboard focus is trapped, restored, and labeled correctly.
+- [x] Each section row has a clear Edit action that opens its existing editor controls.
+- [x] Desktop opens a shadcn/Base UI dialog and mobile uses the established responsive drawer pattern.
+- [x] The modal reuses the current schema-driven fields and keeps the developer JSON editor as the existing advanced fallback.
+- [x] Saving updates the card preview without a full-page refresh.
+- [x] Closing with unsaved section changes uses the established dirty-close confirmation and does not discard edits silently.
+- [x] Section order, enablement, visibility, validation reveal, and sticky preview behavior remain available outside the modal.
+- [x] Keyboard focus is trapped, restored, and labeled correctly.
 
 ## Notes
 
@@ -47,3 +47,5 @@ Use `ResponsiveModal` from the existing dashboard workflow. Keep the invitation 
 
 - 2026-07-18T00:00:00Z: Task created.
 - 2026-07-18T13:12:11+08:00: Aligned the task with the existing inline schema editor/live-preview workspace and removed assumptions about raw-JSON-only or redundant detail cards.
+- 2026-07-18T16:05:24+08:00: Started implementation after confirming the responsive modal dependency is complete and this is the lowest-order ready task.
+- 2026-07-18T16:13:17+08:00: Completed the responsive section editor modal/drawer, separated preview selection from editing, retained row-level ordering/enablement/visibility controls, added section-scoped dirty discard behavior, and updated existing coverage. Verified all 93 dashboard tests, dashboard typecheck, formatting, and diff checks.
