@@ -1,6 +1,7 @@
 import {
   activityActorTypeSchema,
   activityTypeSchema,
+  collaboratorInvitationStatusSchema,
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
@@ -18,6 +19,8 @@ import {
   activityActorTypeEnum,
   activityEvents,
   activityTypeEnum,
+  collaboratorInvitationStatusEnum,
+  collaboratorInvitations,
   eventAssets,
   eventManagers,
   eventPublications,
@@ -52,6 +55,7 @@ describe("database schema", () => {
         users,
         events,
         eventManagers,
+        collaboratorInvitations,
         eventThemeSettings,
         eventRsvpSettings,
         eventSections,
@@ -70,6 +74,7 @@ describe("database schema", () => {
       "users",
       "events",
       "event_managers",
+      "collaborator_invitations",
       "event_theme_settings",
       "event_rsvp_settings",
       "event_sections",
@@ -94,6 +99,7 @@ describe("database schema", () => {
     const contentColumns = getTableColumns(eventSectionContents);
     const guestGroupColumns = getTableColumns(guestGroups);
     const guestGroupMemberColumns = getTableColumns(guestGroupMembers);
+    const collaboratorInvitationColumns = getTableColumns(collaboratorInvitations);
 
     expect(eventColumns).not.toHaveProperty("selectedThemeId");
     expect(eventColumns).not.toHaveProperty("rsvpSettingsJson");
@@ -119,6 +125,14 @@ describe("database schema", () => {
       name: expect.anything(),
       sortOrder: expect.anything(),
     });
+    expect(collaboratorInvitationColumns).toMatchObject({
+      email: expect.anything(),
+      expiresAt: expect.anything(),
+      invitedByUserId: expect.anything(),
+      lastSentAt: expect.anything(),
+      role: expect.anything(),
+      status: expect.anything(),
+    });
     expect(getTableColumns(eventPublications)).toHaveProperty("sectionsJson");
   });
 
@@ -129,6 +143,9 @@ describe("database schema", () => {
     expect(sectionVisibilityEnum.enumValues).toEqual(sectionVisibilitySchema.options);
     expect(rsvpStatusEnum.enumValues).toEqual(rsvpStatusSchema.options);
     expect(managerRoleEnum.enumValues).toEqual(managerRoleSchema.options);
+    expect(collaboratorInvitationStatusEnum.enumValues).toEqual(
+      collaboratorInvitationStatusSchema.options,
+    );
     expect(guestGroupStatusEnum.enumValues).toEqual(guestGroupStatusSchema.options);
     expect(activityActorTypeEnum.enumValues).toEqual(activityActorTypeSchema.options);
     expect(activityTypeEnum.enumValues).toEqual(activityTypeSchema.options);
@@ -149,6 +166,7 @@ describe("database schema", () => {
       eventSlugAliasesSlug: "event_slug_aliases_slug_unique",
       eventsOwnerDeletedAt: "events_owner_deleted_at_idx",
       eventsOwnerUserId: "events_owner_user_id_idx",
+      collaboratorInvitationsPendingEmail: "collaborator_invitations_pending_email_unique",
       guestGroupsInviteTokenHash: "guest_groups_invite_token_hash_unique",
       guestGroupMembersGroupId: "guest_group_members_group_id_idx",
       guestGroupMembersGroupSort: "guest_group_members_group_sort_unique",

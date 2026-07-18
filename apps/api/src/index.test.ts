@@ -1,7 +1,9 @@
 import { getTheme } from "@lumiere/themes";
 import type {
   ActivityEvent,
+  CollaboratorInvitation,
   Event,
+  EventCollaborator,
   EventSummary,
   EventCreate,
   EventSection,
@@ -29,6 +31,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } from "./auth";
 import { createApp } from "./app";
+import type { CollaboratorStore } from "./collaborators";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore, PublishingReadiness } from "./events";
@@ -67,6 +70,9 @@ const localUser: LocalUser = {
 };
 
 const eventId = "00000000-0000-4000-8000-000000000101";
+const collaboratorInvitationId = "00000000-0000-4000-8000-000000000111";
+const collaboratorUserId = "00000000-0000-4000-8000-000000000112";
+const collaboratorMembershipId = "00000000-0000-4000-8000-000000000113";
 
 const baseEvent: Event = {
   hasPublicAccessCode: false,
@@ -91,6 +97,30 @@ const baseEvent: Event = {
   },
   createdAt: "2026-07-08T00:00:00.000Z",
   updatedAt: "2026-07-08T00:00:00.000Z",
+};
+
+const baseCollaboratorInvitation: CollaboratorInvitation = {
+  createdAt: "2026-07-08T00:00:00.000Z",
+  email: "editor@example.com",
+  eventId,
+  expiresAt: "2026-07-15T00:00:00.000Z",
+  id: collaboratorInvitationId,
+  invitedByUserId: localUser.id,
+  lastSentAt: "2026-07-08T00:00:00.000Z",
+  role: "editor",
+  sendCount: 1,
+  status: "pending",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+};
+
+const baseCollaborator: EventCollaborator = {
+  createdAt: "2026-07-08T01:00:00.000Z",
+  displayName: "Eli Editor",
+  email: "editor@example.com",
+  eventId,
+  id: collaboratorMembershipId,
+  role: "editor",
+  userId: collaboratorUserId,
 };
 
 const guestGroupId = "00000000-0000-4000-8000-000000000301";
@@ -644,6 +674,238 @@ describe("API app", () => {
     });
     expect(response.status).toBe(200);
     expect(listManagedEvents).toHaveBeenCalledWith(localUser.id);
+  });
+
+  it("lets owners invite, list, resend, and revoke event collaborators", async () => {
+    const { authStore } = createTestAuthStore();
+    const {
+      collaboratorStore,
+      createInvitation,
+      listEventCollaboration,
+      resendInvitation,
+      revokeInvitation,
+    } = createTestCollaboratorStore();
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const headers = {
+      authorization: `Bearer ${createSupabaseToken()}`,
+      "content-type": "application/json",
+    };
+    const createResponse = await app.request(`/events/${eventId}/collaborator-invitations`, {
+      body: JSON.stringify({
+        email: "EDITOR@Example.com",
+        role: "editor",
+      }),
+      headers,
+      method: "POST",
+    });
+    const listResponse = await app.request(`/events/${eventId}/collaboration`, {
+      headers,
+    });
+    const resendResponse = await app.request(
+      `/events/${eventId}/collaborator-invitations/${collaboratorInvitationId}/resend`,
+      {
+        headers,
+        method: "POST",
+      },
+    );
+    const revokeResponse = await app.request(
+      `/events/${eventId}/collaborator-invitations/${collaboratorInvitationId}/revoke`,
+      {
+        headers,
+        method: "POST",
+      },
+    );
+
+    expect(createResponse.status).toBe(201);
+    await expect(createResponse.json()).resolves.toEqual({
+      invitation: baseCollaboratorInvitation,
+    });
+    expect(createInvitation).toHaveBeenCalledWith({
+      email: "editor@example.com",
+      eventId,
+      invitedByUserId: localUser.id,
+      role: "editor",
+    });
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toEqual({
+      collaborators: [baseCollaborator],
+      invitations: [baseCollaboratorInvitation],
+    });
+    expect(listEventCollaboration).toHaveBeenCalledWith(eventId);
+    expect(resendResponse.status).toBe(200);
+    expect(resendInvitation).toHaveBeenCalledWith(eventId, collaboratorInvitationId);
+    expect(revokeResponse.status).toBe(200);
+    expect(revokeInvitation).toHaveBeenCalledWith(eventId, collaboratorInvitationId);
+  });
+
+  it("allows the matching authenticated identity to accept or decline an invitation", async () => {
+    const { authStore } = createTestAuthStore();
+    const acceptedInvitation: CollaboratorInvitation = {
+      ...baseCollaboratorInvitation,
+      respondedAt: "2026-07-09T00:00:00.000Z",
+      respondedByUserId: localUser.id,
+      status: "accepted",
+      updatedAt: "2026-07-09T00:00:00.000Z",
+    };
+    const declinedInvitation: CollaboratorInvitation = {
+      ...acceptedInvitation,
+      status: "declined",
+    };
+    const { acceptInvitation, collaboratorStore, declineInvitation } = createTestCollaboratorStore({
+      acceptResult: {
+        collaborator: baseCollaborator,
+        invitation: acceptedInvitation,
+      },
+      declineResult: declinedInvitation,
+    });
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const headers = {
+      authorization: `Bearer ${createSupabaseToken({
+        email: "EDITOR@Example.com",
+        sub: "supabase-editor-id",
+        user_metadata: {
+          name: "Eli Editor",
+        },
+      })}`,
+    };
+    const acceptResponse = await app.request(
+      `/collaborator-invitations/${collaboratorInvitationId}/accept`,
+      {
+        headers,
+        method: "POST",
+      },
+    );
+    const declineResponse = await app.request(
+      `/collaborator-invitations/${collaboratorInvitationId}/decline`,
+      {
+        headers,
+        method: "POST",
+      },
+    );
+
+    expect(acceptResponse.status).toBe(200);
+    await expect(acceptResponse.json()).resolves.toEqual({
+      collaborator: baseCollaborator,
+      invitation: acceptedInvitation,
+    });
+    expect(acceptInvitation).toHaveBeenCalledWith(collaboratorInvitationId, {
+      displayName: "Eli Editor",
+      email: "editor@example.com",
+      userId: localUser.id,
+    });
+    expect(declineResponse.status).toBe(200);
+    await expect(declineResponse.json()).resolves.toEqual({
+      invitation: declinedInvitation,
+    });
+    expect(declineInvitation).toHaveBeenCalledWith(collaboratorInvitationId, {
+      email: "editor@example.com",
+      userId: localUser.id,
+    });
+  });
+
+  it("returns conflicts for duplicate pending invitations and active memberships", async () => {
+    const { authStore } = createTestAuthStore();
+    const { collaboratorStore, createInvitation } = createTestCollaboratorStore();
+    createInvitation
+      .mockResolvedValueOnce("pending_exists")
+      .mockResolvedValueOnce("membership_exists");
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const request = () =>
+      app.request(`/events/${eventId}/collaborator-invitations`, {
+        body: JSON.stringify({
+          email: "editor@example.com",
+          role: "viewer",
+        }),
+        headers: {
+          authorization: `Bearer ${createSupabaseToken()}`,
+          "content-type": "application/json",
+        },
+        method: "POST",
+      });
+    const pendingResponse = await request();
+    const membershipResponse = await request();
+
+    expect(pendingResponse.status).toBe(409);
+    await expect(pendingResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        message: "A pending collaborator invitation already exists for this email",
+      },
+    });
+    expect(membershipResponse.status).toBe(409);
+    await expect(membershipResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        message: "A collaborator membership already exists for this email",
+      },
+    });
+  });
+
+  it("lets owners remove non-owner collaborators but never the event owner", async () => {
+    const { authStore } = createTestAuthStore();
+    const { collaboratorStore, removeCollaborator } = createTestCollaboratorStore();
+    removeCollaborator.mockResolvedValueOnce(true).mockResolvedValueOnce("owner");
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const headers = {
+      authorization: `Bearer ${createSupabaseToken()}`,
+    };
+    const removedResponse = await app.request(
+      `/events/${eventId}/collaborators/${collaboratorUserId}`,
+      {
+        headers,
+        method: "DELETE",
+      },
+    );
+    const ownerResponse = await app.request(`/events/${eventId}/collaborators/${localUser.id}`, {
+      headers,
+      method: "DELETE",
+    });
+
+    expect(removedResponse.status).toBe(200);
+    await expect(removedResponse.json()).resolves.toEqual({ removed: true });
+    expect(ownerResponse.status).toBe(403);
+    await expect(ownerResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "FORBIDDEN",
+        message: "Event owner cannot be removed",
+      },
+    });
+  });
+
+  it("keeps collaborator management owner-only", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("editor"),
+    });
+    const { collaboratorStore, listEventCollaboration } = createTestCollaboratorStore();
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const response = await app.request(`/events/${eventId}/collaboration`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    expect(response.status).toBe(403);
+    expect(listEventCollaboration).not.toHaveBeenCalled();
   });
 
   it("creates an event for the authenticated manager", async () => {
@@ -3016,6 +3278,79 @@ function createTestAuthStore({
     authStore,
     findEventAccess,
     upsertUserProfile,
+  };
+}
+
+function createTestCollaboratorStore({
+  acceptResult = {
+    collaborator: baseCollaborator,
+    invitation: {
+      ...baseCollaboratorInvitation,
+      respondedAt: "2026-07-09T00:00:00.000Z",
+      respondedByUserId: collaboratorUserId,
+      status: "accepted",
+      updatedAt: "2026-07-09T00:00:00.000Z",
+    },
+  },
+  createResult = baseCollaboratorInvitation,
+  declineResult = {
+    ...baseCollaboratorInvitation,
+    respondedAt: "2026-07-09T00:00:00.000Z",
+    respondedByUserId: collaboratorUserId,
+    status: "declined",
+    updatedAt: "2026-07-09T00:00:00.000Z",
+  },
+  removeResult = true,
+  resendResult = {
+    ...baseCollaboratorInvitation,
+    expiresAt: "2026-07-16T00:00:00.000Z",
+    lastSentAt: "2026-07-09T00:00:00.000Z",
+    sendCount: 2,
+    updatedAt: "2026-07-09T00:00:00.000Z",
+  },
+  revokeResult = {
+    ...baseCollaboratorInvitation,
+    revokedAt: "2026-07-09T00:00:00.000Z",
+    status: "revoked",
+    updatedAt: "2026-07-09T00:00:00.000Z",
+  },
+}: {
+  acceptResult?: Awaited<ReturnType<CollaboratorStore["acceptInvitation"]>>;
+  createResult?: Awaited<ReturnType<CollaboratorStore["createInvitation"]>>;
+  declineResult?: Awaited<ReturnType<CollaboratorStore["declineInvitation"]>>;
+  removeResult?: Awaited<ReturnType<CollaboratorStore["removeCollaborator"]>>;
+  resendResult?: Awaited<ReturnType<CollaboratorStore["resendInvitation"]>>;
+  revokeResult?: Awaited<ReturnType<CollaboratorStore["revokeInvitation"]>>;
+} = {}) {
+  const acceptInvitation = vi.fn(async () => acceptResult);
+  const createInvitation = vi.fn(async () => createResult);
+  const declineInvitation = vi.fn(async () => declineResult);
+  const listEventCollaboration = vi.fn(async () => ({
+    collaborators: [baseCollaborator],
+    invitations: [baseCollaboratorInvitation],
+  }));
+  const removeCollaborator = vi.fn(async () => removeResult);
+  const resendInvitation = vi.fn(async () => resendResult);
+  const revokeInvitation = vi.fn(async () => revokeResult);
+  const collaboratorStore: CollaboratorStore = {
+    acceptInvitation,
+    createInvitation,
+    declineInvitation,
+    listEventCollaboration,
+    removeCollaborator,
+    resendInvitation,
+    revokeInvitation,
+  };
+
+  return {
+    acceptInvitation,
+    collaboratorStore,
+    createInvitation,
+    declineInvitation,
+    listEventCollaboration,
+    removeCollaborator,
+    resendInvitation,
+    revokeInvitation,
   };
 }
 

@@ -5,6 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 
 import type { AuthStore } from "./auth";
+import type { CollaboratorStore } from "./collaborators";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError, createApiError } from "./errors";
 import type { EventStore } from "./events";
@@ -17,6 +18,7 @@ import type { ThemeSectionStore } from "./theme-sections";
 
 export type CreateAppOptions = {
   authStore?: AuthStore;
+  collaboratorStore?: CollaboratorStore;
   config: ApiEnv;
   dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
@@ -37,6 +39,7 @@ const noStoreMiddleware: MiddlewareHandler<ApiBindings> = async (context, next) 
 
 export const createApp = ({
   authStore,
+  collaboratorStore,
   config,
   dashboardDataStore,
   eventStore,
@@ -60,6 +63,7 @@ export const createApp = ({
   app.use("*", requestIdMiddleware());
   app.use("/events", noStoreMiddleware);
   app.use("/events/*", noStoreMiddleware);
+  app.use("/collaborator-invitations/*", noStoreMiddleware);
   app.use("/public/events", noStoreMiddleware);
   app.use("/public/events/*", noStoreMiddleware);
 
@@ -67,6 +71,7 @@ export const createApp = ({
     "/",
     createRoutes({
       authStore,
+      collaboratorStore,
       config,
       dashboardDataStore,
       eventStore,

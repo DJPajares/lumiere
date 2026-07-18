@@ -27,6 +27,18 @@ export type RsvpStatus = z.infer<typeof rsvpStatusSchema>;
 export const managerRoleSchema = z.enum(["owner", "editor", "viewer"]);
 export type ManagerRole = z.infer<typeof managerRoleSchema>;
 
+export const collaboratorRoleSchema = z.enum(["editor", "viewer"]);
+export type CollaboratorRole = z.infer<typeof collaboratorRoleSchema>;
+
+export const collaboratorInvitationStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "expired",
+]);
+export type CollaboratorInvitationStatus = z.infer<typeof collaboratorInvitationStatusSchema>;
+
 export const guestGroupStatusSchema = z.enum([
   "pending",
   "opened",

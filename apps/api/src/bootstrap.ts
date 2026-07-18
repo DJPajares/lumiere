@@ -2,6 +2,7 @@ import { envIssuesToMessage, loadApiEnv } from "@lumiere/config";
 import { createDatabase, createPostgresClient } from "@lumiere/db";
 
 import { createDrizzleAuthStore } from "./auth";
+import { createDrizzleCollaboratorStore } from "./collaborators";
 import { createApp } from "./app";
 import { createDrizzleDashboardDataStore } from "./dashboard-data";
 import { createDrizzleEventStore } from "./events";
@@ -22,6 +23,7 @@ export function createApiApplication(config = loadApiConfig()) {
   const client = createPostgresClient(config.DATABASE_URL, { prepare: false });
   const db = createDatabase(client);
   const authStore = createDrizzleAuthStore(db);
+  const collaboratorStore = createDrizzleCollaboratorStore(db);
   const dashboardDataStore = createDrizzleDashboardDataStore(db);
   const eventStore = createDrizzleEventStore(db);
   const guestGroupStore = createDrizzleGuestGroupStore(db);
@@ -31,6 +33,7 @@ export function createApiApplication(config = loadApiConfig()) {
 
   return createApp({
     authStore,
+    collaboratorStore,
     config,
     dashboardDataStore,
     eventStore,

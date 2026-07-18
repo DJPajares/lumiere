@@ -457,7 +457,7 @@ When updating the logo pack, use `logo.png` as the visible brand source for each
 - Manager endpoints require Supabase bearer auth and per-event access checks before returning or mutating event data.
 - Public event endpoints return public event summaries only; guest endpoints return the invite context needed for RSVP without guest contact details, invite tokens, or manager-only fields.
 - Guest invite tokens are generated from 32 random bytes, returned only inside share URLs, and stored as HMAC-SHA256 hashes using `INVITE_TOKEN_SECRET`.
-- Sensitive `/events/*` and `/public/events/*` API responses send `Cache-Control: no-store` and `Pragma: no-cache`.
+- Sensitive `/events/*`, `/collaborator-invitations/*`, and `/public/events/*` API responses send `Cache-Control: no-store` and `Pragma: no-cache`.
 - Public RSVP submissions have a basic per-app rate limiter keyed by client, event slug, and hashed guest token. For multi-instance production, replace or extend this with a shared Redis, edge, or gateway limiter using the same route and token-hash boundary.
 - Section content is schema-validated and rejects executable-looking markup, inline event handlers, `javascript:` URLs, and non-HTTP media/map URLs before persistence.
 
@@ -475,6 +475,14 @@ POST   /events
 GET    /events/:eventId
 PATCH  /events/:eventId
 DELETE /events/:eventId
+
+GET    /events/:eventId/collaboration
+POST   /events/:eventId/collaborator-invitations
+POST   /events/:eventId/collaborator-invitations/:invitationId/resend
+POST   /events/:eventId/collaborator-invitations/:invitationId/revoke
+DELETE /events/:eventId/collaborators/:collaboratorUserId
+POST   /collaborator-invitations/:invitationId/accept
+POST   /collaborator-invitations/:invitationId/decline
 
 GET    /events/:eventId/theme
 PUT    /events/:eventId/theme
@@ -505,6 +513,7 @@ Core tables:
 - users
 - events
 - event_managers
+- collaborator_invitations
 - event_sections
 - event_assets
 - guest_groups

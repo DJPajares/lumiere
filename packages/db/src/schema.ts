@@ -1,6 +1,7 @@
 import {
   activityActorTypeSchema,
   activityTypeSchema,
+  collaboratorInvitationStatusSchema,
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
@@ -16,6 +17,7 @@ import {
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -68,6 +70,10 @@ export const managerRoleEnum = lumiereSchema.enum(
   "manager_role",
   pgEnumValues(managerRoleSchema.options),
 );
+export const collaboratorInvitationStatusEnum = lumiereSchema.enum(
+  "collaborator_invitation_status",
+  pgEnumValues(collaboratorInvitationStatusSchema.options),
+);
 export const guestGroupStatusEnum = lumiereSchema.enum(
   "guest_group_status",
   pgEnumValues(guestGroupStatusSchema.options),
@@ -101,6 +107,9 @@ export const schemaIndexNames = {
   eventManagersEventUser: "event_managers_event_user_unique",
   eventManagersEventId: "event_managers_event_id_idx",
   eventManagersUserId: "event_managers_user_id_idx",
+  collaboratorInvitationsPendingEmail: "collaborator_invitations_pending_email_unique",
+  collaboratorInvitationsEventStatus: "collaborator_invitations_event_status_idx",
+  collaboratorInvitationsEmailStatus: "collaborator_invitations_email_status_idx",
   eventSectionsEventKey: "event_sections_event_key_unique",
   eventSectionsEventSort: "event_sections_event_sort_idx",
   eventAssetsEventType: "event_assets_event_type_idx",
@@ -224,6 +233,47 @@ export const eventManagers = lumiereSchema.table(
     uniqueIndex(schemaIndexNames.eventManagersEventUser).on(table.eventId, table.userId),
     index(schemaIndexNames.eventManagersEventId).on(table.eventId),
     index(schemaIndexNames.eventManagersUserId).on(table.userId),
+  ],
+);
+
+export const collaboratorInvitations = lumiereSchema.table(
+  "collaborator_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    role: managerRoleEnum("role").notNull(),
+    status: collaboratorInvitationStatusEnum("status").notNull().default("pending"),
+    invitedByUserId: uuid("invited_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    respondedByUserId: uuid("responded_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    expiresAt: timestamp("expires_at", { mode: "string", withTimezone: true }).notNull(),
+    lastSentAt: timestamp("last_sent_at", { mode: "string", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    sendCount: integer("send_count").notNull().default(1),
+    respondedAt: timestamp("responded_at", { mode: "string", withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { mode: "string", withTimezone: true }),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn(),
+  },
+  (table) => [
+    uniqueIndex(schemaIndexNames.collaboratorInvitationsPendingEmail)
+      .on(table.eventId, table.email)
+      .where(sql`${table.status} = 'pending'`),
+    index(schemaIndexNames.collaboratorInvitationsEventStatus).on(table.eventId, table.status),
+    index(schemaIndexNames.collaboratorInvitationsEmailStatus).on(table.email, table.status),
+    check("collaborator_invitations_role_check", sql`${table.role} in ('editor', 'viewer')`),
+    check(
+      "collaborator_invitations_normalized_email_check",
+      sql`${table.email} = lower(btrim(${table.email}))`,
+    ),
+    check("collaborator_invitations_send_count_check", sql`${table.sendCount} >= 1`),
   ],
 );
 
@@ -433,7 +483,13 @@ export const themeRegistrySnapshots = lumiereSchema.table(
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
+  collaboratorInvitationsRespondedTo: many(collaboratorInvitations, {
+    relationName: "collaboratorInvitationResponder",
+  }),
   deletedEvents: many(events, { relationName: "eventDeleter" }),
+  collaboratorInvitationsSent: many(collaboratorInvitations, {
+    relationName: "collaboratorInvitationInviter",
+  }),
   ownedEvents: many(events, { relationName: "eventOwner" }),
   managerMemberships: many(eventManagers),
   notifications: many(notifications),
@@ -451,6 +507,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     references: [users.id],
   }),
   managers: many(eventManagers),
+  collaboratorInvitations: many(collaboratorInvitations),
   sections: many(eventSections),
   assets: many(eventAssets),
   guestGroups: many(guestGroups),
@@ -499,6 +556,23 @@ export const eventManagersRelations = relations(eventManagers, ({ one }) => ({
   }),
   user: one(users, {
     fields: [eventManagers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const collaboratorInvitationsRelations = relations(collaboratorInvitations, ({ one }) => ({
+  event: one(events, {
+    fields: [collaboratorInvitations.eventId],
+    references: [events.id],
+  }),
+  inviter: one(users, {
+    fields: [collaboratorInvitations.invitedByUserId],
+    relationName: "collaboratorInvitationInviter",
+    references: [users.id],
+  }),
+  responder: one(users, {
+    fields: [collaboratorInvitations.respondedByUserId],
+    relationName: "collaboratorInvitationResponder",
     references: [users.id],
   }),
 }));
@@ -582,6 +656,9 @@ export const schema = {
   activityEventsRelations,
   activityActorTypeEnum,
   activityTypeEnum,
+  collaboratorInvitationStatusEnum,
+  collaboratorInvitations,
+  collaboratorInvitationsRelations,
   eventAssets,
   eventAssetsRelations,
   eventManagers,

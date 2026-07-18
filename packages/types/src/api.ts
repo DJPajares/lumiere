@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 import {
+  collaboratorInvitationSchema,
   eventCreateSchema,
+  eventCollaboratorSchema,
   eventDeletionSchema,
   eventSchema,
   eventSectionSchema,
@@ -17,6 +19,7 @@ import {
   rsvpSubmissionSchema,
   themeSchema,
 } from "./domain";
+import { collaboratorRoleSchema } from "./enums";
 import { idSchema, nonEmptyStringSchema, publicSlugSchema } from "./primitives";
 
 export const apiErrorCodeSchema = z.enum([
@@ -81,6 +84,36 @@ export const eventsListResponseSchema = z.object({
   events: z.array(eventSchema),
 });
 export type EventsListResponse = z.infer<typeof eventsListResponseSchema>;
+
+export const collaboratorInvitationRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(320),
+  role: collaboratorRoleSchema,
+});
+export type CollaboratorInvitationRequest = z.input<typeof collaboratorInvitationRequestSchema>;
+
+export const collaboratorInvitationResponseSchema = z.object({
+  invitation: collaboratorInvitationSchema,
+});
+export type CollaboratorInvitationResponse = z.infer<typeof collaboratorInvitationResponseSchema>;
+
+export const collaboratorInvitationAcceptanceResponseSchema =
+  collaboratorInvitationResponseSchema.extend({
+    collaborator: eventCollaboratorSchema,
+  });
+export type CollaboratorInvitationAcceptanceResponse = z.infer<
+  typeof collaboratorInvitationAcceptanceResponseSchema
+>;
+
+export const eventCollaborationResponseSchema = z.object({
+  collaborators: z.array(eventCollaboratorSchema),
+  invitations: z.array(collaboratorInvitationSchema),
+});
+export type EventCollaborationResponse = z.infer<typeof eventCollaborationResponseSchema>;
+
+export const collaboratorRemovalResponseSchema = z.object({
+  removed: z.literal(true),
+});
+export type CollaboratorRemovalResponse = z.infer<typeof collaboratorRemovalResponseSchema>;
 
 export const eventPublishingDestinationSchema = z.enum(["details", "sections", "theme", "rsvp"]);
 export type EventPublishingDestination = z.infer<typeof eventPublishingDestinationSchema>;
@@ -247,6 +280,27 @@ export const byEventAndNotificationIdParamsSchema = byEventIdParamsSchema.extend
   notificationId: idSchema,
 });
 export type ByEventAndNotificationIdParams = z.infer<typeof byEventAndNotificationIdParamsSchema>;
+
+export const byCollaboratorInvitationIdParamsSchema = z.object({
+  invitationId: idSchema,
+});
+export type ByCollaboratorInvitationIdParams = z.infer<
+  typeof byCollaboratorInvitationIdParamsSchema
+>;
+
+export const byEventAndCollaboratorInvitationIdParamsSchema = byEventIdParamsSchema.extend({
+  invitationId: idSchema,
+});
+export type ByEventAndCollaboratorInvitationIdParams = z.infer<
+  typeof byEventAndCollaboratorInvitationIdParamsSchema
+>;
+
+export const byEventAndCollaboratorUserIdParamsSchema = byEventIdParamsSchema.extend({
+  collaboratorUserId: idSchema,
+});
+export type ByEventAndCollaboratorUserIdParams = z.infer<
+  typeof byEventAndCollaboratorUserIdParamsSchema
+>;
 
 export const publicEventParamsSchema = z.object({
   eventSlug: publicSlugSchema,

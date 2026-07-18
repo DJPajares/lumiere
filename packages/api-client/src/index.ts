@@ -1,6 +1,10 @@
 import {
   activityEventsResponseSchema,
   apiErrorSchema,
+  collaboratorInvitationAcceptanceResponseSchema,
+  collaboratorInvitationResponseSchema,
+  collaboratorRemovalResponseSchema,
+  eventCollaborationResponseSchema,
   eventResponseSchema,
   eventPublishingReadinessResponseSchema,
   eventSectionsResponseSchema,
@@ -23,6 +27,11 @@ import {
   themesResponseSchema,
   type ActivityEventsResponse,
   type ApiError,
+  type CollaboratorInvitationAcceptanceResponse,
+  type CollaboratorInvitationRequest,
+  type CollaboratorInvitationResponse,
+  type CollaboratorRemovalResponse,
+  type EventCollaborationResponse,
   type EventCreateRequest,
   type EventDeletionRequest,
   type EventResponse,
@@ -143,6 +152,16 @@ export const createApiClient = ({
   };
 
   return {
+    acceptCollaboratorInvitation: (
+      invitationId: string,
+    ): Promise<CollaboratorInvitationAcceptanceResponse> =>
+      request(
+        `/collaborator-invitations/${encodePathSegment(invitationId)}/accept`,
+        collaboratorInvitationAcceptanceResponseSchema,
+        {
+          method: "POST",
+        },
+      ),
     deleteEvent: (eventId: string, input: EventDeletionRequest): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
         body: input,
@@ -162,6 +181,16 @@ export const createApiClient = ({
         guestGroupInviteResponseSchema,
         {
           body: input,
+          method: "POST",
+        },
+      ),
+    declineCollaboratorInvitation: (
+      invitationId: string,
+    ): Promise<CollaboratorInvitationResponse> =>
+      request(
+        `/collaborator-invitations/${encodePathSegment(invitationId)}/decline`,
+        collaboratorInvitationResponseSchema,
+        {
           method: "POST",
         },
       ),
@@ -200,6 +229,18 @@ export const createApiClient = ({
           auth: false,
         },
       ),
+    inviteEventCollaborator: (
+      eventId: string,
+      input: CollaboratorInvitationRequest,
+    ): Promise<CollaboratorInvitationResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaborator-invitations`,
+        collaboratorInvitationResponseSchema,
+        {
+          body: input,
+          method: "POST",
+        },
+      ),
     publishEvent: (eventId: string, expectedUpdatedAt: string): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema, {
         body: { expectedUpdatedAt, status: "published" },
@@ -213,6 +254,11 @@ export const createApiClient = ({
       request(`/events/${encodePathSegment(eventId)}/activity`, activityEventsResponseSchema, {
         query,
       }),
+    listEventCollaboration: (eventId: string): Promise<EventCollaborationResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaboration`,
+        eventCollaborationResponseSchema,
+      ),
     listEventNotifications: (
       eventId: string,
       query?: QueryParams,
@@ -274,10 +320,49 @@ export const createApiClient = ({
           method: "POST",
         },
       ),
+    removeEventCollaborator: (
+      eventId: string,
+      collaboratorUserId: string,
+    ): Promise<CollaboratorRemovalResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaborators/${encodePathSegment(
+          collaboratorUserId,
+        )}`,
+        collaboratorRemovalResponseSchema,
+        {
+          method: "DELETE",
+        },
+      ),
+    resendCollaboratorInvitation: (
+      eventId: string,
+      invitationId: string,
+    ): Promise<CollaboratorInvitationResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaborator-invitations/${encodePathSegment(
+          invitationId,
+        )}/resend`,
+        collaboratorInvitationResponseSchema,
+        {
+          method: "POST",
+        },
+      ),
     restoreEvent: (eventId: string): Promise<EventResponse> =>
       request(`/events/${encodePathSegment(eventId)}/restore`, eventResponseSchema, {
         method: "POST",
       }),
+    revokeCollaboratorInvitation: (
+      eventId: string,
+      invitationId: string,
+    ): Promise<CollaboratorInvitationResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaborator-invitations/${encodePathSegment(
+          invitationId,
+        )}/revoke`,
+        collaboratorInvitationResponseSchema,
+        {
+          method: "POST",
+        },
+      ),
     submitRsvp: (
       eventSlug: string,
       guestToken: string,

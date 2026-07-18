@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   activityActorTypeSchema,
   activityTypeSchema,
+  collaboratorInvitationStatusSchema,
+  collaboratorRoleSchema,
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
@@ -175,6 +177,30 @@ export const eventManagerSchema = z.object({
   createdAt: isoDateTimeSchema,
 });
 export type EventManager = z.infer<typeof eventManagerSchema>;
+
+export const eventCollaboratorSchema = eventManagerSchema.extend({
+  displayName: z.string().trim().max(160).optional(),
+  email: z.string().trim().email().max(320),
+});
+export type EventCollaborator = z.infer<typeof eventCollaboratorSchema>;
+
+export const collaboratorInvitationSchema = z.object({
+  id: idSchema,
+  eventId: idSchema,
+  email: z.string().trim().email().max(320),
+  role: collaboratorRoleSchema,
+  status: collaboratorInvitationStatusSchema,
+  invitedByUserId: idSchema,
+  respondedByUserId: idSchema.optional(),
+  expiresAt: isoDateTimeSchema,
+  lastSentAt: isoDateTimeSchema,
+  sendCount: z.number().int().min(1),
+  respondedAt: isoDateTimeSchema.optional(),
+  revokedAt: isoDateTimeSchema.optional(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+export type CollaboratorInvitation = z.infer<typeof collaboratorInvitationSchema>;
 
 export const eventSectionSchema = z.object({
   id: idSchema,

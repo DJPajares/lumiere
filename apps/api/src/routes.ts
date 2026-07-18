@@ -8,9 +8,13 @@ import {
   validateThemeSections,
 } from "@lumiere/themes";
 import {
+  byCollaboratorInvitationIdParamsSchema,
+  byEventAndCollaboratorInvitationIdParamsSchema,
+  byEventAndCollaboratorUserIdParamsSchema,
   byEventAndGuestGroupIdParamsSchema,
   byEventAndNotificationIdParamsSchema,
   byEventIdParamsSchema,
+  collaboratorInvitationRequestSchema,
   eventCreateRequestSchema,
   eventDeletionRequestSchema,
   eventSectionsUpdateRequestSchema,
@@ -29,6 +33,7 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { createHmac } from "node:crypto";
 
 import { assertEventAccess, requireManagerAuth, type AuthStore } from "./auth";
+import type { CollaboratorInvitationIssue, CollaboratorStore } from "./collaborators";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
@@ -52,6 +57,7 @@ import { toApiTheme, type ThemeSectionStore } from "./theme-sections";
 
 export type AppOptions = {
   authStore?: AuthStore;
+  collaboratorStore?: CollaboratorStore;
   config: ApiEnv;
   dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
@@ -90,6 +96,7 @@ const rsvpRateLimitWindowMs = 10 * 60 * 1000;
 
 export const createRoutes = ({
   authStore,
+  collaboratorStore,
   config,
   dashboardDataStore,
   eventStore,
@@ -230,6 +237,206 @@ export const createRoutes = ({
 
     return context.json({ events });
   });
+
+  routes.get(
+    "/events/:eventId/collaboration",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "owner",
+      });
+
+      return context.json(await stores.collaboratorStore.listEventCollaboration(eventId));
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/collaborator-invitations",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const manager = context.get("manager");
+      const input = await parseJsonBody(context, collaboratorInvitationRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+        minimumRole: "owner",
+      });
+      const invitation = await stores.collaboratorStore.createInvitation({
+        email: input.email,
+        eventId,
+        invitedByUserId: manager.user.id,
+        role: input.role,
+      });
+
+      if (typeof invitation === "string") {
+        throwCollaboratorInvitationIssue(invitation);
+      }
+
+      return context.json({ invitation }, 201);
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/collaborator-invitations/:invitationId/resend",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const { eventId, invitationId } = parseEventAndCollaboratorInvitationIdParams({
+        eventId: context.req.param("eventId"),
+        invitationId: context.req.param("invitationId"),
+      });
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "owner",
+      });
+      const invitation = await stores.collaboratorStore.resendInvitation(eventId, invitationId);
+
+      if (!invitation) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator invitation not found");
+      }
+
+      if (typeof invitation === "string") {
+        throwCollaboratorInvitationIssue(invitation);
+      }
+
+      return context.json({ invitation });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/collaborator-invitations/:invitationId/revoke",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const { eventId, invitationId } = parseEventAndCollaboratorInvitationIdParams({
+        eventId: context.req.param("eventId"),
+        invitationId: context.req.param("invitationId"),
+      });
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "owner",
+      });
+      const invitation = await stores.collaboratorStore.revokeInvitation(eventId, invitationId);
+
+      if (!invitation) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator invitation not found");
+      }
+
+      if (typeof invitation === "string") {
+        throwCollaboratorInvitationIssue(invitation);
+      }
+
+      return context.json({ invitation });
+    },
+  );
+
+  routes.delete(
+    "/events/:eventId/collaborators/:collaboratorUserId",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const { collaboratorUserId, eventId } = parseEventAndCollaboratorUserIdParams({
+        collaboratorUserId: context.req.param("collaboratorUserId"),
+        eventId: context.req.param("eventId"),
+      });
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "owner",
+      });
+      const removed = await stores.collaboratorStore.removeCollaborator(
+        eventId,
+        collaboratorUserId,
+      );
+
+      if (removed === "owner") {
+        throw new ApiHttpError("FORBIDDEN", "Event owner cannot be removed");
+      }
+
+      if (!removed) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator not found");
+      }
+
+      return context.json({ removed: true as const });
+    },
+  );
+
+  routes.post(
+    "/collaborator-invitations/:invitationId/accept",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const store = requireCollaboratorStore(collaboratorStore);
+      const invitationId = parseCollaboratorInvitationIdParam(context.req.param("invitationId"));
+      const manager = context.get("manager");
+      const result = await store.acceptInvitation(invitationId, {
+        displayName: manager.displayName,
+        email: manager.email,
+        userId: manager.user.id,
+      });
+
+      if (!result) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator invitation not found");
+      }
+
+      if (typeof result === "string") {
+        throwCollaboratorInvitationIssue(result);
+      }
+
+      return context.json(result);
+    },
+  );
+
+  routes.post(
+    "/collaborator-invitations/:invitationId/decline",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const store = requireCollaboratorStore(collaboratorStore);
+      const invitationId = parseCollaboratorInvitationIdParam(context.req.param("invitationId"));
+      const manager = context.get("manager");
+      const invitation = await store.declineInvitation(invitationId, {
+        email: manager.email,
+        userId: manager.user.id,
+      });
+
+      if (!invitation) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator invitation not found");
+      }
+
+      if (typeof invitation === "string") {
+        throwCollaboratorInvitationIssue(invitation);
+      }
+
+      return context.json({ invitation });
+    },
+  );
 
   routes.get(
     "/events/slug-suggestion",
@@ -1080,6 +1287,31 @@ const requireManagerStores = ({
   };
 };
 
+const requireCollaboratorStore = (collaboratorStore: CollaboratorStore | undefined) => {
+  if (!collaboratorStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Collaborator store is not configured");
+  }
+
+  return collaboratorStore;
+};
+
+const requireManagerCollaboratorStores = ({
+  authStore,
+  collaboratorStore,
+}: {
+  authStore: AuthStore | undefined;
+  collaboratorStore: CollaboratorStore | undefined;
+}) => {
+  if (!authStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Auth store is not configured");
+  }
+
+  return {
+    authStore,
+    collaboratorStore: requireCollaboratorStore(collaboratorStore),
+  };
+};
+
 const requireThemeSectionStore = (themeSectionStore: ThemeSectionStore | undefined) => {
   if (!themeSectionStore) {
     throw new ApiHttpError("INTERNAL_ERROR", "Theme section store is not configured");
@@ -1186,6 +1418,87 @@ const parseEventIdParam = (eventId: string | undefined) => {
   }
 
   return result.data.eventId;
+};
+
+const parseCollaboratorInvitationIdParam = (invitationId: string | undefined) => {
+  const result = byCollaboratorInvitationIdParamsSchema.safeParse({
+    invitationId,
+  });
+
+  if (!result.success || !isUuid(result.data.invitationId)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid collaborator invitation ID", {
+      fields: result.success
+        ? [
+            {
+              message: "Must be a valid UUID",
+              path: ["invitationId"],
+            },
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data.invitationId;
+};
+
+const parseEventAndCollaboratorInvitationIdParams = ({
+  eventId,
+  invitationId,
+}: {
+  eventId: string | undefined;
+  invitationId: string | undefined;
+}) => {
+  const result = byEventAndCollaboratorInvitationIdParamsSchema.safeParse({
+    eventId,
+    invitationId,
+  });
+
+  if (!result.success || !isUuid(result.data.eventId) || !isUuid(result.data.invitationId)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid collaborator invitation ID", {
+      fields: result.success
+        ? [
+            ...(!isUuid(result.data.eventId)
+              ? [{ message: "Must be a valid UUID", path: ["eventId"] }]
+              : []),
+            ...(!isUuid(result.data.invitationId)
+              ? [{ message: "Must be a valid UUID", path: ["invitationId"] }]
+              : []),
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const parseEventAndCollaboratorUserIdParams = ({
+  collaboratorUserId,
+  eventId,
+}: {
+  collaboratorUserId: string | undefined;
+  eventId: string | undefined;
+}) => {
+  const result = byEventAndCollaboratorUserIdParamsSchema.safeParse({
+    collaboratorUserId,
+    eventId,
+  });
+
+  if (!result.success || !isUuid(result.data.eventId) || !isUuid(result.data.collaboratorUserId)) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid collaborator ID", {
+      fields: result.success
+        ? [
+            ...(!isUuid(result.data.eventId)
+              ? [{ message: "Must be a valid UUID", path: ["eventId"] }]
+              : []),
+            ...(!isUuid(result.data.collaboratorUserId)
+              ? [{ message: "Must be a valid UUID", path: ["collaboratorUserId"] }]
+              : []),
+          ]
+        : zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
 };
 
 const parseEventAndGuestGroupIdParams = ({
@@ -1373,6 +1686,29 @@ const assertEventSlugAvailable = async (
       },
     ],
   });
+};
+
+const throwCollaboratorInvitationIssue = (issue: CollaboratorInvitationIssue): never => {
+  if (issue === "identity_mismatch") {
+    throw new ApiHttpError("FORBIDDEN", "Collaborator invitation is not available to this manager");
+  }
+
+  if (issue === "expired") {
+    throw new ApiHttpError("CONFLICT", "Collaborator invitation has expired");
+  }
+
+  if (issue === "membership_exists") {
+    throw new ApiHttpError("CONFLICT", "A collaborator membership already exists for this email");
+  }
+
+  if (issue === "pending_exists") {
+    throw new ApiHttpError(
+      "CONFLICT",
+      "A pending collaborator invitation already exists for this email",
+    );
+  }
+
+  throw new ApiHttpError("CONFLICT", "Collaborator invitation is no longer pending");
 };
 
 const createEventSlugSuggestion = async (
