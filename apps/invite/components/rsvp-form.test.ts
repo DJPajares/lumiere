@@ -136,6 +136,12 @@ describe("RSVP form flow helpers", () => {
     );
     await act(() => container.querySelector<HTMLInputElement>("#guestMember-0")?.click());
     await act(() => container.querySelector<HTMLInputElement>("#guestMember-1")?.click());
+
+    expect(container.querySelector<HTMLInputElement>("#guestMember-0")?.disabled).toBe(false);
+    expect(container.querySelector<HTMLInputElement>("#guestMember-1")?.disabled).toBe(false);
+    expect(container.querySelector<HTMLInputElement>("#guestMember-2")?.disabled).toBe(true);
+    expect(container.querySelector<HTMLInputElement>("#guestMember-3")?.disabled).toBe(true);
+
     await act(() =>
       container.querySelector<HTMLButtonElement>('button[aria-label="Remove one guest"]')?.click(),
     );

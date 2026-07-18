@@ -7,7 +7,7 @@ import type {
   GuestGroup,
   GuestGroupStatus,
   JsonValue,
-  Notification,
+  RsvpResponse,
   RsvpStatus,
 } from "@lumiere/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,7 +21,7 @@ type ResponsesActivityData = {
   activity: ActivityEvent[];
   event: Event;
   guestGroups: GuestGroup[];
-  notifications: Notification[];
+  responses: RsvpResponse[];
 };
 
 type ResponsesActivityState =
@@ -45,6 +45,7 @@ type ResponseRow = {
   guestGroup: GuestGroup;
   message: string;
   responseStatus: ResponseFilter | "responded";
+  selectedAttendees: string[];
   submittedAt: string | null;
 };
 
@@ -100,12 +101,18 @@ export function ResponsesActivityWorkspace({
       );
 
       try {
-        const [eventResponse, guestGroupsResponse, activityResponse, notificationsResponse] =
+        const [eventResponse, guestGroupsResponse, activityResponse, responsesResponse] =
           await Promise.all([
             apiClient.getEvent(eventId),
-            apiClient.listGuestGroups(eventId),
-            apiClient.listEventActivity(eventId),
-            apiClient.listEventNotifications(eventId),
+            mode === "responses"
+              ? apiClient.listGuestGroups(eventId)
+              : Promise.resolve({ guestGroups: [] }),
+            mode === "activity"
+              ? apiClient.listEventActivity(eventId)
+              : Promise.resolve({ activity: [] }),
+            mode === "responses"
+              ? apiClient.listEventResponses(eventId)
+              : Promise.resolve({ responses: [] }),
           ]);
 
         setState({
@@ -113,7 +120,7 @@ export function ResponsesActivityWorkspace({
             activity: activityResponse.activity,
             event: eventResponse.event,
             guestGroups: guestGroupsResponse.guestGroups,
-            notifications: notificationsResponse.notifications,
+            responses: responsesResponse.responses,
           },
           error: null,
           isRefreshing: false,
@@ -128,7 +135,7 @@ export function ResponsesActivityWorkspace({
         });
       }
     },
-    [apiClient, eventId],
+    [apiClient, eventId, mode],
   );
 
   useEffect(() => {
@@ -189,7 +196,7 @@ export function ResponsesActivityWorkspace({
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
               {mode === "responses"
-                ? "Review guest group response state, pax count, submitted time, and the latest manager-facing RSVP message."
+                ? "Review each guest group's RSVP status, selected attendees, pax count, message, and submitted time."
                 : "Review chronological guest and manager events with the metadata needed for quick diagnosis."}
             </p>
           </div>
@@ -206,11 +213,10 @@ export function ResponsesActivityWorkspace({
 
       {mode === "responses" ? (
         <ResponsesView
-          activity={readyState.data.activity}
           filter={filter}
           guestGroups={readyState.data.guestGroups}
-          notifications={readyState.data.notifications}
           onFilterChange={setFilter}
+          responses={readyState.data.responses}
         />
       ) : (
         <ActivityView activity={readyState.data.activity} />
@@ -220,21 +226,19 @@ export function ResponsesActivityWorkspace({
 }
 
 function ResponsesView({
-  activity,
   filter,
   guestGroups,
-  notifications,
   onFilterChange,
+  responses,
 }: {
-  activity: ActivityEvent[];
   filter: ResponseFilter;
   guestGroups: GuestGroup[];
-  notifications: Notification[];
   onFilterChange: (filter: ResponseFilter) => void;
+  responses: RsvpResponse[];
 }) {
   const rows = useMemo(
-    () => buildResponseRows({ activity, guestGroups, notifications }),
-    [activity, guestGroups, notifications],
+    () => buildResponseRows({ guestGroups, responses }),
+    [guestGroups, responses],
   );
   const filteredRows =
     filter === "all" ? rows : rows.filter((row) => row.responseStatus === filter);
@@ -245,8 +249,8 @@ function ResponsesView({
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Responses</h2>
           <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-            Pending and disabled rows come from guest group state; submitted rows come from recent
-            RSVP activity.
+            Submitted rows use the saved RSVP record, so attendee names remain available beyond the
+            recent activity window.
           </p>
         </div>
         <div className="flex flex-wrap gap-2" aria-label="Response filters">
@@ -284,17 +288,17 @@ function ResponsesView({
 function ResponseTable({ rows }: { rows: ResponseRow[] }) {
   return (
     <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
-      <div className="hidden grid-cols-[1.2fr_0.8fr_0.7fr_1fr_1.5fr] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
+      <div className="hidden grid-cols-[1.1fr_0.75fr_1.35fr_1fr_1.35fr] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
         <span>Guest group</span>
         <span>Status</span>
-        <span>Attendees</span>
+        <span>Attending guests</span>
         <span>Submitted</span>
         <span>Message</span>
       </div>
       <div className="grid divide-y divide-[var(--border)]">
         {rows.map((row) => (
           <article
-            className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.2fr_0.8fr_0.7fr_1fr_1.5fr] lg:items-start"
+            className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.1fr_0.75fr_1.35fr_1fr_1.35fr] lg:items-start"
             key={row.guestGroup.id}
           >
             <div>
@@ -308,8 +312,17 @@ function ResponseTable({ rows }: { rows: ResponseRow[] }) {
               <StatusBadge status={row.responseStatus} />
             </div>
             <div>
-              <MobileLabel>Attendees</MobileLabel>
-              <span>{row.attendeeCount === null ? "-" : `${row.attendeeCount} pax`}</span>
+              <MobileLabel>Attending guests</MobileLabel>
+              <p>{row.attendeeCount === null ? "-" : `${row.attendeeCount} pax`}</p>
+              {row.selectedAttendees.length > 0 ? (
+                <p className="mt-1 leading-5 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                  {row.selectedAttendees.join(", ")}
+                </p>
+              ) : row.attendeeCount && row.attendeeCount > 0 ? (
+                <p className="mt-1 text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                  Names not collected
+                </p>
+              ) : null}
             </div>
             <div>
               <MobileLabel>Submitted</MobileLabel>
@@ -369,49 +382,38 @@ function ActivityView({ activity }: { activity: ActivityEvent[] }) {
 }
 
 function buildResponseRows({
-  activity,
   guestGroups,
-  notifications,
+  responses,
 }: {
-  activity: ActivityEvent[];
   guestGroups: GuestGroup[];
-  notifications: Notification[];
+  responses: RsvpResponse[];
 }) {
-  const rsvpActivity = activity.filter(isRsvpActivity);
+  const responsesByGuestGroup = new Map(
+    responses.map((response) => [response.guestGroupId, response] as const),
+  );
 
   return guestGroups.map((group): ResponseRow => {
-    const latestActivity = rsvpActivity.find(
-      (item) => readStringMetadata(item.metadata, "guestGroupId") === group.id,
-    );
-    const notification = latestActivity
-      ? notifications.find((item) => {
-          const responseId = readStringMetadata(latestActivity.metadata, "responseId");
-          return responseId
-            ? readStringMetadata(item.metadata, "responseId") === responseId
-            : readStringMetadata(item.metadata, "guestGroupId") === group.id;
-        })
-      : undefined;
-    const activityStatus = latestActivity
-      ? readRsvpStatusMetadata(latestActivity.metadata, "responseStatus")
-      : undefined;
+    const response = responsesByGuestGroup.get(group.id);
 
     if (group.status === "disabled") {
       return {
-        attendeeCount: null,
+        attendeeCount: response?.attendeeCount ?? null,
         guestGroup: group,
-        message: "Invite access disabled.",
+        message: response?.message ?? "Invite access disabled.",
         responseStatus: "disabled",
-        submittedAt: latestActivity?.createdAt ?? null,
+        selectedAttendees: response?.guestNames ?? [],
+        submittedAt: response?.submittedAt ?? null,
       };
     }
 
-    if (activityStatus) {
+    if (response) {
       return {
-        attendeeCount: readNumberMetadata(latestActivity?.metadata, "attendeeCount"),
+        attendeeCount: response.attendeeCount,
         guestGroup: group,
-        message: notification?.message ?? "RSVP captured in recent activity.",
-        responseStatus: activityStatus,
-        submittedAt: latestActivity?.createdAt ?? null,
+        message: response.message ?? "No message included.",
+        responseStatus: response.responseStatus,
+        selectedAttendees: response.guestNames,
+        submittedAt: response.submittedAt,
       };
     }
 
@@ -419,8 +421,9 @@ function buildResponseRows({
       return {
         attendeeCount: null,
         guestGroup: group,
-        message: "Response details are outside the recent activity window.",
+        message: "Saved response details are unavailable.",
         responseStatus: "responded",
+        selectedAttendees: [],
         submittedAt: null,
       };
     }
@@ -430,6 +433,7 @@ function buildResponseRows({
       guestGroup: group,
       message: group.status === "opened" ? "Invite opened; waiting for RSVP." : "Waiting for RSVP.",
       responseStatus: "pending",
+      selectedAttendees: [],
       submittedAt: null,
     };
   });
@@ -499,10 +503,6 @@ function MobileLabel({ children }: { children: string }) {
       {children}
     </p>
   );
-}
-
-function isRsvpActivity(activity: ActivityEvent) {
-  return activity.activityType === "rsvp_submitted" || activity.activityType === "rsvp_updated";
 }
 
 function readStringMetadata(metadata: Record<string, JsonValue>, key: string) {

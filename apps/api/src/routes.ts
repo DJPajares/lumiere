@@ -374,6 +374,23 @@ export const createRoutes = ({
   );
 
   routes.get(
+    "/events/:eventId/responses",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerDashboardStores({ authStore, dashboardDataStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+      });
+      const responses = await stores.dashboardDataStore.listResponses(eventId);
+
+      return context.json({ responses });
+    },
+  );
+
+  routes.get(
     "/events/:eventId/notifications",
     requireManagerAuth({ authStore, config }),
     async (context) => {

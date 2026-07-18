@@ -173,6 +173,11 @@ export const rsvpSubmissionResponseSchema = z.object({
 });
 export type RsvpSubmissionResponse = z.infer<typeof rsvpSubmissionResponseSchema>;
 
+export const rsvpResponsesResponseSchema = z.object({
+  responses: z.array(rsvpResponseSchema),
+});
+export type RsvpResponsesResponse = z.infer<typeof rsvpResponsesResponseSchema>;
+
 export const eventSummarySchema = z.object({
   attending: z.object({
     groups: z.number().int().min(0),

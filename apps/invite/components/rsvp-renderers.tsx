@@ -412,16 +412,19 @@ function NamedMemberControls({
         {members.map((member, index) => {
           const inputId = `guestMember-${index}`;
           const checked = contract.formState.guestNames.includes(member.name);
+          const selectionLimitReached =
+            selectedCount >= contract.formState.attendeeCount && !checked;
 
           return (
             <label
-              className="lumiere-type-body flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 transition hover:border-[color-mix(in_srgb,var(--accent)_52%,var(--border))] has-checked:border-[var(--accent)] has-checked:bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] focus-within:ring-2 focus-within:ring-[var(--focus)]"
+              className="lumiere-type-body flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 transition hover:border-[color-mix(in_srgb,var(--accent)_52%,var(--border))] has-checked:border-[var(--accent)] has-checked:bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] has-disabled:cursor-not-allowed has-disabled:opacity-45 focus-within:ring-2 focus-within:ring-[var(--focus)]"
               htmlFor={inputId}
               key={`${member.sortOrder}-${member.name}`}
             >
               <input
                 checked={checked}
                 className="size-4 shrink-0 accent-[var(--accent)]"
+                disabled={selectionLimitReached}
                 id={inputId}
                 onChange={() => contract.actions.toggleGuestMember(member.name)}
                 type="checkbox"

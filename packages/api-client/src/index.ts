@@ -17,6 +17,7 @@ import {
   notificationsResponseSchema,
   publicEventResponseSchema,
   publicGuestInviteResponseSchema,
+  rsvpResponsesResponseSchema,
   rsvpSubmissionResponseSchema,
   themeResponseSchema,
   themesResponseSchema,
@@ -45,6 +46,7 @@ import {
   type NotificationsResponse,
   type PublicEventResponse,
   type PublicGuestInviteResponse,
+  type RsvpResponsesResponse,
   type RsvpSubmissionRequest,
   type RsvpSubmissionResponse,
   type ThemeResponse,
@@ -218,6 +220,8 @@ export const createApiClient = ({
       request(`/events/${encodePathSegment(eventId)}/notifications`, notificationsResponseSchema, {
         query,
       }),
+    listEventResponses: (eventId: string): Promise<RsvpResponsesResponse> =>
+      request(`/events/${encodePathSegment(eventId)}/responses`, rsvpResponsesResponseSchema),
     markAllEventNotificationsRead: (eventId: string): Promise<NotificationsMarkAllReadResponse> =>
       request(
         `/events/${encodePathSegment(eventId)}/notifications/read-all`,

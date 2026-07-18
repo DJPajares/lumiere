@@ -6,7 +6,7 @@ assignee: null
 epic: 'rsvp'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T13:29:44+08:00'
+modified: '2026-07-18T13:52:11+08:00'
 completedAt: '2026-07-18T13:29:44+08:00'
 labels: ['invite', 'rsvp', 'validation', 'accessibility']
 depends_on: ['t89-guest-group-member-fields', 't70-rsvp-response-field-settings']
@@ -50,3 +50,4 @@ Newly created or edited groups now keep the structured member count aligned with
 - 2026-07-18T13:12:11+08:00: Reconciled the task with the max-pax-driven member editor and the existing RSVP count/name flow; retained explicit pax-versus-checkbox validation and a legacy-record fallback.
 - 2026-07-18T13:21:48+08:00: Started after confirming t89 and t70 are complete; extending the current public guest context and custom RSVP renderer without changing the invitation component boundary.
 - 2026-07-18T13:29:44+08:00: Completed structured named-member checkboxes, exact pax validation, non-destructive count changes, saved-response matching/stale-name recovery, accessible inline errors, and legacy text-input compatibility. Verified 36 invite tests, 88 API tests, direct typechecks across affected dependents, theme/UI boundaries, formatting, diff checks, and the invite production build.
+- 2026-07-18T13:52:11+08:00: Follow-up UX pass disables unchecked member options once the selected pax count is filled while leaving checked names enabled for replacement or mismatch recovery.

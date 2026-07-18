@@ -10,9 +10,10 @@ import {
   rsvpResponses,
   sql,
 } from "@lumiere/db";
-import type { ActivityEvent, EventSummary, Notification } from "@lumiere/types";
+import type { ActivityEvent, EventSummary, Notification, RsvpResponse } from "@lumiere/types";
 
 import { toIsoDateTime } from "./serialization";
+import { toApiRsvpResponse } from "./rsvps";
 
 type GuestGroupSummaryRow = Pick<typeof guestGroups.$inferSelect, "id" | "maxPax" | "status">;
 type RsvpSummaryRow = Pick<
@@ -27,6 +28,7 @@ export type DashboardDataStore = {
   getEventSummary(eventId: string): Promise<EventSummary>;
   listActivity(eventId: string): Promise<ActivityEvent[]>;
   listNotifications(eventId: string, userId: string): Promise<Notification[]>;
+  listResponses(eventId: string): Promise<RsvpResponse[]>;
   markAllNotificationsRead(eventId: string, userId: string): Promise<number>;
   markNotificationRead(
     eventId: string,
@@ -94,6 +96,16 @@ export const createDrizzleDashboardDataStore = (db: Database): DashboardDataStor
       .limit(20);
 
     return rows.map(toApiNotification);
+  },
+
+  async listResponses(eventId) {
+    const rows = await db
+      .select()
+      .from(rsvpResponses)
+      .where(eq(rsvpResponses.eventId, eventId))
+      .orderBy(desc(rsvpResponses.submittedAt));
+
+    return rows.map(toApiRsvpResponse);
   },
 
   async markAllNotificationsRead(eventId, userId) {

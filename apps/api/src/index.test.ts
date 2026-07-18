@@ -1001,6 +1001,31 @@ describe("API app", () => {
     expect(listActivity).toHaveBeenCalledWith(eventId);
   });
 
+  it("returns event-scoped RSVP details for managers", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { dashboardDataStore, listResponses } = createTestDashboardDataStore({
+      responses: [baseRsvpResponse],
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      dashboardDataStore,
+    });
+    const response = await app.request(`/events/${eventId}/responses`, {
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+      },
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      responses: [baseRsvpResponse],
+    });
+    expect(response.status).toBe(200);
+    expect(listResponses).toHaveBeenCalledWith(eventId);
+  });
+
   it("returns in-app notifications for the current manager", async () => {
     const { authStore } = createTestAuthStore({
       access: roleAccess("viewer"),
@@ -2997,15 +3022,18 @@ function createTestAuthStore({
 function createTestDashboardDataStore({
   activity = [activityEvent, olderActivityEvent],
   notifications = [notification],
+  responses = [baseRsvpResponse],
   summary = eventSummary,
 }: {
   activity?: ActivityEvent[];
   notifications?: Notification[];
+  responses?: RsvpResponse[];
   summary?: EventSummary;
 } = {}) {
   const getEventSummary = vi.fn(async () => summary);
   const listActivity = vi.fn(async () => activity);
   const listNotifications = vi.fn(async () => notifications);
+  const listResponses = vi.fn(async () => responses);
   const dismissNotification = vi.fn(async () => true);
   const markAllNotificationsRead = vi.fn(
     async () => notifications.filter((item) => !item.readAt).length,
@@ -3016,6 +3044,7 @@ function createTestDashboardDataStore({
     getEventSummary,
     listActivity,
     listNotifications,
+    listResponses,
     markAllNotificationsRead,
     markNotificationRead,
   };
@@ -3026,6 +3055,7 @@ function createTestDashboardDataStore({
     getEventSummary,
     listActivity,
     listNotifications,
+    listResponses,
     markAllNotificationsRead,
     markNotificationRead,
   };
@@ -3692,6 +3722,7 @@ function createIntegrationSmokeStores() {
     getEventSummary: vi.fn(async () => buildSmokeSummary(guestGroupRecord, responseRecord)),
     listActivity: vi.fn(async () => activity),
     listNotifications: vi.fn(async () => notifications),
+    listResponses: vi.fn(async () => (responseRecord ? [responseRecord] : [])),
     markAllNotificationsRead: vi.fn(
       async () => notifications.filter((item) => !item.readAt).length,
     ),

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { ActivityEvent, Event, GuestGroup, Notification } from "@lumiere/types";
+import type { ActivityEvent, Event, GuestGroup, RsvpResponse } from "@lumiere/types";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -27,6 +27,7 @@ describe("ResponsesActivityWorkspace", () => {
     expect(screen.getByText("Tan Family")).toBeTruthy();
     expect(screen.getByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeTruthy();
     expect(screen.getByText("2 pax")).toBeTruthy();
+    expect(screen.getByText("Mina Tan, Alex Tan")).toBeTruthy();
     expect(screen.getByText("Pending Cousins")).toBeTruthy();
     expect(screen.getByText("Old Vendor List")).toBeTruthy();
 
@@ -51,7 +52,7 @@ describe("ResponsesActivityWorkspace", () => {
     renderWithAuth(
       createApiClientStub({
         listEventActivity: vi.fn(async () => ({ activity: [] })),
-        listEventNotifications: vi.fn(async () => ({ notifications: [] })),
+        listEventResponses: vi.fn(async () => ({ responses: [] })),
         listGuestGroups: vi.fn(async () => ({ guestGroups: [] })),
       }),
       "responses",
@@ -67,7 +68,7 @@ describe("ResponsesActivityWorkspace", () => {
     renderWithAuth(
       createApiClientStub({
         listEventActivity: vi.fn(async () => ({ activity: [] })),
-        listEventNotifications: vi.fn(async () => ({ notifications: [] })),
+        listEventResponses: vi.fn(async () => ({ responses: [] })),
         listGuestGroups: vi.fn(async () => ({ guestGroups: [] })),
       }),
       "activity",
@@ -133,9 +134,7 @@ function createApiClientStub(
   return {
     getEvent: vi.fn(async () => ({ event: dashboardEvent })),
     listEventActivity: vi.fn(async () => ({ activity: [rsvpActivity, declinedActivity] })),
-    listEventNotifications: vi.fn(async () => ({
-      notifications: [rsvpNotification, declinedNotification],
-    })),
+    listEventResponses: vi.fn(async () => ({ responses: [tanResponse, declinedResponse] })),
     listGuestGroups: vi.fn(async () => ({
       guestGroups: [tanGroup, leeGroup, pendingGroup, disabledGroup],
     })),
@@ -252,34 +251,27 @@ const openedActivity: ActivityEvent = {
   },
 };
 
-const rsvpNotification: Notification = {
-  createdAt: "2030-05-01T12:00:00.000Z",
+const tanResponse: RsvpResponse = {
+  answers: [],
+  attendeeCount: 2,
   eventId: "evt_123",
-  id: "notification_tan",
+  guestGroupId: "guest_tan",
+  guestNames: ["Mina Tan", "Alex Tan"],
+  id: "response_tan",
   message: "Tan Family submitted an RSVP for Spring Dinner.",
-  metadata: {
-    attendeeCount: 2,
-    guestGroupId: "guest_tan",
-    guestGroupLabel: "Tan Family",
-    responseId: "response_tan",
-    responseStatus: "attending",
-  },
-  notificationType: "rsvp_submitted",
-  title: "RSVP submitted",
-  userId: "user_123",
+  responseStatus: "attending",
+  submittedAt: "2030-05-01T12:00:00.000Z",
+  updatedAt: "2030-05-01T12:00:00.000Z",
 };
 
-const declinedNotification: Notification = {
-  ...rsvpNotification,
-  id: "notification_lee",
-  message: "Lee Family updated an RSVP for Spring Dinner.",
-  metadata: {
-    attendeeCount: 0,
-    guestGroupId: "guest_lee",
-    guestGroupLabel: "Lee Family",
-    responseId: "response_lee",
-    responseStatus: "not_attending",
-  },
-  notificationType: "rsvp_updated",
-  title: "RSVP updated",
+const declinedResponse: RsvpResponse = {
+  ...tanResponse,
+  attendeeCount: 0,
+  guestGroupId: "guest_lee",
+  guestNames: [],
+  id: "response_lee",
+  message: "Sorry to miss it.",
+  responseStatus: "not_attending",
+  submittedAt: "2030-05-02T12:00:00.000Z",
+  updatedAt: "2030-05-02T12:00:00.000Z",
 };
