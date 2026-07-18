@@ -12,6 +12,8 @@ import {
 } from "@lumiere/dashboard-ui/components/field";
 import { Input } from "@lumiere/dashboard-ui/components/input";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
+import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
+import { LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
   guestGroupMutationRequestSchema,
   type Event,
@@ -73,6 +75,7 @@ type PendingAction = {
 
 type GuestSortKey = "label" | "createdAt" | "updatedAt" | "lastOpenedAt" | "maxPax" | "status";
 type GuestSortDirection = "asc" | "desc";
+type GuestViewMode = "cards" | "list";
 
 type GuestListFilters = {
   direction: GuestSortDirection;
@@ -141,12 +144,16 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const [guestListFilters, setGuestListFilters] = useState<GuestListFilters>(() =>
     readGuestListFilters(),
   );
+  const [guestViewMode, setGuestViewMode] = useState<GuestViewMode>(() => readGuestViewMode());
 
   useEffect(() => {
-    const syncFiltersFromUrl = () => setGuestListFilters(readGuestListFilters());
+    const syncViewFromUrl = () => {
+      setGuestListFilters(readGuestListFilters());
+      setGuestViewMode(readGuestViewMode());
+    };
 
-    window.addEventListener("popstate", syncFiltersFromUrl);
-    return () => window.removeEventListener("popstate", syncFiltersFromUrl);
+    window.addEventListener("popstate", syncViewFromUrl);
+    return () => window.removeEventListener("popstate", syncViewFromUrl);
   }, []);
 
   const updateGuestListFilters = useCallback((updates: Partial<GuestListFilters>) => {
@@ -160,6 +167,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const clearGuestListFilters = useCallback(() => {
     writeGuestListFilters(defaultGuestListFilters);
     setGuestListFilters(defaultGuestListFilters);
+  }, []);
+
+  const updateGuestViewMode = useCallback((viewMode: GuestViewMode) => {
+    writeGuestViewMode(viewMode);
+    setGuestViewMode(viewMode);
   }, []);
 
   const loadGuests = useCallback(
@@ -579,6 +591,8 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onUpdate={updateGuestListFilters}
       />
 
+      <GuestGroupViewControls onChange={updateGuestViewMode} viewMode={guestViewMode} />
+
       {actionMessage ? (
         <div
           className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm"
@@ -634,6 +648,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onConfirmDisable={(group) => void disableGuestGroup(group)}
         onConfirmRegenerate={(group) => void regenerateInvite(group)}
         totalGuestGroups={readyState.data.guestGroups.length}
+        viewMode={guestViewMode}
       />
     </div>
   );
@@ -767,6 +782,52 @@ function GuestGroupFilters({
           value={filters.direction}
         />
       </FieldGroup>
+    </section>
+  );
+}
+
+function GuestGroupViewControls({
+  onChange,
+  viewMode,
+}: {
+  onChange: (viewMode: GuestViewMode) => void;
+  viewMode: GuestViewMode;
+}) {
+  return (
+    <section
+      aria-label="Guest group view"
+      className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <p className="text-sm font-semibold">View guest groups</p>
+        <p className="mt-1 text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+          Use cards for detail or a compact list for quick scanning.
+        </p>
+      </div>
+      <ToggleGroup
+        aria-label="Guest group view"
+        className="w-full sm:w-fit"
+        onValueChange={(value) => {
+          const nextView = value[0];
+
+          if (nextView === "cards" || nextView === "list") {
+            onChange(nextView);
+          }
+        }}
+        size="sm"
+        spacing={0}
+        value={[viewMode]}
+        variant="outline"
+      >
+        <ToggleGroupItem aria-label="Card view" type="button" value="cards">
+          <LayoutGridIcon data-icon="inline-start" />
+          Cards
+        </ToggleGroupItem>
+        <ToggleGroupItem aria-label="Compact list view" type="button" value="list">
+          <ListIcon data-icon="inline-start" />
+          Compact list
+        </ToggleGroupItem>
+      </ToggleGroup>
     </section>
   );
 }
@@ -925,6 +986,7 @@ function GuestGroupList({
   onRegenerate,
   pendingAction,
   totalGuestGroups,
+  viewMode,
 }: {
   busyGroupId: string | null;
   canEdit: boolean;
@@ -940,6 +1002,7 @@ function GuestGroupList({
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
   totalGuestGroups: number;
+  viewMode: GuestViewMode;
 }) {
   if (guestGroups.length === 0 && totalGuestGroups > 0) {
     return (
@@ -973,6 +1036,26 @@ function GuestGroupList({
             : "No guest groups are available to review yet."}
         </p>
       </section>
+    );
+  }
+
+  if (viewMode === "list") {
+    return (
+      <GuestGroupCompactList
+        busyGroupId={busyGroupId}
+        canEdit={canEdit}
+        guestGroups={guestGroups}
+        inviteLinks={inviteLinks}
+        onCancelPendingAction={onCancelPendingAction}
+        onConfirmDisable={onConfirmDisable}
+        onConfirmRegenerate={onConfirmRegenerate}
+        onCopy={onCopy}
+        onDisable={onDisable}
+        onEdit={onEdit}
+        onRegenerate={onRegenerate}
+        pendingAction={pendingAction}
+        totalGuestGroups={totalGuestGroups}
+      />
     );
   }
 
@@ -1135,6 +1218,223 @@ function GuestGroupList({
   );
 }
 
+type GuestGroupCompactListProps = {
+  busyGroupId: string | null;
+  canEdit: boolean;
+  guestGroups: GuestGroup[];
+  inviteLinks: Record<string, string>;
+  onCancelPendingAction: () => void;
+  onConfirmDisable: (group: GuestGroup) => void;
+  onConfirmRegenerate: (group: GuestGroup) => void;
+  onCopy: (group: GuestGroup) => void;
+  onDisable: (group: GuestGroup) => void;
+  onEdit: (group: GuestGroup) => void;
+  onRegenerate: (group: GuestGroup) => void;
+  pendingAction: PendingAction;
+  totalGuestGroups: number;
+};
+
+function GuestGroupCompactList({
+  busyGroupId,
+  canEdit,
+  guestGroups,
+  inviteLinks,
+  onCancelPendingAction,
+  onConfirmDisable,
+  onConfirmRegenerate,
+  onCopy,
+  onDisable,
+  onEdit,
+  onRegenerate,
+  pendingAction,
+  totalGuestGroups,
+}: GuestGroupCompactListProps) {
+  return (
+    <section className="grid gap-3" aria-label="Guest groups">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Guest groups</h2>
+        <p
+          className="text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
+          role="status"
+        >
+          Showing {guestGroups.length} of {totalGuestGroups}
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
+        <div className="hidden grid-cols-[1.35fr_0.8fr_1fr_1.25fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
+          <span>Guest group</span>
+          <span>Status</span>
+          <span>Last opened</span>
+          <span>Invite link</span>
+          <span className="sr-only">Actions</span>
+        </div>
+        <div className="grid divide-y divide-[var(--border)]">
+          {guestGroups.map((group) => {
+            const inviteLink = inviteLinks[group.id];
+            const pending = pendingAction?.groupId === group.id ? pendingAction : null;
+            const isBusy = busyGroupId === group.id;
+            const isDisabled = group.status === "disabled";
+            const contact = group.members?.length
+              ? group.members.map((member) => member.name).join(", ")
+              : group.contactName || group.contactEmail || "No contact details";
+
+            return (
+              <article
+                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.35fr_0.8fr_1fr_1.25fr_auto] lg:items-start"
+                key={group.id}
+              >
+                <div>
+                  <p className="font-semibold">{group.label}</p>
+                  <p className="mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                    {group.maxPax} max pax · {contact}
+                  </p>
+                </div>
+
+                <div>
+                  <CompactMobileLabel>Status</CompactMobileLabel>
+                  <StatusBadge status={group.status} />
+                </div>
+
+                <div>
+                  <CompactMobileLabel>Last opened</CompactMobileLabel>
+                  <span>
+                    {group.lastOpenedAt ? formatGuestDate(group.lastOpenedAt) : "Not opened"}
+                  </span>
+                </div>
+
+                <div className="min-w-0">
+                  <CompactMobileLabel>Invite link</CompactMobileLabel>
+                  {inviteLink ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate font-mono text-xs">
+                        {inviteLink}
+                      </span>
+                      <button
+                        className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        onClick={() => onCopy(group)}
+                        type="button"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                      Code: <span className="font-mono">{group.inviteCode}</span>
+                    </span>
+                  )}
+                </div>
+
+                {canEdit ? (
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <button
+                      aria-label={`Edit ${group.label}`}
+                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      onClick={() => onEdit(group)}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isBusy || isDisabled}
+                      onClick={() => onRegenerate(group)}
+                      type="button"
+                    >
+                      Regenerate
+                    </button>
+                    <button
+                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-3 text-sm font-semibold text-[var(--error)] transition hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isBusy || isDisabled}
+                      onClick={() => onDisable(group)}
+                      type="button"
+                    >
+                      Disable
+                    </button>
+                  </div>
+                ) : null}
+
+                {pending ? (
+                  <CompactPendingAction
+                    busy={isBusy}
+                    onCancel={onCancelPendingAction}
+                    onConfirm={() =>
+                      pending.type === "regenerate"
+                        ? onConfirmRegenerate(group)
+                        : onConfirmDisable(group)
+                    }
+                    type={pending.type}
+                  />
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CompactPendingAction({
+  busy,
+  onCancel,
+  onConfirm,
+  type,
+}: {
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  type: "disable" | "regenerate";
+}) {
+  return (
+    <div
+      className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface))] p-3 lg:col-span-5"
+      role="alert"
+    >
+      <p className="font-semibold">
+        {type === "regenerate" ? "Regenerate this invite link?" : "Disable this guest group?"}
+      </p>
+      <p className="text-sm leading-6">
+        {type === "regenerate"
+          ? "The current invite link will stop working and a fresh copyable URL will be created."
+          : "The guest group stays in the list, but private invite access is blocked."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={busy}
+          onClick={onConfirm}
+          type="button"
+        >
+          {busy ? "Working..." : type === "regenerate" ? "Confirm regenerate" : "Confirm disable"}
+        </button>
+        <button
+          className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CompactMobileLabel({ children }: { children: string }) {
+  return (
+    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] lg:hidden">
+      {children}
+    </span>
+  );
+}
+
+function formatGuestDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 function TextField({
   error,
   inputMode,
@@ -1204,12 +1504,43 @@ function readGuestListFilters(): GuestListFilters {
   };
 }
 
+function readGuestViewMode(): GuestViewMode {
+  if (typeof window === "undefined") {
+    return "cards";
+  }
+
+  return new URLSearchParams(window.location.search).get("view") === "list" ? "list" : "cards";
+}
+
+function writeGuestViewMode(viewMode: GuestViewMode) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  if (viewMode === "cards") {
+    params.delete("view");
+  } else {
+    params.set("view", viewMode);
+  }
+
+  const queryString = params.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
+  window.history.replaceState(window.history.state, "", nextUrl);
+}
+
 function writeGuestListFilters(filters: GuestListFilters) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const params = new URLSearchParams();
+  const params = new URLSearchParams(window.location.search);
+
+  params.delete("q");
+  params.delete("status");
+  params.delete("sort");
+  params.delete("direction");
   const query = filters.query.trim();
 
   if (query) {

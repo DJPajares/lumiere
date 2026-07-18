@@ -112,6 +112,32 @@ describe("GuestManagementWorkspace", () => {
     expect(window.location.search).toBe("");
   });
 
+  it("switches between detail cards and a URL-persisted compact list with shared actions", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth(createApiClientStub());
+
+    await screen.findByText("Tan Family");
+    expect(screen.getByRole("button", { name: "Compact list view" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+
+    expect(window.location.search).toBe("?view=list");
+    expect(screen.getAllByText("Last opened").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
+    expect(screen.getByText("tan-code")).toBeTruthy();
+
+    cleanup();
+    renderWithAuth(createApiClientStub());
+    expect((await screen.findAllByText("Last opened")).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Compact list view" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Card view" }));
+    expect(window.location.search).toBe("");
+    expect(screen.queryByText("Last opened")).toBeNull();
+  });
+
   it("loads guest groups across dashboard states", async () => {
     const guestGroups: GuestGroup[] = [
       guestGroup,

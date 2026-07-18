@@ -1,13 +1,13 @@
 ---
 id: 't97-dashboard-guest-view-modes'
-status: 'backlog'
+status: 'done'
 priority: 'medium'
 assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T13:12:11+08:00'
-completedAt: null
+modified: '2026-07-18T16:59:41+08:00'
+completedAt: '2026-07-18T16:59:41+08:00'
 labels: ['dashboard', 'guests', 'views', 'responsive']
 depends_on: ['t96-dashboard-guest-filter-and-sort']
 order: 'a97'
@@ -31,12 +31,12 @@ Add a compact list/table presentation alongside the existing guest cards so mana
 
 ## Acceptance
 
-- [ ] Guest management provides the existing detail card view and one denser list/table view with the fields needed to identify a group and its RSVP/invite status.
-- [ ] Both views use the same search, filters, sorting, edit, link, regenerate, and disable handlers.
-- [ ] The selected view is persisted per manager or encoded in the URL.
-- [ ] Mobile defaults to an appropriate touch-friendly view without losing access to important fields.
-- [ ] The views remain responsive without requiring bulk selection or a desktop-only data-table dependency.
-- [ ] View controls use dashboard-only shadcn/Base UI components and remain keyboard accessible.
+- [x] Guest management provides the existing detail card view and one denser list/table view with the fields needed to identify a group and its RSVP/invite status.
+- [x] Both views use the same search, filters, sorting, edit, link, regenerate, and disable handlers.
+- [x] The selected view is persisted per manager or encoded in the URL.
+- [x] Mobile defaults to an appropriate touch-friendly view without losing access to important fields.
+- [x] The views remain responsive without requiring bulk selection or a desktop-only data-table dependency.
+- [x] View controls use dashboard-only shadcn/Base UI components and remain keyboard accessible.
 
 ## Notes
 
@@ -46,3 +46,6 @@ The compact mode must be materially denser than the current responsive cards. Ke
 
 - 2026-07-18T00:00:00Z: Task created.
 - 2026-07-18T13:12:11+08:00: Kept the requested multi-view behavior while removing generated assumptions about pagination, bulk selection, and a separate data path.
+- 2026-07-18T16:48:19+08:00: Started implementation after t96 completion; reusing the existing card actions, URL-backed guest filters, and Base UI ToggleGroup conventions.
+- 2026-07-18T16:59:41+08:00: Added URL-persisted Cards and Compact list modes, reusing shared guest filters, sorting, and group actions with responsive mobile labels.
+- 2026-07-18T16:59:41+08:00: Verified dashboard tests (96 passed), TypeScript, Prettier, and `git diff --check`.
