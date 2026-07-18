@@ -48,18 +48,49 @@
   box-shadow: 0.3rem 0.3rem 0 var(--foreground);
 }
 
-[data-theme-id="solar-pop"] .lumiere-section:nth-of-type(4n + 1):not(.lumiere-section--hero) {
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 1):not(.lumiere-section--hero) {
   background: var(--accent);
-  color: var(--background);
+  color: var(--foreground);
 }
 
-[data-theme-id="solar-pop"] .lumiere-section:nth-of-type(4n + 2):not(.lumiere-section--hero) {
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 2):not(.lumiere-section--hero) {
   background: var(--surface-muted);
+  color: var(--foreground);
 }
 
-[data-theme-id="solar-pop"] .lumiere-section:nth-of-type(4n + 3):not(.lumiere-section--hero) {
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 3):not(.lumiere-section--hero) {
   background: color-mix(in srgb, var(--focus) 84%, var(--background));
   color: var(--background);
+}
+
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 1):not(.lumiere-section--hero)
+  :is(.lumiere-section__eyebrow, .lumiere-countdown__label),
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 2):not(.lumiere-section--hero)
+  :is(.lumiere-section__eyebrow, .lumiere-countdown__label) {
+  color: var(--foreground);
+}
+
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"]
+  .lumiere-section:nth-of-type(4n + 3):not(.lumiere-section--hero)
+  :is(.lumiere-section__eyebrow, .lumiere-countdown__label) {
+  color: var(--background);
+}
+
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"] .lumiere-date-panel,
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"] .lumiere-countdown__unit {
+  border-color: var(--foreground);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"] .lumiere-countdown time,
+[data-theme-id="solar-pop"][data-theme-resolved-mode="light"] .lumiere-countdown__unit span {
+  color: color-mix(in srgb, var(--foreground) 74%, transparent);
 }
 
 [data-theme-id="solar-pop"] :is(.lumiere-detail-item, .lumiere-profile-card) {

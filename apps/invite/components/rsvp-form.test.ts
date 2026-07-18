@@ -99,6 +99,8 @@ describe("RSVP form flow helpers", () => {
 
       expect(spatialHtml).toContain(`data-rsvp-renderer="${theme.presentation.rsvp.rendererId}"`);
       expect(spatialHtml).toContain(`data-rsvp-layout="${theme.presentation.rsvp.rendererId}"`);
+      expect(spatialHtml).toContain('data-rsvp-details="closed"');
+      expect(spatialHtml).toContain("lumiere-spatial-rsvp__body");
       expect(spatialHtml).toContain("Capacity");
       expect(spatialHtml).toContain("4 guests");
       expect(spatialHtml).toContain('aria-label="Attendance"');
@@ -124,6 +126,7 @@ describe("RSVP form flow helpers", () => {
     expect(html).toContain('id="guestMember-0"');
     expect(html).toContain('id="guestMember-3"');
     expect(html).toContain("Ari Tan");
+    expect(html).toContain("lumiere-rsvp-member-grid");
     expect(html).toContain("Select 1 person attending. 0 selected.");
     expect(html).not.toContain('id="guestName-0"');
     expect(html).not.toContain("<details");

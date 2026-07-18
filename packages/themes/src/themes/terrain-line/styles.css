@@ -8,12 +8,9 @@
     var(--background);
 }
 
-[data-theme-id="terrain-line"] .lumiere-section--hero::before {
-  position: absolute;
-  inset: 8% auto 8% clamp(1.25rem, 6vw, 6rem);
-  width: 1px;
-  content: "";
-  background: linear-gradient(var(--focus), var(--accent), transparent);
+[data-theme-id="terrain-line"] .lumiere-hero-copy {
+  padding-inline-start: clamp(1rem, 2.5vw, 2rem);
+  border-inline-start: 1px solid var(--focus);
 }
 
 [data-theme-id="terrain-line"] .lumiere-hero-pretitle,
@@ -33,11 +30,18 @@
   position: relative;
 }
 
-[data-theme-id="terrain-line"] .lumiere-section:not(.lumiere-section--hero)::before {
-  position: absolute;
-  inset: -1px auto auto clamp(1.25rem, 6vw, 6rem);
+[data-theme-id="terrain-line"]
+  .lumiere-section:not(.lumiere-section--hero)
+  .lumiere-section__kicker {
+  justify-content: flex-start;
+}
+
+[data-theme-id="terrain-line"]
+  .lumiere-section:not(.lumiere-section--hero)
+  .lumiere-section__kicker::before {
   width: 0.65rem;
   height: 0.65rem;
+  flex: 0 0 auto;
   content: "";
   border: 2px solid var(--focus);
   border-radius: 50%;
@@ -45,6 +49,7 @@
 }
 
 [data-theme-id="terrain-line"] [data-section-composition="timeline"] .lumiere-section__inner {
+  padding-inline-start: clamp(1.75rem, 4vw, 3rem);
   border-inline-start: 1px solid var(--accent);
 }
 

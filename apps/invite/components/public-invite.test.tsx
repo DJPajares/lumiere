@@ -229,6 +229,7 @@ describe("public invite section renderers", () => {
       expect(html).toContain(heroClassName);
       expect(html).toContain(`${themeId} event image`);
       expect(html).toContain('data-section-renderer-coverage="specialized"');
+      expect(html).not.toContain("h-screen");
     }
 
     const toggleableInvite = createInvite([]);
@@ -885,6 +886,17 @@ describe("public invite section renderers", () => {
     expect(html).toContain("lumiere-rsvp-layout");
     expect(html).toContain("Private music");
     expect(html).toContain('src="https://audio.example.com/private-suite.mp3"');
+
+    const spatialHtml = renderToStaticMarkup(
+      createElement(GuestInvitation, {
+        guestToken: "sample-guest-token-for-preview",
+        invite: { ...invite, selectedThemeId: "terrain-line", themeMode: "dark" },
+      }),
+    );
+
+    expect(spatialHtml).toContain('data-rsvp-layout="basecamp-reply"');
+    expect(spatialHtml).toContain("max-w-5xl");
+    expect(spatialHtml).toContain("lumiere-spatial-rsvp__details");
   });
 });
 

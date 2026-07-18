@@ -1066,6 +1066,9 @@ function RsvpSection({
   const questions = readRsvpQuestions(content.questions);
   const requireGuestToken = readBoolean(settings.requireGuestToken, true);
   const submitContext = guest && guestToken ? { guest, guestToken } : null;
+  const usesSpatialRsvp =
+    theme.presentation.rsvp.rendererId !== "common" &&
+    theme.presentation.rsvp.rendererId !== "editorial-ledger";
 
   return (
     <div className="lumiere-rsvp-layout flex flex-col gap-5">
@@ -1113,7 +1116,9 @@ function RsvpSection({
       </div>
 
       {submitContext && (
-        <div className="mx-auto w-full max-w-2xl">
+        <div
+          className={joinClassNames("mx-auto w-full", usesSpatialRsvp ? "max-w-5xl" : "max-w-2xl")}
+        >
           <RsvpForm
             copy={copy}
             eventSlug={eventSlug}

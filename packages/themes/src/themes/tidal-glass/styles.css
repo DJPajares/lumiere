@@ -47,14 +47,22 @@
   margin-top: -1px;
 }
 
-[data-theme-id="tidal-glass"] .lumiere-section:not(.lumiere-section--hero)::before {
-  position: absolute;
-  inset: 0 0 auto;
-  height: clamp(2rem, 5vw, 4rem);
+[data-theme-id="tidal-glass"]
+  .lumiere-section:not(.lumiere-section--hero)
+  .lumiere-section__kicker {
+  justify-content: flex-start;
+}
+
+[data-theme-id="tidal-glass"]
+  .lumiere-section:not(.lumiere-section--hero)
+  .lumiere-section__kicker::before {
+  width: 1.75rem;
+  height: 0.6rem;
+  flex: 0 0 auto;
   content: "";
-  border-top: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  border-top: 2px solid var(--accent);
   border-radius: 50%;
-  pointer-events: none;
+  transform: translateY(0.2rem);
 }
 
 [data-theme-id="tidal-glass"] [data-section-composition="layered-media"] {

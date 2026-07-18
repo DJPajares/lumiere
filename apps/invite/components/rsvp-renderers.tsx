@@ -237,6 +237,7 @@ function SpatialRsvpRenderer({
     <form
       className={contract.presentation.cardClassName}
       data-rsvp-has-details={String(contract.flags.hasDetails)}
+      data-rsvp-details={contract.details.isOpen ? "open" : "closed"}
       data-rsvp-layout={layout}
       data-rsvp-renderer={contract.presentation.rendererId}
       data-rsvp-state={contract.status.tone}
@@ -267,10 +268,10 @@ function SpatialRsvpRenderer({
         </div>
       ) : null}
 
-      <div className="grid lg:grid-cols-[0.86fr_1.14fr]">
+      <div className="lumiere-spatial-rsvp__body grid lg:grid-cols-[minmax(0,1.08fr)_minmax(20rem,0.92fr)]">
         <section
           aria-label="Attendance"
-          className="grid content-start gap-5 bg-[var(--surface-muted)] px-4 py-5 sm:px-6 sm:py-7"
+          className="lumiere-spatial-rsvp__attendance grid min-w-0 content-start gap-5 bg-[var(--surface-muted)] px-4 py-5 sm:px-6 sm:py-7"
         >
           <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">{stationLabel}</p>
           <AttendanceControls contract={contract} />
@@ -278,9 +279,12 @@ function SpatialRsvpRenderer({
         {contract.flags.hasDetails ? (
           <section
             aria-label="Guest details"
-            className="grid content-start border-t border-[var(--border)] px-4 py-5 sm:px-6 sm:py-7 lg:border-l lg:border-t-0"
+            className="lumiere-spatial-rsvp__details grid min-w-0 content-start gap-6 border-t border-[var(--border)] px-4 py-5 sm:px-6 sm:py-7 lg:border-l lg:border-t-0"
           >
             <DetailsControls contract={contract} expandedLabel />
+            {!contract.flags.isUpdatingExistingReply ? (
+              <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+            ) : null}
           </section>
         ) : (
           <section
@@ -292,13 +296,10 @@ function SpatialRsvpRenderer({
         )}
       </div>
 
-      <footer className="grid gap-4 border-t border-[var(--border)] px-4 py-5 sm:grid-cols-[1fr_minmax(12rem,18rem)] sm:items-center sm:px-6">
-        {contract.flags.hasDetails && !contract.flags.isUpdatingExistingReply ? (
-          <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
-        ) : (
-          <span />
-        )}
-        <SubmitAction contract={contract} />
+      <footer className="flex justify-end border-t border-[var(--border)] px-4 py-5 sm:px-6">
+        <div className="w-full sm:max-w-sm">
+          <SubmitAction contract={contract} />
+        </div>
       </footer>
     </form>
   );
@@ -542,7 +543,7 @@ function NamedMemberControls({
           selected.
         </p>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="lumiere-rsvp-member-grid grid gap-2 sm:grid-cols-2">
         {members.map((member, index) => {
           const inputId = `guestMember-${index}`;
           const checked = contract.formState.guestNames.includes(member.name);
@@ -563,7 +564,7 @@ function NamedMemberControls({
                 onChange={() => contract.actions.toggleGuestMember(member.name)}
                 type="checkbox"
               />
-              <span>{member.name}</span>
+              <span className="min-w-0 break-words">{member.name}</span>
             </label>
           );
         })}

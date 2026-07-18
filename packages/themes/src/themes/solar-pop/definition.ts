@@ -61,7 +61,7 @@ export const solarPopTheme = {
   tokens: {
     light: {
       background: "#fff4df",
-      foreground: "#172847",
+      foreground: "#0d1b31",
       surface: "#fffaf0",
       surfaceMuted: "#ffd269",
       border: "#172847",
