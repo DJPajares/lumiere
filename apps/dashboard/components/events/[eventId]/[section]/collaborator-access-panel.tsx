@@ -548,7 +548,7 @@ function InviteCollaboratorModal({
                 value={email}
               />
               <FieldDescription>
-                The invitation can only be accepted by a signed-in user with this email.
+                The invitation appears on the dashboard home for a signed-in user with this email.
               </FieldDescription>
               <FieldError>{error}</FieldError>
             </Field>

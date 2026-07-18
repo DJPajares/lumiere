@@ -2,6 +2,7 @@ import {
   activityEventsResponseSchema,
   apiErrorSchema,
   collaboratorInvitationAcceptanceResponseSchema,
+  collaboratorInvitationInboxResponseSchema,
   collaboratorInvitationResponseSchema,
   collaboratorRemovalResponseSchema,
   collaboratorRoleUpdateResponseSchema,
@@ -30,6 +31,7 @@ import {
   type ActivityEventsResponse,
   type ApiError,
   type CollaboratorInvitationAcceptanceResponse,
+  type CollaboratorInvitationInboxResponse,
   type CollaboratorInvitationRequest,
   type CollaboratorInvitationResponse,
   type CollaboratorRemovalResponse,
@@ -297,6 +299,8 @@ export const createApiClient = ({
     listEvents: (): Promise<EventsListResponse> => request("/events", eventsListResponseSchema),
     listDeletedEvents: (): Promise<EventsListResponse> =>
       request("/events/trash", eventsListResponseSchema),
+    listPendingCollaboratorInvitations: (): Promise<CollaboratorInvitationInboxResponse> =>
+      request("/collaborator-invitations", collaboratorInvitationInboxResponseSchema),
     listGuestGroups: (eventId: string): Promise<GuestGroupsResponse> =>
       request(`/events/${encodePathSegment(eventId)}/guest-groups`, guestGroupsResponseSchema),
     listThemes: (): Promise<ThemesResponse> =>

@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
-import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
+import type {
+  ActivityEvent,
+  CollaboratorInvitationInboxItem,
+  Event,
+  EventSummary,
+} from "@lumiere/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
@@ -40,6 +45,85 @@ describe("ManagerOverviewWorkspace", () => {
     expect(await screen.findByText("Create your first Lumiere event")).toBeTruthy();
     expect(screen.queryByLabelText("Event title")).toBeNull();
     expect(screen.getByRole("button", { name: "Create event" })).toBeTruthy();
+  });
+
+  it("shows pending event invitations and refreshes managed events after acceptance", async () => {
+    const user = userEvent.setup();
+    const acceptCollaboratorInvitation = vi.fn(async () => ({
+      collaborator: {
+        createdAt: "2030-01-02T00:00:00.000Z",
+        email: "manager@example.com",
+        eventId: springDinner.id,
+        id: "membership-spring",
+        role: "editor" as const,
+        userId: "manager-1",
+      },
+      invitation: {
+        ...springInvitation,
+        respondedAt: "2030-01-02T00:00:00.000Z",
+        respondedByUserId: "manager-1",
+        status: "accepted" as const,
+        updatedAt: "2030-01-02T00:00:00.000Z",
+      },
+    }));
+    const listEvents = vi
+      .fn<DashboardApiClient["listEvents"]>()
+      .mockResolvedValueOnce({ events: [] })
+      .mockResolvedValueOnce({ events: [springDinner] });
+    const listPendingCollaboratorInvitations = vi
+      .fn<DashboardApiClient["listPendingCollaboratorInvitations"]>()
+      .mockResolvedValueOnce({ invitations: [springInvitation] })
+      .mockResolvedValueOnce({ invitations: [] });
+
+    renderOverview({
+      acceptCollaboratorInvitation,
+      getEventSummary: vi.fn(async () => ({ summary: springSummary })),
+      listEventActivity: vi.fn(async () => ({ activity: [] })),
+      listEvents,
+      listPendingCollaboratorInvitations,
+    });
+
+    expect(await screen.findByRole("heading", { name: "Event invitations" })).toBeTruthy();
+    expect(screen.getByText("Spring Dinner")).toBeTruthy();
+    expect(screen.getByText("Editor")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Accept invitation to Spring Dinner" }));
+
+    expect(await screen.findByRole("link", { name: "Open Spring Dinner" })).toBeTruthy();
+    expect(acceptCollaboratorInvitation).toHaveBeenCalledWith(springInvitation.id);
+    expect(listEvents).toHaveBeenCalledTimes(2);
+  });
+
+  it("removes a pending event invitation after it is declined", async () => {
+    const user = userEvent.setup();
+    const declineCollaboratorInvitation = vi.fn(async () => ({
+      invitation: {
+        ...springInvitation,
+        respondedAt: "2030-01-02T00:00:00.000Z",
+        respondedByUserId: "manager-1",
+        status: "declined" as const,
+        updatedAt: "2030-01-02T00:00:00.000Z",
+      },
+    }));
+    const listPendingCollaboratorInvitations = vi
+      .fn<DashboardApiClient["listPendingCollaboratorInvitations"]>()
+      .mockResolvedValueOnce({ invitations: [springInvitation] })
+      .mockResolvedValueOnce({ invitations: [] });
+
+    renderOverview({
+      declineCollaboratorInvitation,
+      listEvents: vi.fn(async () => ({ events: [] })),
+      listPendingCollaboratorInvitations,
+    });
+
+    await user.click(
+      await screen.findByRole("button", { name: "Decline invitation to Spring Dinner" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Event invitations" })).toBeNull(),
+    );
+    expect(declineCollaboratorInvitation).toHaveBeenCalledWith(springInvitation.id);
   });
 
   it("combines multi-event status, RSVP movement, milestones, actions, and activity", async () => {
@@ -132,6 +216,7 @@ function renderOverview(apiClient: Partial<DashboardApiClient>) {
   const authValue: DashboardAuthContextValue = {
     apiClient: {
       listDeletedEvents: async () => ({ events: [] }),
+      listPendingCollaboratorInvitations: async () => ({ invitations: [] }),
       ...apiClient,
     } as DashboardApiClient,
     errorMessage: null,
@@ -187,6 +272,23 @@ const autumnLaunch: Event = {
   status: "published",
   title: "Autumn Launch",
   updatedAt: "2030-03-01T00:00:00.000Z",
+};
+
+const springInvitation: CollaboratorInvitationInboxItem = {
+  createdAt: "2030-01-01T00:00:00.000Z",
+  email: "manager@example.com",
+  eventId: springDinner.id,
+  eventTitle: springDinner.title,
+  expiresAt: "2030-01-08T00:00:00.000Z",
+  id: "invitation-spring",
+  invitedByDisplayName: "Ada Host",
+  invitedByEmail: "host@example.com",
+  invitedByUserId: "host-1",
+  lastSentAt: "2030-01-01T00:00:00.000Z",
+  role: "editor",
+  sendCount: 1,
+  status: "pending",
+  updatedAt: "2030-01-01T00:00:00.000Z",
 };
 
 const springSummary: EventSummary = {

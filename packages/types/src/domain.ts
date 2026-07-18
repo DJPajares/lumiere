@@ -209,6 +209,13 @@ export const collaboratorInvitationSchema = z.object({
 });
 export type CollaboratorInvitation = z.infer<typeof collaboratorInvitationSchema>;
 
+export const collaboratorInvitationInboxItemSchema = collaboratorInvitationSchema.extend({
+  eventTitle: z.string().trim().min(1).max(160),
+  invitedByDisplayName: z.string().trim().max(160).optional(),
+  invitedByEmail: z.string().trim().email().max(320),
+});
+export type CollaboratorInvitationInboxItem = z.infer<typeof collaboratorInvitationInboxItemSchema>;
+
 export const eventSectionSchema = z.object({
   id: idSchema,
   eventId: idSchema,

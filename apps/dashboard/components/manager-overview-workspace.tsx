@@ -6,7 +6,12 @@ import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@lumiere/dashboard-ui/components/tabs";
 import { cn } from "@lumiere/dashboard-ui/lib/utils";
-import type { ActivityEvent, Event, EventSummary } from "@lumiere/types";
+import type {
+  ActivityEvent,
+  CollaboratorInvitationInboxItem,
+  Event,
+  EventSummary,
+} from "@lumiere/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +36,7 @@ type ManagerOverviewData = {
   deletedEvents: Event[];
   events: Event[];
   insights: EventInsight[];
+  invitations: CollaboratorInvitationInboxItem[];
 };
 
 type ManagerOverviewState =
@@ -51,6 +57,10 @@ export function ManagerOverviewWorkspace() {
   const requestRevision = useRef(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [pendingInvitationAction, setPendingInvitationAction] = useState<{
+    id: string;
+    type: "accept" | "decline";
+  } | null>(null);
   const [restoringEventId, setRestoringEventId] = useState<string | null>(null);
 
   const loadOverview = useCallback(async () => {
@@ -69,9 +79,10 @@ export function ManagerOverviewWorkspace() {
     setState(initialState);
 
     try {
-      const [{ events }, { events: deletedEvents }] = await Promise.all([
+      const [{ events }, { events: deletedEvents }, { invitations }] = await Promise.all([
         apiClient.listEvents(),
         apiClient.listDeletedEvents(),
+        apiClient.listPendingCollaboratorInvitations(),
       ]);
 
       if (revision !== requestRevision.current) {
@@ -108,7 +119,7 @@ export function ManagerOverviewWorkspace() {
       }
 
       setState({
-        data: { deletedEvents, events, insights },
+        data: { deletedEvents, events, insights, invitations },
         error: null,
         status: "ready",
       });
@@ -144,6 +155,34 @@ export function ManagerOverviewWorkspace() {
     }
   };
 
+  const respondToInvitation = async (
+    invitation: CollaboratorInvitationInboxItem,
+    response: "accept" | "decline",
+  ) => {
+    if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
+      return;
+    }
+
+    setPendingInvitationAction({ id: invitation.id, type: response });
+
+    try {
+      if (response === "accept") {
+        await apiClient.acceptCollaboratorInvitation(invitation.id);
+        toast.success(`You now have access to ${invitation.eventTitle}.`);
+      } else {
+        await apiClient.declineCollaboratorInvitation(invitation.id);
+        toast.success(`Invitation to ${invitation.eventTitle} was declined.`);
+      }
+
+      await loadOverview();
+    } catch (error) {
+      toast.error(toFriendlyApiMessage(error));
+    } finally {
+      setPendingInvitationAction(null);
+    }
+  };
+
   useEffect(() => {
     void loadOverview();
 
@@ -164,6 +203,11 @@ export function ManagerOverviewWorkspace() {
     return (
       <>
         <div className="grid gap-5">
+          <CollaboratorInvitationInbox
+            invitations={state.data.invitations}
+            onRespond={(invitation, response) => void respondToInvitation(invitation, response)}
+            pendingAction={pendingInvitationAction}
+          />
           <ManagerOverviewEmpty
             onCreate={() => {
               setEditingEvent(null);
@@ -199,8 +243,12 @@ export function ManagerOverviewWorkspace() {
           setModalOpen(true);
         }}
         onRefresh={() => void loadOverview()}
+        onRespondToInvitation={(invitation, response) =>
+          void respondToInvitation(invitation, response)
+        }
         onRestore={(event) => void restoreEvent(event)}
         restoringEventId={restoringEventId}
+        pendingInvitationAction={pendingInvitationAction}
       />
       <EventBasicsModal
         event={editingEvent}
@@ -219,6 +267,7 @@ export function ManagerOverviewWorkspace() {
                       insights: current.data.insights.map((insight) =>
                         insight.event.id === event.id ? { ...insight, event } : insight,
                       ),
+                      invitations: current.data.invitations,
                     },
                   }
                 : current,
@@ -238,14 +287,21 @@ function ManagerOverviewContent({
   onCreate,
   onEdit,
   onRefresh,
+  onRespondToInvitation,
   onRestore,
+  pendingInvitationAction,
   restoringEventId,
 }: {
   data: ManagerOverviewData;
   onCreate: () => void;
   onEdit: (event: Event) => void;
   onRefresh: () => void;
+  onRespondToInvitation: (
+    invitation: CollaboratorInvitationInboxItem,
+    response: "accept" | "decline",
+  ) => void;
   onRestore: (event: Event) => void;
+  pendingInvitationAction: { id: string; type: "accept" | "decline" } | null;
   restoringEventId: string | null;
 }) {
   const now = new Date();
@@ -257,6 +313,12 @@ function ManagerOverviewContent({
 
   return (
     <div className="grid gap-5">
+      <CollaboratorInvitationInbox
+        invitations={data.invitations}
+        onRespond={onRespondToInvitation}
+        pendingAction={pendingInvitationAction}
+      />
+
       <section className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card text-card-foreground shadow-sm">
         <div className="flex flex-col gap-4 border-b border-border bg-[color-mix(in_srgb,var(--primary)_6%,var(--card))] p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
           <div className="max-w-2xl">
@@ -332,6 +394,88 @@ function ManagerOverviewContent({
         restoringEventId={restoringEventId}
       />
     </div>
+  );
+}
+
+function CollaboratorInvitationInbox({
+  invitations,
+  onRespond,
+  pendingAction,
+}: {
+  invitations: CollaboratorInvitationInboxItem[];
+  onRespond: (invitation: CollaboratorInvitationInboxItem, response: "accept" | "decline") => void;
+  pendingAction: { id: string; type: "accept" | "decline" } | null;
+}) {
+  if (invitations.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-labelledby="event-invitations-heading"
+      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight" id="event-invitations-heading">
+            Event invitations
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Review invitations sent to your signed-in email before they expire.
+          </p>
+        </div>
+        <Badge variant="secondary">
+          {invitations.length} {invitations.length === 1 ? "invitation" : "invitations"}
+        </Badge>
+      </div>
+
+      <ul className="mt-4 divide-y divide-border">
+        {invitations.map((invitation) => {
+          const isBusy = pendingAction?.id === invitation.id;
+          const inviter = invitation.invitedByDisplayName || invitation.invitedByEmail;
+
+          return (
+            <li
+              className="grid gap-4 py-4 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+              key={invitation.id}
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="truncate font-semibold">{invitation.eventTitle}</h3>
+                  <Badge variant="outline">
+                    {invitation.role === "editor" ? "Editor" : "Viewer"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  Invited by {inviter} · Expires {formatDateTime(invitation.expiresAt)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 md:justify-end">
+                <Button
+                  aria-label={`Decline invitation to ${invitation.eventTitle}`}
+                  className="min-h-10"
+                  disabled={pendingAction !== null}
+                  onClick={() => onRespond(invitation, "decline")}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isBusy && pendingAction.type === "decline" ? "Declining" : "Decline"}
+                </Button>
+                <Button
+                  aria-label={`Accept invitation to ${invitation.eventTitle}`}
+                  className="min-h-10"
+                  disabled={pendingAction !== null}
+                  onClick={() => onRespond(invitation, "accept")}
+                  size="sm"
+                >
+                  {isBusy && pendingAction.type === "accept" ? "Accepting" : "Accept"}
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

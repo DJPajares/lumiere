@@ -63,6 +63,7 @@ export const createApp = ({
   app.use("*", requestIdMiddleware());
   app.use("/events", noStoreMiddleware);
   app.use("/events/*", noStoreMiddleware);
+  app.use("/collaborator-invitations", noStoreMiddleware);
   app.use("/collaborator-invitations/*", noStoreMiddleware);
   app.use("/public/events", noStoreMiddleware);
   app.use("/public/events/*", noStoreMiddleware);

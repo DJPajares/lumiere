@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  collaboratorInvitationInboxItemSchema,
   collaboratorInvitationSchema,
   eventCreateSchema,
   eventAccessSchema,
@@ -108,6 +109,13 @@ export const collaboratorInvitationAcceptanceResponseSchema =
   });
 export type CollaboratorInvitationAcceptanceResponse = z.infer<
   typeof collaboratorInvitationAcceptanceResponseSchema
+>;
+
+export const collaboratorInvitationInboxResponseSchema = z.object({
+  invitations: z.array(collaboratorInvitationInboxItemSchema),
+});
+export type CollaboratorInvitationInboxResponse = z.infer<
+  typeof collaboratorInvitationInboxResponseSchema
 >;
 
 export const eventCollaborationResponseSchema = z.object({

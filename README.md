@@ -508,6 +508,7 @@ POST   /events/:eventId/collaborator-invitations/:invitationId/resend
 POST   /events/:eventId/collaborator-invitations/:invitationId/revoke
 PATCH  /events/:eventId/collaborators/:collaboratorUserId
 DELETE /events/:eventId/collaborators/:collaboratorUserId
+GET    /collaborator-invitations
 POST   /collaborator-invitations/:invitationId/accept
 POST   /collaborator-invitations/:invitationId/decline
 

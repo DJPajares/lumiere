@@ -13,7 +13,12 @@ import {
   sql,
   users,
 } from "@lumiere/db";
-import type { CollaboratorInvitation, CollaboratorRole, EventCollaborator } from "@lumiere/types";
+import type {
+  CollaboratorInvitation,
+  CollaboratorInvitationInboxItem,
+  CollaboratorRole,
+  EventCollaborator,
+} from "@lumiere/types";
 
 import { ApiHttpError } from "./errors";
 import { toIsoDateTime } from "./serialization";
@@ -64,6 +69,7 @@ export type CollaboratorStore = {
     collaborators: EventCollaborator[];
     invitations: CollaboratorInvitation[];
   }>;
+  listPendingInvitations(email: string): Promise<CollaboratorInvitationInboxItem[]>;
   removeCollaborator(
     eventId: string,
     collaboratorUserId: string,
@@ -301,6 +307,51 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
       collaborators: collaboratorRows.map(toApiCollaborator),
       invitations: invitationRows.map(toApiCollaboratorInvitation),
     };
+  },
+
+  async listPendingInvitations(email) {
+    const normalizedEmail = normalizeCollaboratorEmail(email);
+
+    await db
+      .update(collaboratorInvitations)
+      .set({
+        status: "expired",
+        updatedAt: sql`now()`,
+      })
+      .where(
+        and(
+          eq(collaboratorInvitations.email, normalizedEmail),
+          eq(collaboratorInvitations.status, "pending"),
+          sql`${collaboratorInvitations.expiresAt} <= now()`,
+        ),
+      );
+
+    const invitationRows = await db
+      .select({
+        eventTitle: events.title,
+        invitation: collaboratorInvitations,
+        invitedByDisplayName: users.displayName,
+        invitedByEmail: users.email,
+      })
+      .from(collaboratorInvitations)
+      .innerJoin(events, eq(events.id, collaboratorInvitations.eventId))
+      .innerJoin(users, eq(users.id, collaboratorInvitations.invitedByUserId))
+      .where(
+        and(
+          eq(collaboratorInvitations.email, normalizedEmail),
+          eq(collaboratorInvitations.status, "pending"),
+          isNull(events.deletedAt),
+          sql`${collaboratorInvitations.expiresAt} > now()`,
+        ),
+      )
+      .orderBy(asc(collaboratorInvitations.expiresAt), desc(collaboratorInvitations.createdAt));
+
+    return invitationRows.map((row) => ({
+      ...toApiCollaboratorInvitation(row.invitation),
+      eventTitle: row.eventTitle,
+      ...(row.invitedByDisplayName ? { invitedByDisplayName: row.invitedByDisplayName } : {}),
+      invitedByEmail: row.invitedByEmail,
+    }));
   },
 
   async removeCollaborator(eventId, collaboratorUserId, actorUserId) {

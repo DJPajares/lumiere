@@ -2,6 +2,7 @@ import { getTheme } from "@lumiere/themes";
 import type {
   ActivityEvent,
   CollaboratorInvitation,
+  CollaboratorInvitationInboxItem,
   Event,
   EventCollaborator,
   EventSummary,
@@ -111,6 +112,13 @@ const baseCollaboratorInvitation: CollaboratorInvitation = {
   sendCount: 1,
   status: "pending",
   updatedAt: "2026-07-08T00:00:00.000Z",
+};
+
+const baseCollaboratorInvitationInboxItem: CollaboratorInvitationInboxItem = {
+  ...baseCollaboratorInvitation,
+  eventTitle: baseEvent.title,
+  invitedByDisplayName: localUser.displayName ?? undefined,
+  invitedByEmail: localUser.email,
 };
 
 const baseCollaborator: EventCollaborator = {
@@ -731,6 +739,7 @@ describe("API app", () => {
       role: "editor",
     });
     expect(listResponse.status).toBe(200);
+    expect(listResponse.headers.get("cache-control")).toBe("no-store");
     await expect(listResponse.json()).resolves.toEqual({
       collaborators: [baseCollaborator],
       invitations: [baseCollaboratorInvitation],
@@ -742,7 +751,7 @@ describe("API app", () => {
     expect(revokeInvitation).toHaveBeenCalledWith(eventId, collaboratorInvitationId);
   });
 
-  it("allows the matching authenticated identity to accept or decline an invitation", async () => {
+  it("lists invitations for and allows responses from the matching authenticated identity", async () => {
     const { authStore } = createTestAuthStore();
     const acceptedInvitation: CollaboratorInvitation = {
       ...baseCollaboratorInvitation,
@@ -755,13 +764,14 @@ describe("API app", () => {
       ...acceptedInvitation,
       status: "declined",
     };
-    const { acceptInvitation, collaboratorStore, declineInvitation } = createTestCollaboratorStore({
-      acceptResult: {
-        collaborator: baseCollaborator,
-        invitation: acceptedInvitation,
-      },
-      declineResult: declinedInvitation,
-    });
+    const { acceptInvitation, collaboratorStore, declineInvitation, listPendingInvitations } =
+      createTestCollaboratorStore({
+        acceptResult: {
+          collaborator: baseCollaborator,
+          invitation: acceptedInvitation,
+        },
+        declineResult: declinedInvitation,
+      });
     const app = createApp({
       authStore,
       collaboratorStore,
@@ -776,6 +786,9 @@ describe("API app", () => {
         },
       })}`,
     };
+    const listResponse = await app.request("/collaborator-invitations", {
+      headers,
+    });
     const acceptResponse = await app.request(
       `/collaborator-invitations/${collaboratorInvitationId}/accept`,
       {
@@ -791,6 +804,11 @@ describe("API app", () => {
       },
     );
 
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toEqual({
+      invitations: [baseCollaboratorInvitationInboxItem],
+    });
+    expect(listPendingInvitations).toHaveBeenCalledWith("editor@example.com");
     expect(acceptResponse.status).toBe(200);
     await expect(acceptResponse.json()).resolves.toEqual({
       collaborator: baseCollaborator,
@@ -3389,6 +3407,7 @@ function createTestCollaboratorStore({
     status: "declined",
     updatedAt: "2026-07-09T00:00:00.000Z",
   },
+  inboxResult = [baseCollaboratorInvitationInboxItem],
   removeResult = true,
   resendResult = {
     ...baseCollaboratorInvitation,
@@ -3411,6 +3430,7 @@ function createTestCollaboratorStore({
   acceptResult?: Awaited<ReturnType<CollaboratorStore["acceptInvitation"]>>;
   createResult?: Awaited<ReturnType<CollaboratorStore["createInvitation"]>>;
   declineResult?: Awaited<ReturnType<CollaboratorStore["declineInvitation"]>>;
+  inboxResult?: Awaited<ReturnType<CollaboratorStore["listPendingInvitations"]>>;
   removeResult?: Awaited<ReturnType<CollaboratorStore["removeCollaborator"]>>;
   resendResult?: Awaited<ReturnType<CollaboratorStore["resendInvitation"]>>;
   revokeResult?: Awaited<ReturnType<CollaboratorStore["revokeInvitation"]>>;
@@ -3423,6 +3443,7 @@ function createTestCollaboratorStore({
     collaborators: [baseCollaborator],
     invitations: [baseCollaboratorInvitation],
   }));
+  const listPendingInvitations = vi.fn(async () => inboxResult);
   const removeCollaborator = vi.fn(async () => removeResult);
   const resendInvitation = vi.fn(async () => resendResult);
   const revokeInvitation = vi.fn(async () => revokeResult);
@@ -3432,6 +3453,7 @@ function createTestCollaboratorStore({
     createInvitation,
     declineInvitation,
     listEventCollaboration,
+    listPendingInvitations,
     removeCollaborator,
     resendInvitation,
     revokeInvitation,
@@ -3444,6 +3466,7 @@ function createTestCollaboratorStore({
     createInvitation,
     declineInvitation,
     listEventCollaboration,
+    listPendingInvitations,
     removeCollaborator,
     resendInvitation,
     revokeInvitation,

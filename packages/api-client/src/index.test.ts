@@ -42,6 +42,40 @@ describe("API client", () => {
     expect(requestHeaders(fetch).get("authorization")).toBe("Bearer manager-token");
   });
 
+  it("loads the signed-in manager's pending collaborator invitations", async () => {
+    const invitation = {
+      createdAt: "2026-07-08T00:00:00.000Z",
+      email: "editor@example.com",
+      eventId: "00000000-0000-4000-8000-000000000101",
+      eventTitle: "Launch Night",
+      expiresAt: "2026-07-15T00:00:00.000Z",
+      id: "00000000-0000-4000-8000-000000000111",
+      invitedByDisplayName: "Ada Host",
+      invitedByEmail: "host@example.com",
+      invitedByUserId: "00000000-0000-4000-8000-000000000102",
+      lastSentAt: "2026-07-08T00:00:00.000Z",
+      role: "editor",
+      sendCount: 1,
+      status: "pending",
+      updatedAt: "2026-07-08T00:00:00.000Z",
+    } as const;
+    const fetch = createFetchMock({ invitations: [invitation] });
+    const client = createApiClient({
+      authToken: "manager-token",
+      baseUrl: "https://api.example.test",
+      fetch,
+    });
+
+    await expect(client.listPendingCollaboratorInvitations()).resolves.toEqual({
+      invitations: [invitation],
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.example.test/collaborator-invitations",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(requestHeaders(fetch).get("authorization")).toBe("Bearer manager-token");
+  });
+
   it("does not require Supabase tokens for public invite calls", async () => {
     const fetch = createFetchMock(publicEventResponse);
     const client = createApiClient({

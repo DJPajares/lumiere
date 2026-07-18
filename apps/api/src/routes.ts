@@ -240,6 +240,17 @@ export const createRoutes = ({
   });
 
   routes.get(
+    "/collaborator-invitations",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const store = requireCollaboratorStore(collaboratorStore);
+      const invitations = await store.listPendingInvitations(context.get("manager").email);
+
+      return context.json({ invitations });
+    },
+  );
+
+  routes.get(
     "/events/:eventId/collaboration",
     requireManagerAuth({ authStore, config }),
     async (context) => {
