@@ -79,7 +79,13 @@ export type ThemeHeroPresentation = {
   pretitleCopy?: string;
 };
 
-export type ThemeRsvpRendererId = "common" | "editorial-ledger";
+export type ThemeRsvpRendererId =
+  | "basecamp-reply"
+  | "check-in-console"
+  | "common"
+  | "editorial-ledger"
+  | "festival-gate"
+  | "shoreline-reply";
 
 export type ThemeRsvpPresentation = {
   cardClassName: string;
@@ -117,26 +123,52 @@ export type ThemeOrnamentSet =
   | "botanical"
   | "candlelight"
   | "confetti"
+  | "contour-lines"
   | "constellation"
   | "drapery"
   | "editorial-rules"
+  | "geometric-planes"
   | "none"
   | "porcelain-rings"
+  | "signal-grid"
   | "signature-thread"
-  | "snowfall";
+  | "snowfall"
+  | "tide-lines";
 
-export type ThemeDividerStyle = "dotted" | "hairline" | "luminous" | "none" | "short-rule";
+export type ThemeDividerStyle =
+  | "dotted"
+  | "hairline"
+  | "luminous"
+  | "none"
+  | "route-line"
+  | "short-rule"
+  | "signal-track"
+  | "tide-line";
 
 export type ThemeFrameStyle =
-  "double-line" | "frameless" | "frosted" | "gilded" | "offset" | "organic" | "playful" | "soft";
+  | "double-line"
+  | "edge-lit"
+  | "frameless"
+  | "frosted"
+  | "geometric"
+  | "gilded"
+  | "offset"
+  | "organic"
+  | "playful"
+  | "soft"
+  | "terrain";
 
 export type ThemeImageTreatmentKind =
   | "cinematic"
   | "crisp"
+  | "cutout"
   | "desaturated"
+  | "documentary"
+  | "edge-lit"
   | "frosted"
   | "natural"
   | "nocturne"
+  | "refracted"
   | "sun-washed"
   | "vibrant";
 
@@ -171,7 +203,15 @@ export type ThemeComposition = {
     parallaxProfile: ThemeParallaxProfile;
   };
   hero: {
-    composition: "centered-media" | "editorial-split" | "layered-portrait" | "seasonal-tableau";
+    composition:
+      | "centered-media"
+      | "color-plane"
+      | "editorial-split"
+      | "fluid-horizon"
+      | "layered-portrait"
+      | "route-led"
+      | "seasonal-tableau"
+      | "signal-route";
     fullViewport: boolean;
     mediaTreatment: string;
   };
@@ -181,7 +221,15 @@ export type ThemeComposition = {
     overlay: "accent-wash" | "none" | "soft-vignette";
   };
   sectionDefaults: Partial<Record<SectionType, ThemeSectionDefault>>;
-  rsvpDesign: "default" | "editorial" | "playful" | "seasonal";
+  rsvpDesign:
+    | "basecamp"
+    | "check-in"
+    | "default"
+    | "editorial"
+    | "festival"
+    | "playful"
+    | "seasonal"
+    | "shoreline";
   ambientMedia: {
     audioSlot: "none" | "optional";
     controlStrategy: "external-controls" | "not-supported";
@@ -227,7 +275,16 @@ export type ThemeModeTogglePresentation = {
     light: string;
   };
   placement: "top-end" | "top-start";
-  style: "celestial" | "editorial" | "organic" | "seasonal" | "soft-pill";
+  style:
+    | "celestial"
+    | "editorial"
+    | "fluid"
+    | "organic"
+    | "pop"
+    | "seasonal"
+    | "signal"
+    | "soft-pill"
+    | "terrain";
 };
 
 export type ThemeDefinition = {
@@ -297,5 +354,9 @@ export const themeIds = [
   "celestial-gold",
   "velvet-dusk",
   "porcelain-blue",
+  "neon-signal",
+  "tidal-glass",
+  "solar-pop",
+  "terrain-line",
 ] as const;
 export type ThemeId = (typeof themeIds)[number];

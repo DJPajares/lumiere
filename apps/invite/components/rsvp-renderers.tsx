@@ -66,8 +66,12 @@ export type RsvpRendererContract = {
 };
 
 const rsvpRenderers = {
+  "basecamp-reply": BasecampRsvpRenderer,
+  "check-in-console": CheckInConsoleRsvpRenderer,
   common: CommonRsvpRenderer,
   "editorial-ledger": EditorialLedgerRsvpRenderer,
+  "festival-gate": FestivalGateRsvpRenderer,
+  "shoreline-reply": ShorelineRsvpRenderer,
 } satisfies Record<ThemeRsvpRendererId, ComponentType<RsvpRendererContract>>;
 
 export function resolveRsvpRenderer(
@@ -166,6 +170,136 @@ function EditorialLedgerRsvpRenderer(contract: RsvpRendererContract) {
           <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
         ) : null}
       </div>
+    </form>
+  );
+}
+
+function CheckInConsoleRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="check-in-console"
+      partyLabel="Access group"
+      stationLabel="Final station"
+    />
+  );
+}
+
+function ShorelineRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="shoreline-reply"
+      partyLabel="Your party"
+      stationLabel="At the waterline"
+    />
+  );
+}
+
+function FestivalGateRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="festival-gate"
+      partyLabel="Guest list"
+      stationLabel="Entry gate"
+    />
+  );
+}
+
+function BasecampRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="basecamp-reply"
+      partyLabel="Route party"
+      stationLabel="Basecamp"
+    />
+  );
+}
+
+function SpatialRsvpRenderer({
+  contract,
+  layout,
+  partyLabel,
+  stationLabel,
+}: {
+  contract: RsvpRendererContract;
+  layout: Exclude<ThemeRsvpRendererId, "common" | "editorial-ledger">;
+  partyLabel: string;
+  stationLabel: string;
+}) {
+  if (contract.flags.isConfirmationVisible) {
+    return <RsvpConfirmation contract={contract} editorial />;
+  }
+
+  return (
+    <form
+      className={contract.presentation.cardClassName}
+      data-rsvp-has-details={String(contract.flags.hasDetails)}
+      data-rsvp-layout={layout}
+      data-rsvp-renderer={contract.presentation.rendererId}
+      data-rsvp-state={contract.status.tone}
+      onSubmit={contract.actions.submit}
+    >
+      <header className="grid gap-5 border-b border-[var(--border)] px-4 py-5 sm:px-6 sm:py-7 lg:grid-cols-[1fr_auto] lg:items-end">
+        <RsvpHeader contract={contract} />
+        <dl className="grid min-w-48 grid-cols-2 gap-4 border-t border-[var(--border)] pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <div>
+            <dt className={contract.presentation.fieldLabelClassName}>{partyLabel}</dt>
+            <dd className="lumiere-type-body mt-2">{contract.context.guestGroup.label}</dd>
+          </div>
+          <div>
+            <dt className={contract.presentation.fieldLabelClassName}>Capacity</dt>
+            <dd className="lumiere-type-body mt-2">
+              {contract.context.guestGroup.maxPax} {contract.copy.guestLabelPlural.toLowerCase()}
+            </dd>
+          </div>
+        </dl>
+      </header>
+
+      {contract.submittedResponse ||
+      contract.recoveryState ||
+      contract.errors.form ||
+      contract.flags.isUpdatingExistingReply ? (
+        <div className="grid gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-6">
+          <RsvpFeedback contract={contract} />
+        </div>
+      ) : null}
+
+      <div className="grid lg:grid-cols-[0.86fr_1.14fr]">
+        <section
+          aria-label="Attendance"
+          className="grid content-start gap-5 bg-[var(--surface-muted)] px-4 py-5 sm:px-6 sm:py-7"
+        >
+          <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">{stationLabel}</p>
+          <AttendanceControls contract={contract} />
+        </section>
+        {contract.flags.hasDetails ? (
+          <section
+            aria-label="Guest details"
+            className="grid content-start border-t border-[var(--border)] px-4 py-5 sm:px-6 sm:py-7 lg:border-l lg:border-t-0"
+          >
+            <DetailsControls contract={contract} expandedLabel />
+          </section>
+        ) : (
+          <section
+            aria-label="Response status"
+            className="grid content-center border-t border-[var(--border)] px-4 py-5 sm:px-6 lg:border-l lg:border-t-0"
+          >
+            <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+          </section>
+        )}
+      </div>
+
+      <footer className="grid gap-4 border-t border-[var(--border)] px-4 py-5 sm:grid-cols-[1fr_minmax(12rem,18rem)] sm:items-center sm:px-6">
+        {contract.flags.hasDetails && !contract.flags.isUpdatingExistingReply ? (
+          <ReplyStatusPanel copy={contract.status.copy} tone={contract.status.tone} />
+        ) : (
+          <span />
+        )}
+        <SubmitAction contract={contract} />
+      </footer>
     </form>
   );
 }

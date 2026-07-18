@@ -150,6 +150,126 @@ Use Reverie as a benchmark for immersion, section ownership, motion tuning, medi
 - Ornament/backdrop: sparse abstract porcelain rings and mineral paper texture without china patterns or ceramic clip art.
 - Dashboard preview: real Study in Blue, Glass Gallery, afternoon, collected moments, and reply samples.
 
+## Non-Paper Portfolio Gate
+
+The next portfolio wave moves away from stationery, folios, vellum, porcelain, and editorial-print metaphors. These themes must differ through composition, spatial behavior, typography, media framing, and RSVP structure—not by applying new tokens to an existing invitation page.
+
+| Direction | Primary metaphor | Event-type fit | Deliberate exclusions | Default read |
+| --- | --- | --- | --- | --- |
+| Neon Signal | Luminous signage and a route through night | Launch, dinner, birthday, private event, other | Wedding, kids party, holiday | Dark-first, fast, urban |
+| Tidal Glass | Daylight refracted through moving water | Wedding, dinner, holiday, private event, other | Birthday, kids party, launch | Light-first, calm, fluid |
+| Solar Pop | Sunlit festival identity built from color planes | Birthday, kids party, launch, private event, other | Wedding, dinner, holiday | Light-first, bold, joyful |
+| Terrain Line | A route unfolding through topographic space | Wedding, birthday, dinner, launch, private event, other | Kids party, holiday | System-first, grounded, place-led |
+
+Event fit is intentional. The dashboard compatibility filter must not offer an excluded pairing as a valid choice, even if the shared renderer could technically display its sections.
+
+### Portfolio-wide requirements
+
+- The four composition maps are `neon-signal`, `tidal-glass`, `solar-pop`, and `terrain-line`. Each map must be a stable typed identifier, not an app-local theme check.
+- Every direction supports the complete section contract so a manager can preserve existing event content. Each direction must declare every renderer slot as specialized or themed fallback; a fallback may keep the shared content schema but must still inherit the theme's spacing, type, mode, and accessibility rules.
+- All four expose light, dark, system, and toggleable manager options. “Dark-first” and “light-first” describe the art-directed default, not missing token sets.
+- Dashboard thumbnails use real `previewData` and the actual preview renderer. The identifying composition must survive at card size; an accent swatch or decorative mock card is insufficient.
+- Mobile reading order remains semantic when spatial layers collapse. At 390px, text cannot be hidden by media, route rails, translucent bands, or oversized numerals.
+- Luminous, translucent, and saturated treatments still require WCAG AA-readable controls, visible labels, non-color state cues, strong focus indicators, and stable disabled/closed/error/success states.
+- Motion communicates arrival, sequence, or response. Reduced motion removes travel, drift, sweeps, wipes, pulses, parallax, and pinning while preserving static hierarchy and orientation.
+
+### Shared anti-slop and anti-overlap rules
+
+- No stationery surfaces, faux paper grain, torn edges, folio borders, reply cards, postage cues, scrapbook layers, or “printed invitation” framing.
+- No generic glassmorphism card stacks. Tidal Glass may use translucency as a full-width spatial layer, never as a dashboard-like grid of blurred cards.
+- No emoji-heavy celebration UI, sticker packs, confetti wallpaper, stock party motifs, or uncontrolled rainbow gradients.
+- No palette-only differentiation. A theme fails the gate if its section map, image cropping, typography, and RSVP layout match an existing theme.
+- Neon Signal must not become Celestial Gold with cyan tokens, Velvet Dusk with scanlines, or a cyberpunk franchise imitation.
+- Tidal Glass must not become a recolored Porcelain Blue, Garden Light with blur, or resort/beach clip art.
+- Solar Pop must not become Kids with stronger colors, Modern Minimal with rounded corners, or a collage of decorative cards.
+- Terrain Line must not become Modern Minimal with contour decoration, Garden Light in darker green, or a literal consumer map UI.
+- Lumiere gold and logo motifs remain app-shell identity. They are not a required ingredient in any event theme.
+
+## Neon Signal
+
+- Fit: launches, dinners, birthdays, private events, and generic events. Do not offer it for weddings, kids parties, or holidays.
+- Design read: a live signal moving through charcoal city space, using electric cyan as the primary signal, coral as a sparing interrupt, and off-white operational text. No broad neon-gradient wash.
+- Typography: oversized variable grotesk for event title and chapter numbers, neutral grotesk for body copy, and compact mono for time, place, status, and field labels. Mono is metadata, never the long-form reading face.
+- Shape: sharp corners with clipped or notched transitions; controls retain a usable hit area and may use only a slight radius.
+- Composition map: `neon-signal`, named **Signal Route**.
+- Hero: a full-viewport signal entrance with one edge-lit media field, oversized title, and a directional time/place readout. The no-cover state becomes a deliberate field of signal rails and event facts, not a fake photo or glowing card.
+- Section rhythm: signal entrance → time/place readout → sequential program rail → optional people/story transmission → edge-lit contact strip → arrival coordinates → check-in console → signal-close outro. `introduction`, `date`, `details`, `location`, `gallery`, `rsvp`, and `outro` receive specialized slots; `profile`, `story`, `entourage`, `dress_code`, and `custom` use themed fallbacks aligned to the same route rail.
+- Image treatment: wide or narrow documentary crops with hard masks, dark edge exposure, restrained cyan/coral rim light, and compact mono captions. Never recolor the subject with a duotone that obscures people or venue details.
+- RSVP: a **Check-in Console**, embedded as the final route station rather than a floating card. Show guest identity, reserved capacity, attendance, attendee names, custom answers, host note, and one decisive transmit action with visible labels. Validation appears at its field; recoverable request errors preserve all entries; closed and disabled states read as explicit check-in status; success resolves into a stable confirmed readout.
+- Modes: dark-first with complete light, dark, system, and toggleable support. Dark uses charcoal and restrained luminous accents; light uses warm gray, ink, deep cyan, and coral without imitating paper. Toggle labels should describe `Night signal` and `Day signal`.
+- Motion: short entry sweeps, staggered route reveals, and one-time progress illumination. No continuously moving cyberpunk background, flicker, marquee, or ambient flashing.
+- Reduced motion: remove sweeps, line travel, and stagger offsets; render every route segment and status change immediately with static contrast, rules, and labels.
+- Accessibility: cyan/coral never carry status alone; scanline or grid cues stay decorative and cannot cross body copy; glow cannot reduce glyph edges; focus uses a solid high-contrast outline; no flashing treatment exceeds safe animation thresholds.
+- Dashboard preview: use a real launch sample such as `After Hours / Studio 18`, showing the charcoal entrance, oversized title, cyan route rail, time/place readout, and a slice of the check-in console at expanded size. The thumbnail must read as a route, not a dark card.
+- Naming/IP: use generic transit and signal language. Avoid branded city signs, code-terminal parody, protected sci-fi references, or illegible “hacker” copy.
+
+## Tidal Glass
+
+- Fit: weddings, dinners, holidays, private events, and generic location-led occasions. Do not offer it for birthdays, kids parties, or launches.
+- Design read: daylight moving through water, with deep ink, sea-glass aqua, softened blue-green, pale mineral light, and a limited warm signal for semantic emphasis.
+- Typography: soft geometric sans for display and body, with open counters and relaxed line spacing; use a quieter humanist label face or weight shift for facts. It must not inherit Porcelain Blue's editorial or serif cadence.
+- Shape: broad fluid boundaries and softened corners, but no repeated pill controls or identical rounded cards.
+- Composition map: `tidal-glass`, named **Tidal Flow**.
+- Hero: a wide fluid horizon with title and event facts held above a refracted cover-image field. A no-cover hero uses layered translucent color bands and a clear venue/date anchor, not frosted placeholder chrome.
+- Section rhythm: fluid horizon → tide-marked date → overlapping story/profile current → shoreline detail rail → wide image field → anchored venue chapter → calm-cove reply → horizon outro. `introduction`, `date`, `profile`, `story`, `details`, `gallery`, `location`, `rsvp`, and `outro` receive specialized slots; `entourage`, `dress_code`, and `custom` use spacious themed fallbacks.
+- Image treatment: wide crops with protected focal points, soft refracted edge color, and clear text-safe zones. Photography remains crisp enough to inspect; blur is a supporting depth cue, never the main treatment.
+- RSVP: a **Shoreline Reply** laid out as one spacious flow with guest and party capacity anchored in a readable side or top rail. Labels remain visible above controls; validation sits near its field; closed and disabled states stay calm but unmistakable; recoverable errors keep data; success settles into a quiet confirmed-cove state.
+- Modes: light-first with complete light, dark, system, and toggleable support. Light resembles daylight through aqua water; dark becomes deep-water ink with brighter sea-glass signals, not a generic navy glass UI. Toggle labels should describe `Day water` and `Deep water`.
+- Motion: slow one-time layer drift, gentle section reveals, and restrained refraction shifts tied to meaningful entry. No perpetual floating blobs or scroll-jacking liquid simulation.
+- Reduced motion: freeze all layers and remove refractive drift; static transparency, overlap, spacing, and tide-line geometry retain the composition.
+- Accessibility: every text-bearing translucent band resolves against a controlled backing color; do not place small copy directly on photography; focus rings remain opaque; map and location actions use text labels; transparency cannot be the only section boundary.
+- Dashboard preview: use a real dinner or coastal-wedding sample such as `Low Tide Supper / Glass House`, showing the fluid horizon, one wide image, tide-line divider, and shoreline facts. The expanded preview should include part of the reply flow, not a blur-card collage.
+- Naming/IP: water language stays abstract and contemporary. Avoid shells, waves-as-clip-art, resort logos, beach typography, or wellness-app tropes.
+
+## Solar Pop
+
+- Fit: birthdays, kids parties, launches, private events, and generic daytime celebrations. Do not offer it for weddings, dinners, or holidays.
+- Design read: a confident sunlit festival identity using coral, marigold, cobalt, and leaf green as controlled planes. One plane leads each chapter; all four colors do not compete in every viewport.
+- Typography: expressive wide sans or display grotesk for titles and oversized numerals, a highly readable geometric sans for body copy, and a condensed sans for labels and schedule facts. Joy comes from scale and cadence rather than novelty glyphs.
+- Shape: crisp crop windows and confident medium radii; avoid bubbly pills, sticker outlines, scalloped paper edges, and a repeated rounded-card deck.
+- Composition map: `solar-pop`, named **Solar Field**.
+- Hero: a full-viewport arrangement of two or three interlocking color planes, a cutout-like cover crop, and oversized date numerals. The no-cover state lets typography and color geometry carry the opening without decorative party icons.
+- Section rhythm: solar field → oversized date gate → directional detail panels → optional celebrant/story crop → bold venue turn → cutout image run → festival-gate reply → color-field outro. `introduction`, `date`, `details`, `profile`, `story`, `location`, `gallery`, `rsvp`, and `outro` receive specialized slots; `dress_code`, `entourage`, and `custom` use themed fallbacks with the same plane logic.
+- Image treatment: clean subject-aware crops inside geometric windows, hard color offsets, and occasional full-bleed images. Never simulate scrapbook cut paper, stickers, taped photos, or confetti frames.
+- RSVP: a **Festival Gate** with large clear attendance choices, visible party capacity, straightforward attendee names and questions, parent-friendly helper copy, and a strong keyboard path. Field errors remain local; disabled and closed states replace the action with explicit status; recoverable failures preserve entries; success becomes a bold but quiet admission-confirmed panel.
+- Modes: light-first with complete light, dark, system, and toggleable support. Light uses sunlit off-white plus saturated planes; the dark `Dusk` variant deepens the base and slightly softens chroma while preserving AA contrast and color relationships.
+- Motion: one-time color wipes, crop-window reveals, and restrained numeral emphasis. No bouncing controls, confetti loops, pulsing rainbow fields, or motion that delays reading.
+- Reduced motion: remove wipes, pulses, and crop travel; show the final geometric arrangement immediately with document order intact.
+- Accessibility: each color plane has a tested foreground pairing; validation and attendance use icons or text in addition to color; oversized numerals cannot displace the real date label; cutout images retain meaningful alt text; focus is high contrast on every plane.
+- Dashboard preview: use a real birthday or daytime launch sample such as `Milo Turns Eight / Sunroom`, showing an oversized `08`, coral/marigold/cobalt planes, one real subject crop, and a visible festival-gate choice in expanded view. No emoji or decorative card collage.
+- Naming/IP: keep the identity graphic and generic. Avoid copying festival brands, toy packaging, cartoon characters, or familiar pop-art works.
+
+## Terrain Line
+
+- Fit: weddings, birthdays, dinners, launches, private events, and generic place-led gatherings. Do not offer it for kids parties or holidays.
+- Design read: a route unfolding through landscape, with pine, slate, sand, and ember tones, documentary imagery, restrained contour geometry, and practical location intelligence.
+- Typography: sturdy humanist sans for display and body with a compact utility mono for bearings, time, distance, and itinerary labels. It should feel contemporary and inclusive, not like an archival park poster.
+- Shape: compact radii, clipped route markers, and open spatial fields. Avoid utility-card grids and literal map-pin badges.
+- Composition map: `terrain-line`, named **Terrain Route**.
+- Hero: a route-led opening that pairs a landscape or venue crop with title, date, and one clear origin marker. The no-cover state uses contour density and event coordinates/facts to create depth without pretending to be an interactive map.
+- Section rhythm: origin marker → itinerary spine → people/story waypoint → practical kit/details → documentary image field → destination chapter → basecamp reply → final bearing. `introduction`, `date`, `details`, `story`, `location`, `gallery`, `rsvp`, and `outro` receive specialized slots; `profile`, `entourage`, `dress_code`, and `custom` use themed waypoint fallbacks.
+- Image treatment: natural documentary color, broad landscape crops, inset human moments, descriptive captions, and no artificial vintage filter. Venue and people remain recognizable; contour lines never cross faces or important map controls.
+- RSVP: a **Basecamp Reply** integrated at the route end, with visible party capacity, attendance, names, questions, note, and a single confirm action. Field errors are local; focus is unmistakable; closed and disabled states are explicit; recoverable failures preserve entries; success pins a stable response-confirmed marker.
+- Modes: system-first with complete light, dark, system, and toggleable support. Light uses sand and slate with pine/ember signals; dark uses deep pine/slate with sand text and restrained ember. Both modes preserve the same terrain hierarchy.
+- Motion: short route progression, waypoint reveals, and very slow contour depth limited to meaningful chapter entry. Do not animate an always-traveling path or make guests chase content down a map.
+- Reduced motion: stop route travel, contour drift, pinning, and parallax; keep a static itinerary spine, numbered waypoints, and clear reading order.
+- Accessibility: contour lines remain low-density decoration outside text backing areas; markers include text and sequence numbers; location actions clearly distinguish map view from directions; ember is not the only status cue; focus stays visible against both sand and pine.
+- Dashboard preview: use a real destination or outdoor-dinner sample such as `North Ridge Supper / Quarry Overlook`, showing the origin marker, itinerary spine, contour field, natural image crop, and part of the basecamp reply at expanded size. It must not read as a generic map card.
+- Naming/IP: avoid national-park marks, outdoor-brand language, trail-app UI, expedition stereotypes, and adventure clip art.
+
+## Non-Paper Contract Follow-Up
+
+Complete this as one small shared-contract preparation patch at the start of the implementation wave, then let each theme add only its own isolated module:
+
+- Add the four stable `ThemeId` values and four `InviteCompositionMapId` values without renaming or reordering persisted existing IDs.
+- Extend typed visual vocabulary only where metadata needs to express the approved systems: four hero compositions, signal/tide/plane/contour ornament and divider choices, edge-lit/refracted/cutout/documentary image treatments, and matching mode-toggle styles.
+- Add motion declarations for one-time signal sweep, fluid drift, color wipe, and route progress, each with an explicit static reduced-motion rule. Keep these generic primitives outside concrete theme modules.
+- Add typed RSVP presentation/renderer variants for check-in console, shoreline reply, festival gate, and basecamp reply. Renderer dispatch must be metadata-driven; invite and dashboard code must not branch on concrete theme IDs.
+- Add all four composition maps to the shared map registry and test uniqueness across map ID, hero, image treatment, RSVP renderer, and primary section rhythm.
+- Keep theme assets, definitions, visual effects, and exports under `src/themes/<theme-id>/`. Do not import dashboard UI, shadcn, or Base UI into `packages/themes` or `apps/invite`; do not import concrete theme modules into dashboard controls.
+
+This contract patch is an implementation prerequisite, not a fifth visual direction. If an enum addition has no consumer in one of the approved maps, do not add it.
+
 ## Naming And IP
 
 Theme names must stay generic unless licensing is resolved. Avoid protected characters, fashion labels, venue names, songs, films, or franchise cues. Mood references are fine; direct imitation is not.

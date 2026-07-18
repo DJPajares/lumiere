@@ -6,12 +6,16 @@ import { gardenLightThemeModule } from "./garden-light";
 import { kidsThemeModule } from "./kids";
 import { lumiereDefaultThemeModule } from "./lumiere-default";
 import { modernMinimalThemeModule } from "./modern-minimal";
+import { neonSignalThemeModule } from "./neon-signal";
 import { noelThemeModule } from "./noel";
 import { noelV2ThemeModule } from "./noel-v2";
+import { solarPopThemeModule } from "./solar-pop";
 import { signatureThemeModule } from "./signature";
 import { evergreenFolioThemeModule } from "./evergreen-folio";
 import { porcelainBlueThemeModule } from "./porcelain-blue";
 import { premiumThemeModule } from "./premium";
+import { terrainLineThemeModule } from "./terrain-line";
+import { tidalGlassThemeModule } from "./tidal-glass";
 import { velvetDuskThemeModule } from "./velvet-dusk";
 
 export * from "../contracts";
@@ -21,12 +25,16 @@ export * from "./garden-light";
 export * from "./kids";
 export * from "./lumiere-default";
 export * from "./modern-minimal";
+export * from "./neon-signal";
 export * from "./noel";
 export * from "./noel-v2";
 export * from "./signature";
 export * from "./evergreen-folio";
 export * from "./porcelain-blue";
 export * from "./premium";
+export * from "./solar-pop";
+export * from "./terrain-line";
+export * from "./tidal-glass";
 export * from "./velvet-dusk";
 
 export const themeModuleRegistry = {
@@ -43,6 +51,10 @@ export const themeModuleRegistry = {
   "celestial-gold": celestialGoldThemeModule,
   "velvet-dusk": velvetDuskThemeModule,
   "porcelain-blue": porcelainBlueThemeModule,
+  "neon-signal": neonSignalThemeModule,
+  "tidal-glass": tidalGlassThemeModule,
+  "solar-pop": solarPopThemeModule,
+  "terrain-line": terrainLineThemeModule,
 } satisfies Record<ThemeId, ThemeModule>;
 
 export const themeVisualEffects = Object.fromEntries(

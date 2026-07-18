@@ -1,0 +1,139 @@
+[data-theme-id="neon-signal"] .lumiere-invitation {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)
+      0 0 / clamp(3rem, 8vw, 7rem) 100%,
+    linear-gradient(var(--background), var(--background));
+}
+
+[data-theme-id="neon-signal"] .lumiere-section--hero::before {
+  position: absolute;
+  inset: 0 auto 0 clamp(1rem, 5vw, 5rem);
+  width: 0.25rem;
+  content: "";
+  background: linear-gradient(var(--accent), transparent 78%);
+  box-shadow: 0 0 2rem color-mix(in srgb, var(--accent) 52%, transparent);
+}
+
+[data-theme-id="neon-signal"] .lumiere-hero-copy {
+  position: relative;
+  z-index: 1;
+  align-content: center;
+  min-width: 0;
+}
+
+[data-theme-id="neon-signal"] .lumiere-hero-pretitle,
+[data-theme-id="neon-signal"] :is(.lumiere-section__eyebrow, .lumiere-type-label) {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+[data-theme-id="neon-signal"] .lumiere-hero-title {
+  max-width: 9ch;
+  text-transform: uppercase;
+  text-shadow: 0 0 2.5rem color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+[data-theme-id="neon-signal"] :is(.lumiere-hero-media, .lumiere-section-image) {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+    1rem 1rem 0 color-mix(in srgb, var(--accent) 8%, transparent),
+    0 0 4rem color-mix(in srgb, var(--accent) 18%, transparent);
+  filter: contrast(1.06) saturate(0.82);
+}
+
+[data-theme-id="neon-signal"] .lumiere-hero-facts {
+  border-block: 1px solid var(--border);
+}
+
+[data-theme-id="neon-signal"] .lumiere-hero-fact {
+  border: 0;
+  border-inline-start: 2px solid var(--accent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="neon-signal"] .lumiere-section:not(.lumiere-section--hero) {
+  position: relative;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+}
+
+[data-theme-id="neon-signal"] .lumiere-section:not(.lumiere-section--hero)::before {
+  position: absolute;
+  inset: -1px auto auto clamp(1.25rem, 6vw, 6rem);
+  width: clamp(4rem, 16vw, 13rem);
+  height: 2px;
+  content: "";
+  background: var(--accent);
+  box-shadow: 0 0 1rem var(--accent);
+  transform-origin: left;
+}
+
+[data-theme-id="neon-signal"] [data-section-composition="timeline"] .lumiere-section__inner {
+  border-inline-start: 1px solid var(--accent);
+}
+
+[data-theme-id="neon-signal"] .lumiere-detail-grid {
+  gap: 0;
+  border-block: 1px solid var(--border);
+}
+
+[data-theme-id="neon-signal"] .lumiere-detail-item {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-theme-id="neon-signal"] .lumiere-gallery-grid {
+  gap: 0.35rem;
+}
+
+[data-theme-id="neon-signal"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--background) 94%, transparent);
+  --map-caption-border: var(--accent);
+  --map-embed-filter: grayscale(1) invert(0.88) hue-rotate(130deg) contrast(1.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 2.5rem color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+[data-theme-id="neon-signal"] [data-rsvp-renderer="check-in-console"] {
+  position: relative;
+}
+
+[data-theme-id="neon-signal"] [data-rsvp-renderer="check-in-console"]::before {
+  height: 0.25rem;
+  content: "";
+  background: linear-gradient(90deg, var(--accent) 0 72%, var(--error) 72%);
+  box-shadow: 0 0 1.4rem color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+[data-theme-id="neon-signal"] :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-id="neon-signal"]
+    [data-motion-kind="signal-sweep"][data-motion-state="visible"]
+    .lumiere-section__inner {
+    animation: neon-signal-enter 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes neon-signal-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme-id="neon-signal"] *,
+  [data-theme-id="neon-signal"] *::before,
+  [data-theme-id="neon-signal"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

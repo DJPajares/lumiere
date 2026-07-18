@@ -25,12 +25,19 @@ const controlStyles: Record<ThemeModeTogglePresentation["style"], string> = {
     "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] shadow-[0_12px_40px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
   editorial:
     "rounded-none border-[var(--foreground)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] shadow-none",
+  fluid:
+    "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--accent)_46%,var(--border))] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] shadow-[0_14px_42px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
   organic:
     "rounded-[var(--radius-lg)] border-[color-mix(in_srgb,var(--border)_78%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
+  pop: "rounded-[var(--radius-md)] border-2 border-[var(--foreground)] bg-[var(--surface)] shadow-[0.25rem_0.25rem_0_var(--foreground)]",
   seasonal:
     "border-[color-mix(in_srgb,var(--accent)_42%,var(--border))] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_15%,transparent)]",
+  signal:
+    "rounded-[var(--radius-sm)] border-[var(--accent)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] shadow-[0_0_28px_color-mix(in_srgb,var(--accent)_20%,transparent)]",
   "soft-pill":
     "border-[color-mix(in_srgb,var(--border)_78%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_12px_36px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
+  terrain:
+    "rounded-[var(--radius-md)] border-[var(--foreground)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] shadow-[0.25rem_0.25rem_0_color-mix(in_srgb,var(--accent)_22%,transparent)]",
 };
 
 export function InviteThemeModeControl({

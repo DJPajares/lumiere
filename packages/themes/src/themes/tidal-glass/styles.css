@@ -1,0 +1,116 @@
+[data-theme-id="tidal-glass"] .lumiere-invitation {
+  background:
+    radial-gradient(
+      ellipse at 8% 18%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      160deg,
+      var(--background),
+      color-mix(in srgb, var(--surface-muted) 55%, var(--background))
+    );
+}
+
+[data-theme-id="tidal-glass"] .lumiere-section--hero {
+  border-radius: 0 0 50% 8% / 0 0 10% 4%;
+}
+
+[data-theme-id="tidal-glass"] .lumiere-hero-copy {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(2rem, 8vw, 7rem);
+}
+
+[data-theme-id="tidal-glass"] .lumiere-hero-media {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow:
+    -2rem 2rem 5rem color-mix(in srgb, var(--accent) 14%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+[data-theme-id="tidal-glass"] .lumiere-hero-media::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 38%
+  );
+  pointer-events: none;
+}
+
+[data-theme-id="tidal-glass"] .lumiere-section:not(.lumiere-section--hero) {
+  position: relative;
+  margin-top: -1px;
+}
+
+[data-theme-id="tidal-glass"] .lumiere-section:not(.lumiere-section--hero)::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: clamp(2rem, 5vw, 4rem);
+  content: "";
+  border-top: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+[data-theme-id="tidal-glass"] [data-section-composition="layered-media"] {
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme-id="tidal-glass"] :is(.lumiere-detail-item, .lumiere-profile-card) {
+  border: 0;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+[data-theme-id="tidal-glass"] .lumiere-gallery-grid {
+  grid-auto-rows: minmax(14rem, 34vw);
+}
+
+[data-theme-id="tidal-glass"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 94%, transparent);
+  --map-caption-border: color-mix(in srgb, var(--accent) 48%, var(--border));
+  --map-embed-filter: saturate(0.76) hue-rotate(125deg) contrast(0.94);
+  border-radius: 45% 12% 42% 10% / 16% 34% 14% 32%;
+}
+
+[data-theme-id="tidal-glass"] [data-rsvp-renderer="shoreline-reply"] {
+  backdrop-filter: blur(16px);
+}
+
+[data-theme-id="tidal-glass"] [data-rsvp-renderer="shoreline-reply"]::before {
+  height: clamp(2rem, 5vw, 4rem);
+  content: "";
+  background: linear-gradient(
+    165deg,
+    transparent 46%,
+    color-mix(in srgb, var(--accent) 34%, transparent) 47%
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-id="tidal-glass"]
+    [data-motion-kind="fluid-drift"][data-motion-state="visible"]
+    .lumiere-section__inner {
+    animation: tidal-glass-enter 780ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes tidal-glass-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme-id="tidal-glass"] * {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -7,11 +7,15 @@ export type ThemeSectionDensity = "balanced" | "compact" | "spacious";
 
 export type ThemeMotionKind =
   | "card-reveal"
+  | "color-wipe"
+  | "fluid-drift"
   | "gallery-drift"
   | "hero-reveal"
   | "media-parallax"
   | "media-reveal"
+  | "route-progress"
   | "section-reveal"
+  | "signal-sweep"
   | "sticky-pin"
   | "timeline-reveal";
 
@@ -25,9 +29,13 @@ export type InviteCompositionMapId =
   | "garden-celebration"
   | "ivory-editorial"
   | "minimal-modern"
+  | "neon-signal"
   | "neutral-basic"
   | "porcelain-gallery"
   | "signature-suite"
+  | "solar-pop"
+  | "terrain-line"
+  | "tidal-glass"
   | "velvet-afterglow"
   | "wedding-editorial";
 
@@ -257,6 +265,34 @@ export const inviteMotionRules: MotionRule[] = [
     intent: "Subtle depth across feature-gallery images.",
     reducedMotion: "Disable drift and preserve the composed grid.",
     rule: "Use tiny opposing translate values on image layers; never crop inspectable subjects beyond recognition.",
+  },
+  {
+    id: "signal-sweep",
+    implementation: "css",
+    intent: "Mark arrival at a signal-route chapter with one short directional sweep.",
+    reducedMotion: "Remove the sweep and show the signal rail at full contrast.",
+    rule: "Run once on reveal using opacity and transform; never flicker or loop.",
+  },
+  {
+    id: "fluid-drift",
+    implementation: "css",
+    intent: "Reveal the relationship between translucent spatial layers.",
+    reducedMotion: "Freeze layers in their final readable positions.",
+    rule: "Use a small one-time translate on decorative layers; never move text-bearing surfaces continuously.",
+  },
+  {
+    id: "color-wipe",
+    implementation: "css",
+    intent: "Introduce a new color-plane chapter without delaying its content.",
+    reducedMotion: "Render the final color planes immediately.",
+    rule: "Use a short clipped transform behind content and never pulse or loop.",
+  },
+  {
+    id: "route-progress",
+    implementation: "css",
+    intent: "Clarify sequence between terrain waypoints.",
+    reducedMotion: "Keep the complete route and numbered waypoints visible.",
+    rule: "Reveal the route once in document order; do not pin or scroll-jack the page.",
   },
 ];
 
@@ -617,6 +653,160 @@ export const expansionInviteCompositionMaps: Record<
   },
 };
 
+export const nonPaperInviteCompositionMaps: Record<
+  "neonSignal" | "solarPop" | "terrainLine" | "tidalGlass",
+  InviteCompositionMap
+> = {
+  neonSignal: {
+    eventTypes: ["launch", "dinner", "birthday", "private_event", "other"],
+    id: "neon-signal",
+    name: "Signal Route",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "signal-sweep",
+        note: "Open with a full-height signal entrance and an edge-lit media field.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "route-progress",
+        note: "Join time, place, and program facts to one directional route.",
+        section: "details",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Run imagery as an edge-lit contact strip rather than printed tiles.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "signal-sweep",
+        note: "Treat arrival information as coordinates beside a practical map.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "route-progress",
+        note: "Resolve the route in a check-in console with explicit response states.",
+        section: "rsvp",
+      },
+    ],
+  },
+  tidalGlass: {
+    eventTypes: ["wedding", "dinner", "holiday", "private_event", "other"],
+    id: "tidal-glass",
+    name: "Tidal Flow",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "fluid-drift",
+        note: "Open on a wide refracted horizon with a protected title field.",
+        section: "introduction",
+      },
+      {
+        composition: "layered-media",
+        motion: "fluid-drift",
+        note: "Let story and profile content overlap through broad translucent bands.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Use one wide crisp image field with restrained refracted edges.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Anchor venue facts to a stable shoreline rail.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "fluid-drift",
+        note: "Close with one spacious shoreline reply flow.",
+        section: "rsvp",
+      },
+    ],
+  },
+  solarPop: {
+    eventTypes: ["birthday", "kids_party", "launch", "private_event", "other"],
+    id: "solar-pop",
+    name: "Solar Field",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "color-wipe",
+        note: "Open with interlocking color planes, one subject crop, and oversized date type.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "color-wipe",
+        note: "Move practical details through directional panels without card repetition.",
+        section: "details",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Use geometric crop windows and subject-aware image fields.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Give venue and arrival facts their own strong color-plane turn.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "color-wipe",
+        note: "Finish at a clear, keyboard-friendly festival gate.",
+        section: "rsvp",
+      },
+    ],
+  },
+  terrainLine: {
+    eventTypes: ["wedding", "birthday", "dinner", "launch", "private_event", "other"],
+    id: "terrain-line",
+    name: "Terrain Route",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "route-progress",
+        note: "Open with a landscape field, title, and one clear origin marker.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "route-progress",
+        note: "Arrange the itinerary as a single numbered route spine.",
+        section: "details",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Use documentary story imagery as a waypoint, not a postcard.",
+        section: "story",
+      },
+      {
+        composition: "editorial-split",
+        motion: "route-progress",
+        note: "Pair destination facts with an inspectable practical map.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "route-progress",
+        note: "Conclude at a basecamp reply with a stable confirmed marker.",
+        section: "rsvp",
+      },
+    ],
+  },
+};
+
 export const inviteVisualCompositionSystem = {
   antiCardStackPrinciple:
     "Only the neutral/basic theme may rely on framed cards as the dominant rhythm; premium themes must mix full-bleed, editorial, timeline, gallery, and layered-media moments.",
@@ -628,5 +818,6 @@ export const inviteVisualCompositionSystem = {
     "Real event imagery is preferred; missing media should reserve intentional upload/asset slots or useful event facts, not fake screenshots or abstract decoration.",
   motionRules: inviteMotionRules,
   expansionMaps: expansionInviteCompositionMaps,
+  nonPaperMaps: nonPaperInviteCompositionMaps,
   sampleMaps: sampleInviteCompositionMaps,
 } as const;

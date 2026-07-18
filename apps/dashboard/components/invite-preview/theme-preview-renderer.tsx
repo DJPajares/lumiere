@@ -314,21 +314,51 @@ function PreviewOrnament({ theme, tokens }: { theme: ThemeDefinition; tokens: Th
 
   const style: CSSProperties = {
     border: `1px solid ${withAlpha(tokens.accent, "66")}`,
-    borderRadius: ornaments.set === "botanical" ? "75% 15% 75% 15%" : "999px",
+    borderRadius:
+      ornaments.set === "botanical"
+        ? "75% 15% 75% 15%"
+        : ornaments.set === "geometric-planes" || ornaments.set === "signal-grid"
+          ? "0"
+          : "999px",
+    background:
+      ornaments.set === "signal-grid"
+        ? `repeating-linear-gradient(90deg, transparent 0 11px, ${withAlpha(tokens.accent, "66")} 11px 12px)`
+        : ornaments.set === "geometric-planes"
+          ? `linear-gradient(135deg, ${tokens.accent} 0 48%, ${tokens.warning} 48% 72%, ${tokens.surfaceMuted} 72%)`
+          : ornaments.set === "contour-lines"
+            ? `repeating-radial-gradient(ellipse, transparent 0 9px, ${withAlpha(tokens.accent, "66")} 10px 11px)`
+            : ornaments.set === "tide-lines"
+              ? `radial-gradient(ellipse at 50% 100%, transparent 0 48%, ${withAlpha(tokens.accent, "66")} 49% 50%, transparent 51%)`
+              : "transparent",
     boxShadow:
       ornaments.set === "constellation"
         ? `22px 18px 0 -3px ${tokens.accent}, 48px -10px 0 -4px ${tokens.accentStrong}`
         : ornaments.set === "confetti"
           ? `18px 28px 0 -2px ${tokens.warning}, 44px 8px 0 -3px ${tokens.accentStrong}`
           : `0 0 36px ${withAlpha(tokens.accent, "44")}`,
-    height: ornaments.set === "editorial-rules" ? "1px" : "72px",
+    height:
+      ornaments.set === "editorial-rules"
+        ? "1px"
+        : ornaments.set === "signal-grid"
+          ? "88%"
+          : "72px",
     opacity: ornaments.density === "sparse" ? 0.45 : 0.7,
     pointerEvents: "none",
     position: "absolute",
     right: "7%",
     top: "8%",
-    transform: ornaments.set === "botanical" ? "rotate(28deg)" : "none",
-    width: ornaments.set === "editorial-rules" ? "34%" : "72px",
+    transform:
+      ornaments.set === "botanical"
+        ? "rotate(28deg)"
+        : ornaments.set === "geometric-planes"
+          ? "rotate(-8deg)"
+          : "none",
+    width:
+      ornaments.set === "editorial-rules"
+        ? "34%"
+        : ornaments.set === "signal-grid"
+          ? "34%"
+          : "72px",
     zIndex: 0,
   };
 

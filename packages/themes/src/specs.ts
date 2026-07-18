@@ -112,9 +112,13 @@ const createExpansionThemeTemplateSpec = (
     | "evergreen-folio"
     | "garden-light"
     | "modern-minimal"
+    | "neon-signal"
     | "noel-v2"
     | "porcelain-blue"
+    | "solar-pop"
     | "signature"
+    | "terrain-line"
+    | "tidal-glass"
     | "velvet-dusk",
   profile: ExpansionThemeSpecProfile,
 ): ThemeTemplateSpec => {
@@ -885,6 +889,108 @@ export const themeTemplateSpecs = {
     ],
     namingGuidance:
       "Porcelain Blue is a generic color-and-material descriptor; avoid ceramic makers, museums, and hospitality trademarks.",
+  }),
+  "neon-signal": createExpansionThemeTemplateSpec("neon-signal", {
+    moodBoardNotes: [
+      "Charcoal city space and electric cyan create a connected signal route.",
+      "Oversized grotesk titles and compact mono facts make time and place immediate.",
+      "Edge-lit documentary crops form a contact strip rather than a printed gallery.",
+    ],
+    antiSlopConstraints: [
+      "No cyberpunk franchise references, terminal parody, or illegible hacker copy.",
+      "No continuous flicker, neon-gradient overload, or glowing card stacks.",
+      "Do not recolor Celestial Gold or Velvet Dusk; preserve the route and check-in structure.",
+    ],
+    lightGuidance:
+      "Use warm gray space, ink text, deep cyan signals, and a restrained coral interrupt without paper cues.",
+    darkGuidance:
+      "Use charcoal fields, off-white text, electric cyan rails, and tightly controlled glow.",
+    statusGuidance:
+      "Cyan and coral never carry status alone; every state includes explicit text and structure.",
+    reducedMotion:
+      "Remove sweeps and route travel while keeping every signal rail and status immediately visible.",
+    dashboardRequirements: [
+      "Show After Hours, Studio 18, the program route, and the check-in station.",
+      "The compact preview must read as a connected dark route, not a glowing card.",
+    ],
+    namingGuidance:
+      "Use generic signal and transit language without branded city signs or protected science-fiction cues.",
+  }),
+  "tidal-glass": createExpansionThemeTemplateSpec("tidal-glass", {
+    moodBoardNotes: [
+      "Sea-glass aqua, deep ink, and pale mineral light create a refracted daylight field.",
+      "Broad translucent bands overlap like moving water while practical facts remain anchored.",
+      "Wide crisp photography and soft geometric sans type keep the invitation contemporary.",
+    ],
+    antiSlopConstraints: [
+      "No generic blur-card gallery, shells, beach clip art, or resort-brand cues.",
+      "Never place small text directly on photography or uncontrolled transparency.",
+      "Do not recolor Porcelain Blue; preserve fluid bands, wide media, and shoreline reply.",
+    ],
+    lightGuidance:
+      "Use pale mineral fields, deep ink copy, and sea-glass signals with controlled translucency.",
+    darkGuidance:
+      "Use deep-water ink with bright aqua signals and opaque text backing, not generic navy glass UI.",
+    statusGuidance:
+      "All states use semantic text, opaque focus rings, and more than transparency or color.",
+    reducedMotion:
+      "Freeze translucent layers and remove drift while preserving overlap, contrast, and reading order.",
+    dashboardRequirements: [
+      "Show Low Tide Supper, The Glass House, a wide image field, and shoreline facts.",
+      "Expanded preview includes the reply flow without becoming a blur-card collage.",
+    ],
+    namingGuidance:
+      "Keep water language abstract and contemporary; avoid hospitality and wellness trademarks.",
+  }),
+  "solar-pop": createExpansionThemeTemplateSpec("solar-pop", {
+    moodBoardNotes: [
+      "Coral, marigold, cobalt, and leaf green form confident chapter-scale planes.",
+      "Oversized numerals and expressive sans type provide joy through scale and cadence.",
+      "Subject-aware geometric crops replace stickers, scrapbook framing, and party motifs.",
+    ],
+    antiSlopConstraints: [
+      "No emoji-heavy UI, confetti wallpaper, stickers, or uncontrolled rainbow gradients.",
+      "Do not recreate Kids with stronger colors or Modern Minimal with rounder geometry.",
+      "One color plane leads each chapter; all colors never compete in one viewport.",
+    ],
+    lightGuidance: "Use sunlit off-white and saturated planes with tested foreground pairings.",
+    darkGuidance:
+      "Use a deep cobalt dusk base with softened chroma and the same clear plane hierarchy.",
+    statusGuidance:
+      "Attendance and validation always combine semantic copy with icons or structure.",
+    reducedMotion:
+      "Remove wipes, pulses, and crop travel while rendering the final plane arrangement immediately.",
+    dashboardRequirements: [
+      "Show Milo Turns Eight, The Sunroom, the oversized 08, and a real subject crop.",
+      "Expanded preview includes a festival-gate choice with no decorative card collage.",
+    ],
+    namingGuidance:
+      "Keep the identity generic; avoid festival brands, toy packaging, characters, and familiar pop-art works.",
+  }),
+  "terrain-line": createExpansionThemeTemplateSpec("terrain-line", {
+    moodBoardNotes: [
+      "Pine, slate, sand, and ember tones establish a grounded place-led route.",
+      "Sparse contour geometry and numbered waypoints orient the invitation without literal map UI.",
+      "Natural documentary imagery and humanist sans type keep the landscape contemporary.",
+    ],
+    antiSlopConstraints: [
+      "No faux paper, archival park posters, hiking-brand references, or adventure clip art.",
+      "Contour lines never cross copy, faces, or practical map controls.",
+      "Do not recolor Modern Minimal or Garden Light; preserve the route spine and basecamp close.",
+    ],
+    lightGuidance: "Use sand and slate fields with pine structure and one ember focus signal.",
+    darkGuidance:
+      "Use deep pine and slate with sand text and restrained ember while preserving route hierarchy.",
+    statusGuidance:
+      "Waypoints, errors, and attendance states include text and numbering rather than ember alone.",
+    reducedMotion:
+      "Stop route travel, contour drift, pinning, and parallax while keeping the full itinerary visible.",
+    dashboardRequirements: [
+      "Show North Ridge Supper, Quarry Overlook, the itinerary spine, and contour field.",
+      "Expanded preview includes the basecamp reply without reading as a generic map card.",
+    ],
+    namingGuidance:
+      "Avoid national-park marks, trail-app language, outdoor brands, and expedition stereotypes.",
   }),
 } satisfies Record<ThemeId, ThemeTemplateSpec>;
 

@@ -16,6 +16,7 @@ import {
   inviteMotionRules,
   inviteVisualCompositionSystem,
   normalizeLocationContent,
+  nonPaperInviteCompositionMaps,
   reverieReferenceLinks,
   resolveTheme,
   resolveThemeRsvpCopy,
@@ -41,6 +42,8 @@ const expansionThemeIds = [
   "porcelain-blue",
   "signature",
 ] as const;
+
+const nonPaperThemeIds = ["neon-signal", "tidal-glass", "solar-pop", "terrain-line"] as const;
 
 const baseSections = [
   {
@@ -128,6 +131,10 @@ describe("theme registry", () => {
       "celestial-gold",
       "velvet-dusk",
       "porcelain-blue",
+      "neon-signal",
+      "tidal-glass",
+      "solar-pop",
+      "terrain-line",
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
@@ -214,7 +221,14 @@ describe("theme registry", () => {
       expect(
         theme.sectionRhythm.every((section) => theme.supportedSections.includes(section)),
       ).toBe(true);
-      expect(["common", "editorial-ledger"]).toContain(theme.presentation.rsvp.rendererId);
+      expect([
+        "basecamp-reply",
+        "check-in-console",
+        "common",
+        "editorial-ledger",
+        "festival-gate",
+        "shoreline-reply",
+      ]).toContain(theme.presentation.rsvp.rendererId);
       expect(
         rendererSlots.every((slot) => slot.rendererKey === `section.${slot.sectionType}`),
       ).toBe(true);
@@ -233,7 +247,7 @@ describe("theme registry", () => {
   });
 
   it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {
-    const signatures = expansionThemeIds.map((themeId) => {
+    const signatures = [...expansionThemeIds, ...nonPaperThemeIds].map((themeId) => {
       const theme = themeRegistry[themeId];
 
       return JSON.stringify({
@@ -251,7 +265,7 @@ describe("theme registry", () => {
       });
     });
 
-    expect(new Set(signatures).size).toBe(expansionThemeIds.length);
+    expect(new Set(signatures).size).toBe(expansionThemeIds.length + nonPaperThemeIds.length);
     expect(
       new Set(expansionThemeIds.map((themeId) => themeRegistry[themeId].typography.display)).size,
     ).toBe(expansionThemeIds.length);
@@ -661,6 +675,15 @@ describe("theme registry", () => {
           !map.rhythm.every((item) => item.composition === "framed"),
       ),
     ).toBe(true);
+
+    const nonPaperMaps = Object.values(nonPaperInviteCompositionMaps);
+
+    expect(nonPaperMaps).toHaveLength(nonPaperThemeIds.length);
+    expect(new Set(nonPaperMaps.map((map) => map.id)).size).toBe(nonPaperThemeIds.length);
+    expect(nonPaperMaps.every((map) => map.rhythm.length >= 5)).toBe(true);
+    expect(
+      nonPaperMaps.every((map) => !map.rhythm.every((item) => item.composition === "framed")),
+    ).toBe(true);
   });
 
   it("sets Premium apart as a full-viewport editorial invitation theme", () => {
@@ -965,6 +988,7 @@ describe("theme registry", () => {
       "kids",
       "noel",
       "signature",
+      "solar-pop",
     ]);
     expect(
       compatibilityEventTypes.every(

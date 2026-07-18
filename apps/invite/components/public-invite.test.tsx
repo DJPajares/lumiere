@@ -186,6 +186,51 @@ describe("public invite section renderers", () => {
       ]
     `);
 
+    const nonPaperDirections = [
+      ["neon-signal", "neon-signal", "lumiere-hero--neon-signal", "signal-route"],
+      ["tidal-glass", "tidal-glass", "lumiere-hero--tidal-glass", "fluid-horizon"],
+      ["solar-pop", "solar-pop", "lumiere-hero--solar-pop", "color-plane"],
+      ["terrain-line", "terrain-line", "lumiere-hero--terrain-line", "route-led"],
+    ] as const;
+
+    for (const [themeId, compositionMap, heroClassName, heroComposition] of nonPaperDirections) {
+      const invite = createInvite([
+        createSection({
+          content: {
+            coverImage: {
+              alt: `${themeId} event image`,
+              url: `https://images.example.com/${themeId}.jpg`,
+            },
+            subtitle: "A non-paper theme sample.",
+            title: "A new kind of gathering",
+          },
+          sectionKey: "welcome",
+          sectionType: "introduction",
+          sortOrder: 0,
+        }),
+        createSection({
+          content: {
+            items: [{ label: "Arrival", value: "6:30 PM" }],
+            title: "The route",
+          },
+          sectionKey: "details",
+          sectionType: "details",
+          sortOrder: 1,
+        }),
+      ]);
+      invite.selectedThemeId = themeId;
+      invite.themeMode = themeId === "neon-signal" ? "dark" : "light";
+
+      const html = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
+
+      expect(html).toContain(`data-theme-id="${themeId}"`);
+      expect(html).toContain(`data-composition-map="${compositionMap}"`);
+      expect(html).toContain(`data-theme-hero-composition="${heroComposition}"`);
+      expect(html).toContain(heroClassName);
+      expect(html).toContain(`${themeId} event image`);
+      expect(html).toContain('data-section-renderer-coverage="specialized"');
+    }
+
     const toggleableInvite = createInvite([]);
     toggleableInvite.selectedThemeId = "premium";
     toggleableInvite.themeMode = "toggleable";

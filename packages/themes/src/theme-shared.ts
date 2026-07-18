@@ -52,6 +52,42 @@ export const seasonalRsvpPresentation = {
   titleClassName: "lumiere-type-name",
 } satisfies ThemeRsvpPresentation;
 
+function createSpatialRsvpPresentation({
+  cardClassName,
+  rendererId,
+}: Pick<ThemeRsvpPresentation, "cardClassName" | "rendererId">): ThemeRsvpPresentation {
+  return {
+    ...defaultRsvpPresentation,
+    cardClassName,
+    rendererId,
+    titleClassName: "lumiere-type-name text-[var(--foreground)]",
+  };
+}
+
+export const checkInConsoleRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-[0_0_64px_color-mix(in_srgb,var(--accent)_18%,transparent)]",
+  rendererId: "check-in-console",
+});
+
+export const shorelineRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_28px_90px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
+  rendererId: "shoreline-reply",
+});
+
+export const festivalGateRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden rounded-[var(--radius-lg)] border-2 border-[var(--foreground)] bg-[var(--surface)] shadow-[0.55rem_0.55rem_0_var(--foreground)]",
+  rendererId: "festival-gate",
+});
+
+export const basecampRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_14%,transparent)]",
+  rendererId: "basecamp-reply",
+});
+
 export function createThemePresentation({
   hero,
   rsvp = defaultRsvpPresentation,

@@ -82,6 +82,28 @@ describe("RSVP form flow helpers", () => {
     expect(editorialHtml).toContain("4 seats");
     expect(editorialHtml).toContain('id="guestName-0"');
     expect(editorialHtml).toContain('id="rsvp-message"');
+
+    for (const themeId of ["neon-signal", "tidal-glass", "solar-pop", "terrain-line"] as const) {
+      const theme = themeRegistry[themeId];
+      const spatialHtml = renderToStaticMarkup(
+        createElement(RsvpForm, {
+          copy: resolveThemeRsvpCopy(theme),
+          eventSlug: `${themeId}-event`,
+          guestGroup,
+          guestToken: "sample-guest-token-for-preview",
+          initialResponseStatus: null,
+          presentation: theme.presentation.rsvp,
+          questions,
+        }),
+      );
+
+      expect(spatialHtml).toContain(`data-rsvp-renderer="${theme.presentation.rsvp.rendererId}"`);
+      expect(spatialHtml).toContain(`data-rsvp-layout="${theme.presentation.rsvp.rendererId}"`);
+      expect(spatialHtml).toContain("Capacity");
+      expect(spatialHtml).toContain("4 guests");
+      expect(spatialHtml).toContain('aria-label="Attendance"');
+      expect(spatialHtml).toContain('type="radio"');
+    }
   });
 
   it("renders structured members as checkboxes instead of legacy name inputs", () => {
