@@ -13,6 +13,7 @@ import {
 } from "@lumiere/dashboard-ui/components/field";
 import { Input } from "@lumiere/dashboard-ui/components/input";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
+import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { DownloadIcon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
@@ -592,13 +593,15 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         >
           <h2 className="text-lg font-semibold">Unable to load guest groups</h2>
           <p className="text-sm">{state.error}</p>
-          <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-4 text-sm font-semibold transition hover:bg-[color-mix(in_srgb,var(--error)_12%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)]"
+          <Button
+            className="w-fit"
             onClick={() => void loadGuests()}
+            size="lg"
             type="button"
+            variant="outline"
           >
             Try again
-          </button>
+          </Button>
         </section>
       </div>
     );
@@ -633,22 +636,19 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
               <DownloadIcon data-icon="inline-start" />
               Export
             </Button>
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            <Button
               disabled={readyState.isRefreshing}
               onClick={() => void loadGuests({ refreshing: true })}
+              size="lg"
               type="button"
+              variant="outline"
             >
               {readyState.isRefreshing ? "Refreshing..." : "Refresh"}
-            </button>
+            </Button>
             {canEdit ? (
-              <button
-                className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
-                onClick={startCreate}
-                type="button"
-              >
+              <Button onClick={startCreate} size="lg" type="button">
                 New guest group
-              </button>
+              </Button>
             ) : (
               <span className="rounded-full border border-[var(--border)] px-3 py-1 text-sm font-medium">
                 View-only access
@@ -900,14 +900,15 @@ function GuestGroupFilters({
             in the URL so this view can be refreshed or shared.
           </p>
         </div>
-        <button
-          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+        <Button
           disabled={!hasActiveFilters}
           onClick={onClear}
+          size="lg"
           type="button"
+          variant="outline"
         >
           Clear filters
-        </button>
+        </Button>
       </div>
 
       <FieldGroup className="grid gap-4 lg:grid-cols-[minmax(18rem,2fr)_minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)]">
@@ -1102,39 +1103,26 @@ function GuestGroupForm({
         />
       ) : null}
 
-      <label className="grid gap-2 text-sm font-medium" htmlFor="guest-notes">
-        Notes
-        <textarea
+      <Field data-invalid={Boolean(errors.notes)}>
+        <FieldLabel htmlFor="guest-notes">Notes</FieldLabel>
+        <Textarea
           aria-describedby={errors.notes ? "guest-notes-error" : undefined}
-          aria-invalid={errors.notes ? true : undefined}
-          className="min-h-24 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+          aria-invalid={Boolean(errors.notes)}
+          className="min-h-24"
           id="guest-notes"
           onChange={(event) => onUpdate("notes", event.target.value)}
           value={values.notes}
         />
-        {errors.notes ? (
-          <span className="text-sm text-[var(--error)]" id="guest-notes-error">
-            {errors.notes}
-          </span>
-        ) : null}
-      </label>
+        {errors.notes ? <FieldError id="guest-notes-error">{errors.notes}</FieldError> : null}
+      </Field>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={submitting}
-          onClick={onSubmit}
-          type="button"
-        >
+        <Button disabled={submitting} onClick={onSubmit} size="lg" type="button">
           {submitting ? "Saving..." : editingGroup ? "Save guest group" : "Create guest group"}
-        </button>
-        <button
-          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          onClick={onCancel}
-          type="button"
-        >
+        </Button>
+        <Button onClick={onCancel} size="lg" type="button" variant="outline">
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -1186,13 +1174,9 @@ function GuestGroupList({
         <p className="max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
           Try a different search or status, or clear the filters to see every guest group again.
         </p>
-        <button
-          className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          onClick={onClearFilters}
-          type="button"
-        >
+        <Button className="w-fit" onClick={onClearFilters} size="lg" type="button">
           Clear filters
-        </button>
+        </Button>
       </section>
     );
   }
@@ -1283,30 +1267,33 @@ function GuestGroupList({
               <div className="flex flex-wrap gap-2">
                 {canEdit ? (
                   <>
-                    <button
+                    <Button
                       aria-label={`Edit ${group.label}`}
-                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       onClick={() => onEdit(group)}
+                      size="lg"
                       type="button"
+                      variant="outline"
                     >
                       Edit
-                    </button>
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                    </Button>
+                    <Button
                       disabled={isBusy || isDisabled}
                       onClick={() => onRegenerate(group)}
+                      size="lg"
                       type="button"
+                      variant="outline"
                     >
                       Regenerate link
-                    </button>
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-3 text-sm font-semibold text-[var(--error)] transition hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)] disabled:cursor-not-allowed disabled:opacity-60"
+                    </Button>
+                    <Button
                       disabled={isBusy || isDisabled}
                       onClick={() => onDisable(group)}
+                      size="lg"
                       type="button"
+                      variant="destructive"
                     >
                       Disable
-                    </button>
+                    </Button>
                   </>
                 ) : null}
               </div>
@@ -1316,27 +1303,19 @@ function GuestGroupList({
               <p className="text-sm font-semibold">Invite link</p>
               {inviteLink && !isDisabled ? (
                 <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-                  <input
+                  <Input
                     aria-label={`${group.label} invite link`}
-                    className="min-h-10 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm"
+                    className="h-10"
                     readOnly
                     value={inviteLink}
                   />
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface-muted)]"
-                      onClick={() => onCopy(group)}
-                      type="button"
-                    >
+                    <Button onClick={() => onCopy(group)} size="lg" type="button">
                       Copy link
-                    </button>
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                      onClick={() => onOpen(group)}
-                      type="button"
-                    >
+                    </Button>
+                    <Button onClick={() => onOpen(group)} size="lg" type="button" variant="outline">
                       Open link
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -1362,29 +1341,26 @@ function GuestGroupList({
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                  <Button
                     disabled={isBusy}
                     onClick={() =>
                       pending.type === "regenerate"
                         ? onConfirmRegenerate(group)
                         : onConfirmDisable(group)
                     }
+                    size="lg"
                     type="button"
+                    variant={pending.type === "disable" ? "destructive" : "default"}
                   >
                     {isBusy
                       ? "Working..."
                       : pending.type === "regenerate"
                         ? "Confirm regenerate"
                         : "Confirm disable"}
-                  </button>
-                  <button
-                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                    onClick={onCancelPendingAction}
-                    type="button"
-                  >
+                  </Button>
+                  <Button onClick={onCancelPendingAction} size="lg" type="button" variant="outline">
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -1489,20 +1465,17 @@ function GuestGroupCompactList({
                       <span className="min-w-0 flex-1 truncate font-mono text-xs">
                         {inviteLink}
                       </span>
-                      <button
-                        className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                        onClick={() => onCopy(group)}
-                        type="button"
-                      >
+                      <Button onClick={() => onCopy(group)} size="lg" type="button">
                         Copy link
-                      </button>
-                      <button
-                        className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      </Button>
+                      <Button
                         onClick={() => onOpen(group)}
+                        size="lg"
                         type="button"
+                        variant="outline"
                       >
                         Open link
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <InviteLinkUnavailable compact group={group} />
@@ -1511,30 +1484,33 @@ function GuestGroupCompactList({
 
                 {canEdit ? (
                   <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <button
+                    <Button
                       aria-label={`Edit ${group.label}`}
-                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       onClick={() => onEdit(group)}
+                      size="lg"
                       type="button"
+                      variant="outline"
                     >
                       Edit
-                    </button>
-                    <button
-                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                    </Button>
+                    <Button
                       disabled={isBusy || isDisabled}
                       onClick={() => onRegenerate(group)}
+                      size="lg"
                       type="button"
+                      variant="outline"
                     >
                       Regenerate
-                    </button>
-                    <button
-                      className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-3 text-sm font-semibold text-[var(--error)] transition hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)] disabled:cursor-not-allowed disabled:opacity-60"
+                    </Button>
+                    <Button
                       disabled={isBusy || isDisabled}
                       onClick={() => onDisable(group)}
+                      size="lg"
                       type="button"
+                      variant="destructive"
                     >
                       Disable
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
 
@@ -1609,21 +1585,18 @@ function CompactPendingAction({
           : "The guest group stays in the list, but private invite access is blocked."}
       </p>
       <div className="flex flex-wrap gap-2">
-        <button
-          className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+        <Button
           disabled={busy}
           onClick={onConfirm}
+          size="lg"
           type="button"
+          variant={type === "disable" ? "destructive" : "default"}
         >
           {busy ? "Working..." : type === "regenerate" ? "Confirm regenerate" : "Confirm disable"}
-        </button>
-        <button
-          className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          onClick={onCancel}
-          type="button"
-        >
+        </Button>
+        <Button onClick={onCancel} size="lg" type="button" variant="outline">
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -1671,11 +1644,11 @@ function TextField({
   return (
     <label className="grid gap-2 text-sm font-medium" htmlFor={inputId}>
       {label}
-      <input
+      <Input
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? true : undefined}
-        className="min-h-10 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-normal outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+        className="h-10"
         id={inputId}
         inputMode={inputMode}
         max={max}

@@ -2,6 +2,7 @@
 
 import { ApiClientError } from "@lumiere/api-client";
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
+import { Button } from "@lumiere/dashboard-ui/components/button";
 import { LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
@@ -211,13 +212,15 @@ export function ResponsesActivityWorkspace({
         >
           <h2 className="text-lg font-semibold">Unable to load {mode}</h2>
           <p className="text-sm">{state.error}</p>
-          <button
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-4 text-sm font-semibold transition hover:bg-[color-mix(in_srgb,var(--error)_12%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)]"
+          <Button
+            className="w-fit"
             onClick={() => void loadWorkspace()}
+            size="lg"
             type="button"
+            variant="outline"
           >
             Try again
-          </button>
+          </Button>
         </section>
       </div>
     );
@@ -250,14 +253,15 @@ export function ResponsesActivityWorkspace({
                 : "Review chronological guest and manager events with the metadata needed for quick diagnosis."}
             </p>
           </div>
-          <button
-            className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+          <Button
             disabled={readyState.isRefreshing}
             onClick={() => void loadWorkspace({ refreshing: true })}
+            size="lg"
             type="button"
+            variant="outline"
           >
             {readyState.isRefreshing ? "Refreshing..." : "Refresh"}
-          </button>
+          </Button>
         </div>
       </section>
 
