@@ -884,6 +884,7 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-invite-modernization="editorial-v1"');
     expect(html).toContain("lumiere-guest-panel");
     expect(html).toContain("lumiere-rsvp-layout");
+    expect(html).toContain("lumiere-rsvp-heading grid justify-items-start gap-3 text-left");
     expect(html).toContain("Private music");
     expect(html).toContain('src="https://audio.example.com/private-suite.mp3"');
 

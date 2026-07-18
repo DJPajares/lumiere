@@ -1073,7 +1073,7 @@ function RsvpSection({
   return (
     <div className="lumiere-rsvp-layout flex flex-col gap-5">
       <div className="lumiere-rsvp-copy grid gap-4">
-        <div className="grid justify-items-center gap-3 text-center">
+        <div className="lumiere-rsvp-heading grid justify-items-start gap-3 text-left">
           <h2 className="lumiere-type-title" id={titleId}>
             {copy.sectionTitle}
           </h2>
