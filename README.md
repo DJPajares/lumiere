@@ -113,6 +113,7 @@ NEXT_PUBLIC_APP_NAME=Lumiere
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_APP_NAME=Lumiere Dashboard
@@ -177,6 +178,7 @@ Copy the result and paste it in `SUPABASE_JWKS`
 | Key | Local value | Production value | Notes |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:4000` | deployed API URL | Browser-safe API base URL for dashboard requests. |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3001` | dashboard app URL | Canonical dashboard origin used for Supabase email confirmation redirects. Falls back to the current browser origin when omitted. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase project URL | Same project as `SUPABASE_URL`. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public key | Supabase public key | `Project Settings` -> `API keys` -> browser-safe public key. The legacy `anon public` key works; prefer the newer publishable key when available. |
 | `NEXT_PUBLIC_APP_NAME` | `Lumiere Dashboard` | dashboard display name | Browser-safe display name. |
@@ -186,9 +188,11 @@ keys, database URLs, JWT secrets, or invite token secrets in invite/dashboard
 client env files.
 
 Manager accounts can be created at `/signup`. Enable email signup in the Supabase
-Auth provider settings and allow `<DASHBOARD_APP_BASE_URL>/login` as an auth redirect
-URL. When email confirmation is enabled, the dashboard asks the manager to confirm
-the address before signing in; otherwise Supabase starts the session immediately.
+Auth provider settings, set the production Site URL to the dashboard origin, and allow
+`<NEXT_PUBLIC_SITE_URL>/login` as an auth redirect URL. The confirmation email template
+should link to `{{ .ConfirmationURL }}` so Supabase preserves the requested redirect.
+When email confirmation is enabled, the dashboard asks the manager to confirm the
+address before signing in; otherwise Supabase starts the session immediately.
 The API mirrors the authenticated Supabase profile into the local `users` table on
 the manager's first authenticated API request, so Lumiere does not store or process
 manager passwords in Hono.

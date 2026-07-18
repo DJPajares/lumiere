@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { createDashboardApiClient } from "../lib/dashboard-api";
+import { readDashboardPublicEnv } from "../lib/dashboard-env";
 import {
   createDashboardSupabaseClient,
   type DashboardSupabaseClient,
@@ -215,7 +216,10 @@ export function DashboardAuthProvider({ children, value }: DashboardAuthProvider
             display_name: normalizedDisplayName,
             full_name: normalizedDisplayName,
           },
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: new URL(
+            "/login",
+            readDashboardPublicEnv().siteUrl || window.location.origin,
+          ).toString(),
         },
       });
 
