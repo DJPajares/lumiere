@@ -15,6 +15,7 @@ import { SectionBuilderWorkspace } from "./section-builder-workspace";
 describe("SectionBuilderWorkspace", () => {
   afterEach(() => {
     cleanup();
+    window.localStorage.clear();
   });
 
   it("loads sections supported by the selected theme", async () => {
@@ -33,6 +34,32 @@ describe("SectionBuilderWorkspace", () => {
         expect(screen.getAllByText(label).length).toBeGreaterThan(0);
       },
     );
+  });
+
+  it("switches between detailed, minimal, and list section views", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth(createApiClientStub());
+
+    await screen.findByText("Configure content for Spring Dinner");
+    const sectionPanel = screen.getByRole("region", { name: "Section order and validation" });
+    const sectionOrder = sectionPanel.querySelector("[data-section-order-view]");
+
+    expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("detailed");
+
+    await user.click(within(sectionPanel).getByRole("button", { name: "Minimalist section view" }));
+
+    expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("minimal");
+    expect(within(sectionPanel).queryByRole("button", { name: "Edit Story" })).toBeNull();
+
+    await user.click(within(sectionPanel).getByRole("button", { name: "Preview Story" }));
+
+    expect(within(sectionPanel).getByRole("button", { name: "Edit Story" })).toBeTruthy();
+
+    await user.click(within(sectionPanel).getByRole("button", { name: "List section view" }));
+
+    expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("list");
+    expect(window.localStorage.getItem("lumiere.dashboard.content-section-view")).toBe("list");
   });
 
   it("opens a labeled section dialog from the keyboard and restores focus", async () => {
