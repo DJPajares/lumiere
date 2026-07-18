@@ -2,7 +2,7 @@
   "name": "lumiere",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "scripts": {
     "dev": "turbo dev",
     "dev:invite": "pnpm --filter @lumiere/invite dev",

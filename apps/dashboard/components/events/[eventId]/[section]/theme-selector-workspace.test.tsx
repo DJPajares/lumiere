@@ -116,7 +116,7 @@ describe("ThemeSelectorWorkspace", () => {
     expect(document.querySelector('[data-preview-mode="dark"]')).toBeTruthy();
   });
 
-  it("applies a theme immediately with the mode selected on its card", async () => {
+  it("confirms a theme change with the mode selected on its card", async () => {
     const user = userEvent.setup();
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
       access: ownerAccess,
@@ -152,6 +152,10 @@ describe("ThemeSelectorWorkspace", () => {
 
     await screen.findByRole("heading", { name: "Kids" });
     await user.click(screen.getByRole("button", { name: "Use Kids" }));
+
+    const themeDialog = await screen.findByRole("alertdialog", { name: "Apply Kids?" });
+    expect(updateEventTheme).not.toHaveBeenCalled();
+    await user.click(within(themeDialog).getByRole("button", { name: "Apply theme" }));
 
     await waitFor(() => expect(updateEventTheme).toHaveBeenCalledTimes(1));
     expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {
@@ -193,6 +197,9 @@ describe("ThemeSelectorWorkspace", () => {
 
     await screen.findByRole("heading", { name: "Kids" });
     await user.click(screen.getByRole("button", { name: "Use Kids" }));
+
+    const themeDialog = await screen.findByRole("alertdialog", { name: "Apply Kids?" });
+    await user.click(within(themeDialog).getByRole("button", { name: "Apply theme" }));
 
     expect(await screen.findByText("Theme service is unavailable.")).toBeTruthy();
     expect(updateEventTheme).toHaveBeenCalledWith("evt_123", {

@@ -324,7 +324,7 @@ function ResponsesView({
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <ToggleGroup
           aria-label="Response filters"
-          className="w-full flex-wrap xl:w-fit"
+          className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:w-fit"
           onValueChange={(value) => {
             const nextFilter = value[0];
             if (isResponseFilter(nextFilter)) {
@@ -337,7 +337,7 @@ function ResponsesView({
         >
           {responseFilters.map((item) => (
             <ToggleGroupItem
-              className="flex-1 sm:flex-none"
+              className="w-full sm:w-auto sm:flex-none"
               key={item.value}
               type="button"
               value={item.value}

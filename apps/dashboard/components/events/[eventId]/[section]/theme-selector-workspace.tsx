@@ -224,6 +224,7 @@ function ThemeSelectorContent({
   const [galleryViewStorageReady, setGalleryViewStorageReady] = useState(false);
   const [showIncompatible, setShowIncompatible] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
+  const [pendingTheme, setPendingTheme] = useState<ThemeGalleryEntry | null>(null);
   const [pendingThemeMode, setPendingThemeMode] = useState<ThemeMode | null>(null);
 
   useEffect(() => {
@@ -395,6 +396,29 @@ function ThemeSelectorContent({
     if (canEdit && nextMode !== state.values.themeMode && !state.isSaving) {
       setPendingThemeMode(nextMode);
     }
+  };
+
+  const requestThemeSelection = (entry: ThemeGalleryEntry) => {
+    if (
+      !canEdit ||
+      !entry.isCompatible ||
+      state.isSaving ||
+      entry.theme.id === state.currentThemeId
+    ) {
+      return;
+    }
+
+    setPendingTheme(entry);
+  };
+
+  const confirmThemeSelection = () => {
+    if (!pendingTheme) {
+      return;
+    }
+
+    const themeToApply = pendingTheme;
+    setPendingTheme(null);
+    void applyTheme(themeToApply);
   };
 
   const confirmThemeModeChange = () => {
@@ -576,7 +600,7 @@ function ThemeSelectorContent({
                 isSaving={state.isSaving}
                 key={entry.theme.id}
                 onPreview={setPreviewEntry}
-                onUse={applyTheme}
+                onUse={requestThemeSelection}
                 savingThemeId={state.savingThemeId}
                 selectedMode={state.values.themeMode}
                 view={galleryView}
@@ -585,6 +609,34 @@ function ThemeSelectorContent({
           </div>
         )}
       </section>
+
+      <AlertDialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingTheme(null);
+          }
+        }}
+        open={Boolean(pendingTheme)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply {pendingTheme?.theme.name ?? "this theme"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace the current invitation design and apply the new theme immediately.
+              Guests will see the change the next time they open the invitation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingTheme?.reasons.length ? (
+            <p className="text-sm text-warning">{pendingTheme.reasons[0]}</p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={state.isSaving}>Keep current theme</AlertDialogCancel>
+            <AlertDialogAction disabled={state.isSaving} onClick={confirmThemeSelection}>
+              Apply theme
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         onOpenChange={(open) => {

@@ -42,6 +42,7 @@ type CollaborationState =
   | { data: null; error: string | null; status: "error" | "loading" };
 
 type PendingAction = { id: string; type: "remove" | "resend" | "revoke" | "role" } | null;
+type PendingRoleChange = { collaborator: EventCollaborator; role: CollaboratorRole } | null;
 
 const collaboratorRoleOptions = [
   { label: "Editor", value: "editor" },
@@ -66,6 +67,8 @@ export function CollaboratorAccessPanel({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [pendingRemoval, setPendingRemoval] = useState<EventCollaborator | null>(null);
+  const [pendingRevocation, setPendingRevocation] = useState<CollaboratorInvitation | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange>(null);
 
   const loadCollaboration = useCallback(async () => {
     if (accessRole !== "owner") {
@@ -195,6 +198,34 @@ export function CollaboratorAccessPanel({
     }
   };
 
+  const requestRoleChange = (collaborator: EventCollaborator, role: CollaboratorRole) => {
+    if (collaborator.role === role || pendingAction !== null) {
+      return;
+    }
+
+    setPendingRoleChange({ collaborator, role });
+  };
+
+  const confirmRoleChange = () => {
+    if (!pendingRoleChange) {
+      return;
+    }
+
+    const roleChange = pendingRoleChange;
+    setPendingRoleChange(null);
+    void updateRole(roleChange.collaborator, roleChange.role);
+  };
+
+  const confirmRevocation = () => {
+    if (!pendingRevocation) {
+      return;
+    }
+
+    const invitation = pendingRevocation;
+    setPendingRevocation(null);
+    void revokeInvitation(invitation);
+  };
+
   const removeCollaborator = async () => {
     if (!apiClient || !pendingRemoval) return;
     const collaborator = pendingRemoval;
@@ -256,8 +287,8 @@ export function CollaboratorAccessPanel({
             eventTitle={eventTitle}
             onRemove={setPendingRemoval}
             onResend={(invitation) => void resendInvitation(invitation)}
-            onRevoke={(invitation) => void revokeInvitation(invitation)}
-            onRoleChange={(collaborator, role) => void updateRole(collaborator, role)}
+            onRevoke={setPendingRevocation}
+            onRoleChange={requestRoleChange}
             pendingAction={pendingAction}
           />
         ) : null}
@@ -307,6 +338,64 @@ export function CollaboratorAccessPanel({
               variant="destructive"
             >
               {pendingAction?.type === "remove" ? "Removing..." : "Remove access"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(pendingRoleChange)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingRoleChange(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change collaborator role?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRoleChange?.collaborator.email} will change from{" "}
+              {pendingRoleChange
+                ? formatRole(pendingRoleChange.collaborator.role)
+                : "their current role"}{" "}
+              to {pendingRoleChange ? formatRole(pendingRoleChange.role) : "the new role"}. This
+              changes what they can view and edit in {eventTitle}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current role</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>Change role</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(pendingRevocation)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingRevocation(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke this invitation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRevocation?.email} will no longer be able to use this invitation to access{" "}
+              {eventTitle}. You can send a new invitation later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pendingAction?.type === "revoke"}>
+              Keep invitation
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pendingAction?.type === "revoke"}
+              onClick={confirmRevocation}
+              variant="destructive"
+            >
+              {pendingAction?.type === "revoke" ? "Revoking..." : "Revoke invitation"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

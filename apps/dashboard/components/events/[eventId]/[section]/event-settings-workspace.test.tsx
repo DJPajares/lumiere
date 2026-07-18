@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { CollaboratorInvitation, Event, EventCollaborator } from "@lumiere/types";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -146,6 +146,11 @@ describe("EventSettingsWorkspace", () => {
     screen.getByLabelText("Role for editor@example.com").focus();
     await user.keyboard("{ArrowDown}");
     await user.click(screen.getByRole("option", { name: "Viewer" }));
+    const roleDialog = await screen.findByRole("alertdialog", {
+      name: "Change collaborator role?",
+    });
+    expect(updateEventCollaboratorRole).not.toHaveBeenCalled();
+    await user.click(within(roleDialog).getByRole("button", { name: "Change role" }));
     await waitFor(() =>
       expect(updateEventCollaboratorRole).toHaveBeenCalledWith(
         "evt_123",
