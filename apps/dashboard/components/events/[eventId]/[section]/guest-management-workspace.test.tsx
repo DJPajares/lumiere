@@ -265,6 +265,58 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByText("New Table invite link copied.")).toBeTruthy();
   });
 
+  it("opens active invite links safely from cards and the compact list", async () => {
+    const user = userEvent.setup();
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/active-token";
+    const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [{ ...guestGroup, inviteLink }] })),
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    await user.click(screen.getByRole("button", { name: "Open link" }));
+    expect(openWindow).toHaveBeenCalledWith(inviteLink, "_blank", "noopener,noreferrer");
+    expect(await screen.findByText("Tan Family invite link opened.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    await user.click(screen.getByRole("button", { name: "Open link" }));
+    expect(openWindow).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps open unavailable for disabled and legacy guest groups", async () => {
+    const user = userEvent.setup();
+    const legacyGroup: GuestGroup = {
+      ...guestGroup,
+      id: "guest_legacy",
+      label: "Legacy Family",
+    };
+    const disabledGroup: GuestGroup = {
+      ...guestGroup,
+      id: "guest_disabled",
+      inviteLink: "https://invite.lumiere.test/e/spring-dinner/g/disabled-token",
+      label: "Disabled Family",
+      status: "disabled",
+    };
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [legacyGroup, disabledGroup] })),
+      }),
+    );
+
+    await screen.findByText("Legacy Family");
+    expect(screen.queryByRole("button", { name: "Open link" })).toBeNull();
+    expect(screen.getByText(/Full URL unavailable for this older invite/)).toBeTruthy();
+    expect(screen.getByText("Invite access is disabled for this group.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    expect(screen.queryByRole("button", { name: "Open link" })).toBeNull();
+    expect(screen.getByText(/Full URL unavailable\. Regenerate this group/)).toBeTruthy();
+  });
+
   it("migrates a legacy contact into automatic member fields while editing", async () => {
     const user = userEvent.setup();
     const updatedGroup: GuestGroup = {

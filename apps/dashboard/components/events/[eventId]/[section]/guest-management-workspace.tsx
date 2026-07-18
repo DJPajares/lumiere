@@ -501,6 +501,32 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     }
   };
 
+  const openInviteLink = (group: GuestGroup) => {
+    const inviteLink = state.inviteLinks[group.id];
+
+    if (!inviteLink || group.status === "disabled") {
+      const message =
+        group.status === "disabled"
+          ? "This guest group is disabled. Invite access is unavailable."
+          : "Regenerate this invite link before opening a shareable URL.";
+      setActionMessage(message);
+      toast.warning(message);
+      return;
+    }
+
+    const openedWindow = window.open(inviteLink, "_blank", "noopener,noreferrer");
+
+    if (!openedWindow) {
+      const message = "The invite could not be opened. Allow pop-ups and try again.";
+      setActionMessage(message);
+      toast.error(message);
+      return;
+    }
+
+    setActionMessage(group.label + " invite link opened.");
+    toast.success(group.label + " invite link opened.");
+  };
+
   if (state.status === "loading") {
     return (
       <div className="grid gap-5">
@@ -642,6 +668,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onCopy={(group) => void copyInviteLink(group)}
         onDisable={(group) => setPendingAction({ groupId: group.id, type: "disable" })}
         onEdit={startEdit}
+        onOpen={openInviteLink}
         onRegenerate={(group) => setPendingAction({ groupId: group.id, type: "regenerate" })}
         pendingAction={pendingAction}
         onCancelPendingAction={() => setPendingAction(null)}
@@ -983,6 +1010,7 @@ function GuestGroupList({
   onCopy,
   onDisable,
   onEdit,
+  onOpen,
   onRegenerate,
   pendingAction,
   totalGuestGroups,
@@ -999,6 +1027,7 @@ function GuestGroupList({
   onCopy: (group: GuestGroup) => void;
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
+  onOpen: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
   totalGuestGroups: number;
@@ -1052,6 +1081,7 @@ function GuestGroupList({
         onCopy={onCopy}
         onDisable={onDisable}
         onEdit={onEdit}
+        onOpen={onOpen}
         onRegenerate={onRegenerate}
         pendingAction={pendingAction}
         totalGuestGroups={totalGuestGroups}
@@ -1142,7 +1172,7 @@ function GuestGroupList({
 
             <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-3">
               <p className="text-sm font-semibold">Invite link</p>
-              {inviteLink ? (
+              {inviteLink && !isDisabled ? (
                 <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                   <input
                     aria-label={`${group.label} invite link`}
@@ -1150,20 +1180,25 @@ function GuestGroupList({
                     readOnly
                     value={inviteLink}
                   />
-                  <button
-                    className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface-muted)]"
-                    onClick={() => onCopy(group)}
-                    type="button"
-                  >
-                    Copy link
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface-muted)]"
+                      onClick={() => onCopy(group)}
+                      type="button"
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      onClick={() => onOpen(group)}
+                      type="button"
+                    >
+                      Open link
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                  Full URL unavailable for this older invite. Regenerate this group once to create a
-                  copyable shareable link. Invite code:{" "}
-                  <span className="font-mono text-[var(--foreground)]">{group.inviteCode}</span>
-                </p>
+                <InviteLinkUnavailable group={group} />
               )}
             </div>
 
@@ -1229,6 +1264,7 @@ type GuestGroupCompactListProps = {
   onCopy: (group: GuestGroup) => void;
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
+  onOpen: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
   totalGuestGroups: number;
@@ -1245,6 +1281,7 @@ function GuestGroupCompactList({
   onCopy,
   onDisable,
   onEdit,
+  onOpen,
   onRegenerate,
   pendingAction,
   totalGuestGroups,
@@ -1305,7 +1342,7 @@ function GuestGroupCompactList({
 
                 <div className="min-w-0">
                   <CompactMobileLabel>Invite link</CompactMobileLabel>
-                  {inviteLink ? (
+                  {inviteLink && !isDisabled ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="min-w-0 flex-1 truncate font-mono text-xs">
                         {inviteLink}
@@ -1315,13 +1352,18 @@ function GuestGroupCompactList({
                         onClick={() => onCopy(group)}
                         type="button"
                       >
-                        Copy
+                        Copy link
+                      </button>
+                      <button
+                        className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        onClick={() => onOpen(group)}
+                        type="button"
+                      >
+                        Open link
                       </button>
                     </div>
                   ) : (
-                    <span className="text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-                      Code: <span className="font-mono">{group.inviteCode}</span>
-                    </span>
+                    <InviteLinkUnavailable compact group={group} />
                   )}
                 </div>
 
@@ -1372,6 +1414,31 @@ function GuestGroupCompactList({
         </div>
       </div>
     </section>
+  );
+}
+
+function InviteLinkUnavailable({
+  compact = false,
+  group,
+}: {
+  compact?: boolean;
+  group: GuestGroup;
+}) {
+  if (group.status === "disabled") {
+    return (
+      <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+        Invite access is disabled for this group.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+      {compact
+        ? "Full URL unavailable. Regenerate this group to create a shareable link."
+        : "Full URL unavailable for this older invite. Regenerate this group once to create a copyable shareable link."}{" "}
+      Invite code: <span className="font-mono text-[var(--foreground)]">{group.inviteCode}</span>
+    </p>
   );
 }
 
