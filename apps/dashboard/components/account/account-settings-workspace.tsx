@@ -35,7 +35,9 @@ export function AccountSettingsWorkspace() {
 
       <dl className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">Account ID</dt>
+          <dt className="text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+            Account ID
+          </dt>
           <dd className="mt-1 break-all font-mono text-xs">{user?.id ?? "Unavailable"}</dd>
         </div>
         <div>
@@ -70,7 +72,9 @@ export function getInitials(displayName: string | undefined, email: string | und
   const source = displayName?.trim() || email?.split("@")[0]?.trim() || "Manager";
   const words = source.split(/[\s._-]+/).filter(Boolean);
 
-  return (words.length > 1 ? `${words[0]?.[0] ?? ""}${words.at(-1)?.[0] ?? ""}` : source.slice(0, 2))
+  return (
+    words.length > 1 ? `${words[0]?.[0] ?? ""}${words.at(-1)?.[0] ?? ""}` : source.slice(0, 2)
+  )
     .toUpperCase()
     .slice(0, 2);
 }

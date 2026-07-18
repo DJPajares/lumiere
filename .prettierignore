@@ -9,3 +9,4 @@ coverage/
 pnpm-lock.yaml
 *next.config.ts
 *.md
+packages/db/drizzle/meta/
