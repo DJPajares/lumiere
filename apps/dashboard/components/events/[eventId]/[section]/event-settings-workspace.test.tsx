@@ -96,6 +96,11 @@ describe("EventSettingsWorkspace", () => {
     await screen.findByText("Event settings");
     await user.click(screen.getByRole("button", { name: "Edit event details" }));
     await screen.findByRole("dialog", { name: "Edit Spring Dinner" });
+    const modalFooter = document.querySelector<HTMLElement>(
+      '[data-slot="responsive-modal-footer"]',
+    );
+    expect(modalFooter).toBeTruthy();
+    expect(within(modalFooter as HTMLElement).getByText("All changes saved")).toBeTruthy();
     await user.clear(screen.getByLabelText("Event title"));
     await user.type(screen.getByLabelText("Event title"), "Summer Dinner");
     await user.click(screen.getByRole("button", { name: "Save event" }));

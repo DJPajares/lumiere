@@ -157,23 +157,34 @@ export function EventBasicsModal({ event, onOpenChange, onSaved, open }: EventBa
       onOpenChange={onOpenChange}
       open={open}
       footer={({ requestClose }) => (
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button disabled={isSaving} onClick={requestClose} type="button" variant="outline">
-            {event ? "Cancel changes" : "Cancel"}
-          </Button>
-          <Button
-            disabled={isSaving || (mode === "edit" && !dirty)}
-            form={event ? `edit-event-${event.id}` : "create-event"}
-            type="submit"
-          >
-            {isSaving ? "Saving..." : event ? "Save event" : "Create event"}
-          </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {event ? (
+            <div className="flex flex-wrap items-center gap-2 text-sm" role="status">
+              <span className="font-semibold">
+                {dirty ? "Unsaved changes" : "All changes saved"}
+              </span>
+              <span className="text-muted-foreground">
+                {dirty ? "Review and save when ready." : "You can leave this screen safely."}
+              </span>
+            </div>
+          ) : null}
+          <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+            <Button disabled={isSaving} onClick={requestClose} type="button" variant="outline">
+              {event ? "Cancel changes" : "Cancel"}
+            </Button>
+            <Button
+              disabled={isSaving || (mode === "edit" && !dirty)}
+              form={event ? `edit-event-${event.id}` : "create-event"}
+              type="submit"
+            >
+              {isSaving ? "Saving..." : event ? "Save event" : "Create event"}
+            </Button>
+          </div>
         </div>
       )}
       title={event ? `Edit ${event.title}` : "Create event"}
     >
       <EventBasicsForm
-        dirty={dirty}
         formId={event ? `edit-event-${event.id}` : "create-event"}
         formState={formState}
         isSaving={isSaving}

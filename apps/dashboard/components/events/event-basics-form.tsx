@@ -56,14 +56,12 @@ export type EventBasicsFormValues = {
 };
 
 export type EventBasicsFormProps = {
-  dirty?: boolean;
   formId: string;
   formState: EventFormState;
   isSaving: boolean;
   mode: "create" | "edit";
   onFieldChange: (field: EventFormField, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  statusMessage?: string | null;
   values: EventBasicsFormValues;
 };
 
@@ -84,30 +82,19 @@ export const eventTypes: Array<{ label: string; value: EventType }> = [
 ];
 
 export function EventBasicsForm({
-  dirty = false,
   formId,
   formState,
   isSaving,
   mode,
   onFieldChange,
   onSubmit,
-  statusMessage,
   values,
 }: EventBasicsFormProps) {
   const disabled = isSaving;
 
   return (
     <form className="grid content-start gap-4" id={formId} noValidate onSubmit={onSubmit}>
-      <FormMessage formError={formState.formError} statusMessage={statusMessage} />
-
-      {mode === "edit" ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm">
-          <span className="font-semibold">{dirty ? "Unsaved changes" : "All changes saved"}</span>
-          <span className="text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
-            {dirty ? "Review and save when ready." : "You can leave this screen safely."}
-          </span>
-        </div>
-      ) : null}
+      <FormMessage formError={formState.formError} />
 
       <DashboardTextInput
         disabled={disabled}
@@ -467,19 +454,9 @@ export function statusClassName(value: Event["status"]) {
   return `${base} bg-[color-mix(in_srgb,var(--warning)_14%,var(--surface))] text-[var(--warning)]`;
 }
 
-function FormMessage({
-  formError,
-  statusMessage,
-}: {
-  formError: string | null;
-  statusMessage?: string | null;
-}) {
+function FormMessage({ formError }: { formError: string | null }) {
   if (formError) {
     return <DashboardNotice tone="error">{formError}</DashboardNotice>;
-  }
-
-  if (statusMessage) {
-    return <DashboardNotice tone="success">{statusMessage}</DashboardNotice>;
   }
 
   return null;
