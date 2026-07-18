@@ -53,6 +53,8 @@ export type ActivityActorType = z.infer<typeof activityActorTypeSchema>;
 
 export const activityTypeSchema = z.enum([
   "event_created",
+  "collaborator_removed",
+  "collaborator_role_changed",
   "event_deleted",
   "event_published",
   "event_restored",

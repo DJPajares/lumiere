@@ -3,11 +3,12 @@
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
-import { eventDeletionRetentionDays, type Event } from "@lumiere/types";
+import { eventDeletionRetentionDays, type Event, type ManagerRole } from "@lumiere/types";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
+import { CollaboratorAccessPanel } from "./collaborator-access-panel";
 import { EventBasicsModal } from "../../event-basics-modal";
 import { EventDeletionModal } from "../../event-deletion-modal";
 import {
@@ -18,7 +19,7 @@ import {
 } from "../../event-basics-form";
 
 type SettingsState =
-  | { error: null; event: Event; status: "ready" }
+  | { accessRole: ManagerRole; error: null; event: Event; status: "ready" }
   | { error: string | null; event: null; status: "error" | "loading" };
 
 export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
@@ -45,7 +46,12 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
 
     try {
       const response = await apiClient.getEvent(eventId);
-      setState({ error: null, event: response.event, status: "ready" });
+      setState({
+        accessRole: response.access.role,
+        error: null,
+        event: response.event,
+        status: "ready",
+      });
     } catch (error) {
       setState({ error: toFriendlyApiMessage(error), event: null, status: "error" });
     }
@@ -84,6 +90,8 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
   }
 
   const event = state.event;
+  const canEdit = state.accessRole !== "viewer";
+  const isOwner = state.accessRole === "owner";
 
   return (
     <>
@@ -108,39 +116,62 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
           <MetadataItem label="Starts" value={formatDateTime(event.startsAt, event.timezone)} />
         </dl>
 
-        <Button className="min-h-10 w-fit" onClick={() => setEditOpen(true)}>
-          Edit event details
-        </Button>
+        {canEdit ? (
+          <Button className="min-h-10 w-fit" onClick={() => setEditOpen(true)}>
+            Edit event details
+          </Button>
+        ) : (
+          <Badge className="w-fit" variant="outline">
+            View-only access
+          </Badge>
+        )}
       </section>
 
-      <section className="grid gap-4 rounded-[var(--radius-lg)] border border-destructive/30 bg-card p-5 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
-        <div>
-          <p className="text-sm font-semibold text-destructive">Danger zone</p>
-          <h2 className="mt-2 text-lg font-semibold">Delete this event</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Public and guest access stops immediately. The event remains recoverable from Home for{" "}
-            {eventDeletionRetentionDays} days.
-          </p>
-        </div>
-        <Button className="min-h-10" onClick={() => setDeleteOpen(true)} variant="destructive">
-          Delete event
-        </Button>
-      </section>
+      <CollaboratorAccessPanel
+        accessRole={state.accessRole}
+        eventId={eventId}
+        eventTitle={event.title}
+      />
+
+      {isOwner ? (
+        <section className="grid gap-4 rounded-[var(--radius-lg)] border border-destructive/30 bg-card p-5 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
+          <div>
+            <p className="text-sm font-semibold text-destructive">Danger zone</p>
+            <h2 className="mt-2 text-lg font-semibold">Delete this event</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Public and guest access stops immediately. The event remains recoverable from Home for{" "}
+              {eventDeletionRetentionDays} days.
+            </p>
+          </div>
+          <Button className="min-h-10" onClick={() => setDeleteOpen(true)} variant="destructive">
+            Delete event
+          </Button>
+        </section>
+      ) : null}
 
       <EventBasicsModal
         event={event}
         onOpenChange={setEditOpen}
-        onSaved={(savedEvent) => setState({ error: null, event: savedEvent, status: "ready" })}
+        onSaved={(savedEvent) =>
+          setState({
+            accessRole: state.accessRole,
+            error: null,
+            event: savedEvent,
+            status: "ready",
+          })
+        }
         open={editOpen}
       />
-      <EventDeletionModal
-        event={event}
-        onDeleted={() => {
-          window.location.assign("/");
-        }}
-        onOpenChange={setDeleteOpen}
-        open={deleteOpen}
-      />
+      {isOwner ? (
+        <EventDeletionModal
+          event={event}
+          onDeleted={() => {
+            window.location.assign("/");
+          }}
+          onOpenChange={setDeleteOpen}
+          open={deleteOpen}
+        />
+      ) : null}
     </>
   );
 }

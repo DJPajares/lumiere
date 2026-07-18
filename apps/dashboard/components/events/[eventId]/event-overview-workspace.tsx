@@ -29,6 +29,7 @@ import type {
   EventPublishingDestination,
   EventPublishingReadiness,
   EventSummary,
+  ManagerRole,
 } from "@lumiere/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -38,6 +39,7 @@ import { EventTabs } from "../../placeholder-panels";
 import { EventBasicsModal } from "../event-basics-modal";
 
 type OverviewData = {
+  accessRole: ManagerRole;
   activity: ActivityEvent[];
   event: Event;
   readiness: EventPublishingReadiness;
@@ -111,6 +113,7 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
 
         setState({
           data: {
+            accessRole: eventResponse.access.role,
             activity: activityResponse.activity,
             event: eventResponse.event,
             readiness: readinessResponse.readiness,
@@ -258,6 +261,7 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
   return (
     <>
       <EventOverviewContent
+        accessRole={overviewData.accessRole}
         activity={overviewData.activity}
         event={overviewData.event}
         isRefreshing={state.isRefreshing}
@@ -274,41 +278,46 @@ export function EventOverviewWorkspace({ eventId }: { eventId: string }) {
         readiness={overviewData.readiness}
         summary={overviewData.summary}
       />
-      <EventBasicsModal
-        event={overviewData.event}
-        onOpenChange={setEditOpen}
-        onSaved={(savedEvent) =>
-          setState((current) =>
-            current.status === "ready"
-              ? {
-                  ...current,
-                  data: { ...current.data, event: savedEvent },
-                }
-              : current,
-          )
-        }
-        open={editOpen}
-      />
-      <PublishConfirmation
-        error={publicationError}
-        isPublishing={publicationPending === "publish"}
-        onConfirm={() => void publishEvent()}
-        onOpenChange={setPublishOpen}
-        open={publishOpen}
-        readiness={overviewData.readiness}
-      />
-      <UnpublishConfirmation
-        error={publicationError}
-        isUnpublishing={publicationPending === "unpublish"}
-        onConfirm={() => void unpublishEvent()}
-        onOpenChange={setUnpublishOpen}
-        open={unpublishOpen}
-      />
+      {overviewData.accessRole !== "viewer" ? (
+        <>
+          <EventBasicsModal
+            event={overviewData.event}
+            onOpenChange={setEditOpen}
+            onSaved={(savedEvent) =>
+              setState((current) =>
+                current.status === "ready"
+                  ? {
+                      ...current,
+                      data: { ...current.data, event: savedEvent },
+                    }
+                  : current,
+              )
+            }
+            open={editOpen}
+          />
+          <PublishConfirmation
+            error={publicationError}
+            isPublishing={publicationPending === "publish"}
+            onConfirm={() => void publishEvent()}
+            onOpenChange={setPublishOpen}
+            open={publishOpen}
+            readiness={overviewData.readiness}
+          />
+          <UnpublishConfirmation
+            error={publicationError}
+            isUnpublishing={publicationPending === "unpublish"}
+            onConfirm={() => void unpublishEvent()}
+            onOpenChange={setUnpublishOpen}
+            open={unpublishOpen}
+          />
+        </>
+      ) : null}
     </>
   );
 }
 
 function EventOverviewContent({
+  accessRole,
   activity,
   event,
   isRefreshing,
@@ -326,6 +335,7 @@ function EventOverviewContent({
   onUnpublish: () => void;
 }) {
   const summaryCards = useMemo(() => getSummaryCards(summary, activity), [activity, summary]);
+  const canEdit = accessRole !== "viewer";
 
   return (
     <div className="grid gap-5">
@@ -345,9 +355,11 @@ function EventOverviewContent({
           <div className="flex flex-wrap gap-2">
             {event.status === "draft" ? (
               <>
-                <Button disabled={!readiness.ready} onClick={onPublish} size="lg" type="button">
-                  Publish event
-                </Button>
+                {canEdit ? (
+                  <Button disabled={!readiness.ready} onClick={onPublish} size="lg" type="button">
+                    Publish event
+                  </Button>
+                ) : null}
                 <Button
                   nativeButton={false}
                   render={<Link href={`/events/${event.id}/content`} />}
@@ -366,9 +378,13 @@ function EventOverviewContent({
                 Open invite
               </Button>
             ) : null}
-            <Button onClick={onEdit} size="lg" type="button" variant="outline">
-              Edit event
-            </Button>
+            {canEdit ? (
+              <Button onClick={onEdit} size="lg" type="button" variant="outline">
+                Edit event
+              </Button>
+            ) : (
+              <Badge variant="outline">View-only access</Badge>
+            )}
             <Button
               disabled={isRefreshing}
               onClick={onRefresh}
@@ -388,7 +404,12 @@ function EventOverviewContent({
         </dl>
       </section>
 
-      <PublishingReadinessPanel event={event} onUnpublish={onUnpublish} readiness={readiness} />
+      <PublishingReadinessPanel
+        canEdit={canEdit}
+        event={event}
+        onUnpublish={onUnpublish}
+        readiness={readiness}
+      />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="RSVP summary">
         {summaryCards.map((card) => (
@@ -424,10 +445,12 @@ function EventOverviewContent({
 }
 
 function PublishingReadinessPanel({
+  canEdit,
   event,
   onUnpublish,
   readiness,
 }: {
+  canEdit: boolean;
   event: Event;
   onUnpublish: () => void;
   readiness: EventPublishingReadiness;
@@ -490,7 +513,7 @@ function PublishingReadinessPanel({
                   size="sm"
                   variant="outline"
                 >
-                  Fix in {publishingDestinationLabel(blocker.destination)}
+                  {canEdit ? "Fix" : "Review"} in {publishingDestinationLabel(blocker.destination)}
                 </Button>
               </li>
             ))}
@@ -535,9 +558,11 @@ function PublishingReadinessPanel({
               >
                 Share invite
               </Button>
-              <Button onClick={onUnpublish} type="button" variant="destructive">
-                Unpublish event
-              </Button>
+              {canEdit ? (
+                <Button onClick={onUnpublish} type="button" variant="destructive">
+                  Unpublish event
+                </Button>
+              ) : null}
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -892,6 +917,10 @@ function formatActivityTitle(activity: ActivityEvent) {
   }
 
   switch (activity.activityType) {
+    case "collaborator_removed":
+      return "Collaborator removed";
+    case "collaborator_role_changed":
+      return "Collaborator role changed";
     case "event_created":
       return "Event created";
     case "event_deleted":

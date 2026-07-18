@@ -4,8 +4,10 @@ import {
   collaboratorInvitationAcceptanceResponseSchema,
   collaboratorInvitationResponseSchema,
   collaboratorRemovalResponseSchema,
+  collaboratorRoleUpdateResponseSchema,
   eventCollaborationResponseSchema,
   eventResponseSchema,
+  managedEventResponseSchema,
   eventPublishingReadinessResponseSchema,
   eventSectionsResponseSchema,
   eventSlugSuggestionResponseSchema,
@@ -31,10 +33,13 @@ import {
   type CollaboratorInvitationRequest,
   type CollaboratorInvitationResponse,
   type CollaboratorRemovalResponse,
+  type CollaboratorRoleUpdateRequest,
+  type CollaboratorRoleUpdateResponse,
   type EventCollaborationResponse,
   type EventCreateRequest,
   type EventDeletionRequest,
   type EventResponse,
+  type ManagedEventResponse,
   type EventPublishingReadinessResponse,
   type EventSectionsResponse,
   type EventSectionsUpdateRequest,
@@ -202,8 +207,8 @@ export const createApiClient = ({
           method: "DELETE",
         },
       ),
-    getEvent: (eventId: string): Promise<EventResponse> =>
-      request(`/events/${encodePathSegment(eventId)}`, eventResponseSchema),
+    getEvent: (eventId: string): Promise<ManagedEventResponse> =>
+      request(`/events/${encodePathSegment(eventId)}`, managedEventResponseSchema),
     getEventPublishingReadiness: (eventId: string): Promise<EventPublishingReadinessResponse> =>
       request(
         `/events/${encodePathSegment(eventId)}/publish-readiness`,
@@ -391,6 +396,21 @@ export const createApiClient = ({
         body: input,
         method: "PATCH",
       }),
+    updateEventCollaboratorRole: (
+      eventId: string,
+      collaboratorUserId: string,
+      input: CollaboratorRoleUpdateRequest,
+    ): Promise<CollaboratorRoleUpdateResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/collaborators/${encodePathSegment(
+          collaboratorUserId,
+        )}`,
+        collaboratorRoleUpdateResponseSchema,
+        {
+          body: input,
+          method: "PATCH",
+        },
+      ),
     updateEventSections: (
       eventId: string,
       input: EventSectionsUpdateRequest,

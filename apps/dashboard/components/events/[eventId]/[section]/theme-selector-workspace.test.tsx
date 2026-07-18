@@ -119,6 +119,7 @@ describe("ThemeSelectorWorkspace", () => {
   it("applies a theme immediately with the mode selected on its card", async () => {
     const user = userEvent.setup();
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: {
         ...dashboardEvent,
         eventType: "birthday",
@@ -164,6 +165,7 @@ describe("ThemeSelectorWorkspace", () => {
   it("keeps the gallery usable when an automatic theme save fails", async () => {
     const user = userEvent.setup();
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: {
         ...dashboardEvent,
         eventType: "birthday",
@@ -203,6 +205,7 @@ describe("ThemeSelectorWorkspace", () => {
 
   it("prevents selecting themes that do not support the event type", async () => {
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: dashboardEvent,
     }));
     const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
@@ -264,6 +267,7 @@ function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
   const getEvent =
     apiClient.getEvent ??
     vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: dashboardEvent,
     }));
 
@@ -315,6 +319,12 @@ const dashboardEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "18 Marina Gardens Drive",
   venueName: "Emerald Gardens",
+};
+
+const ownerAccess = {
+  eventId: "evt_123",
+  role: "owner" as const,
+  userId: "user_123",
 };
 
 const premiumTheme: Theme = {

@@ -15,6 +15,7 @@ import {
   byEventAndNotificationIdParamsSchema,
   byEventIdParamsSchema,
   collaboratorInvitationRequestSchema,
+  collaboratorRoleUpdateRequestSchema,
   eventCreateRequestSchema,
   eventDeletionRequestSchema,
   eventSectionsUpdateRequestSchema,
@@ -366,15 +367,17 @@ export const createRoutes = ({
         collaboratorUserId: context.req.param("collaboratorUserId"),
         eventId: context.req.param("eventId"),
       });
+      const manager = context.get("manager");
       await assertEventAccess({
         authStore: stores.authStore,
         eventId,
-        manager: context.get("manager"),
+        manager,
         minimumRole: "owner",
       });
       const removed = await stores.collaboratorStore.removeCollaborator(
         eventId,
         collaboratorUserId,
+        manager.user.id,
       );
 
       if (removed === "owner") {
@@ -386,6 +389,45 @@ export const createRoutes = ({
       }
 
       return context.json({ removed: true as const });
+    },
+  );
+
+  routes.patch(
+    "/events/:eventId/collaborators/:collaboratorUserId",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerCollaboratorStores({
+        authStore,
+        collaboratorStore,
+      });
+      const { collaboratorUserId, eventId } = parseEventAndCollaboratorUserIdParams({
+        collaboratorUserId: context.req.param("collaboratorUserId"),
+        eventId: context.req.param("eventId"),
+      });
+      const manager = context.get("manager");
+      const input = await parseJsonBody(context, collaboratorRoleUpdateRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+        minimumRole: "owner",
+      });
+      const collaborator = await stores.collaboratorStore.updateCollaboratorRole(
+        eventId,
+        collaboratorUserId,
+        input.role,
+        manager.user.id,
+      );
+
+      if (collaborator === "owner") {
+        throw new ApiHttpError("FORBIDDEN", "Event owner role cannot be changed");
+      }
+
+      if (!collaborator) {
+        throw new ApiHttpError("NOT_FOUND", "Collaborator not found");
+      }
+
+      return context.json({ collaborator });
     },
   );
 
@@ -498,7 +540,7 @@ export const createRoutes = ({
   routes.get("/events/:eventId", requireManagerAuth({ authStore, config }), async (context) => {
     const stores = requireManagerStores({ authStore, eventStore });
     const eventId = parseEventIdParam(context.req.param("eventId"));
-    await assertEventAccess({
+    const access = await assertEventAccess({
       authStore: stores.authStore,
       eventId,
       manager: context.get("manager"),
@@ -510,6 +552,7 @@ export const createRoutes = ({
     }
 
     return context.json({
+      access,
       event,
     });
   });

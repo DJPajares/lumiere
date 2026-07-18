@@ -404,7 +404,7 @@ function createApiClientStub(
   return {
     createGuestGroup: vi.fn(),
     disableGuestGroup: vi.fn(),
-    getEvent: vi.fn(async () => ({ event: dashboardEvent })),
+    getEvent: vi.fn(async () => ({ access: ownerAccess, event: dashboardEvent })),
     listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
     regenerateGuestGroupInvite: vi.fn(),
     updateGuestGroup: vi.fn(),
@@ -432,6 +432,12 @@ const dashboardEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "12 Orchard Road",
   venueName: "Glass Hall",
+};
+
+const ownerAccess = {
+  eventId: "evt_123",
+  role: "owner" as const,
+  userId: "user_123",
 };
 
 const guestGroup: GuestGroup = {

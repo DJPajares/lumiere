@@ -461,6 +461,24 @@ When updating the logo pack, use `logo.png` as the visible brand source for each
 - Public RSVP submissions have a basic per-app rate limiter keyed by client, event slug, and hashed guest token. For multi-instance production, replace or extend this with a shared Redis, edge, or gateway limiter using the same route and token-hash boundary.
 - Section content is schema-validated and rejects executable-looking markup, inline event handlers, `javascript:` URLs, and non-HTTP media/map URLs before persistence.
 
+### Event Role Matrix
+
+| Capability | Owner | Editor | Viewer |
+| --- | --- | --- | --- |
+| View event details, theme, content, guests, responses, activity, and personal notifications | Yes | Yes | Yes |
+| Mark or dismiss personal event notifications | Yes | Yes | Yes |
+| Update event details and publishing status | Yes | Yes | No |
+| Update theme and sections | Yes | Yes | No |
+| Create, update, disable, or regenerate guest-group links | Yes | Yes | No |
+| Invite collaborators and manage pending invitations | Yes | No | No |
+| Change collaborator roles or remove collaborators | Yes | No | No |
+| Delete or restore an event | Yes | No | No |
+
+The event creator is the canonical owner and event administrator. Collaborators use the existing
+`editor` or `viewer` roles; there is no separate administrator alias. Dashboard controls reflect
+these permissions, while the API remains the authorization boundary for every event-scoped
+request.
+
 ## API Endpoints
 
 ```text
@@ -480,6 +498,7 @@ GET    /events/:eventId/collaboration
 POST   /events/:eventId/collaborator-invitations
 POST   /events/:eventId/collaborator-invitations/:invitationId/resend
 POST   /events/:eventId/collaborator-invitations/:invitationId/revoke
+PATCH  /events/:eventId/collaborators/:collaboratorUserId
 DELETE /events/:eventId/collaborators/:collaboratorUserId
 POST   /collaborator-invitations/:invitationId/accept
 POST   /collaborator-invitations/:invitationId/decline

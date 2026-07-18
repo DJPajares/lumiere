@@ -825,6 +825,8 @@ function formatActivityTitle(activity: ActivityEvent) {
   }
 
   const labels: Record<ActivityEvent["activityType"], string> = {
+    collaborator_removed: "Collaborator removed",
+    collaborator_role_changed: "Collaborator role changed",
     event_created: "Event created",
     event_deleted: "Event deleted",
     event_published: "Event published",

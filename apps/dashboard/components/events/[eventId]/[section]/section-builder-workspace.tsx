@@ -22,6 +22,7 @@ import {
   type EventSection,
   type EventSectionsUpdateRequest,
   type JsonValue,
+  type ManagerRole,
   type SectionType,
   type SectionVisibility,
   type Theme,
@@ -93,6 +94,7 @@ type SectionPreviewModel = {
 };
 
 type BuilderReadyState = {
+  accessRole: ManagerRole;
   event: Event;
   error: null;
   formMessage: string | null;
@@ -176,6 +178,7 @@ export function SectionBuilderWorkspace({ eventId }: { eventId: string }) {
       });
 
       setState({
+        accessRole: eventResponse.access.role,
         error: null,
         event: eventResponse.event,
         formMessage: null,
@@ -267,6 +270,7 @@ function SectionBuilderContent({
   updateState: Dispatch<SetStateAction<BuilderState>>;
 }) {
   const { apiClient } = useDashboardAuth();
+  const canEdit = state.accessRole !== "viewer";
   const enabledCount = useMemo(
     () => state.sections.filter((section) => section.enabled).length,
     [state.sections],
@@ -571,22 +575,30 @@ function SectionBuilderContent({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              className={secondaryButtonClassName}
-              disabled={!hasUnsavedChanges || state.isSaving}
-              onClick={cancelChanges}
-              type="button"
-            >
-              Cancel changes
-            </button>
-            <button
-              className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={state.isSaving}
-              onClick={() => void saveSections()}
-              type="button"
-            >
-              {state.isSaving ? "Saving sections..." : "Save sections"}
-            </button>
+            {canEdit ? (
+              <>
+                <button
+                  className={secondaryButtonClassName}
+                  disabled={!hasUnsavedChanges || state.isSaving}
+                  onClick={cancelChanges}
+                  type="button"
+                >
+                  Cancel changes
+                </button>
+                <button
+                  className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={state.isSaving}
+                  onClick={() => void saveSections()}
+                  type="button"
+                >
+                  {state.isSaving ? "Saving sections..." : "Save sections"}
+                </button>
+              </>
+            ) : (
+              <span className="rounded-full border border-[var(--border)] px-3 py-1 text-sm font-medium">
+                View-only access
+              </span>
+            )}
           </div>
         </div>
 
@@ -611,6 +623,7 @@ function SectionBuilderContent({
             </div>
             <button
               className={secondaryButtonClassName}
+              disabled={!canEdit}
               onClick={enableSuggestedSection}
               type="button"
             >
@@ -635,25 +648,30 @@ function SectionBuilderContent({
       </section>
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] xl:items-start">
-        <SectionOrderPanel
-          canSave={!state.isSaving}
-          dirtySectionKeys={dirtySectionKeys}
-          expandedSectionKey={expandedSectionKey}
-          isSaving={state.isSaving}
-          models={previewModels}
-          moveSection={moveSection}
-          onCancel={cancelChanges}
-          onOpen={openSectionEditor}
-          onSave={() => void saveSections()}
-          sectionErrors={state.sectionErrors}
-          selectedSectionKey={selectedPreview?.section.sectionKey}
-          selectedSectionIndex={selectedPreviewIndex}
-          updateSection={updateSection}
-          rsvpSettings={rsvpSettings}
-          updateRsvpSetting={(key, value) =>
-            setRsvpSettings((current) => ({ ...current, [key]: value }))
-          }
-        />
+        <fieldset className="contents" disabled={!canEdit}>
+          <legend className="sr-only">
+            {canEdit ? "Event section controls" : "Event section controls are view only"}
+          </legend>
+          <SectionOrderPanel
+            canSave={canEdit && !state.isSaving}
+            dirtySectionKeys={dirtySectionKeys}
+            expandedSectionKey={expandedSectionKey}
+            isSaving={state.isSaving}
+            models={previewModels}
+            moveSection={moveSection}
+            onCancel={cancelChanges}
+            onOpen={openSectionEditor}
+            onSave={() => void saveSections()}
+            sectionErrors={state.sectionErrors}
+            selectedSectionKey={selectedPreview?.section.sectionKey}
+            selectedSectionIndex={selectedPreviewIndex}
+            updateSection={updateSection}
+            rsvpSettings={rsvpSettings}
+            updateRsvpSetting={(key, value) =>
+              setRsvpSettings((current) => ({ ...current, [key]: value }))
+            }
+          />
+        </fieldset>
 
         <SectionPreviewPanel
           event={state.event}

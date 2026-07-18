@@ -33,7 +33,7 @@ describe("EventOverviewWorkspace", () => {
     }));
 
     renderWithAuth({
-      getEvent: vi.fn(async () => ({ event: overviewEvent })),
+      getEvent: vi.fn(async () => ({ access: ownerAccess, event: overviewEvent })),
       getEventPublishingReadiness: vi.fn(async () => ({ readiness: readyReadiness })),
       getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
       listEventActivity: vi.fn(async () => ({
@@ -88,7 +88,7 @@ describe("EventOverviewWorkspace", () => {
     };
 
     renderWithAuth({
-      getEvent: vi.fn(async () => ({ event: draftEvent })),
+      getEvent: vi.fn(async () => ({ access: ownerAccess, event: draftEvent })),
       getEventPublishingReadiness: vi.fn(async () => ({
         readiness: {
           ...readyReadiness,
@@ -138,7 +138,7 @@ describe("EventOverviewWorkspace", () => {
       .mockResolvedValueOnce({ event: publishedEvent });
 
     renderWithAuth({
-      getEvent: vi.fn(async () => ({ event: draftEvent })),
+      getEvent: vi.fn(async () => ({ access: ownerAccess, event: draftEvent })),
       getEventPublishingReadiness: vi.fn(async () => ({ readiness: readyReadiness })),
       getEventSummary: vi.fn(async () => ({ summary: overviewSummary })),
       listEventActivity: vi.fn(async () => ({ activity: [] })),
@@ -225,6 +225,12 @@ const overviewEvent: Event = {
 const draftEvent: Event = {
   ...overviewEvent,
   status: "draft",
+};
+
+const ownerAccess = {
+  eventId: "evt_123",
+  role: "owner" as const,
+  userId: "user_123",
 };
 
 const readyReadiness: EventPublishingReadiness = {

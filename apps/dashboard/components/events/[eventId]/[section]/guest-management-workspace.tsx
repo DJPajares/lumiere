@@ -19,6 +19,7 @@ import {
   type GuestGroupMemberMutationInput,
   type GuestGroupMutationRequest,
   type GuestGroupStatus,
+  type ManagerRole,
 } from "@lumiere/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -28,6 +29,7 @@ import { DashboardSelect } from "../../../ui/dashboard-fields";
 import { ResponsiveModal } from "../../../ui/responsive-modal";
 
 type GuestWorkspaceData = {
+  accessRole: ManagerRole;
   event: Event;
   guestGroups: GuestGroup[];
 };
@@ -142,6 +144,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
         setState((current) => ({
           data: {
+            accessRole: eventResponse.access.role,
             event: eventResponse.event,
             guestGroups: guestGroupResponse.guestGroups,
           },
@@ -461,6 +464,8 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     return null;
   }
 
+  const canEdit = readyState.data.accessRole !== "viewer";
+
   return (
     <div className="grid gap-5">
       <EventTabs active="guests" eventId={eventId} />
@@ -488,13 +493,19 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
             >
               {readyState.isRefreshing ? "Refreshing..." : "Refresh"}
             </button>
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
-              onClick={startCreate}
-              type="button"
-            >
-              New guest group
-            </button>
+            {canEdit ? (
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)] active:scale-[0.99]"
+                onClick={startCreate}
+                type="button"
+              >
+                New guest group
+              </button>
+            ) : (
+              <span className="rounded-full border border-[var(--border)] px-3 py-1 text-sm font-medium">
+                View-only access
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -510,37 +521,40 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         </div>
       ) : null}
 
-      <ResponsiveModal
-        description={
-          editingGroup
-            ? "Update the group identity, capacity, invite status, and private notes."
-            : "Create one private invite for a household, table, or guest group."
-        }
-        dirty={JSON.stringify(formValues) !== JSON.stringify(baselineValues)}
-        onDiscard={() => {
-          setFormValues(baselineValues);
-          setFormErrors({});
-        }}
-        onOpenChange={setFormOpen}
-        open={formOpen}
-        title={editingGroup ? `Edit ${editingGroup.label}` : "Create guest group"}
-      >
-        {({ requestClose }) => (
-          <GuestGroupForm
-            editingGroup={editingGroup}
-            errors={formErrors}
-            onCancel={requestClose}
-            onSubmit={() => void submitForm()}
-            onUpdate={updateField}
-            onUpdateMember={updateMember}
-            submitting={submitting}
-            values={formValues}
-          />
-        )}
-      </ResponsiveModal>
+      {canEdit ? (
+        <ResponsiveModal
+          description={
+            editingGroup
+              ? "Update the group identity, capacity, invite status, and private notes."
+              : "Create one private invite for a household, table, or guest group."
+          }
+          dirty={JSON.stringify(formValues) !== JSON.stringify(baselineValues)}
+          onDiscard={() => {
+            setFormValues(baselineValues);
+            setFormErrors({});
+          }}
+          onOpenChange={setFormOpen}
+          open={formOpen}
+          title={editingGroup ? `Edit ${editingGroup.label}` : "Create guest group"}
+        >
+          {({ requestClose }) => (
+            <GuestGroupForm
+              editingGroup={editingGroup}
+              errors={formErrors}
+              onCancel={requestClose}
+              onSubmit={() => void submitForm()}
+              onUpdate={updateField}
+              onUpdateMember={updateMember}
+              submitting={submitting}
+              values={formValues}
+            />
+          )}
+        </ResponsiveModal>
+      ) : null}
 
       <GuestGroupList
         busyGroupId={busyGroupId}
+        canEdit={canEdit}
         guestGroups={readyState.data.guestGroups}
         inviteLinks={readyState.inviteLinks}
         onCopy={(group) => void copyInviteLink(group)}
@@ -749,6 +763,7 @@ function GuestGroupForm({
 
 function GuestGroupList({
   busyGroupId,
+  canEdit,
   guestGroups,
   inviteLinks,
   onCancelPendingAction,
@@ -761,6 +776,7 @@ function GuestGroupList({
   pendingAction,
 }: {
   busyGroupId: string | null;
+  canEdit: boolean;
   guestGroups: GuestGroup[];
   inviteLinks: Record<string, string>;
   onCancelPendingAction: () => void;
@@ -777,7 +793,9 @@ function GuestGroupList({
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))] p-5">
         <h2 className="text-xl font-semibold">No guest groups yet</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-          Create the first household or invite group to generate a private RSVP link.
+          {canEdit
+            ? "Create the first household or invite group to generate a private RSVP link."
+            : "No guest groups are available to review yet."}
         </p>
       </section>
     );
@@ -824,30 +842,34 @@ function GuestGroupList({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button
-                  aria-label={`Edit ${group.label}`}
-                  className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                  onClick={() => onEdit(group)}
-                  type="button"
-                >
-                  Edit
-                </button>
-                <button
-                  className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isBusy || isDisabled}
-                  onClick={() => onRegenerate(group)}
-                  type="button"
-                >
-                  Regenerate link
-                </button>
-                <button
-                  className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-3 text-sm font-semibold text-[var(--error)] transition hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isBusy || isDisabled}
-                  onClick={() => onDisable(group)}
-                  type="button"
-                >
-                  Disable
-                </button>
+                {canEdit ? (
+                  <>
+                    <button
+                      aria-label={`Edit ${group.label}`}
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      onClick={() => onEdit(group)}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isBusy || isDisabled}
+                      onClick={() => onRegenerate(group)}
+                      type="button"
+                    >
+                      Regenerate link
+                    </button>
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--error)] px-3 text-sm font-semibold text-[var(--error)] transition hover:bg-[color-mix(in_srgb,var(--error)_10%,transparent)] focus:outline-none focus:ring-2 focus:ring-[var(--error)] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isBusy || isDisabled}
+                      onClick={() => onDisable(group)}
+                      type="button"
+                    >
+                      Disable
+                    </button>
+                  </>
+                ) : null}
               </div>
             </div>
 

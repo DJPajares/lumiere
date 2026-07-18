@@ -108,6 +108,7 @@ describe("SectionBuilderWorkspace", () => {
 
   it("locks enabled required sections once the event is published", async () => {
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: {
         ...dashboardEvent,
         status: "published",
@@ -137,6 +138,7 @@ describe("SectionBuilderWorkspace", () => {
   it("shows required section details before saving a published event", async () => {
     const user = userEvent.setup();
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+      access: ownerAccess,
       event: {
         ...dashboardEvent,
         status: "published",
@@ -364,7 +366,10 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
 function createApiClientStub(
   overrides: Partial<DashboardApiClient> = {},
 ): Partial<DashboardApiClient> {
-  const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({ event: dashboardEvent }));
+  const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
+    access: ownerAccess,
+    event: dashboardEvent,
+  }));
   const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
     selectedThemeId: "premium",
     theme: premiumTheme,
@@ -403,6 +408,12 @@ const dashboardEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "12 Orchard Road",
   venueName: "Glass Hall",
+};
+
+const ownerAccess = {
+  eventId: "evt_123",
+  role: "owner" as const,
+  userId: "user_123",
 };
 
 const savedIntroductionSection: EventSection = {

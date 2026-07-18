@@ -178,6 +178,13 @@ export const eventManagerSchema = z.object({
 });
 export type EventManager = z.infer<typeof eventManagerSchema>;
 
+export const eventAccessSchema = z.object({
+  eventId: idSchema,
+  userId: idSchema,
+  role: managerRoleSchema,
+});
+export type EventAccess = z.infer<typeof eventAccessSchema>;
+
 export const eventCollaboratorSchema = eventManagerSchema.extend({
   displayName: z.string().trim().max(160).optional(),
   email: z.string().trim().email().max(320),

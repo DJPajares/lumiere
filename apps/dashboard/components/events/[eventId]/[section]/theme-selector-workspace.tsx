@@ -30,8 +30,9 @@ import {
 } from "@lumiere/themes";
 import {
   eventThemeUpdateRequestSchema,
-  type EventType,
   type EventThemeUpdateRequest,
+  type EventType,
+  type ManagerRole,
   type Theme,
   type ThemeMode,
 } from "@lumiere/types";
@@ -83,6 +84,7 @@ type ThemeGalleryEntry = {
 
 type ThemeWorkspaceState =
   | {
+      accessRole: ManagerRole;
       currentThemeId?: string;
       currentThemeConfig: EventThemeUpdateRequest["themeConfig"];
       error: null;
@@ -140,6 +142,7 @@ export function ThemeSelectorWorkspace({ eventId }: { eventId: string }) {
           : (selectedTheme?.defaultMode ?? "system");
 
       setState({
+        accessRole: eventResponse.access.role,
         currentThemeId: eventThemeResponse.selectedThemeId,
         currentThemeConfig: eventThemeResponse.themeConfig,
         error: null,
@@ -214,6 +217,7 @@ function ThemeSelectorContent({
   updateState: Dispatch<SetStateAction<ThemeWorkspaceState>>;
 }) {
   const { apiClient } = useDashboardAuth();
+  const canEdit = state.accessRole !== "viewer";
   const [modeFilter, setModeFilter] = useState<GalleryModeFilter>("any");
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
   const [galleryView, setGalleryView] = useState<ThemeGalleryView>("large");
@@ -295,7 +299,7 @@ function ThemeSelectorContent({
     entry: ThemeGalleryEntry,
     successMessage = `${entry.theme.name} is now active.`,
   ) => {
-    if (!entry.isCompatible || state.isSaving) {
+    if (!canEdit || !entry.isCompatible || state.isSaving) {
       return;
     }
 
@@ -388,7 +392,7 @@ function ThemeSelectorContent({
   const requestThemeModeChange = (value: string) => {
     const nextMode = value as ThemeMode;
 
-    if (nextMode !== state.values.themeMode && !state.isSaving) {
+    if (canEdit && nextMode !== state.values.themeMode && !state.isSaving) {
       setPendingThemeMode(nextMode);
     }
   };
@@ -411,7 +415,10 @@ function ThemeSelectorContent({
 
       <section className="grid gap-4 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
         <div>
-          <Badge variant="secondary">{formatEventType(state.eventType)} themes</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{formatEventType(state.eventType)} themes</Badge>
+            {!canEdit ? <Badge variant="outline">View-only access</Badge> : null}
+          </div>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">
             Choose the invitation for {state.eventTitle}
           </h2>
@@ -481,7 +488,7 @@ function ThemeSelectorContent({
               <div className="grid gap-2 sm:border-l sm:border-border sm:pl-4">
                 <span className="hidden text-sm font-medium sm:block">Invitation setting</span>
                 <DashboardSelect
-                  disabled={state.isSaving}
+                  disabled={!canEdit || state.isSaving}
                   id="theme-mode"
                   label="Theme mode"
                   onValueChange={requestThemeModeChange}
@@ -562,6 +569,7 @@ function ThemeSelectorContent({
           >
             {visibleEntries.map((entry) => (
               <ThemeGalleryCard
+                canEdit={canEdit}
                 entry={entry}
                 eventType={state.eventType}
                 isSelected={state.values.selectedThemeId === entry.theme.id}
@@ -646,6 +654,7 @@ function ThemeSelectorContent({
 }
 
 function ThemeGalleryCard({
+  canEdit,
   entry,
   eventType,
   isSelected,
@@ -656,6 +665,7 @@ function ThemeGalleryCard({
   selectedMode,
   view,
 }: {
+  canEdit: boolean;
   entry: ThemeGalleryEntry;
   eventType: EventType;
   isSelected: boolean;
@@ -677,6 +687,7 @@ function ThemeGalleryCard({
   if (view === "list") {
     return (
       <ThemeGalleryListItem
+        canEdit={canEdit}
         entry={entry}
         isActive={isActive}
         isSaving={isSaving}
@@ -747,7 +758,7 @@ function ThemeGalleryCard({
           <Button
             aria-label={`Use ${entry.theme.name}`}
             className="min-h-10 sm:min-w-32"
-            disabled={!entry.isCompatible || isSaving || isActive}
+            disabled={!canEdit || !entry.isCompatible || isSaving || isActive}
             onClick={() => void onUse(entry)}
             size="sm"
           >
@@ -770,6 +781,7 @@ function ThemeGalleryCard({
 }
 
 function ThemeGalleryListItem({
+  canEdit,
   entry,
   isActive,
   isSaving,
@@ -779,6 +791,7 @@ function ThemeGalleryListItem({
   savingThemeId,
   statusLabel,
 }: {
+  canEdit: boolean;
   entry: ThemeGalleryEntry;
   isActive: boolean;
   isSaving: boolean;
@@ -832,7 +845,7 @@ function ThemeGalleryListItem({
           <Button
             aria-label={`Use ${entry.theme.name}`}
             className="min-h-10 w-full min-[420px]:w-auto min-[420px]:min-w-32"
-            disabled={!entry.isCompatible || isSaving || isActive}
+            disabled={!canEdit || !entry.isCompatible || isSaving || isActive}
             onClick={() => void onUse(entry)}
             size="sm"
           >

@@ -527,6 +527,18 @@ function readRsvpStatusMetadata(
 
 function formatActivityTitle(activity: ActivityEvent) {
   const guestGroupLabel = readStringMetadata(activity.metadata, "guestGroupLabel");
+  const collaboratorEmail = readStringMetadata(activity.metadata, "collaboratorEmail");
+
+  if (activity.activityType === "collaborator_removed") {
+    return collaboratorEmail ? `${collaboratorEmail} was removed` : "Collaborator was removed";
+  }
+
+  if (activity.activityType === "collaborator_role_changed") {
+    const role = readStringMetadata(activity.metadata, "role");
+    return collaboratorEmail && role
+      ? `${collaboratorEmail} is now a ${role}`
+      : "Collaborator role changed";
+  }
 
   if (activity.activityType === "rsvp_submitted") {
     return guestGroupLabel ? `RSVP submitted by ${guestGroupLabel}` : "RSVP submitted";

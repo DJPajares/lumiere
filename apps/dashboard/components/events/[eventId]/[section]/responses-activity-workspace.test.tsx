@@ -132,7 +132,7 @@ function createApiClientStub(
   overrides: Partial<DashboardApiClient> = {},
 ): Partial<DashboardApiClient> {
   return {
-    getEvent: vi.fn(async () => ({ event: dashboardEvent })),
+    getEvent: vi.fn(async () => ({ access: ownerAccess, event: dashboardEvent })),
     listEventActivity: vi.fn(async () => ({ activity: [rsvpActivity, declinedActivity] })),
     listEventResponses: vi.fn(async () => ({ responses: [tanResponse, declinedResponse] })),
     listGuestGroups: vi.fn(async () => ({
@@ -162,6 +162,12 @@ const dashboardEvent: Event = {
   updatedAt: "2030-01-01T00:00:00.000Z",
   venueAddress: "12 Orchard Road",
   venueName: "Glass Hall",
+};
+
+const ownerAccess = {
+  eventId: "evt_123",
+  role: "owner" as const,
+  userId: "user_123",
 };
 
 const tanGroup: GuestGroup = {

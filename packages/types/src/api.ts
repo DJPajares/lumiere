@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   collaboratorInvitationSchema,
   eventCreateSchema,
+  eventAccessSchema,
   eventCollaboratorSchema,
   eventDeletionSchema,
   eventSchema,
@@ -69,6 +70,11 @@ export const eventResponseSchema = z.object({
 });
 export type EventResponse = z.infer<typeof eventResponseSchema>;
 
+export const managedEventResponseSchema = eventResponseSchema.extend({
+  access: eventAccessSchema,
+});
+export type ManagedEventResponse = z.infer<typeof managedEventResponseSchema>;
+
 export const eventSlugSuggestionRequestSchema = z.object({
   eventId: idSchema.optional(),
   title: nonEmptyStringSchema.max(160),
@@ -114,6 +120,16 @@ export const collaboratorRemovalResponseSchema = z.object({
   removed: z.literal(true),
 });
 export type CollaboratorRemovalResponse = z.infer<typeof collaboratorRemovalResponseSchema>;
+
+export const collaboratorRoleUpdateRequestSchema = z.object({
+  role: collaboratorRoleSchema,
+});
+export type CollaboratorRoleUpdateRequest = z.input<typeof collaboratorRoleUpdateRequestSchema>;
+
+export const collaboratorRoleUpdateResponseSchema = z.object({
+  collaborator: eventCollaboratorSchema,
+});
+export type CollaboratorRoleUpdateResponse = z.infer<typeof collaboratorRoleUpdateResponseSchema>;
 
 export const eventPublishingDestinationSchema = z.enum(["details", "sections", "theme", "rsvp"]);
 export type EventPublishingDestination = z.infer<typeof eventPublishingDestinationSchema>;

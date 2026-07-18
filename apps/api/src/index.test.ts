@@ -886,6 +886,59 @@ describe("API app", () => {
         message: "Event owner cannot be removed",
       },
     });
+    expect(removeCollaborator).toHaveBeenCalledWith(eventId, collaboratorUserId, localUser.id);
+  });
+
+  it("lets owners change collaborator roles but never the event owner role", async () => {
+    const viewerCollaborator: EventCollaborator = {
+      ...baseCollaborator,
+      role: "viewer",
+    };
+    const { collaboratorStore, updateCollaboratorRole } = createTestCollaboratorStore({
+      updateRoleResult: viewerCollaborator,
+    });
+    updateCollaboratorRole.mockResolvedValueOnce(viewerCollaborator).mockResolvedValueOnce("owner");
+    const { authStore } = createTestAuthStore();
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const headers = {
+      authorization: `Bearer ${createSupabaseToken()}`,
+      "content-type": "application/json",
+    };
+    const updatedResponse = await app.request(
+      `/events/${eventId}/collaborators/${collaboratorUserId}`,
+      {
+        body: JSON.stringify({ role: "viewer" }),
+        headers,
+        method: "PATCH",
+      },
+    );
+    const ownerResponse = await app.request(`/events/${eventId}/collaborators/${localUser.id}`, {
+      body: JSON.stringify({ role: "editor" }),
+      headers,
+      method: "PATCH",
+    });
+
+    expect(updatedResponse.status).toBe(200);
+    await expect(updatedResponse.json()).resolves.toEqual({
+      collaborator: viewerCollaborator,
+    });
+    expect(updateCollaboratorRole).toHaveBeenCalledWith(
+      eventId,
+      collaboratorUserId,
+      "viewer",
+      localUser.id,
+    );
+    expect(ownerResponse.status).toBe(403);
+    await expect(ownerResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "FORBIDDEN",
+        message: "Event owner role cannot be changed",
+      },
+    });
   });
 
   it("keeps collaborator management owner-only", async () => {
@@ -906,6 +959,37 @@ describe("API app", () => {
 
     expect(response.status).toBe(403);
     expect(listEventCollaboration).not.toHaveBeenCalled();
+  });
+
+  it("blocks removed memberships and cross-event collaborator escalation", async () => {
+    const { authStore } = createTestAuthStore({
+      access: { access: null, eventFound: true },
+    });
+    const { collaboratorStore, updateCollaboratorRole } = createTestCollaboratorStore();
+    const app = createApp({
+      authStore,
+      collaboratorStore,
+      config: loadTestConfig(),
+    });
+    const response = await app.request(`/events/${eventId}/collaborators/${collaboratorUserId}`, {
+      body: JSON.stringify({ role: "editor" }),
+      headers: {
+        authorization: `Bearer ${createSupabaseToken()}`,
+        "content-type": "application/json",
+        "x-request-id": "removed-membership-request",
+      },
+      method: "PATCH",
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        message: "Manager does not have access to this event",
+        requestId: "removed-membership-request",
+      },
+    });
+    expect(updateCollaboratorRole).not.toHaveBeenCalled();
   });
 
   it("creates an event for the authenticated manager", async () => {
@@ -1133,6 +1217,11 @@ describe("API app", () => {
     });
 
     await expect(response.json()).resolves.toEqual({
+      access: {
+        eventId,
+        role: "viewer",
+        userId: localUser.id,
+      },
       event: baseEvent,
     });
     expect(response.status).toBe(200);
@@ -3314,6 +3403,10 @@ function createTestCollaboratorStore({
     status: "revoked",
     updatedAt: "2026-07-09T00:00:00.000Z",
   },
+  updateRoleResult = {
+    ...baseCollaborator,
+    role: "viewer",
+  },
 }: {
   acceptResult?: Awaited<ReturnType<CollaboratorStore["acceptInvitation"]>>;
   createResult?: Awaited<ReturnType<CollaboratorStore["createInvitation"]>>;
@@ -3321,6 +3414,7 @@ function createTestCollaboratorStore({
   removeResult?: Awaited<ReturnType<CollaboratorStore["removeCollaborator"]>>;
   resendResult?: Awaited<ReturnType<CollaboratorStore["resendInvitation"]>>;
   revokeResult?: Awaited<ReturnType<CollaboratorStore["revokeInvitation"]>>;
+  updateRoleResult?: Awaited<ReturnType<CollaboratorStore["updateCollaboratorRole"]>>;
 } = {}) {
   const acceptInvitation = vi.fn(async () => acceptResult);
   const createInvitation = vi.fn(async () => createResult);
@@ -3332,6 +3426,7 @@ function createTestCollaboratorStore({
   const removeCollaborator = vi.fn(async () => removeResult);
   const resendInvitation = vi.fn(async () => resendResult);
   const revokeInvitation = vi.fn(async () => revokeResult);
+  const updateCollaboratorRole = vi.fn(async () => updateRoleResult);
   const collaboratorStore: CollaboratorStore = {
     acceptInvitation,
     createInvitation,
@@ -3340,6 +3435,7 @@ function createTestCollaboratorStore({
     removeCollaborator,
     resendInvitation,
     revokeInvitation,
+    updateCollaboratorRole,
   };
 
   return {
@@ -3351,6 +3447,7 @@ function createTestCollaboratorStore({
     removeCollaborator,
     resendInvitation,
     revokeInvitation,
+    updateCollaboratorRole,
   };
 }
 

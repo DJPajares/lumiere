@@ -1,5 +1,6 @@
 import type { Database } from "@lumiere/db";
 import {
+  activityEvents,
   and,
   asc,
   collaboratorInvitations,
@@ -38,6 +39,7 @@ export type CollaboratorInvitationAcceptanceResult =
   | null;
 
 export type CollaboratorRemovalResult = "owner" | boolean;
+export type CollaboratorRoleUpdateResult = EventCollaborator | "owner" | null;
 
 export type CollaboratorStore = {
   acceptInvitation(
@@ -65,9 +67,16 @@ export type CollaboratorStore = {
   removeCollaborator(
     eventId: string,
     collaboratorUserId: string,
+    actorUserId: string,
   ): Promise<CollaboratorRemovalResult>;
   resendInvitation(eventId: string, invitationId: string): Promise<CollaboratorInvitationResult>;
   revokeInvitation(eventId: string, invitationId: string): Promise<CollaboratorInvitationResult>;
+  updateCollaboratorRole(
+    eventId: string,
+    collaboratorUserId: string,
+    role: CollaboratorRole,
+    actorUserId: string,
+  ): Promise<CollaboratorRoleUpdateResult>;
 };
 
 export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore => ({
@@ -294,7 +303,7 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
     };
   },
 
-  async removeCollaborator(eventId, collaboratorUserId) {
+  async removeCollaborator(eventId, collaboratorUserId, actorUserId) {
     return db.transaction(async (tx) => {
       const database = tx as unknown as StoreDatabase;
       const [event] = await database
@@ -312,8 +321,13 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
       }
 
       const [membership] = await database
-        .select({ role: eventManagers.role })
+        .select({
+          displayName: users.displayName,
+          email: users.email,
+          role: eventManagers.role,
+        })
         .from(eventManagers)
+        .innerJoin(users, eq(users.id, eventManagers.userId))
         .where(
           and(eq(eventManagers.eventId, eventId), eq(eventManagers.userId, collaboratorUserId)),
         )
@@ -327,7 +341,7 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
         return "owner";
       }
 
-      const removed = await database
+      const [removed] = await database
         .delete(eventManagers)
         .where(
           and(
@@ -338,7 +352,23 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
         )
         .returning({ id: eventManagers.id });
 
-      return removed.length > 0;
+      if (!removed) {
+        return false;
+      }
+
+      await database.insert(activityEvents).values({
+        actorId: actorUserId,
+        actorType: "manager",
+        activityType: "collaborator_removed",
+        eventId,
+        metadataJson: {
+          collaboratorEmail: membership.email,
+          collaboratorUserId,
+          previousRole: membership.role,
+        },
+      });
+
+      return true;
     });
   },
 
@@ -440,6 +470,89 @@ export const createDrizzleCollaboratorStore = (db: Database): CollaboratorStore 
         .returning();
 
       return revokedInvitation ? toApiCollaboratorInvitation(revokedInvitation) : "not_pending";
+    });
+  },
+
+  async updateCollaboratorRole(eventId, collaboratorUserId, role, actorUserId) {
+    return db.transaction(async (tx) => {
+      const database = tx as unknown as StoreDatabase;
+      const [event] = await database
+        .select({ ownerUserId: events.ownerUserId })
+        .from(events)
+        .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+        .limit(1);
+
+      if (!event) {
+        return null;
+      }
+
+      if (event.ownerUserId === collaboratorUserId) {
+        return "owner";
+      }
+
+      const [membership] = await database
+        .select({
+          createdAt: eventManagers.createdAt,
+          displayName: users.displayName,
+          email: users.email,
+          eventId: eventManagers.eventId,
+          id: eventManagers.id,
+          role: eventManagers.role,
+          userId: eventManagers.userId,
+        })
+        .from(eventManagers)
+        .innerJoin(users, eq(users.id, eventManagers.userId))
+        .where(
+          and(eq(eventManagers.eventId, eventId), eq(eventManagers.userId, collaboratorUserId)),
+        )
+        .limit(1);
+
+      if (!membership) {
+        return null;
+      }
+
+      if (membership.role === "owner") {
+        return "owner";
+      }
+
+      if (membership.role === role) {
+        return toApiCollaborator(membership);
+      }
+
+      const [updatedMembership] = await database
+        .update(eventManagers)
+        .set({ role })
+        .where(
+          and(
+            eq(eventManagers.eventId, eventId),
+            eq(eventManagers.userId, collaboratorUserId),
+            ne(eventManagers.role, "owner"),
+          ),
+        )
+        .returning();
+
+      if (!updatedMembership) {
+        return null;
+      }
+
+      await database.insert(activityEvents).values({
+        actorId: actorUserId,
+        actorType: "manager",
+        activityType: "collaborator_role_changed",
+        eventId,
+        metadataJson: {
+          collaboratorEmail: membership.email,
+          collaboratorUserId,
+          previousRole: membership.role,
+          role,
+        },
+      });
+
+      return toApiCollaborator({
+        ...updatedMembership,
+        displayName: membership.displayName,
+        email: membership.email,
+      });
     });
   },
 });
