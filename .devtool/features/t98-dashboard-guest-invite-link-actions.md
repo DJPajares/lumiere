@@ -6,10 +6,10 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T00:00:00Z'
+modified: '2026-07-18T13:12:11+08:00'
 completedAt: null
 labels: ['dashboard', 'guests', 'invite-link', 'actions']
-depends_on: ['t96-dashboard-guest-filter-and-sort']
+depends_on: ['t89-guest-group-member-fields']
 order: 'a98'
 ---
 
@@ -18,11 +18,11 @@ order: 'a98'
 ## Hierarchy
 
 - Epic: `guest-management`
-- Dependencies: `t96-dashboard-guest-filter-and-sort`
+- Dependencies: `t89-guest-group-member-fields`
 
 ## Scope
 
-Add direct Open Link and Copy Link actions to guest-group rows/cards and detail workflows. Ensure managers can inspect the guest-facing invitation without exposing or logging sensitive token material unnecessarily.
+Add an Open Link action beside the guest card's existing read-only URL and Copy Link action. Keep the current regenerate/disable behavior and accessible copy feedback; this task should not create a second guest-detail workflow.
 
 ## Suggested Agent
 
@@ -33,15 +33,16 @@ Add direct Open Link and Copy Link actions to guest-group rows/cards and detail 
 
 - [ ] Every guest group with an active invite link exposes a clear Open Link action.
 - [ ] Open Link launches the guest-specific invite in a new tab using safe link behavior.
-- [ ] Copy Link provides accessible success and failure feedback.
-- [ ] Revoked, expired, or unpublished links show an appropriate disabled state and explanation.
+- [ ] The existing Copy Link action retains accessible success and failure feedback.
+- [ ] Disabled groups and legacy groups without a recoverable full URL show the current unavailable/regenerate explanation instead of an Open action.
 - [ ] Sensitive invite tokens are not included in analytics, error logs, or unnecessary UI text.
-- [ ] Actions are available consistently in supported guest view modes and the guest detail modal.
+- [ ] If t97 is later implemented, both actions reuse the same handlers in its compact view.
 
 ## Notes
 
-Consider a separate Preview as Manager action only if it can avoid recording a real guest response or activity event.
+Opening the real guest link is an inspection action, not an impersonation or response-bypass mode. Do not add manager-preview semantics in this task.
 
 ## Progress Log
 
 - 2026-07-18T00:00:00Z: Task created.
+- 2026-07-18T13:12:11+08:00: Recognized the existing Copy Link flow and narrowed the task to adding a safe Open Link action without depending on filtering or a nonexistent detail modal.

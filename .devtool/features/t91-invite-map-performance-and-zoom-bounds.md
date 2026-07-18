@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-experience'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T00:00:00Z'
+modified: '2026-07-18T13:12:11+08:00'
 completedAt: null
 labels: ['invite', 'map', 'performance', 'location']
 depends_on: ['t75-invite-location-map-experience']
@@ -22,7 +22,7 @@ order: 'a91'
 
 ## Scope
 
-Reduce map-related API usage and prevent guests from zooming out beyond a useful event-location range. Load the interactive map only when needed, reuse resolved coordinates, and apply bounded viewport behavior without blocking external directions links.
+Harden the existing no-key, coordinate-driven OpenStreetMap embed. Avoid adding a geocoding pipeline that the app does not currently need, defer third-party map loading until useful, and prevent an unbounded interactive map from becoming the primary invite experience. Keep the safe external directions action as the reliable fallback.
 
 ## Suggested Agent
 
@@ -31,18 +31,19 @@ Reduce map-related API usage and prevent guests from zooming out beyond a useful
 
 ## Acceptance
 
-- [ ] Geocoding or place-resolution requests are performed server-side or during event-location save, not on every invite render.
-- [ ] Resolved coordinates and normalized map metadata are persisted or cached for reuse.
-- [ ] The interactive map is lazy-loaded only when the location section approaches the viewport or the guest requests it.
-- [ ] Map configuration defines a minimum zoom or geographic bounds that prevent excessive zoom-out.
-- [ ] The map still supports useful local pan and zoom interactions around the venue.
+- [ ] Invite rendering continues to use persisted location-section coordinates or an approved embed URL and makes no client-side geocoding request.
+- [ ] The current server-normalized location contract and coordinate-derived OpenStreetMap bounding box remain the single source for map and directions URLs.
+- [ ] The third-party iframe is not loaded before the location section approaches the viewport; a user-initiated load is acceptable if it produces a clearer fallback.
+- [ ] If the no-key embed cannot enforce useful zoom bounds, it remains a bounded preview rather than exposing unrestricted map interaction.
+- [ ] The venue name, address, and directions action remain usable before and without iframe initialization.
 - [ ] External directions continue to open in a new tab with safe link attributes.
-- [ ] Tests verify request deduplication, cached coordinates, lazy loading, and zoom-bound configuration.
+- [ ] Existing map tests are updated to cover deferred loading, the persisted-coordinate path, fallback content, and safe external links.
 
 ## Notes
 
-Prefer a static preview or lightweight placeholder before interactive map initialization. Avoid exposing provider secrets in the invite client.
+The current implementation already uses `loading="lazy"`, persisted coordinates, normalized URLs, and no provider secret. Improve actual network deferral without introducing speculative caching, place-resolution APIs, or a client-visible key.
 
 ## Progress Log
 
 - 2026-07-18T00:00:00Z: Task created.
+- 2026-07-18T13:12:11+08:00: Reframed the task around the existing no-key OpenStreetMap embed and removed assumptions about repeated geocoding requests or a new coordinate cache.

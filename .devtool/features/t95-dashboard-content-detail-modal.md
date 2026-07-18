@@ -6,7 +6,7 @@ assignee: null
 epic: 'dashboard-content'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T00:00:00Z'
+modified: '2026-07-18T13:12:11+08:00'
 completedAt: null
 labels: ['dashboard', 'content', 'dialog', 'ux']
 depends_on: ['t62-dashboard-responsive-modal-workflows']
@@ -22,7 +22,7 @@ order: 'a95'
 
 ## Scope
 
-Add an explicit details action to event-content cards and open the corresponding detailed editor in a responsive modal or mobile drawer. Remove redundant standalone detail cards and preserve direct-link behavior where useful.
+Move the existing per-section editor from inline expansion into the established responsive modal/drawer while preserving the section-order list, selected live preview, schema-driven field controls, developer JSON fallback, and single save/cancel model. This is a presentation refactor of the current content workspace, not a second content editor.
 
 ## Suggested Agent
 
@@ -31,18 +31,19 @@ Add an explicit details action to event-content cards and open the corresponding
 
 ## Acceptance
 
-- [ ] Each editable content or section card has a clear Details/Edit action.
+- [ ] Each section row has a clear Edit action that opens its existing editor controls.
 - [ ] Desktop opens a shadcn/Base UI dialog and mobile uses the established responsive drawer pattern.
-- [ ] The modal renders schema-driven fields rather than raw JSON.
+- [ ] The modal reuses the current schema-driven fields and keeps the developer JSON editor as the existing advanced fallback.
 - [ ] Saving updates the card preview without a full-page refresh.
-- [ ] Closing with unsaved changes triggers a clear confirmation flow.
-- [ ] The active detail view can be represented in the URL or restored after refresh when practical.
+- [ ] Closing with unsaved section changes uses the established dirty-close confirmation and does not discard edits silently.
+- [ ] Section order, enablement, visibility, validation reveal, and sticky preview behavior remain available outside the modal.
 - [ ] Keyboard focus is trapped, restored, and labeled correctly.
 
 ## Notes
 
-Use the existing dashboard field system. The invitation preview inside the modal must use the custom invite/theme renderer and must not inherit dashboard component styles.
+Use `ResponsiveModal` from the existing dashboard workflow. Keep the invitation preview in its current dedicated panel; do not duplicate or squeeze the full preview into the editor modal.
 
 ## Progress Log
 
 - 2026-07-18T00:00:00Z: Task created.
+- 2026-07-18T13:12:11+08:00: Aligned the task with the existing inline schema editor/live-preview workspace and removed assumptions about raw-JSON-only or redundant detail cards.

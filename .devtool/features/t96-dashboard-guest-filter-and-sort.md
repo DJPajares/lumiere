@@ -6,7 +6,7 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T00:00:00Z'
+modified: '2026-07-18T13:12:11+08:00'
 completedAt: null
 labels: ['dashboard', 'guests', 'filtering', 'sorting']
 depends_on: ['t89-guest-group-member-fields']
@@ -22,7 +22,7 @@ order: 'a96'
 
 ## Scope
 
-Add practical filtering, searching, and sorting for event guest groups and members. Support server-side query parameters when result size can grow beyond a small local list.
+Add simple search, status filtering, and sorting to the existing event-scoped guest-group card list. Use the guest groups already loaded by the workspace for the MVP; introduce server-side query parameters and pagination only when a documented list-size threshold or measured performance issue requires them.
 
 ## Suggested Agent
 
@@ -31,18 +31,19 @@ Add practical filtering, searching, and sorting for event guest groups and membe
 
 ## Acceptance
 
-- [ ] Managers can search by group name, member name, and invite identifier where appropriate.
-- [ ] Filters cover RSVP status, invite status, response completeness, and relevant guest-group settings.
-- [ ] Sort options include name, creation date, last response/activity, party size, and RSVP status.
+- [ ] Managers can search case-insensitively by group label, structured member name, contact email, or the non-secret invite code.
+- [ ] The initial filter covers the existing guest-group statuses: pending, opened, responded, declined, and disabled.
+- [ ] Sort options use fields already present on `GuestGroup`: label, created/updated time, last opened time, max pax, and status.
 - [ ] Filter and sort state is reflected in the URL so views can be refreshed or shared.
-- [ ] The API validates supported fields and uses indexed queries for server-side filtering/sorting.
+- [ ] Filtering does not search or expose invite tokens, and all input data remains scoped to the active event by the existing API.
 - [ ] Clear-all and no-results states are obvious and accessible.
-- [ ] Tests cover combined filters, sort direction, invalid query parameters, and event isolation.
+- [ ] Existing guest workspace tests are extended for search, status filtering, sort direction, URL restoration, and clear-all behavior.
 
 ## Notes
 
-Avoid loading all events or all guests into the client. Queries must remain scoped to the active event and current user's access.
+Do not load responses or activity solely to manufacture filters that the guest-group model does not support. A later scale task can add validated API query parameters, indexes, and pagination without changing the UI contract.
 
 ## Progress Log
 
 - 2026-07-18T00:00:00Z: Task created.
+- 2026-07-18T13:12:11+08:00: Narrowed the task to client-side controls over the existing event-scoped guest list and removed speculative response-completeness and server-pagination requirements.
