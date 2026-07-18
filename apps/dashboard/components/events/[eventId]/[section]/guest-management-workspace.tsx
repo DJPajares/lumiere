@@ -1,6 +1,7 @@
 "use client";
 
-import { ApiClientError } from "@lumiere/api-client";
+import { ApiClientError, type GuestDataExportDownload } from "@lumiere/api-client";
+import { Button } from "@lumiere/dashboard-ui/components/button";
 import {
   Field,
   FieldDescription,
@@ -13,10 +14,12 @@ import {
 import { Input } from "@lumiere/dashboard-ui/components/input";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
-import { LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
+import { DownloadIcon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
   guestGroupMutationRequestSchema,
   type Event,
+  type GuestDataExportFormat,
+  type GuestDataExportScope,
   type GuestGroup,
   type GuestGroupMemberMutationInput,
   type GuestGroupMutationRequest,
@@ -141,6 +144,10 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [busyGroupId, setBusyGroupId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<GuestDataExportFormat>("csv");
+  const [exportScope, setExportScope] = useState<GuestDataExportScope>("all");
+  const [exporting, setExporting] = useState(false);
   const [guestListFilters, setGuestListFilters] = useState<GuestListFilters>(() =>
     readGuestListFilters(),
   );
@@ -249,6 +256,8 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     [guestGroups, guestListFilters],
   );
   const hasGuestListFilters = !areGuestListFiltersDefault(guestListFilters);
+  const hasSupportedExportFilters =
+    Boolean(guestListFilters.query.trim()) || guestListFilters.status !== "all";
 
   const startCreate = () => {
     setEditingGroupId(null);
@@ -527,6 +536,43 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     toast.success(group.label + " invite link opened.");
   };
 
+  const startExport = () => {
+    setExportScope(hasSupportedExportFilters ? "filtered" : "all");
+    setExportOpen(true);
+  };
+
+  const downloadGuestData = async () => {
+    if (!apiClient) {
+      toast.error("Dashboard API is not configured.");
+      return;
+    }
+
+    const scope = exportScope === "filtered" && hasSupportedExportFilters ? "filtered" : "all";
+    setExporting(true);
+    setActionMessage(null);
+
+    try {
+      const download = await apiClient.downloadGuestData(eventId, {
+        format: exportFormat,
+        q: scope === "filtered" ? guestListFilters.query.trim() || undefined : undefined,
+        scope,
+        status:
+          scope === "filtered" && guestListFilters.status !== "all"
+            ? guestListFilters.status
+            : undefined,
+      });
+      triggerBrowserDownload(download);
+      const message = `${download.filename} is ready.`;
+      setActionMessage(message);
+      setExportOpen(false);
+      toast.success(message);
+    } catch (error) {
+      toast.error(toFriendlyApiMessage(error));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (state.status === "loading") {
     return (
       <div className="grid gap-5">
@@ -583,6 +629,10 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button onClick={startExport} size="lg" type="button" variant="outline">
+              <DownloadIcon data-icon="inline-start" />
+              Export
+            </Button>
             <button
               className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               disabled={readyState.isRefreshing}
@@ -658,6 +708,98 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
           )}
         </ResponsiveModal>
       ) : null}
+
+      <ResponsiveModal
+        description="Download guest groups and RSVP details without invite credentials or internal IDs."
+        footer={({ requestClose }) => (
+          <div className="flex justify-end gap-2">
+            <Button disabled={exporting} onClick={requestClose} type="button" variant="outline">
+              Cancel
+            </Button>
+            <Button disabled={exporting} onClick={() => void downloadGuestData()} type="button">
+              <DownloadIcon data-icon="inline-start" />
+              {exporting ? "Preparing export..." : `Download ${exportFormat.toUpperCase()}`}
+            </Button>
+          </div>
+        )}
+        onOpenChange={(open) => {
+          if (!exporting) {
+            setExportOpen(open);
+          }
+        }}
+        open={exportOpen}
+        title="Export guest data"
+      >
+        <FieldGroup>
+          <FieldSet>
+            <FieldLegend>File format</FieldLegend>
+            <FieldDescription>
+              CSV is lightweight and universal. XLSX adds a frozen header row, filters, wrapping,
+              and readable column widths.
+            </FieldDescription>
+            <ToggleGroup
+              aria-label="Export file format"
+              onValueChange={(value) => {
+                const nextFormat = value[0];
+                if (nextFormat === "csv" || nextFormat === "xlsx") {
+                  setExportFormat(nextFormat);
+                }
+              }}
+              spacing={0}
+              value={[exportFormat]}
+              variant="outline"
+            >
+              <ToggleGroupItem type="button" value="csv">
+                CSV
+              </ToggleGroupItem>
+              <ToggleGroupItem type="button" value="xlsx">
+                XLSX
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </FieldSet>
+
+          <FieldSet>
+            <FieldLegend>Rows to include</FieldLegend>
+            <FieldDescription>
+              Exports use a stable server order. Card or compact-list sorting does not change the
+              file.
+            </FieldDescription>
+            <ToggleGroup
+              aria-label="Export row scope"
+              onValueChange={(value) => {
+                const nextScope = value[0];
+                if (
+                  nextScope === "all" ||
+                  (nextScope === "filtered" && hasSupportedExportFilters)
+                ) {
+                  setExportScope(nextScope);
+                }
+              }}
+              orientation="vertical"
+              spacing={2}
+              value={[exportScope]}
+              variant="outline"
+            >
+              <ToggleGroupItem type="button" value="all">
+                All event rows ({guestGroups.length})
+              </ToggleGroupItem>
+              <ToggleGroupItem disabled={!hasSupportedExportFilters} type="button" value="filtered">
+                Current search and status filters ({filteredGuestGroups.length})
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <FieldDescription>
+              {hasSupportedExportFilters
+                ? "Current filters include the search text and status shown in this workspace."
+                : "Add search text or a status filter to enable a filtered export."}
+            </FieldDescription>
+          </FieldSet>
+
+          <FieldDescription>
+            Each request is limited to 10,000 guest-group rows. Selected attendee names are taken
+            from the submitted RSVP.
+          </FieldDescription>
+        </FieldGroup>
+      </ResponsiveModal>
 
       <GuestGroupList
         busyGroupId={busyGroupId}
@@ -1550,6 +1692,18 @@ function TextField({
       ) : null}
     </label>
   );
+}
+
+function triggerBrowserDownload({ blob, filename }: GuestDataExportDownload) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 function readGuestListFilters(): GuestListFilters {

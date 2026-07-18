@@ -21,7 +21,7 @@ import {
   rsvpSubmissionSchema,
   themeSchema,
 } from "./domain";
-import { collaboratorRoleSchema } from "./enums";
+import { collaboratorRoleSchema, guestGroupStatusSchema } from "./enums";
 import { idSchema, nonEmptyStringSchema, publicSlugSchema } from "./primitives";
 
 export const apiErrorCodeSchema = z.enum([
@@ -216,6 +216,20 @@ export const guestGroupsResponseSchema = z.object({
   guestGroups: z.array(guestGroupSchema),
 });
 export type GuestGroupsResponse = z.infer<typeof guestGroupsResponseSchema>;
+
+export const guestDataExportFormatSchema = z.enum(["csv", "xlsx"]);
+export type GuestDataExportFormat = z.infer<typeof guestDataExportFormatSchema>;
+
+export const guestDataExportScopeSchema = z.enum(["all", "filtered"]);
+export type GuestDataExportScope = z.infer<typeof guestDataExportScopeSchema>;
+
+export const guestDataExportQuerySchema = z.object({
+  format: guestDataExportFormatSchema,
+  scope: guestDataExportScopeSchema,
+  q: z.string().trim().max(160).optional(),
+  status: guestGroupStatusSchema.optional(),
+});
+export type GuestDataExportQuery = z.infer<typeof guestDataExportQuerySchema>;
 
 export const guestGroupInviteResponseSchema = guestGroupResponseSchema.extend({
   inviteLink: nonEmptyStringSchema.url(),

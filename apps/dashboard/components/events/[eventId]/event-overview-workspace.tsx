@@ -929,6 +929,8 @@ function formatActivityTitle(activity: ActivityEvent) {
       return "Event published";
     case "event_restored":
       return "Event restored";
+    case "guest_data_exported":
+      return "Guest data exported";
     case "guest_group_created":
       return "Guest group created";
     case "guest_invite_opened":

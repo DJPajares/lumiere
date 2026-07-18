@@ -6,6 +6,7 @@ import { createDrizzleCollaboratorStore } from "./collaborators";
 import { createApp } from "./app";
 import { createDrizzleDashboardDataStore } from "./dashboard-data";
 import { createDrizzleEventStore } from "./events";
+import { createDrizzleGuestDataExportStore } from "./guest-exports";
 import { createDrizzleGuestGroupStore } from "./guest-groups";
 import { createDrizzlePublicInviteStore } from "./public-invites";
 import { createDrizzleRsvpStore } from "./rsvps";
@@ -26,6 +27,7 @@ export function createApiApplication(config = loadApiConfig()) {
   const collaboratorStore = createDrizzleCollaboratorStore(db);
   const dashboardDataStore = createDrizzleDashboardDataStore(db);
   const eventStore = createDrizzleEventStore(db);
+  const guestDataExportStore = createDrizzleGuestDataExportStore(db);
   const guestGroupStore = createDrizzleGuestGroupStore(db);
   const publicInviteStore = createDrizzlePublicInviteStore(db);
   const rsvpStore = createDrizzleRsvpStore(db);
@@ -37,6 +39,7 @@ export function createApiApplication(config = loadApiConfig()) {
     config,
     dashboardDataStore,
     eventStore,
+    guestDataExportStore,
     guestGroupStore,
     publicInviteStore,
     rsvpStore,

@@ -1,0 +1,1 @@
+ALTER TYPE "lumiere"."activity_type" ADD VALUE 'guest_data_exported' BEFORE 'guest_invite_opened';

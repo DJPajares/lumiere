@@ -22,6 +22,7 @@ import {
   eventSlugSuggestionRequestSchema,
   eventThemeUpdateRequestSchema,
   eventUpdateRequestSchema,
+  guestDataExportQuerySchema,
   guestGroupMutationRequestSchema,
   guestInviteParamsSchema,
   managerRoleSchema,
@@ -38,6 +39,12 @@ import type { CollaboratorInvitationIssue, CollaboratorStore } from "./collabora
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore } from "./events";
+import {
+  buildGuestDataCsv,
+  buildGuestDataExportFilename,
+  buildGuestDataXlsx,
+  type GuestDataExportStore,
+} from "./guest-exports";
 import {
   buildGuestInviteLink,
   decryptInviteToken,
@@ -62,6 +69,7 @@ export type AppOptions = {
   config: ApiEnv;
   dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
+  guestDataExportStore?: GuestDataExportStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
   rsvpStore?: RsvpStore;
@@ -101,6 +109,7 @@ export const createRoutes = ({
   config,
   dashboardDataStore,
   eventStore,
+  guestDataExportStore,
   guestGroupStore,
   publicInviteStore,
   rsvpStore,
@@ -1018,6 +1027,70 @@ export const createRoutes = ({
   );
 
   routes.get(
+    "/events/:eventId/guest-data-export",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestDataExportStores({
+        authStore,
+        eventStore,
+        guestDataExportStore,
+      });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const manager = context.get("manager");
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager,
+      });
+      const queryResult = guestDataExportQuerySchema.safeParse({
+        format: context.req.query("format"),
+        q: context.req.query("q"),
+        scope: context.req.query("scope"),
+        status: context.req.query("status"),
+      });
+
+      if (!queryResult.success) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Invalid guest export options", {
+          fields: zodIssuesToFieldErrors(queryResult.error.issues),
+        });
+      }
+
+      const event = await stores.eventStore.getEvent(eventId);
+      if (!event) throw new ApiHttpError("NOT_FOUND", "Event not found");
+      const { format, scope } = queryResult.data;
+      const filters =
+        scope === "filtered"
+          ? {
+              query: queryResult.data.q,
+              status: queryResult.data.status,
+            }
+          : {};
+      const rows = await stores.guestDataExportStore.listRows(eventId, filters);
+      const filename = buildGuestDataExportFilename(event.slug, format);
+      const body =
+        format === "csv" ? buildGuestDataCsv(rows) : new Uint8Array(await buildGuestDataXlsx(rows));
+
+      await stores.guestDataExportStore.recordExport({
+        actorUserId: manager.user.id,
+        eventId,
+        format,
+        rowCount: rows.length,
+        scope,
+        usedQueryFilter: Boolean(filters.query),
+        usedStatusFilter: Boolean(filters.status),
+      });
+
+      return context.body(body, 200, {
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Type":
+          format === "csv"
+            ? "text/csv; charset=utf-8"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+    },
+  );
+
+  routes.get(
     "/events/:eventId/guest-groups",
     requireManagerAuth({ authStore, config }),
     async (context) => {
@@ -1451,6 +1524,27 @@ const requireManagerGuestGroupStores = ({
 }) => ({
   ...requireManagerStores({ authStore, eventStore }),
   guestGroupStore: requireGuestGroupStore(guestGroupStore),
+});
+
+const requireGuestDataExportStore = (guestDataExportStore: GuestDataExportStore | undefined) => {
+  if (!guestDataExportStore) {
+    throw new ApiHttpError("INTERNAL_ERROR", "Guest data export store is not configured");
+  }
+
+  return guestDataExportStore;
+};
+
+const requireManagerGuestDataExportStores = ({
+  authStore,
+  eventStore,
+  guestDataExportStore,
+}: {
+  authStore: AuthStore | undefined;
+  eventStore: EventStore | undefined;
+  guestDataExportStore: GuestDataExportStore | undefined;
+}) => ({
+  ...requireManagerStores({ authStore, eventStore }),
+  guestDataExportStore: requireGuestDataExportStore(guestDataExportStore),
 });
 
 const parseEventIdParam = (eventId: string | undefined) => {

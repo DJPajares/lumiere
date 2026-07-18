@@ -112,6 +112,68 @@ describe("GuestManagementWorkspace", () => {
     expect(window.location.search).toBe("");
   });
 
+  it("downloads the current search and status filters for view-only managers", async () => {
+    const user = userEvent.setup();
+    const downloadGuestData = vi.fn(async () => ({
+      blob: new Blob(["guest export"], { type: "text/csv" }),
+      filename: "spring-dinner-guest-data-2030-01-01.csv",
+    }));
+    const createObjectURL = vi.fn(() => "blob:guest-export");
+    const revokeObjectURL = vi.fn();
+    const clickDownload = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    Object.defineProperties(URL, {
+      createObjectURL: { configurable: true, value: createObjectURL },
+      revokeObjectURL: { configurable: true, value: revokeObjectURL },
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/events/evt_123/guests?q=tan&status=responded&sort=maxPax",
+    );
+
+    renderWithAuth(
+      createApiClientStub({
+        downloadGuestData,
+        getEvent: vi.fn(async () => ({
+          access: { ...ownerAccess, role: "viewer" as const },
+          event: dashboardEvent,
+        })),
+        listGuestGroups: vi.fn(async () => ({
+          guestGroups: [{ ...guestGroup, status: "responded" as const }],
+        })),
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    expect(screen.queryByRole("button", { name: "New guest group" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Export" }));
+
+    expect(screen.getByRole("heading", { name: "Export guest data" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Current search and status filters (1)" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Download CSV" }));
+
+    await waitFor(() =>
+      expect(downloadGuestData).toHaveBeenCalledWith("evt_123", {
+        format: "csv",
+        q: "tan",
+        scope: "filtered",
+        status: "responded",
+      }),
+    );
+    expect(clickDownload).toHaveBeenCalledOnce();
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:guest-export");
+    expect(
+      await screen.findByText("spring-dinner-guest-data-2030-01-01.csv is ready."),
+    ).toBeTruthy();
+  });
+
   it("switches between detail cards and a URL-persisted compact list with shared actions", async () => {
     const user = userEvent.setup();
 
@@ -573,6 +635,7 @@ function createApiClientStub(
   return {
     createGuestGroup: vi.fn(),
     disableGuestGroup: vi.fn(),
+    downloadGuestData: vi.fn(),
     getEvent: vi.fn(async () => ({ access: ownerAccess, event: dashboardEvent })),
     listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
     regenerateGuestGroupInvite: vi.fn(),

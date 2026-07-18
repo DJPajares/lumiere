@@ -1,6 +1,6 @@
 {
-  "id": "79d880ce-1afe-4155-b6f2-2d92f988bb4d",
-  "prevId": "192c4689-8360-417a-a919-8040b4583abb",
+  "id": "fef8671e-7244-42b7-867e-4561dd16cc39",
+  "prevId": "79d880ce-1afe-4155-b6f2-2d92f988bb4d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -106,8 +106,12 @@
           "tableFrom": "activity_events",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -287,8 +291,12 @@
           "tableFrom": "collaborator_invitations",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -297,8 +305,12 @@
           "tableFrom": "collaborator_invitations",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["invited_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invited_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -307,8 +319,12 @@
           "tableFrom": "collaborator_invitations",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["responded_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "responded_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -411,8 +427,12 @@
           "tableFrom": "event_assets",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -521,8 +541,12 @@
           "tableFrom": "event_managers",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -531,8 +555,12 @@
           "tableFrom": "event_managers",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -609,8 +637,12 @@
           "tableFrom": "event_publications",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -653,8 +685,12 @@
           "tableFrom": "event_rsvp_settings",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -697,8 +733,12 @@
           "tableFrom": "event_section_contents",
           "tableTo": "event_sections",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_section_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_section_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -833,8 +873,12 @@
           "tableFrom": "event_sections",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -914,8 +958,12 @@
           "tableFrom": "event_slug_aliases",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -972,8 +1020,12 @@
           "tableFrom": "event_theme_settings",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1184,8 +1236,12 @@
           "tableFrom": "events",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["owner_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1194,8 +1250,12 @@
           "tableFrom": "events",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["deleted_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "deleted_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1294,8 +1354,12 @@
           "tableFrom": "guest_group_members",
           "tableTo": "guest_groups",
           "schemaTo": "lumiere",
-          "columnsFrom": ["guest_group_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "guest_group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1475,8 +1539,12 @@
           "tableFrom": "guest_groups",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1600,8 +1668,12 @@
           "tableFrom": "notifications",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1610,8 +1682,12 @@
           "tableFrom": "notifications",
           "tableTo": "users",
           "schemaTo": "lumiere",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1753,8 +1829,12 @@
           "tableFrom": "rsvp_responses",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1763,8 +1843,12 @@
           "tableFrom": "rsvp_responses",
           "tableTo": "guest_groups",
           "schemaTo": "lumiere",
-          "columnsFrom": ["guest_group_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "guest_group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1848,8 +1932,12 @@
           "tableFrom": "theme_registry_snapshots",
           "tableTo": "events",
           "schemaTo": "lumiere",
-          "columnsFrom": ["event_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1948,7 +2036,11 @@
     "lumiere.activity_actor_type": {
       "name": "activity_actor_type",
       "schema": "lumiere",
-      "values": ["manager", "guest", "system"]
+      "values": [
+        "manager",
+        "guest",
+        "system"
+      ]
     },
     "lumiere.activity_type": {
       "name": "activity_type",
@@ -1963,6 +2055,7 @@
         "section_updated",
         "theme_updated",
         "guest_group_created",
+        "guest_data_exported",
         "guest_invite_opened",
         "rsvp_submitted",
         "rsvp_updated",
@@ -1972,12 +2065,22 @@
     "lumiere.collaborator_invitation_status": {
       "name": "collaborator_invitation_status",
       "schema": "lumiere",
-      "values": ["pending", "accepted", "declined", "revoked", "expired"]
+      "values": [
+        "pending",
+        "accepted",
+        "declined",
+        "revoked",
+        "expired"
+      ]
     },
     "lumiere.event_status": {
       "name": "event_status",
       "schema": "lumiere",
-      "values": ["draft", "published", "archived"]
+      "values": [
+        "draft",
+        "published",
+        "archived"
+      ]
     },
     "lumiere.event_type": {
       "name": "event_type",
@@ -1996,22 +2099,41 @@
     "lumiere.guest_group_status": {
       "name": "guest_group_status",
       "schema": "lumiere",
-      "values": ["pending", "opened", "responded", "declined", "disabled"]
+      "values": [
+        "pending",
+        "opened",
+        "responded",
+        "declined",
+        "disabled"
+      ]
     },
     "lumiere.manager_role": {
       "name": "manager_role",
       "schema": "lumiere",
-      "values": ["owner", "editor", "viewer"]
+      "values": [
+        "owner",
+        "editor",
+        "viewer"
+      ]
     },
     "lumiere.notification_type": {
       "name": "notification_type",
       "schema": "lumiere",
-      "values": ["rsvp_submitted", "rsvp_updated", "guest_opened_invite", "system"]
+      "values": [
+        "rsvp_submitted",
+        "rsvp_updated",
+        "guest_opened_invite",
+        "system"
+      ]
     },
     "lumiere.rsvp_status": {
       "name": "rsvp_status",
       "schema": "lumiere",
-      "values": ["attending", "not_attending", "maybe"]
+      "values": [
+        "attending",
+        "not_attending",
+        "maybe"
+      ]
     },
     "lumiere.section_type": {
       "name": "section_type",
@@ -2034,12 +2156,21 @@
     "lumiere.section_visibility": {
       "name": "section_visibility",
       "schema": "lumiere",
-      "values": ["public", "guest_only", "hidden"]
+      "values": [
+        "public",
+        "guest_only",
+        "hidden"
+      ]
     },
     "lumiere.theme_mode": {
       "name": "theme_mode",
       "schema": "lumiere",
-      "values": ["light", "dark", "system", "toggleable"]
+      "values": [
+        "light",
+        "dark",
+        "system",
+        "toggleable"
+      ]
     }
   },
   "schemas": {

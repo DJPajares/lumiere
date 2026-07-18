@@ -552,6 +552,10 @@ function formatActivityTitle(activity: ActivityEvent) {
     return guestGroupLabel ? `${guestGroupLabel} opened their invite` : "Guest invite opened";
   }
 
+  if (activity.activityType === "guest_data_exported") {
+    return "Guest data exported";
+  }
+
   return activity.activityType.replaceAll("_", " ");
 }
 
@@ -559,6 +563,13 @@ function formatActivityDetail(activity: ActivityEvent) {
   const responseStatus = readRsvpStatusMetadata(activity.metadata, "responseStatus");
   const attendeeCount = readNumberMetadata(activity.metadata, "attendeeCount");
   const guestGroupLabel = readStringMetadata(activity.metadata, "guestGroupLabel");
+
+  if (activity.activityType === "guest_data_exported") {
+    const rowCount = readNumberMetadata(activity.metadata, "rowCount");
+    const format = readStringMetadata(activity.metadata, "format")?.toUpperCase();
+
+    return `${format ?? "Guest"} export prepared${rowCount === null ? "" : ` with ${rowCount} row${rowCount === 1 ? "" : "s"}`}.`;
+  }
 
   if (responseStatus) {
     return `${guestGroupLabel ?? "Guest group"} responded ${formatResponseStatus(responseStatus).toLowerCase()}${attendeeCount === null ? "" : ` for ${attendeeCount} pax`}.`;

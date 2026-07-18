@@ -28,6 +28,7 @@ import {
   rsvpSubmissionResponseSchema,
 } from "@lumiere/types";
 import { createHmac, generateKeyPairSync, sign } from "node:crypto";
+import ExcelJS from "exceljs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthStore, EventAccessLookup, LocalUser, UpsertUserProfileInput } from "./auth";
@@ -37,6 +38,12 @@ import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError } from "./errors";
 import type { EventStore, PublishingReadiness } from "./events";
 import { toApiEvent } from "./events";
+import {
+  buildGuestDataCsv,
+  buildGuestDataXlsx,
+  type GuestDataExportRow,
+  type GuestDataExportStore,
+} from "./guest-exports";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
 import { hashInviteToken } from "./guest-groups";
 import { createApiApplication, loadApiConfig } from "./bootstrap";
@@ -1393,6 +1400,106 @@ describe("API app", () => {
     });
     expect(response.status).toBe(200);
     expect(listResponses).toHaveBeenCalledWith(eventId);
+  });
+
+  it("exports filtered guest data for an authorized viewer and records the download", async () => {
+    const { authStore } = createTestAuthStore({
+      access: roleAccess("viewer"),
+    });
+    const { eventStore } = createTestEventStore();
+    const { guestDataExportStore, listRows, recordExport } = createTestGuestDataExportStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore,
+      guestDataExportStore,
+    });
+    const response = await app.request(
+      `/events/${eventId}/guest-data-export?format=csv&scope=filtered&q=tan&status=responded`,
+      {
+        headers: {
+          authorization: `Bearer ${createSupabaseToken()}`,
+        },
+      },
+    );
+    const bytes = new Uint8Array(await response.clone().arrayBuffer());
+    const csv = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/csv; charset=utf-8");
+    expect(response.headers.get("content-disposition")).toMatch(
+      /^attachment; filename="launch-night-guest-data-\d{4}-\d{2}-\d{2}\.csv"$/,
+    );
+    expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    expect(csv.startsWith('"Group label","Contact name"')).toBe(true);
+    expect(csv).toContain('"Mina Tan\nAlex Tan"');
+    expect(csv).not.toContain(guestGroupId);
+    expect(csv).not.toContain(baseGuestGroup.inviteCode);
+    expect(listRows).toHaveBeenCalledWith(eventId, {
+      query: "tan",
+      status: "responded",
+    });
+    expect(recordExport).toHaveBeenCalledWith({
+      actorUserId: localUser.id,
+      eventId,
+      format: "csv",
+      rowCount: 1,
+      scope: "filtered",
+      usedQueryFilter: true,
+      usedStatusFilter: true,
+    });
+  });
+
+  it("rejects guest data exports before reading rows when event access is missing", async () => {
+    const { authStore } = createTestAuthStore({
+      access: { access: null, eventFound: true },
+    });
+    const { eventStore } = createTestEventStore();
+    const { guestDataExportStore, listRows, recordExport } = createTestGuestDataExportStore();
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore,
+      guestDataExportStore,
+    });
+    const response = await app.request(
+      `/events/${eventId}/guest-data-export?format=xlsx&scope=all`,
+      {
+        headers: {
+          authorization: `Bearer ${createSupabaseToken()}`,
+        },
+      },
+    );
+
+    expect(response.status).toBe(403);
+    expect(listRows).not.toHaveBeenCalled();
+    expect(recordExport).not.toHaveBeenCalled();
+  });
+
+  it("builds readable XLSX cells without executable formulas", async () => {
+    const dangerousLabel = '=HYPERLINK("https://example.com")';
+    const rows = [
+      {
+        ...baseGuestDataExportRow,
+        groupLabel: dangerousLabel,
+      },
+    ];
+    const csv = buildGuestDataCsv(rows);
+    const buffer = await buildGuestDataXlsx(rows);
+    const workbook = new ExcelJS.Workbook();
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength,
+    ) as ArrayBuffer;
+    await workbook.xlsx.load(arrayBuffer);
+    const worksheet = workbook.getWorksheet("Guest data");
+
+    expect(worksheet?.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
+    expect(worksheet?.getRow(1).getCell(1).value).toBe("Group label");
+    expect(worksheet?.getColumn(1).width).toBe(24);
+    expect(worksheet?.getRow(2).getCell(1).value).toBe('\'=HYPERLINK("https://example.com")');
+    expect(worksheet?.getRow(2).getCell(1).formula).toBeUndefined();
+    expect(csv).toContain(`"'=HYPERLINK(""https://example.com"")"`);
   });
 
   it("returns in-app notifications for the current manager", async () => {
@@ -3513,6 +3620,41 @@ function createTestDashboardDataStore({
     listResponses,
     markAllNotificationsRead,
     markNotificationRead,
+  };
+}
+
+const baseGuestDataExportRow: GuestDataExportRow = {
+  attendingPax: 2,
+  contactEmail: "mina@example.com",
+  contactName: "Mina Tan",
+  groupCreatedAt: "2026-07-08T00:00:00.000Z",
+  groupLabel: "Tan Family",
+  groupUpdatedAt: "2026-07-08T04:00:00.000Z",
+  guestMessage: "Excited to attend.",
+  inviteOpenedAt: "2026-07-08T03:00:00.000Z",
+  inviteStatus: "responded",
+  maxPax: 4,
+  namedMembers: "Mina Tan\nAlex Tan",
+  privateNotes: "Window table",
+  rsvpAnswers: "",
+  rsvpStatus: "attending",
+  rsvpSubmittedAt: "2026-07-08T04:00:00.000Z",
+  rsvpUpdatedAt: "2026-07-08T04:00:00.000Z",
+  selectedAttendees: "Mina Tan\nAlex Tan",
+};
+
+function createTestGuestDataExportStore(rows = [baseGuestDataExportRow]) {
+  const listRows = vi.fn(async () => rows);
+  const recordExport = vi.fn(async () => undefined);
+  const guestDataExportStore: GuestDataExportStore = {
+    listRows,
+    recordExport,
+  };
+
+  return {
+    guestDataExportStore,
+    listRows,
+    recordExport,
   };
 }
 

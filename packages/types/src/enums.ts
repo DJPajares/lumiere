@@ -61,6 +61,7 @@ export const activityTypeSchema = z.enum([
   "section_updated",
   "theme_updated",
   "guest_group_created",
+  "guest_data_exported",
   "guest_invite_opened",
   "rsvp_submitted",
   "rsvp_updated",

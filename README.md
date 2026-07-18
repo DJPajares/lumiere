@@ -474,6 +474,7 @@ When updating the logo pack, use `logo.png` as the visible brand source for each
 | Capability | Owner | Editor | Viewer |
 | --- | --- | --- | --- |
 | View event details, theme, content, guests, responses, activity, and personal notifications | Yes | Yes | Yes |
+| Export event-scoped guest and RSVP data | Yes | Yes | Yes |
 | Mark or dismiss personal event notifications | Yes | Yes | Yes |
 | Update event details and publishing status | Yes | Yes | No |
 | Update theme and sections | Yes | Yes | No |
@@ -518,6 +519,7 @@ GET    /events/:eventId/sections
 PUT    /events/:eventId/sections
 
 GET    /events/:eventId/guest-groups
+GET    /events/:eventId/guest-data-export
 POST   /events/:eventId/guest-groups
 PATCH  /events/:eventId/guest-groups/:groupId
 DELETE /events/:eventId/guest-groups/:groupId
@@ -531,6 +533,18 @@ GET    /events/:eventId/notifications
 GET    /themes
 GET    /themes/:themeId
 ```
+
+Guest data export accepts `format=csv|xlsx` and `scope=all|filtered`. Filtered exports repeat the
+guest workspace's optional `q` search and `status` filter on the server; card/list sort order does
+not affect file order. Both formats use one row per guest group with these stable columns:
+`Group label`, `Contact name`, `Contact email`, `Invite status`, `Max pax`, `Named members`,
+`RSVP status`, `Attending pax`, `Selected attendees`, `RSVP answers`, `Guest message`,
+`Private notes`, `Invite opened at`, `RSVP submitted at`, `RSVP updated at`, `Group created at`,
+and `Group updated at`. Multi-value attendee and answer cells are newline-separated.
+
+Exports are capped at 10,000 guest-group rows, neutralize spreadsheet formula prefixes, never
+include internal IDs or invite credentials, and add a `guest_data_exported` event to activity
+history after successful generation.
 
 ## Database / Storage Notes
 

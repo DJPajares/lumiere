@@ -975,6 +975,7 @@ function formatActivityTitle(activity: ActivityEvent) {
     event_deleted: "Event deleted",
     event_published: "Event published",
     event_restored: "Event restored",
+    guest_data_exported: "Guest data exported",
     guest_group_created: "Guest group created",
     guest_invite_opened: "Guest invite opened",
     notification_created: "Notification created",

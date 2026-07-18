@@ -56,6 +56,7 @@ import {
   type GuestGroupMutationRequest,
   type GuestGroupResponse,
   type GuestGroupsResponse,
+  type GuestDataExportQuery,
   type NotificationDismissResponse,
   type NotificationResponse,
   type NotificationsMarkAllReadResponse,
@@ -108,6 +109,11 @@ export class ApiClientError extends Error {
 
 export type LumiereApiClient = ReturnType<typeof createApiClient>;
 
+export type GuestDataExportDownload = {
+  blob: Blob;
+  filename: string;
+};
+
 export const createApiClient = ({
   authToken,
   baseUrl,
@@ -156,6 +162,33 @@ export const createApiClient = ({
         createClientError("INTERNAL_ERROR", "Invalid API response", response),
       );
     }
+  };
+
+  const requestDownload = async (
+    path: string,
+    options: Pick<RequestOptions, "query"> = {},
+  ): Promise<GuestDataExportDownload> => {
+    const headers = new Headers(defaultHeaders);
+    const token = await resolveAuthToken(authToken);
+
+    if (token) {
+      headers.set("authorization", `Bearer ${token}`);
+    }
+
+    const response = await fetchImplementation(buildUrl(baseUrl, path, options.query), {
+      headers,
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      const json = await readJson(response);
+      throw new ApiClientError(response.status, toApiError(json, response));
+    }
+
+    return {
+      blob: await response.blob(),
+      filename: readDownloadFilename(response.headers.get("content-disposition")) ?? "guest-data",
+    };
   };
 
   return {
@@ -236,6 +269,11 @@ export const createApiClient = ({
           auth: false,
         },
       ),
+    downloadGuestData: (
+      eventId: string,
+      query: GuestDataExportQuery,
+    ): Promise<GuestDataExportDownload> =>
+      requestDownload(`/events/${encodePathSegment(eventId)}/guest-data-export`, { query }),
     inviteEventCollaborator: (
       eventId: string,
       input: CollaboratorInvitationRequest,
@@ -505,3 +543,16 @@ const createClientError = (
     requestId: response.headers.get("x-request-id") || "unknown",
   },
 });
+
+const readDownloadFilename = (contentDisposition: string | null) => {
+  const encodedMatch = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1]);
+    } catch {
+      return encodedMatch[1];
+    }
+  }
+
+  return contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+};

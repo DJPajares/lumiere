@@ -9,6 +9,7 @@ import type { CollaboratorStore } from "./collaborators";
 import type { DashboardDataStore } from "./dashboard-data";
 import { ApiHttpError, createApiError } from "./errors";
 import type { EventStore } from "./events";
+import type { GuestDataExportStore } from "./guest-exports";
 import type { GuestGroupStore } from "./guest-groups";
 import type { PublicInviteStore } from "./public-invites";
 import { requestIdMiddleware, type ApiBindings } from "./request-context";
@@ -22,6 +23,7 @@ export type CreateAppOptions = {
   config: ApiEnv;
   dashboardDataStore?: DashboardDataStore;
   eventStore?: EventStore;
+  guestDataExportStore?: GuestDataExportStore;
   guestGroupStore?: GuestGroupStore;
   publicInviteStore?: PublicInviteStore;
   rsvpStore?: RsvpStore;
@@ -43,6 +45,7 @@ export const createApp = ({
   config,
   dashboardDataStore,
   eventStore,
+  guestDataExportStore,
   guestGroupStore,
   publicInviteStore,
   rsvpStore,
@@ -55,7 +58,7 @@ export const createApp = ({
     cors({
       allowHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      exposeHeaders: ["X-Request-Id"],
+      exposeHeaders: ["Content-Disposition", "X-Request-Id"],
       origin: [config.PUBLIC_APP_BASE_URL, config.DASHBOARD_APP_BASE_URL],
     }),
   );
@@ -76,6 +79,7 @@ export const createApp = ({
       config,
       dashboardDataStore,
       eventStore,
+      guestDataExportStore,
       guestGroupStore,
       publicInviteStore,
       rsvpStore,

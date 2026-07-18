@@ -121,6 +121,39 @@ describe("API client", () => {
     );
   });
 
+  it("downloads authenticated guest exports with the server filename", async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response("\uFEFFGroup label\r\nTan Family\r\n", {
+          headers: {
+            "content-disposition": 'attachment; filename="launch-night-guest-data-2026-07-18.csv"',
+            "content-type": "text/csv; charset=utf-8",
+          },
+        }),
+    );
+    const client = createApiClient({
+      authToken: "manager-token",
+      baseUrl: "https://api.example.test",
+      fetch,
+    });
+    const download = await client.downloadGuestData("00000000-0000-4000-8000-000000000101", {
+      format: "csv",
+      q: "tan",
+      scope: "filtered",
+      status: "responded",
+    });
+
+    expect(download.filename).toBe("launch-night-guest-data-2026-07-18.csv");
+    await expect(download.blob.text()).resolves.toContain("Tan Family");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.example.test/events/00000000-0000-4000-8000-000000000101/guest-data-export?format=csv&q=tan&scope=filtered&status=responded",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(requestHeaders(fetch as ReturnType<typeof createFetchMock>).get("authorization")).toBe(
+      "Bearer manager-token",
+    );
+  });
+
   it("requests manager slug suggestions with the event title query", async () => {
     const fetch = createFetchMock({
       slug: "launch-night-a1b2c3",
