@@ -122,6 +122,8 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
 
     const [rsvpResponse] = await db
       .select({
+        attendeeCount: rsvpResponses.attendeeCount,
+        guestNames: rsvpResponses.guestNamesJson,
         responseStatus: rsvpResponses.responseStatus,
       })
       .from(rsvpResponses)
@@ -137,6 +139,13 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
           maxPax: guestGroup.maxPax,
           status: guestGroup.status,
         },
+        response: rsvpResponse
+          ? {
+              attendeeCount: rsvpResponse.attendeeCount,
+              guestNames: rsvpResponse.guestNames,
+              responseStatus: rsvpResponse.responseStatus,
+            }
+          : null,
         responseStatus: rsvpResponse?.responseStatus ?? null,
       },
       sections: listGuestSections(publicEvent.sections),

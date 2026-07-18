@@ -183,6 +183,7 @@ const publicGuestInviteRecord: PublicGuestInviteRecord = {
       maxPax: baseGuestGroup.maxPax,
       status: "pending",
     },
+    response: null,
     responseStatus: null,
   },
   sections: [baseSection, guestOnlyRsvpSection],
@@ -2834,6 +2835,7 @@ describe("API app", () => {
         maxPax: 4,
         status: "pending",
       },
+      response: null,
       responseStatus: null,
     });
     expect(guestInviteBody.sections.map((section) => section.sectionType)).toContain("rsvp");
@@ -2868,6 +2870,19 @@ describe("API app", () => {
       attendeeCount: 2,
       eventId,
       guestGroupId,
+      guestNames: ["Mina Tan", "Alex Tan"],
+      responseStatus: "attending",
+    });
+
+    const updatedGuestInviteResponse = await app.request(
+      `/public/events/smoke-wedding/guest/${guestToken}`,
+    );
+    const updatedGuestInviteBody = publicGuestInviteResponseSchema.parse(
+      await updatedGuestInviteResponse.json(),
+    );
+
+    expect(updatedGuestInviteBody.guest.response).toEqual({
+      attendeeCount: 2,
       guestNames: ["Mina Tan", "Alex Tan"],
       responseStatus: "attending",
     });
@@ -3567,6 +3582,13 @@ function createIntegrationSmokeStores() {
             maxPax: guestGroupRecord.maxPax,
             status: guestGroupRecord.status,
           },
+          response: responseRecord
+            ? {
+                attendeeCount: responseRecord.attendeeCount,
+                guestNames: responseRecord.guestNames,
+                responseStatus: responseRecord.responseStatus,
+              }
+            : null,
           responseStatus: responseRecord?.responseStatus ?? null,
         },
         sections: sections

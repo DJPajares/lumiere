@@ -36,6 +36,7 @@ export type RsvpFormState = {
   guestNames: string[];
   message: string;
   responseStatus: RsvpStatus | "";
+  staleGuestNames?: string[];
 };
 
 export type RsvpFormErrors = Record<string, string>;
@@ -71,9 +72,18 @@ export type RsvpFormProps = {
   eventSlug: string;
   guestGroup: {
     label: string;
+    members?: Array<{
+      name: string;
+      sortOrder: number;
+    }>;
     maxPax: number;
   };
   guestToken: string;
+  initialResponse?: {
+    attendeeCount: number;
+    guestNames: string[];
+    responseStatus: RsvpStatus;
+  } | null;
   initialResponseStatus: RsvpStatus | null;
   presentation?: ThemeRsvpPresentation;
   questions: RsvpQuestion[];
@@ -92,13 +102,20 @@ export function useRsvpFormController({
   eventSlug,
   guestGroup,
   guestToken,
+  initialResponse,
   initialResponseStatus,
   presentation = defaultRsvpPresentation,
   questions,
   rsvpFields = defaultRsvpResponseFields,
 }: RsvpFormProps): RsvpRendererContract {
+  const members = guestGroup.members ?? [];
+  const hasStructuredMembers = rsvpFields.collectGuestNames && members.length > 0;
+  const savedResponseStatus = initialResponse?.responseStatus ?? initialResponseStatus;
   const [state, setState] = useState(() =>
-    createInitialRsvpFormState(guestGroup.maxPax, initialResponseStatus, rsvpFields),
+    createInitialRsvpFormState(guestGroup.maxPax, savedResponseStatus, rsvpFields, {
+      initialResponse,
+      members,
+    }),
   );
   const [errors, setErrors] = useState<RsvpFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,16 +126,18 @@ export function useRsvpFormController({
   const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
-  const hasExistingReply = Boolean(initialResponseStatus || submittedResponse);
+  const hasExistingReply = Boolean(savedResponseStatus || submittedResponse);
   const isConfirmationVisible = hasExistingReply && !isEditingExistingReply;
   const isUpdatingExistingReply = hasExistingReply && isEditingExistingReply;
   const hasSubmittedReply = Boolean(submittedResponse);
   const isResponding = state.responseStatus !== "not_attending";
   const hasDetails =
-    questions.length > 0 || rsvpFields.collectGuestMessage || rsvpFields.collectGuestNames;
+    questions.length > 0 ||
+    rsvpFields.collectGuestMessage ||
+    (rsvpFields.collectGuestNames && !hasStructuredMembers);
   const detailsLabel = resolveDetailsLabel(copy, {
     collectGuestMessage: rsvpFields.collectGuestMessage,
-    collectGuestNames: rsvpFields.collectGuestNames,
+    collectGuestNames: rsvpFields.collectGuestNames && !hasStructuredMembers,
     hasQuestions: questions.length > 0,
   });
   const isLocked = isRsvpLocked(recoveryState);
@@ -133,7 +152,7 @@ export function useRsvpFormController({
     collectGuestMessage: rsvpFields.collectGuestMessage,
     guestGroupLabel: guestGroup.label,
     hasSubmittedReply,
-    initialResponseStatus,
+    initialResponseStatus: savedResponseStatus,
     maxPax: guestGroup.maxPax,
     recoveryState,
     responseStatus,
@@ -153,6 +172,7 @@ export function useRsvpFormController({
       eventSlug,
       guestToken,
       maxPax: guestGroup.maxPax,
+      members,
       questions,
       rsvpFields,
       state,
@@ -181,6 +201,7 @@ export function useRsvpFormController({
             current,
             Math.min(guestGroup.maxPax, current.attendeeCount + 1),
             rsvpFields.collectGuestNames,
+            hasStructuredMembers,
           ),
         ),
       editReply: () => {
@@ -193,6 +214,7 @@ export function useRsvpFormController({
             current,
             Math.max(1, current.attendeeCount - 1),
             rsvpFields.collectGuestNames,
+            hasStructuredMembers,
           ),
         ),
       setAnswer: (questionKey, value) =>
@@ -211,6 +233,14 @@ export function useRsvpFormController({
             itemIndex === index ? value : item,
           ),
         })),
+      toggleGuestMember: (name) =>
+        setState((current) => ({
+          ...current,
+          guestNames: current.guestNames.includes(name)
+            ? current.guestNames.filter((guestName) => guestName !== name)
+            : [...current.guestNames, name],
+          staleGuestNames: [],
+        })),
       setMessage: (message) => setState((current) => ({ ...current, message })),
       setResponseStatus: (responseStatus) =>
         setState((current) =>
@@ -219,6 +249,7 @@ export function useRsvpFormController({
             responseStatus,
             guestGroup.maxPax,
             rsvpFields.collectGuestNames,
+            hasStructuredMembers,
           ),
         ),
       submit: handleSubmit,
@@ -262,34 +293,63 @@ export function createInitialRsvpFormState(
   maxPax: number,
   responseStatus: RsvpStatus | null,
   rsvpFields: RsvpResponseFields = defaultRsvpResponseFields,
+  options: {
+    initialResponse?: RsvpFormProps["initialResponse"];
+    members?: RsvpFormProps["guestGroup"]["members"];
+  } = {},
 ): RsvpFormState {
+  const members = options.members ?? [];
+  const hasStructuredMembers = rsvpFields.collectGuestNames && members.length > 0;
+  const initialGuestNames = options.initialResponse?.guestNames ?? [];
+  const { matchedNames, staleNames } = hasStructuredMembers
+    ? matchGuestNamesToMembers(initialGuestNames, members)
+    : { matchedNames: [], staleNames: [] };
+
   if (responseStatus === "not_attending") {
     return {
       answers: {},
       attendeeCount: 0,
-      guestNames: rsvpFields.collectGuestNames ? [""] : [],
+      guestNames: hasStructuredMembers
+        ? matchedNames
+        : rsvpFields.collectGuestNames
+          ? initialGuestNames.length > 0
+            ? initialGuestNames
+            : [""]
+          : [],
       message: "",
       responseStatus,
+      ...(staleNames.length > 0 ? { staleGuestNames: staleNames } : {}),
     };
   }
 
+  const attendeeCount = options.initialResponse
+    ? Math.max(1, Math.min(maxPax, options.initialResponse.attendeeCount))
+    : 1;
+
   return {
     answers: {},
-    attendeeCount: 1,
-    guestNames: rsvpFields.collectGuestNames ? [""] : [],
+    attendeeCount,
+    guestNames: hasStructuredMembers
+      ? matchedNames
+      : rsvpFields.collectGuestNames
+        ? resizeGuestNames(initialGuestNames, attendeeCount)
+        : [],
     message: "",
     responseStatus:
       responseStatus === "attending" || responseStatus === "maybe" ? responseStatus : "",
+    ...(staleNames.length > 0 ? { staleGuestNames: staleNames } : {}),
   };
 }
 
 export function validateRsvpFormState({
   maxPax,
+  members = [],
   questions,
   rsvpFields = defaultRsvpResponseFields,
   state,
 }: {
   maxPax: number;
+  members?: RsvpFormProps["guestGroup"]["members"];
   questions: RsvpQuestion[];
   rsvpFields?: RsvpResponseFields;
   state: RsvpFormState;
@@ -319,13 +379,33 @@ export function validateRsvpFormState({
     errors.attendeeCount = `This invite allows up to ${maxPax} pax.`;
   }
 
+  const hasStructuredMembers = rsvpFields.collectGuestNames && members.length > 0;
+  const selectedMemberNames = hasStructuredMembers
+    ? matchGuestNamesToMembers(state.guestNames, members).matchedNames
+    : [];
   const guestNames =
     isAttending && rsvpFields.collectGuestNames
-      ? state.guestNames
-          .slice(0, attendeeCount)
-          .map((name) => name.trim())
-          .filter(Boolean)
+      ? hasStructuredMembers
+        ? selectedMemberNames
+        : state.guestNames
+            .slice(0, attendeeCount)
+            .map((name) => name.trim())
+            .filter(Boolean)
       : [];
+
+  if (isAttending && hasStructuredMembers) {
+    const hasStaleSelection = Boolean(state.staleGuestNames?.length);
+
+    if (hasStaleSelection) {
+      errors.guestNames = `Some saved attendees are no longer in this guest group. Select exactly ${attendeeCount} current ${
+        attendeeCount === 1 ? "member" : "members"
+      }.`;
+    } else if (guestNames.length !== attendeeCount) {
+      errors.guestNames = `Select exactly ${attendeeCount} named ${
+        attendeeCount === 1 ? "member" : "members"
+      }. ${guestNames.length} selected.`;
+    }
+  }
 
   const answers = questions.flatMap((question) => {
     const value = state.answers[question.key];
@@ -368,6 +448,7 @@ export async function submitRsvpFormState({
   eventSlug,
   guestToken,
   maxPax,
+  members = [],
   questions,
   rsvpFields = defaultRsvpResponseFields,
   state,
@@ -376,12 +457,13 @@ export async function submitRsvpFormState({
   eventSlug: string;
   guestToken: string;
   maxPax: number;
+  members?: RsvpFormProps["guestGroup"]["members"];
   questions: RsvpQuestion[];
   rsvpFields?: RsvpResponseFields;
   state: RsvpFormState;
   submit: SubmitRsvp;
 }): Promise<RsvpFormSubmitResult> {
-  const validation = validateRsvpFormState({ maxPax, questions, rsvpFields, state });
+  const validation = validateRsvpFormState({ maxPax, members, questions, rsvpFields, state });
 
   if (!validation.ok) {
     return validation;
@@ -527,6 +609,7 @@ function withResponseStatus(
   responseStatus: RsvpStatus,
   maxPax: number,
   collectGuestNames: boolean,
+  hasStructuredMembers: boolean,
 ): RsvpFormState {
   if (responseStatus === "not_attending") {
     return {
@@ -542,7 +625,11 @@ function withResponseStatus(
   return {
     ...state,
     attendeeCount,
-    guestNames: collectGuestNames ? resizeGuestNames(state.guestNames, attendeeCount) : [],
+    guestNames: collectGuestNames
+      ? hasStructuredMembers
+        ? state.guestNames
+        : resizeGuestNames(state.guestNames, attendeeCount)
+      : [],
     responseStatus,
   };
 }
@@ -551,16 +638,50 @@ function withAttendeeCount(
   state: RsvpFormState,
   attendeeCount: number,
   collectGuestNames: boolean,
+  hasStructuredMembers: boolean,
 ): RsvpFormState {
   return {
     ...state,
     attendeeCount,
-    guestNames: collectGuestNames ? resizeGuestNames(state.guestNames, attendeeCount) : [],
+    guestNames: collectGuestNames
+      ? hasStructuredMembers
+        ? state.guestNames
+        : resizeGuestNames(state.guestNames, attendeeCount)
+      : [],
   };
 }
 
 function resizeGuestNames(guestNames: string[], attendeeCount: number) {
   return Array.from({ length: attendeeCount }, (_, index) => guestNames[index] ?? "");
+}
+
+function matchGuestNamesToMembers(
+  guestNames: string[],
+  members: NonNullable<RsvpFormProps["guestGroup"]["members"]>,
+) {
+  const memberNames = new Map(
+    members.map((member) => [normalizeGuestName(member.name), member.name] as const),
+  );
+  const matchedNames: string[] = [];
+  const staleNames: string[] = [];
+
+  for (const guestName of guestNames) {
+    const trimmedName = guestName.trim();
+    if (!trimmedName) continue;
+
+    const memberName = memberNames.get(normalizeGuestName(trimmedName));
+    if (memberName && !matchedNames.includes(memberName)) {
+      matchedNames.push(memberName);
+    } else if (!memberName) {
+      staleNames.push(trimmedName);
+    }
+  }
+
+  return { matchedNames, staleNames };
+}
+
+function normalizeGuestName(name: string) {
+  return name.trim().toLocaleLowerCase();
 }
 
 function resolveDetailsLabel(

@@ -292,6 +292,14 @@ export const publicGuestContextSchema = z.object({
     maxPax: guestGroupSchema.shape.maxPax,
     status: guestGroupSchema.shape.status,
   }),
+  response: z
+    .object({
+      attendeeCount: rsvpResponseSchema.shape.attendeeCount,
+      guestNames: rsvpResponseSchema.shape.guestNames,
+      responseStatus: rsvpResponseSchema.shape.responseStatus,
+    })
+    .nullable()
+    .optional(),
   responseStatus: rsvpResponseSchema.shape.responseStatus.nullable(),
 });
 export type PublicGuestContext = z.infer<typeof publicGuestContextSchema>;

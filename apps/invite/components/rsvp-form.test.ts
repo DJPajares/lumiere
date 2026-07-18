@@ -84,6 +84,77 @@ describe("RSVP form flow helpers", () => {
     expect(editorialHtml).toContain('id="rsvp-message"');
   });
 
+  it("renders structured members as checkboxes instead of legacy name inputs", () => {
+    const html = renderToStaticMarkup(
+      createElement(RsvpForm, {
+        eventSlug: "garden-evening",
+        guestGroup: structuredGuestGroup,
+        guestToken: "sample-guest-token-for-preview",
+        initialResponseStatus: null,
+        questions: [],
+        rsvpFields: {
+          collectGuestMessage: false,
+          collectGuestNames: true,
+        },
+      }),
+    );
+
+    expect(html).toContain('id="guestMember-0"');
+    expect(html).toContain('id="guestMember-3"');
+    expect(html).toContain("Ari Tan");
+    expect(html).toContain("Select 1 person attending. 0 selected.");
+    expect(html).not.toContain('id="guestName-0"');
+    expect(html).not.toContain("<details");
+  });
+
+  it("keeps checked members selected when the attending count is reduced", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+
+    await act(() =>
+      root.render(
+        createElement(RsvpForm, {
+          eventSlug: "garden-evening",
+          guestGroup: structuredGuestGroup,
+          guestToken: "sample-guest-token-for-preview",
+          initialResponseStatus: null,
+          questions: [],
+          rsvpFields: {
+            collectGuestMessage: false,
+            collectGuestNames: true,
+          },
+        }),
+      ),
+    );
+
+    await act(() => container.querySelector<HTMLInputElement>('input[value="attending"]')?.click());
+    await act(() =>
+      container.querySelector<HTMLButtonElement>('button[aria-label="Add one guest"]')?.click(),
+    );
+    await act(() => container.querySelector<HTMLInputElement>("#guestMember-0")?.click());
+    await act(() => container.querySelector<HTMLInputElement>("#guestMember-1")?.click());
+    await act(() =>
+      container.querySelector<HTMLButtonElement>('button[aria-label="Remove one guest"]')?.click(),
+    );
+
+    expect(container.querySelector<HTMLInputElement>("#guestMember-0")?.checked).toBe(true);
+    expect(container.querySelector<HTMLInputElement>("#guestMember-1")?.checked).toBe(true);
+    expect(container.textContent).toContain("Select 1 person attending. 2 selected.");
+
+    await act(async () => {
+      container
+        .querySelector("form")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(container.textContent).toContain("Select exactly 1 named member. 2 selected.");
+    expect(container.querySelector('[role="alert"]')?.getAttribute("aria-live")).toBe("polite");
+    await act(() => root.unmount());
+  });
+
   it("renders an already-submitted reply as a compact confirmation with an editable update flow", async () => {
     const html = renderToStaticMarkup(
       createElement(RsvpForm, {
@@ -308,6 +379,49 @@ describe("RSVP form flow helpers", () => {
     );
   });
 
+  it("requires structured selections to match the selected attendee count", () => {
+    const mismatch = validateRsvpFormState({
+      maxPax: structuredGuestGroup.maxPax,
+      members: structuredGuestGroup.members,
+      questions: [],
+      state: {
+        answers: {},
+        attendeeCount: 2,
+        guestNames: ["Ari Tan"],
+        message: "",
+        responseStatus: "attending",
+      },
+    });
+
+    expect(mismatch.ok).toBe(false);
+    expect(mismatch.ok ? undefined : mismatch.errors.guestNames).toBe(
+      "Select exactly 2 named members. 1 selected.",
+    );
+
+    const declined = validateRsvpFormState({
+      maxPax: structuredGuestGroup.maxPax,
+      members: structuredGuestGroup.members,
+      questions: [],
+      state: {
+        answers: {},
+        attendeeCount: 0,
+        guestNames: ["Ari Tan", "Bea Tan"],
+        message: "",
+        responseStatus: "not_attending",
+        staleGuestNames: ["Former Guest"],
+      },
+    });
+
+    expect(declined).toMatchObject({
+      input: {
+        attendeeCount: 0,
+        guestNames: [],
+        responseStatus: "not_attending",
+      },
+      ok: true,
+    });
+  });
+
   it("requires configured questions while keeping blank names and notes optional", () => {
     const result = validateRsvpFormState({
       maxPax: 4,
@@ -403,6 +517,32 @@ describe("RSVP form flow helpers", () => {
       message: "",
       responseStatus: "not_attending",
     });
+
+    expect(
+      createInitialRsvpFormState(
+        4,
+        "attending",
+        {
+          collectGuestMessage: false,
+          collectGuestNames: true,
+        },
+        {
+          initialResponse: {
+            attendeeCount: 2,
+            guestNames: ["ari tan", "Former Guest"],
+            responseStatus: "attending",
+          },
+          members: structuredGuestGroup.members,
+        },
+      ),
+    ).toEqual({
+      answers: {},
+      attendeeCount: 2,
+      guestNames: ["Ari Tan"],
+      message: "",
+      responseStatus: "attending",
+      staleGuestNames: ["Former Guest"],
+    });
   });
 
   it("maps closed RSVP API failures to a blocking recovery state", async () => {
@@ -490,6 +630,14 @@ const guestGroup = {
   maxPax: 4,
 };
 
+const structuredGuestGroup = {
+  ...guestGroup,
+  members: ["Ari Tan", "Bea Tan", "Cal Tan", "Dee Tan"].map((name, sortOrder) => ({
+    name,
+    sortOrder,
+  })),
+};
+
 function createRendererContract({
   isLocked = false,
   isSubmitting = false,
@@ -514,6 +662,7 @@ function createRendererContract({
       setMessage: vi.fn(),
       setResponseStatus: vi.fn(),
       submit: vi.fn(),
+      toggleGuestMember: vi.fn(),
     },
     context: {
       eventSlug: "formal-evening",

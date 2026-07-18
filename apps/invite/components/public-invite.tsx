@@ -1116,6 +1116,7 @@ function RsvpSection({
             eventSlug={eventSlug}
             guestGroup={submitContext.guest.guestGroup}
             guestToken={submitContext.guestToken}
+            initialResponse={submitContext.guest.response}
             initialResponseStatus={submitContext.guest.responseStatus}
             presentation={theme.presentation.rsvp}
             questions={questions}
