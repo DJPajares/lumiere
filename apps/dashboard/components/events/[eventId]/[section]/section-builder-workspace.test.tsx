@@ -48,8 +48,16 @@ describe("SectionBuilderWorkspace", () => {
 
     expect(await screen.findByRole("dialog", { name: "Edit Story" })).toBeTruthy();
     const storyEditor = screen.getByRole("region", { name: "Story" });
+    const modalFooter = document.querySelector('[data-slot="responsive-modal-footer"]');
 
     expect(storyEditor).toBeTruthy();
+    expect(modalFooter).toBeTruthy();
+    expect(
+      within(modalFooter as HTMLElement).getByRole("button", { name: "Save sections" }),
+    ).toBeTruthy();
+    expect(
+      within(modalFooter as HTMLElement).getByRole("button", { name: "Cancel changes" }),
+    ).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Close Edit Story" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit Story" })).toBeNull());
@@ -91,7 +99,7 @@ describe("SectionBuilderWorkspace", () => {
     );
 
     await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);
-    await user.click(storyEditor.getByRole("button", { name: "Save sections" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
     expect(
       await screen.findByText("Check the highlighted section fields before saving."),
@@ -173,7 +181,7 @@ describe("SectionBuilderWorkspace", () => {
 
     expect(screen.getAllByText("Unsaved").length).toBeGreaterThan(0);
 
-    await user.click(introductionEditor.getByRole("button", { name: "Cancel changes" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Cancel changes" }));
     expect(
       await screen.findByRole("alertdialog", { name: "Discard unsaved changes?" }),
     ).toBeTruthy();
@@ -183,7 +191,7 @@ describe("SectionBuilderWorkspace", () => {
       "Unsaved Supper",
     );
 
-    await user.click(introductionEditor.getByRole("button", { name: "Cancel changes" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Cancel changes" }));
     await user.click(await screen.findByRole("button", { name: "Discard changes" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Edit Introduction" })).toBeNull(),
@@ -236,7 +244,7 @@ describe("SectionBuilderWorkspace", () => {
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
     await user.clear(introductionEditor.getByLabelText(/^Title/));
     await user.type(introductionEditor.getByLabelText(/^Title/), "Garden Supper");
-    await user.click(introductionEditor.getByRole("button", { name: "Save sections" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Edit Introduction" })).toBeNull(),
     );
@@ -251,7 +259,7 @@ describe("SectionBuilderWorkspace", () => {
     await user.type(detailsEditor.getAllByLabelText(/^Label/)[1]!, "Dessert");
     await user.clear(detailsEditor.getAllByLabelText(/^Value/)[1]!);
     await user.type(detailsEditor.getAllByLabelText(/^Value/)[1]!, "Cake and coffee at 9 PM.");
-    await user.click(detailsEditor.getByRole("button", { name: "Save sections" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit Details" })).toBeNull());
 
     await user.click(screen.getByLabelText("Enable Dress Code"));
@@ -265,7 +273,7 @@ describe("SectionBuilderWorkspace", () => {
       dressCodeEditor.getByLabelText("Palette title"),
       "A garden celebration palette",
     );
-    await user.click(dressCodeEditor.getByRole("button", { name: "Save sections" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Edit Dress Code" })).toBeNull(),
     );
@@ -285,7 +293,7 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(rsvpEditor.getByRole("switch", { name: /Guest message/ }));
     await user.click(rsvpEditor.getByRole("switch", { name: /Dietary requirements/ }));
     await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
-    await user.click(rsvpEditor.getByRole("button", { name: "Save sections" }));
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
     await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(4));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
@@ -340,6 +348,16 @@ describe("SectionBuilderWorkspace", () => {
     expect(await screen.findByText("Sections saved.")).toBeTruthy();
   });
 });
+
+function getModalFooter() {
+  const footer = document.querySelector('[data-slot="responsive-modal-footer"]');
+
+  if (!(footer instanceof HTMLElement)) {
+    throw new Error("Expected the responsive modal footer to be rendered.");
+  }
+
+  return within(footer);
+}
 
 function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
   return render(

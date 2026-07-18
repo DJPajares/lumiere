@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import { Button } from "@lumiere/dashboard-ui/components/button";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import {
   canDisableBlueprintSection,
@@ -707,6 +708,33 @@ function SectionBuilderContent({
           contentClassName="sm:max-w-4xl"
           description="Update this section’s invite content. Changes appear in the dedicated preview as you edit."
           dirty={dirtySectionKeys.has(editingPreview.section.sectionKey)}
+          footer={({ requestClose }) => (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                disabled={
+                  !dirtySectionKeys.has(editingPreview.section.sectionKey) || state.isSaving
+                }
+                onClick={requestClose}
+                type="button"
+                variant="outline"
+              >
+                Cancel changes
+              </Button>
+              <Button
+                disabled={!canEdit || state.isSaving}
+                onClick={() => {
+                  void saveSections().then((saved) => {
+                    if (saved) {
+                      setEditingSectionKey(null);
+                    }
+                  });
+                }}
+                type="button"
+              >
+                {state.isSaving ? "Saving..." : "Save sections"}
+              </Button>
+            </div>
+          )}
           onDiscard={() => discardSectionChanges(editingPreview.section.sectionKey)}
           onOpenChange={(open) => {
             if (!open) {
@@ -724,21 +752,11 @@ function SectionBuilderContent({
                   : `${getSectionDefinition(editingPreview.section.sectionType).label} editor is view only`}
               </legend>
               <SectionEditor
-                canSave={canEdit && !state.isSaving}
                 errors={{
                   ...editingPreview.errors,
                   ...(state.sectionErrors[editingPreview.section.sectionKey] ?? {}),
                 }}
                 isDirty={dirtySectionKeys.has(editingPreview.section.sectionKey)}
-                isSaving={state.isSaving}
-                onCancel={requestClose}
-                onSave={() => {
-                  void saveSections().then((saved) => {
-                    if (saved) {
-                      setEditingSectionKey(null);
-                    }
-                  });
-                }}
                 requirement={editingPreview.requirement}
                 rsvpSettings={rsvpSettings}
                 section={editingPreview.section}
@@ -1131,12 +1149,8 @@ function PreviewSectionBody({
 }
 
 function SectionEditor({
-  canSave,
   errors,
   isDirty,
-  isSaving,
-  onCancel,
-  onSave,
   requirement,
   rsvpSettings,
   section,
@@ -1144,12 +1158,8 @@ function SectionEditor({
   updateSection,
   updateRsvpSetting,
 }: {
-  canSave: boolean;
   errors: SectionErrors;
   isDirty: boolean;
-  isSaving: boolean;
-  onCancel: () => void;
-  onSave: () => void;
   requirement: SectionBlueprintRequirement;
   rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
@@ -1192,45 +1202,21 @@ function SectionEditor({
       </div>
 
       <div className="grid gap-6">
-        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-          <p className="text-sm font-semibold">Editor actions</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canSave}
-              onClick={onSave}
-              type="button"
-            >
-              {isSaving ? "Saving..." : "Save sections"}
-            </button>
-            <button
-              className={secondaryButtonClassName}
-              disabled={!isDirty || isSaving}
-              onClick={onCancel}
-              type="button"
-            >
-              Cancel changes
-            </button>
-          </div>
-        </div>
+        <SectionFieldForm
+          disabled={!section.enabled}
+          errors={errors}
+          rsvpSettings={rsvpSettings}
+          section={section}
+          updateSection={updateSection}
+          updateRsvpSetting={updateRsvpSetting}
+        />
 
-        <div className="grid gap-6">
-          <SectionFieldForm
-            disabled={!section.enabled}
-            errors={errors}
-            rsvpSettings={rsvpSettings}
-            section={section}
-            updateSection={updateSection}
-            updateRsvpSetting={updateRsvpSetting}
-          />
-
-          <DeveloperJsonEditor
-            disabled={!section.enabled}
-            errors={errors}
-            section={section}
-            updateSection={updateSection}
-          />
-        </div>
+        <DeveloperJsonEditor
+          disabled={!section.enabled}
+          errors={errors}
+          section={section}
+          updateSection={updateSection}
+        />
       </div>
     </div>
   );

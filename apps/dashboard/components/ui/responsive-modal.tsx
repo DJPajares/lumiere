@@ -39,6 +39,7 @@ type ResponsiveModalProps = {
   contentClassName?: string;
   description: string;
   dirty?: boolean;
+  footer?: ReactNode | ((controls: ResponsiveModalControls) => ReactNode);
   onDiscard?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -50,6 +51,7 @@ export function ResponsiveModal({
   contentClassName,
   description,
   dirty = false,
+  footer,
   onDiscard,
   onOpenChange,
   open,
@@ -81,7 +83,9 @@ export function ResponsiveModal({
 
     onOpenChange(true);
   };
-  const content = typeof children === "function" ? children({ requestClose }) : children;
+  const controls = { requestClose };
+  const content = typeof children === "function" ? children(controls) : children;
+  const footerContent = typeof footer === "function" ? footer(controls) : footer;
   const modalHeader = (
     <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
       <div className="min-w-0">
@@ -114,6 +118,14 @@ export function ResponsiveModal({
       {content}
     </div>
   );
+  const modalFooter = footerContent ? (
+    <div
+      className="shrink-0 border-t border-border bg-popover px-5 py-4 sm:px-6"
+      data-slot="responsive-modal-footer"
+    >
+      {footerContent}
+    </div>
+  ) : null;
 
   return (
     <>
@@ -128,6 +140,7 @@ export function ResponsiveModal({
           >
             {modalHeader}
             {modalBody}
+            {modalFooter}
           </DialogContent>
         </Dialog>
       ) : (
@@ -140,6 +153,7 @@ export function ResponsiveModal({
           >
             {modalHeader}
             {modalBody}
+            {modalFooter}
           </DrawerContent>
         </Drawer>
       )}
