@@ -1,16 +1,16 @@
 ---
 id: 't91-invite-map-performance-and-zoom-bounds'
 status: 'backlog'
-priority: 'medium'
+priority: 'low'
 assignee: null
 epic: 'invite-experience'
 dueDate: null
 created: '2026-07-18T00:00:00Z'
-modified: '2026-07-18T13:12:11+08:00'
+modified: '2026-07-18T14:15:31+08:00'
 completedAt: null
 labels: ['invite', 'map', 'performance', 'location']
 depends_on: ['t75-invite-location-map-experience']
-order: 'a91'
+order: 'z91'
 ---
 
 # t91-invite-map-performance-and-zoom-bounds - Invite map performance and zoom bounds
@@ -47,3 +47,4 @@ The current implementation already uses `loading="lazy"`, persisted coordinates,
 
 - 2026-07-18T00:00:00Z: Task created.
 - 2026-07-18T13:12:11+08:00: Reframed the task around the existing no-key OpenStreetMap embed and removed assumptions about repeated geocoding requests or a new coordinate cache.
+- 2026-07-18T14:15:31+08:00: Deprioritized to last place at the user's request; no scope or acceptance changes.

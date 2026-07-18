@@ -10,9 +10,15 @@ import {
   SheetTrigger,
 } from "@lumiere/dashboard-ui";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useDashboardAuth } from "../auth/dashboard-auth-provider";
 import { DashboardBrandLockup } from "./dashboard-brand";
+import {
+  DashboardEventSwitcher,
+  type DashboardEventSwitcherState,
+} from "./dashboard-event-switcher";
 import { type DashboardNavigationItem, getDashboardNavigation } from "./dashboard-navigation";
 import { DashboardTopBarControls } from "./dashboard-top-bar-controls";
 import { useTopBarVisibility } from "./use-top-bar-visibility";
@@ -24,9 +30,60 @@ type DashboardTopNavigationProps = {
 };
 
 export function DashboardTopNavigation({ activePath }: DashboardTopNavigationProps) {
+  const router = useRouter();
+  const { apiClient, status } = useDashboardAuth();
   const navigation = getDashboardNavigation(activePath);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [eventListState, setEventListState] = useState<DashboardEventSwitcherState>({
+    error: null,
+    events: [],
+    status: "idle",
+  });
+  const [eventListRevision, setEventListRevision] = useState(0);
   const { isVisible, prefersReducedMotion } = useTopBarVisibility(mobileNavigationOpen);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !apiClient) {
+      setEventListState({ error: null, events: [], status: "idle" });
+      return;
+    }
+
+    let isMounted = true;
+    setEventListState((current) => ({ ...current, error: null, status: "loading" }));
+
+    apiClient
+      .listEvents()
+      .then(({ events }) => {
+        if (isMounted) {
+          setEventListState({ error: null, events, status: "ready" });
+        }
+      })
+      .catch((error: unknown) => {
+        if (isMounted) {
+          setEventListState({
+            error: error instanceof Error ? error.message : "Unable to load your events.",
+            events: [],
+            status: "error",
+          });
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [apiClient, eventListRevision, status]);
+
+  useEffect(() => {
+    if (
+      eventListState.status !== "ready" ||
+      !navigation.context.eventId ||
+      eventListState.events.some((event) => event.id === navigation.context.eventId)
+    ) {
+      return;
+    }
+
+    router.replace("/");
+  }, [eventListState, navigation.context.eventId, router]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia(DASHBOARD_DESKTOP_QUERY);
@@ -80,6 +137,14 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
                   ? "Managing the selected event."
                   : "Choose an event to open its workspace."}
               </SheetDescription>
+              <DashboardEventSwitcher
+                activePath={activePath}
+                className="mt-3 w-full justify-between"
+                eventListState={eventListState}
+                mobile
+                onNavigate={() => setMobileNavigationOpen(false)}
+                onRetry={() => setEventListRevision((revision) => revision + 1)}
+              />
             </SheetHeader>
             <MobileNavigation
               managerItems={navigation.manager}
@@ -95,6 +160,14 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
         >
           <DashboardBrandLockup />
         </Link>
+
+        <div className="hidden min-w-0 md:block">
+          <DashboardEventSwitcher
+            activePath={activePath}
+            eventListState={eventListState}
+            onRetry={() => setEventListRevision((revision) => revision + 1)}
+          />
+        </div>
 
         <nav
           aria-label="Dashboard navigation"

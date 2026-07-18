@@ -7,6 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DashboardTopNavigation } from "./dashboard-top-navigation";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 vi.mock("./dashboard-top-bar-controls", () => ({
   DashboardTopBarControls: () => <div data-testid="top-bar-controls">Account controls</div>,
 }));
