@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { Event, GuestGroup } from "@lumiere/types";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -16,10 +16,100 @@ describe("GuestManagementWorkspace", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    window.history.replaceState({}, "", "/events/evt_123/guests");
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: undefined,
     });
+  });
+
+  it("filters by searchable guest data, status, and sort direction while updating the URL", async () => {
+    const user = userEvent.setup();
+    const guestGroups: GuestGroup[] = [
+      {
+        ...guestGroup,
+        contactEmail: "tan@example.com",
+        createdAt: "2030-01-01T00:00:00.000Z",
+        id: "guest_tan",
+        label: "Tan Family",
+        members: [{ id: "member_tan", name: "Mina Tan", sortOrder: 0 }],
+      },
+      {
+        ...guestGroup,
+        contactEmail: "lee@example.com",
+        contactName: "Jordan Lee",
+        createdAt: "2030-03-01T00:00:00.000Z",
+        id: "guest_lee",
+        label: "Lee Family",
+        maxPax: 2,
+        status: "responded",
+      },
+      {
+        ...guestGroup,
+        contactEmail: "mina@example.com",
+        contactName: "Alex Tan",
+        createdAt: "2030-02-01T00:00:00.000Z",
+        id: "guest_mina",
+        label: "Mina and Alex",
+        maxPax: 3,
+        members: [{ id: "member_mina", name: "Alex Tan", sortOrder: 0 }],
+        status: "responded",
+      },
+    ];
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups })),
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    await user.type(screen.getByLabelText("Search guest groups"), "mina");
+
+    expect(screen.getByText("Tan Family")).toBeTruthy();
+    expect(screen.getByText("Mina and Alex")).toBeTruthy();
+    expect(screen.queryByText("Lee Family")).toBeNull();
+    expect(window.location.search).toBe("?q=mina");
+
+    await user.click(screen.getByLabelText("Status filter"));
+    await user.click(await screen.findByRole("option", { name: "Responded" }));
+    expect(screen.queryByText("Tan Family")).toBeNull();
+    expect(window.location.search).toBe("?q=mina&status=responded");
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await user.click(screen.getByLabelText("Sort by"));
+    await user.click(await screen.findByRole("option", { name: "Max pax" }));
+    await user.click(screen.getByLabelText("Sort direction"));
+    await user.click(await screen.findByRole("option", { name: "Oldest / lowest first" }));
+
+    const groupResults = within(screen.getByRole("region", { name: "Guest groups" }));
+    expect(
+      groupResults.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
+    ).toEqual(["Lee Family", "Mina and Alex", "Tan Family"]);
+    expect(window.location.search).toBe("?sort=maxPax&direction=asc");
+  });
+
+  it("restores URL filters and exposes an accessible no-results clear state", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(
+      {},
+      "",
+      "/events/evt_123/guests?q=unknown&status=responded&sort=maxPax&direction=asc",
+    );
+
+    renderWithAuth(createApiClientStub());
+
+    await screen.findByText("No guest groups match these filters");
+    expect((screen.getByLabelText("Search guest groups") as HTMLInputElement).value).toBe(
+      "unknown",
+    );
+    const noResults = screen.getByRole("status", { name: "Guest group results" });
+    expect(within(noResults).getByRole("button", { name: "Clear filters" })).toBeTruthy();
+
+    await user.click(within(noResults).getByRole("button", { name: "Clear filters" }));
+
+    expect(await screen.findByText("Tan Family")).toBeTruthy();
+    expect(window.location.search).toBe("");
   });
 
   it("loads guest groups across dashboard states", async () => {

@@ -71,6 +71,16 @@ type PendingAction = {
   type: "disable" | "regenerate";
 } | null;
 
+type GuestSortKey = "label" | "createdAt" | "updatedAt" | "lastOpenedAt" | "maxPax" | "status";
+type GuestSortDirection = "asc" | "desc";
+
+type GuestListFilters = {
+  direction: GuestSortDirection;
+  query: string;
+  sort: GuestSortKey;
+  status: GuestGroupStatus | "all";
+};
+
 const defaultFormValues: FormValues = {
   contactEmail: "",
   contactName: "",
@@ -88,6 +98,27 @@ const guestStatuses: GuestGroupStatus[] = [
   "declined",
   "disabled",
 ];
+
+const defaultGuestListFilters: GuestListFilters = {
+  direction: "desc",
+  query: "",
+  sort: "createdAt",
+  status: "all",
+};
+
+const guestSortOptions: Array<{ label: string; value: GuestSortKey }> = [
+  { label: "Created date", value: "createdAt" },
+  { label: "Updated date", value: "updatedAt" },
+  { label: "Last opened", value: "lastOpenedAt" },
+  { label: "Group label", value: "label" },
+  { label: "Max pax", value: "maxPax" },
+  { label: "Status", value: "status" },
+];
+
+const guestSortDirectionOptions = [
+  { label: "Newest / highest first", value: "desc" },
+  { label: "Oldest / lowest first", value: "asc" },
+] as const;
 
 export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const { apiClient } = useDashboardAuth();
@@ -107,6 +138,29 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [busyGroupId, setBusyGroupId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [guestListFilters, setGuestListFilters] = useState<GuestListFilters>(() =>
+    readGuestListFilters(),
+  );
+
+  useEffect(() => {
+    const syncFiltersFromUrl = () => setGuestListFilters(readGuestListFilters());
+
+    window.addEventListener("popstate", syncFiltersFromUrl);
+    return () => window.removeEventListener("popstate", syncFiltersFromUrl);
+  }, []);
+
+  const updateGuestListFilters = useCallback((updates: Partial<GuestListFilters>) => {
+    setGuestListFilters((current) => {
+      const next = { ...current, ...updates };
+      writeGuestListFilters(next);
+      return next;
+    });
+  }, []);
+
+  const clearGuestListFilters = useCallback(() => {
+    writeGuestListFilters(defaultGuestListFilters);
+    setGuestListFilters(defaultGuestListFilters);
+  }, []);
 
   const loadGuests = useCallback(
     async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
@@ -177,6 +231,12 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
   const readyState = state.status === "ready" ? state : null;
   const editingGroup = readyState?.data.guestGroups.find((group) => group.id === editingGroupId);
+  const guestGroups = readyState?.data.guestGroups ?? [];
+  const filteredGuestGroups = useMemo(
+    () => filterAndSortGuestGroups(guestGroups, guestListFilters),
+    [guestGroups, guestListFilters],
+  );
+  const hasGuestListFilters = !areGuestListFiltersDefault(guestListFilters);
 
   const startCreate = () => {
     setEditingGroupId(null);
@@ -512,6 +572,13 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
       <GuestSummary guestGroups={readyState.data.guestGroups} />
 
+      <GuestGroupFilters
+        filters={guestListFilters}
+        hasActiveFilters={hasGuestListFilters}
+        onClear={clearGuestListFilters}
+        onUpdate={updateGuestListFilters}
+      />
+
       {actionMessage ? (
         <div
           className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm"
@@ -555,8 +622,9 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       <GuestGroupList
         busyGroupId={busyGroupId}
         canEdit={canEdit}
-        guestGroups={readyState.data.guestGroups}
+        guestGroups={filteredGuestGroups}
         inviteLinks={readyState.inviteLinks}
+        onClearFilters={clearGuestListFilters}
         onCopy={(group) => void copyInviteLink(group)}
         onDisable={(group) => setPendingAction({ groupId: group.id, type: "disable" })}
         onEdit={startEdit}
@@ -565,6 +633,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onCancelPendingAction={() => setPendingAction(null)}
         onConfirmDisable={(group) => void disableGuestGroup(group)}
         onConfirmRegenerate={(group) => void regenerateInvite(group)}
+        totalGuestGroups={readyState.data.guestGroups.length}
       />
     </div>
   );
@@ -618,6 +687,86 @@ function GuestSummary({ guestGroups }: { guestGroups: GuestGroup[] }) {
           </p>
         </article>
       ))}
+    </section>
+  );
+}
+
+function GuestGroupFilters({
+  filters,
+  hasActiveFilters,
+  onClear,
+  onUpdate,
+}: {
+  filters: GuestListFilters;
+  hasActiveFilters: boolean;
+  onClear: () => void;
+  onUpdate: (updates: Partial<GuestListFilters>) => void;
+}) {
+  return (
+    <section
+      aria-label="Guest group filters"
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">Find guest groups</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">Search and sort invites</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            Search labels, member names, contact email, or the non-secret invite code. Filters stay
+            in the URL so this view can be refreshed or shared.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!hasActiveFilters}
+          onClick={onClear}
+          type="button"
+        >
+          Clear filters
+        </button>
+      </div>
+
+      <FieldGroup className="grid gap-4 lg:grid-cols-[minmax(18rem,2fr)_minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)]">
+        <Field>
+          <FieldLabel htmlFor="guest-group-search">Search guest groups</FieldLabel>
+          <Input
+            id="guest-group-search"
+            onChange={(event) => onUpdate({ query: event.target.value })}
+            placeholder="Search by group, member, email, or invite code"
+            value={filters.query}
+          />
+          <FieldDescription>
+            Search is case-insensitive and excludes invite tokens.
+          </FieldDescription>
+        </Field>
+
+        <DashboardSelect
+          id="guest-group-status-filter"
+          label="Status filter"
+          onValueChange={(value) => onUpdate({ status: value as GuestGroupStatus | "all" })}
+          options={[
+            { label: "All statuses", value: "all" },
+            ...guestStatuses.map((status) => ({ label: formatStatus(status), value: status })),
+          ]}
+          value={filters.status}
+        />
+
+        <DashboardSelect
+          id="guest-group-sort"
+          label="Sort by"
+          onValueChange={(value) => onUpdate({ sort: value as GuestSortKey })}
+          options={guestSortOptions}
+          value={filters.sort}
+        />
+
+        <DashboardSelect
+          id="guest-group-sort-direction"
+          label="Sort direction"
+          onValueChange={(value) => onUpdate({ direction: value as GuestSortDirection })}
+          options={[...guestSortDirectionOptions]}
+          value={filters.direction}
+        />
+      </FieldGroup>
     </section>
   );
 }
@@ -767,6 +916,7 @@ function GuestGroupList({
   guestGroups,
   inviteLinks,
   onCancelPendingAction,
+  onClearFilters,
   onConfirmDisable,
   onConfirmRegenerate,
   onCopy,
@@ -774,12 +924,14 @@ function GuestGroupList({
   onEdit,
   onRegenerate,
   pendingAction,
+  totalGuestGroups,
 }: {
   busyGroupId: string | null;
   canEdit: boolean;
   guestGroups: GuestGroup[];
   inviteLinks: Record<string, string>;
   onCancelPendingAction: () => void;
+  onClearFilters: () => void;
   onConfirmDisable: (group: GuestGroup) => void;
   onConfirmRegenerate: (group: GuestGroup) => void;
   onCopy: (group: GuestGroup) => void;
@@ -787,8 +939,31 @@ function GuestGroupList({
   onEdit: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
+  totalGuestGroups: number;
 }) {
-  if (guestGroups.length === 0) {
+  if (guestGroups.length === 0 && totalGuestGroups > 0) {
+    return (
+      <section
+        aria-label="Guest group results"
+        className="grid gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))] p-5"
+        role="status"
+      >
+        <h2 className="text-xl font-semibold">No guest groups match these filters</h2>
+        <p className="max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+          Try a different search or status, or clear the filters to see every guest group again.
+        </p>
+        <button
+          className="inline-flex min-h-10 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          onClick={onClearFilters}
+          type="button"
+        >
+          Clear filters
+        </button>
+      </section>
+    );
+  }
+
+  if (totalGuestGroups === 0) {
     return (
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))] p-5">
         <h2 className="text-xl font-semibold">No guest groups yet</h2>
@@ -803,6 +978,15 @@ function GuestGroupList({
 
   return (
     <section className="grid gap-3" aria-label="Guest groups">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Guest groups</h2>
+        <p
+          className="text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]"
+          role="status"
+        >
+          Showing {guestGroups.length} of {totalGuestGroups}
+        </p>
+      </div>
       {guestGroups.map((group) => {
         const inviteLink = inviteLinks[group.id];
         const pending = pendingAction?.groupId === group.id ? pendingAction : null;
@@ -999,6 +1183,144 @@ function TextField({
       ) : null}
     </label>
   );
+}
+
+function readGuestListFilters(): GuestListFilters {
+  if (typeof window === "undefined") {
+    return defaultGuestListFilters;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const query = params.get("q") ?? "";
+  const statusParam = params.get("status");
+  const sortParam = params.get("sort");
+  const directionParam = params.get("direction");
+
+  return {
+    direction: directionParam === "asc" ? "asc" : defaultGuestListFilters.direction,
+    query,
+    sort: isGuestSortKey(sortParam) ? sortParam : defaultGuestListFilters.sort,
+    status: isGuestGroupStatus(statusParam) ? statusParam : defaultGuestListFilters.status,
+  };
+}
+
+function writeGuestListFilters(filters: GuestListFilters) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const params = new URLSearchParams();
+  const query = filters.query.trim();
+
+  if (query) {
+    params.set("q", query);
+  }
+  if (filters.status !== defaultGuestListFilters.status) {
+    params.set("status", filters.status);
+  }
+  if (filters.sort !== defaultGuestListFilters.sort) {
+    params.set("sort", filters.sort);
+  }
+  if (filters.direction !== defaultGuestListFilters.direction) {
+    params.set("direction", filters.direction);
+  }
+
+  const queryString = params.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
+  window.history.replaceState(window.history.state, "", nextUrl);
+}
+
+function areGuestListFiltersDefault(filters: GuestListFilters) {
+  return (
+    filters.query.trim() === defaultGuestListFilters.query &&
+    filters.status === defaultGuestListFilters.status &&
+    filters.sort === defaultGuestListFilters.sort &&
+    filters.direction === defaultGuestListFilters.direction
+  );
+}
+
+function filterAndSortGuestGroups(guestGroups: GuestGroup[], filters: GuestListFilters) {
+  const query = filters.query.trim().toLocaleLowerCase();
+  const filtered = guestGroups.filter((group) => {
+    if (filters.status !== "all" && group.status !== filters.status) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    const searchableText = [
+      group.label,
+      group.contactName,
+      group.contactEmail,
+      group.inviteCode,
+      ...(group.members?.map((member) => member.name) ?? []),
+    ]
+      .filter(Boolean)
+      .join("\n")
+      .toLocaleLowerCase();
+
+    return searchableText.includes(query);
+  });
+
+  return [...filtered].sort((left, right) => {
+    const primary = compareGuestGroups(left, right, filters.sort);
+
+    if (primary !== 0) {
+      return filters.direction === "asc" ? primary : -primary;
+    }
+
+    return compareText(left.label, right.label) || compareText(left.id, right.id);
+  });
+}
+
+function compareGuestGroups(left: GuestGroup, right: GuestGroup, sort: GuestSortKey) {
+  switch (sort) {
+    case "label":
+      return compareText(left.label, right.label);
+    case "maxPax":
+      return left.maxPax - right.maxPax;
+    case "status":
+      return guestStatuses.indexOf(left.status) - guestStatuses.indexOf(right.status);
+    case "lastOpenedAt":
+      return compareNullableDates(left.lastOpenedAt, right.lastOpenedAt);
+    case "updatedAt":
+      return compareDates(left.updatedAt, right.updatedAt);
+    case "createdAt":
+    default:
+      return compareDates(left.createdAt, right.createdAt);
+  }
+}
+
+function compareDates(left: string, right: string) {
+  return Date.parse(left) - Date.parse(right);
+}
+
+function compareNullableDates(left: string | undefined, right: string | undefined) {
+  if (!left && !right) {
+    return 0;
+  }
+  if (!left) {
+    return 1;
+  }
+  if (!right) {
+    return -1;
+  }
+
+  return compareDates(left, right);
+}
+
+function compareText(left: string, right: string) {
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
+}
+
+function isGuestGroupStatus(value: string | null): value is GuestGroupStatus {
+  return value !== null && guestStatuses.includes(value as GuestGroupStatus);
+}
+
+function isGuestSortKey(value: string | null): value is GuestSortKey {
+  return guestSortOptions.some((option) => option.value === value);
 }
 
 function toFieldId(label: string) {
