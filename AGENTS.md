@@ -47,7 +47,7 @@ Use only `backlog`, `todo`, `in-progress`, `done`, and `blocked`.
 
 - Use `pnpm`.
 - Prefer latest stable dependencies where practical.
-- Use TypeScript, Prettier, and lint-staged where practical.
+- Use TypeScript and lint-staged where practical; do not run Prettier.
 - Do not add a component library unless justified by the task.
 - Use Tailwind CSS as styling foundation with semantic tokens (be aware of lint suggestCanonicalClasses).
 - Keep `globals.css` simple.
