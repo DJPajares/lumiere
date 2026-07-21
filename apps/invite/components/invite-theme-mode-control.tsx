@@ -3,7 +3,7 @@
 import type { ThemeModeTogglePresentation } from "@lumiere/themes";
 import type { ThemeMode } from "@lumiere/types";
 import type { CSSProperties } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export type ResolvedThemeMode = "dark" | "light";
 export type ThemeModeVariables = Record<string, string>;
@@ -50,7 +50,7 @@ export function InviteThemeModeControl({
 }: InviteThemeModeControlProps) {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const labelMeasureRef = useRef<HTMLSpanElement | null>(null);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const rootAnchorRef = useRef<HTMLSpanElement | null>(null);
   const [resolvedMode, setResolvedMode] = useState(initialMode);
   const [measuredLabelWidth, setMeasuredLabelWidth] = useState<number | null>(null);
   const storageKey = useMemo(() => createThemeModeStorageKey(eventKey), [eventKey]);
@@ -58,13 +58,12 @@ export function InviteThemeModeControl({
     configuredMode === "toggleable" && Boolean(presentation) && Boolean(variables.dark);
   const needsPrePaintResolution = configuredMode === "system" || canToggle;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!needsPrePaintResolution) {
       return;
     }
 
-    const root =
-      (buttonRef.current ?? scriptRef.current)?.closest<HTMLElement>("main[data-theme-id]") ?? null;
+    const root = rootAnchorRef.current?.closest<HTMLElement>("main[data-theme-id]") ?? null;
     const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
     const savedMode = canToggle ? readStoredMode(storageKey) : null;
     const followsSystem =
@@ -81,7 +80,9 @@ export function InviteThemeModeControl({
       });
 
       applyThemeMode(root, nextMode, variables);
-      setResolvedMode(nextMode);
+      if (canToggle) {
+        setResolvedMode(nextMode);
+      }
     };
 
     syncMode();
@@ -125,20 +126,9 @@ export function InviteThemeModeControl({
     return null;
   }
 
-  const initializationScript = buildThemeInitializationScript({
-    configuredMode,
-    defaultPreference: presentation?.defaultPreference,
-    storageKey,
-    variables,
-  });
-
   if (!canToggle || !presentation) {
     return (
-      <script
-        data-theme-mode-initializer="true"
-        dangerouslySetInnerHTML={{ __html: initializationScript }}
-        ref={scriptRef}
-      />
+      <span aria-hidden="true" data-theme-mode-anchor="true" hidden ref={rootAnchorRef} />
     );
   }
 
@@ -160,11 +150,7 @@ export function InviteThemeModeControl({
 
   return (
     <>
-      <script
-        data-theme-mode-initializer="true"
-        dangerouslySetInnerHTML={{ __html: initializationScript }}
-        ref={scriptRef}
-      />
+      <span aria-hidden="true" data-theme-mode-anchor="true" hidden ref={rootAnchorRef} />
       <div
         className={`lumiere-theme-mode-control fixed z-50 max-w-[calc(100vw-2rem)] ${placementClass} ${verticalPlacementClass}`}
         data-theme-mode-control={presentation.style}
@@ -264,27 +250,6 @@ function applyThemeMode(
   });
   root.style.colorScheme = mode;
   root.dataset.themeResolvedMode = mode;
-}
-
-function buildThemeInitializationScript({
-  configuredMode,
-  defaultPreference,
-  storageKey,
-  variables,
-}: {
-  configuredMode: ThemeMode;
-  defaultPreference?: ThemeModeTogglePresentation["defaultPreference"];
-  storageKey: string;
-  variables: InviteThemeModeControlProps["variables"];
-}) {
-  const payload = JSON.stringify({
-    configuredMode,
-    defaultPreference,
-    storageKey,
-    variables,
-  }).replace(/</g, "\\u003c");
-
-  return `(function(){var c=${payload};var r=document.currentScript&&document.currentScript.parentElement;if(!r)return;var s=null;if(c.configuredMode==='toggleable'){try{s=localStorage.getItem(c.storageKey)}catch(e){}}var d=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var m=!c.variables.dark||c.configuredMode==='light'?'light':c.configuredMode==='dark'?'dark':c.configuredMode==='system'?(d?'dark':'light'):s==='dark'||s==='light'?s:c.defaultPreference==='dark'?'dark':c.defaultPreference==='system'&&d?'dark':'light';var v=m==='dark'?c.variables.dark:c.variables.light;Object.keys(v).forEach(function(k){r.style.setProperty(k,v[k])});r.style.colorScheme=m;r.dataset.themeResolvedMode=m})()`;
 }
 
 function createThemeModeStorageKey(eventKey: string) {

@@ -241,10 +241,9 @@ describe("public invite section renderers", () => {
 
     expect(toggleableHtml).toContain('data-theme-mode="toggleable"');
     expect(toggleableHtml).toContain('data-theme-mode-control="soft-pill"');
-    expect(toggleableHtml).toContain('data-theme-mode-initializer="true"');
-    expect(toggleableHtml).toContain("lumiere:theme-mode:garden-evening");
-    expect(toggleableHtml).toContain("localStorage.getItem");
-    expect(toggleableHtml.indexOf("data-theme-mode-initializer")).toBeLessThan(
+    expect(toggleableHtml).toContain('data-theme-mode-anchor="true"');
+    expect(toggleableHtml).not.toContain("<script");
+    expect(toggleableHtml.indexOf("data-theme-mode-anchor")).toBeLessThan(
       toggleableHtml.indexOf("lumiere-invitation"),
     );
     expect(toggleableHtml).toContain("Invitation appearance: switch to");
@@ -288,9 +287,9 @@ describe("public invite section renderers", () => {
       createElement(PublicInvitation, { invite: systemInvite }),
     );
 
-    expect(systemHtml).toContain('data-theme-mode-initializer="true"');
+    expect(systemHtml).toContain('data-theme-mode-anchor="true"');
     expect(systemHtml).not.toContain("data-theme-mode-control=");
-    expect(systemHtml).toContain("prefers-color-scheme: dark");
+    expect(systemHtml).not.toContain("<script");
 
     const kidsToggleableInvite = createInvite([]);
     kidsToggleableInvite.selectedThemeId = "kids";
@@ -300,7 +299,7 @@ describe("public invite section renderers", () => {
     );
 
     expect(kidsToggleableHtml).toContain('data-theme-resolved-mode="light"');
-    expect(kidsToggleableHtml).toContain('data-theme-mode-initializer="true"');
+    expect(kidsToggleableHtml).toContain('data-theme-mode-anchor="true"');
     expect(kidsToggleableHtml).toContain('data-theme-mode-control="organic"');
 
     const fallbackInvite = createInvite([]);

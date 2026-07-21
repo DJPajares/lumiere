@@ -11,19 +11,56 @@ import PublicEventPage, {
   generateMetadata as generatePublicEventMetadata,
 } from "../app/e/[eventSlug]/page";
 import { metadata as inviteAppMetadata } from "../app/layout";
-import InviteHome from "../app/page";
+import InviteHome, { metadata as inviteHomeMetadata } from "../app/page";
 
 describe("invite app routes", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the root scaffold with links to public and guest routes", () => {
-    const html = renderToStaticMarkup(createElement(InviteHome));
+  it("renders the root scaffold with links to available curated demos", async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.includes("milo-turns-eight")) {
+        return Response.json(
+          {
+            error: {
+              code: "NOT_FOUND",
+              message: "Public event not found",
+              requestId: "missing-demo-request",
+            },
+          },
+          { status: 404 },
+        );
+      }
+
+      const slug = url.includes("after-hours-studio-18")
+        ? "after-hours-studio-18"
+        : "amara-theo-garden-wedding";
+
+      return Response.json({
+        ...publicEventResponse,
+        event: {
+          ...publicEventResponse.event,
+          slug,
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    const element = await InviteHome();
+    const html = renderToStaticMarkup(element);
 
     expect(html).toContain("Lumiere invite app");
-    expect(html).toContain("/e/launch-night");
-    expect(html).toContain("/e/launch-night/g/sample-guest-token-for-preview");
+    expect(html).toContain("View demo events");
+    expect(html).toContain("/e/amara-theo-garden-wedding");
+    expect(html).toContain("/e/after-hours-studio-18");
+    expect(html).not.toContain('href="/e/milo-turns-eight"');
+    expect(html).toContain("Demo not seeded");
+    expect(html).toContain("pnpm db:seed");
+    expect(html).not.toContain("/g/");
+    expect(html).not.toContain("guestToken");
   });
 
   it("declares invite PWA metadata and icons", () => {
@@ -41,6 +78,13 @@ describe("invite app routes", () => {
     expect(inviteAppMetadata.robots).toMatchObject({
       follow: false,
       index: false,
+    });
+    expect(inviteHomeMetadata).toMatchObject({
+      title: "Lumiere Demo Invitations",
+      robots: {
+        follow: false,
+        index: false,
+      },
     });
   });
 
