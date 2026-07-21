@@ -408,7 +408,7 @@ function HeroDecorationFrame({ className }: { className: string }) {
 function GuestContextPanel({ guest }: { guest: GuestContext }) {
   return (
     <section className="lumiere-guest-panel mx-auto w-full max-w-5xl pb-4">
-      <div className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
+      <div className="grid gap-4 rounded-lg border border-border bg-surface p-5 shadow-[0_18px_60px_color-mix(in_srgb,var(--accent)_10%,transparent)] sm:grid-cols-[1.3fr_0.7fr] sm:items-center sm:p-6">
         <div>
           <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">Guest invitation</p>
           <h2 className="lumiere-type-subtitle mt-2">{guest.guestGroup.label}</h2>
@@ -816,7 +816,7 @@ function ProfileSection({
                 key={index}
               >
                 {image ? <SectionImage asset={image} compact /> : null}
-                <div className="lumiere-profile-copy">
+                <div>
                   <h3 className="lumiere-type-name">{readString(person.name)}</h3>
                   {readString(person.role) ? (
                     <p className="lumiere-type-label mt-1 text-[var(--accent-strong)]">
@@ -1218,7 +1218,7 @@ function HeroFact({ label, value }: { label: string; value: string }) {
 
 function GuestFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-md)] bg-[var(--surface)] p-4">
+    <div className="rounded-[var(--radius-md)] bg-[var(--surface)]">
       <dt className="lumiere-type-label text-[var(--accent-strong)]">{label}</dt>
       <dd className="lumiere-type-caption mt-2">{value}</dd>
     </div>
