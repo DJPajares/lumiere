@@ -1218,7 +1218,7 @@ function HeroFact({ label, value }: { label: string; value: string }) {
 
 function GuestFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-md)] bg-[var(--surface)]">
+    <div className="rounded-[var(--radius-md)]">
       <dt className="lumiere-type-label text-[var(--accent-strong)]">{label}</dt>
       <dd className="lumiere-type-caption mt-2">{value}</dd>
     </div>
