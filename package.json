@@ -2,7 +2,7 @@
   "name": "lumiere",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@11.15.1",
   "scripts": {
     "dev": "turbo dev",
     "dev:invite": "pnpm --filter @lumiere/invite dev",
@@ -34,7 +34,7 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "lint-staged": "^17.0.8",
+    "lint-staged": "^17.1.0",
     "prettier": "^3.9.5",
     "tailwindcss": "^4.3.3",
     "turbo": "^2.10.5",
