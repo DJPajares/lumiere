@@ -6,7 +6,7 @@ assignee: null
 epic: 'dashboard-navigation'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'events', 'navigation', 'event-switcher', 'ux']
 depends_on: ['t113-dashboard-navigation-shell-refactor']
 order: 'a114'
@@ -22,6 +22,11 @@ order: 'a114'
 ## Scope
 
 Replace the title-width event dropdown in the desktop navigation row with a compact icon button in the utility-control cluster near notifications. Keep a popover/menu for choosing events, while showing the active event name in workspace context where it can use available page width.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `high`
 
 ## Acceptance
 

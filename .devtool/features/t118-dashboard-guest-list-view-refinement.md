@@ -6,7 +6,7 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'guests', 'list-view', 'table', 'responsive']
 depends_on: ['t108-dashboard-guest-status-regression', 't117-guest-invite-delivery-and-open-tracking']
 order: 'a118'
@@ -22,6 +22,11 @@ order: 'a118'
 ## Scope
 
 Refine the compact mode delivered in t97 into the primary desktop guest list: dense, scan-friendly rows with stable columns and shared actions. Keep cards available where useful, and use a touch-friendly stacked row treatment on narrow screens rather than introducing a heavy data-table dependency.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `high`
 
 ## Acceptance
 

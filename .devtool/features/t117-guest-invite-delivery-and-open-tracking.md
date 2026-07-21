@@ -6,7 +6,7 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'guests', 'tracking', 'sent', 'opened']
 depends_on: ['t108-dashboard-guest-status-regression', 't15-summary-activity-notification-api', 't98-dashboard-guest-invite-link-actions']
 order: 'a117'
@@ -22,6 +22,11 @@ order: 'a117'
 ## Scope
 
 Add a trustworthy invitation tracker that distinguishes a manager marking or initiating a share from a guest actually opening the private link and from a guest submitting an RSVP. Do not label a browser handoff as delivered or received without provider confirmation.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 

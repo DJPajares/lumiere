@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-access'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'expiration', 'dashboard', 'api', 'database']
 depends_on: ['t111-invite-invalid-link-experience', 't115-invite-link-expiration-policy']
 order: 'a116'
@@ -22,6 +22,11 @@ order: 'a116'
 ## Scope
 
 Implement the approved two-level expiration contract across database, shared types, manager API, dashboard settings, public invite lookup, guest invite lookup, RSVP submission, and invitation error views. Make the event-wide ceiling and optional earlier guest expiry visible and safely editable to authorized managers.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `xhigh`
 
 ## Acceptance
 

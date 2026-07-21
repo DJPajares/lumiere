@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-access'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'expiration', 'access-control', 'contracts', 'product-policy']
 depends_on: ['t44-event-slug-and-public-id-policy', 't71-event-deletion-lifecycle', 't73-event-publishing-workflow']
 order: 'a115'
@@ -22,6 +22,11 @@ order: 'a115'
 ## Scope
 
 Define the expiration contract before adding schema and UI. Use event-level expiration as the global ceiling for the public event URL and every guest URL, with optional per-guest-link expiration that may end one private link earlier but can never extend access beyond the event. Keep schedule end time, RSVP close time, unpublish, deletion, disable, token rotation, and access expiration as distinct concepts.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `xhigh`
 
 ## Acceptance
 

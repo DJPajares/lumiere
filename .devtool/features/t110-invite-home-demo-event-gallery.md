@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-discovery'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'home', 'demo', 'navigation', 'frontend']
 depends_on: ['t109-invite-demo-event-seed-catalog', 't26-invite-public-event-page']
 order: 'a110'
@@ -22,6 +22,11 @@ order: 'a110'
 ## Scope
 
 Replace the invite root's placeholder launch-night links with a clear demo entry point backed by the seeded wedding, kids birthday party, and launch events. Let a visitor choose a demo and open the real public event route while keeping the root page compact and brand-led.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `high`
 
 ## Acceptance
 

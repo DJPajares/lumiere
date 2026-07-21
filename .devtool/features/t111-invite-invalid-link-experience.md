@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-access'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'invalid-link', 'error-state', 'accessibility', 'frontend']
 depends_on: ['t26-invite-public-event-page', 't27-invite-guest-event-page']
 order: 'a111'
@@ -22,6 +22,11 @@ order: 'a111'
 ## Scope
 
 Replace the shared generic unavailable treatment with clear, purpose-built views for an invalid guest link and a missing/unpublished public event. Preserve separate disabled, expired-ready, and temporary-service-error states so guests understand whether to contact the host, request a new link, retry, or return home.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `high`
 
 ## Acceptance
 

@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-experience'
 dueDate: null
 created: '2026-07-22T01:19:42+08:00'
-modified: '2026-07-22T01:19:42+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'navigation', 'sections', 'floating-control', 'motion', 'accessibility']
 depends_on: ['t42-invite-ambient-audio-and-media-controls', 't53-invite-motion-parallax-system', 't74-invite-theme-mode-toggle', 't77-invite-theme-condition-boundary-refactor']
 order: 'a120'
@@ -22,6 +22,11 @@ order: 'a120'
 ## Scope
 
 Add a persistent floating section-navigation control to public and guest invitation pages. Keep it compact at rest, animate it open to reveal the invitation's rendered sections on hover, keyboard focus, or tap, and scroll to the selected section when activated. Position it on the horizontal side opposite the configured light/dark mode control while coordinating with ambient-audio controls and device safe areas.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 

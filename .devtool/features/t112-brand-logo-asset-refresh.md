@@ -6,7 +6,7 @@ assignee: null
 epic: 'design-system'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['brand', 'logo', 'invite', 'dashboard', 'pwa']
 depends_on: ['t35-brand-identity-and-pwa-assets']
 order: 'a112'
@@ -22,6 +22,11 @@ order: 'a112'
 ## Scope
 
 Replace the current invite and dashboard logo packs with the approved updated Lumiere artwork. Refresh visible lockups, metadata, favicons, Apple touch icons, standard PWA icons, and maskable assets while keeping the invite identity distinct from the dashboard shell identity.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `medium`
 
 ## Acceptance
 

@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-discovery'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'database', 'seed', 'demo', 'events']
 depends_on: ['t30-initial-theme-implementations', 't45-event-type-section-blueprints', 't73-event-publishing-workflow']
 order: 'a109'
@@ -22,6 +22,11 @@ order: 'a109'
 ## Scope
 
 Expand the current single-event demo seed into an idempotent catalog of three published events: a wedding, a kids birthday party, and a launch event. Give each event complete, event-appropriate content and a compatible theme so the invite home screen can link to real public invitation data rather than placeholder routes.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 

@@ -6,7 +6,7 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'guests', 'share', 'email', 'whatsapp']
 depends_on: ['t117-guest-invite-delivery-and-open-tracking', 't118-dashboard-guest-list-view-refinement']
 order: 'a119'
@@ -22,6 +22,11 @@ order: 'a119'
 ## Scope
 
 Add one accessible Share action for each active guest invite, available from both guest cards and table rows. Prefer the Web Share API so installed apps such as Messenger can participate, and provide reliable fallbacks for copying, email, and WhatsApp without claiming that the recipient received the message.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Terra (gpt-5.6-terra)`
+- Reasoning level: `high`
 
 ## Acceptance
 

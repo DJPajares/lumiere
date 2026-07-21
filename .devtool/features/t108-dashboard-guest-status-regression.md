@@ -6,7 +6,7 @@ assignee: null
 epic: 'guest-management'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'guests', 'status', 'bug', 'regression']
 depends_on: ['t101-event-collaboration-and-guest-management-regression']
 order: 'a108'
@@ -22,6 +22,11 @@ order: 'a108'
 ## Scope
 
 Reproduce and fix the dashboard regression where changing a guest group's invite status does not reliably persist or appear in guest management. Trace the existing edit form, shared mutation schema, API route, database update, list refresh, filters, cards, and compact list instead of adding a second status-changing path.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 

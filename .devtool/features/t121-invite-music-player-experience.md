@@ -6,7 +6,7 @@ assignee: null
 epic: 'invite-experience'
 dueDate: null
 created: '2026-07-22T01:19:42+08:00'
-modified: '2026-07-22T01:19:42+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['invite', 'music', 'audio', 'player', 'floating-control', 'accessibility']
 depends_on: ['t42-invite-ambient-audio-and-media-controls', 't120-invite-floating-section-navigator']
 order: 'a121'
@@ -22,6 +22,11 @@ order: 'a121'
 ## Scope
 
 Evolve the existing ambient-audio play/pause pill into a polished compact music player for public and guest invitation pages. Preserve browser-safe opt-in/autoplay behavior, then add useful track context and playback feedback without turning the invitation into a media application or blocking RSVP and section navigation.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 

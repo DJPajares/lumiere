@@ -6,7 +6,7 @@ assignee: null
 epic: 'dashboard-navigation'
 dueDate: null
 created: '2026-07-22T01:10:41+08:00'
-modified: '2026-07-22T01:10:41+08:00'
+modified: '2026-07-22T01:22:35+08:00'
 labels: ['dashboard', 'navigation', 'navbar', 'responsive', 'refactor']
 depends_on: ['t59-responsive-dashboard-top-navigation', 't60-dashboard-user-menu-and-notifications', 't92-dashboard-event-switcher']
 order: 'a113'
@@ -22,6 +22,11 @@ order: 'a113'
 ## Scope
 
 Refactor the dashboard top navigation into a clearer, lower-pressure shell that separates product identity, manager-level destinations, event-workspace context, and utility controls. Reduce horizontal competition without changing route ownership or introducing a second active-event state.
+
+## Suggested Agent
+
+- Suggested model: `GPT-5.6 Sol (gpt-5.6-sol)`
+- Reasoning level: `high`
 
 ## Acceptance
 
