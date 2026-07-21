@@ -7,11 +7,17 @@
 
 [data-theme-id="neon-signal"] .lumiere-section--hero::before {
   position: absolute;
-  inset: 0 auto 0 clamp(1rem, 5vw, 5rem);
+  inset: 0 auto 0 0.5rem;
   width: 0.25rem;
   content: "";
   background: linear-gradient(var(--accent), transparent 78%);
   box-shadow: 0 0 2rem color-mix(in srgb, var(--accent) 52%, transparent);
+}
+
+@media (min-width: 40rem) {
+  [data-theme-id="neon-signal"] .lumiere-section--hero::before {
+    inset-inline-start: clamp(1rem, 5vw, 5rem);
+  }
 }
 
 [data-theme-id="neon-signal"] .lumiere-hero-copy {
