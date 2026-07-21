@@ -34,6 +34,11 @@ describe("dashboard data", () => {
       ],
       [
         {
+          attendeeCount: 3,
+          guestGroupId: "00000000-0000-4000-8000-000000000301",
+          responseStatus: "attending",
+        },
+        {
           attendeeCount: 2,
           guestGroupId: "00000000-0000-4000-8000-000000000302",
           responseStatus: "attending",

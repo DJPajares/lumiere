@@ -847,8 +847,9 @@ describe("public invite section renderers", () => {
         guestGroup: {
           label: "Tan Family",
           maxPax: 4,
-          status: "opened",
+          status: "pending",
         },
+        responseRequiredAgain: true,
         responseStatus: null,
       },
       rsvpFields: {
@@ -874,6 +875,8 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
+    expect(html).toContain("Response requested again");
+    expect(html).toContain("The host has asked your group to RSVP again.");
     expect(html).toContain("Meal choice");
     expect(html).toContain("Private RSVP");
     expect(html).toContain("Please reply before Friday.");

@@ -439,21 +439,12 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     setActionMessage(null);
 
     try {
-      const response = await apiClient.disableGuestGroup(eventId, group.id);
-      setState((current) =>
-        current.status === "ready"
-          ? {
-              ...current,
-              data: {
-                ...current.data,
-                guestGroups: current.data.guestGroups.map((item) =>
-                  item.id === response.guestGroup.id ? response.guestGroup : item,
-                ),
-              },
-              inviteLinks: withoutInviteLink(current.inviteLinks, response.guestGroup.id),
-            }
-          : current,
+      const response = await apiClient.updateGuestGroup(
+        eventId,
+        group.id,
+        toGuestGroupMutationRequest(group, "disabled"),
       );
+      replaceGuestGroup(response.guestGroup);
       setPendingAction(null);
       setActionMessage(`${response.guestGroup.label} disabled. Existing invite access is blocked.`);
       toast.success(`${response.guestGroup.label} disabled.`);
@@ -1106,6 +1097,7 @@ function GuestGroupForm({
 
       {editingGroup ? (
         <DashboardSelect
+          description="Pending asks the guest to respond again without deleting the previous RSVP record. Opened, Responded, and Declined require matching guest activity; Disabled blocks this invite link."
           error={errors.status}
           id="guest-invite-status"
           label="Invite status"
@@ -1914,7 +1906,7 @@ function parseGuestGroupForm(values: FormValues):
     contactName: emptyToUndefined(values.contactName),
     label: values.label,
     maxPax,
-    members: values.members,
+    members: values.members.filter((member) => member.name.trim().length > 0),
     notes: values.notes,
     status: values.status,
   });
@@ -1958,6 +1950,21 @@ function parseGuestGroupForm(values: FormValues):
   };
 }
 
+function toGuestGroupMutationRequest(
+  group: GuestGroup,
+  status: "disabled" | "pending",
+): GuestGroupMutationRequest {
+  return {
+    contactEmail: group.contactEmail,
+    contactName: group.contactName,
+    label: group.label,
+    maxPax: group.maxPax,
+    members: group.members?.map(({ id, name }) => ({ id, name })),
+    notes: group.notes,
+    status,
+  };
+}
+
 function toFormErrors(error: unknown): FormErrors {
   if (error instanceof ApiClientError) {
     const errors: FormErrors = {
@@ -1986,12 +1993,6 @@ function toFriendlyApiMessage(error: unknown) {
   }
 
   return error instanceof Error ? error.message : "Unable to complete the guest group request.";
-}
-
-function withoutInviteLink(links: Record<string, string>, groupId: string) {
-  const nextLinks = { ...links };
-  delete nextLinks[groupId];
-  return nextLinks;
 }
 
 function emptyToUndefined(value: string) {

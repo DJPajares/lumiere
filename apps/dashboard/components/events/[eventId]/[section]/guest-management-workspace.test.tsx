@@ -403,10 +403,17 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getByText(/Full URL unavailable\. Regenerate this group/)).toBeTruthy();
   });
 
-  it("migrates a legacy contact into automatic member fields while editing", async () => {
+  it("resets a responded legacy group to pending while preserving its invite link", async () => {
     const user = userEvent.setup();
-    const updatedGroup: GuestGroup = {
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/existing-token";
+    const respondedGroup: GuestGroup = {
       ...guestGroup,
+      inviteLink,
+      lastOpenedAt: "2030-01-02T00:00:00.000Z",
+      status: "responded",
+    };
+    const updatedGroup: GuestGroup = {
+      ...respondedGroup,
       maxPax: 5,
       members: [
         { id: "member_1", name: "Mina Tan", sortOrder: 0 },
@@ -416,7 +423,7 @@ describe("GuestManagementWorkspace", () => {
         { id: "member_5", name: "Sam Tan", sortOrder: 4 },
       ],
       notes: "Seat near the stage.",
-      status: "opened",
+      status: "pending",
     };
     const updateGuestGroup = vi.fn<DashboardApiClient["updateGuestGroup"]>(async () => ({
       guestGroup: updatedGroup,
@@ -424,7 +431,7 @@ describe("GuestManagementWorkspace", () => {
 
     renderWithAuth(
       createApiClientStub({
-        listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [respondedGroup] })),
         updateGuestGroup,
       }),
     );
@@ -445,7 +452,7 @@ describe("GuestManagementWorkspace", () => {
     await user.clear(screen.getByLabelText("Notes"));
     await user.type(screen.getByLabelText("Notes"), "Seat near the stage.");
     await user.click(screen.getByLabelText("Invite status"));
-    await user.click(await screen.findByRole("option", { name: "Opened" }));
+    await user.click(await screen.findByRole("option", { name: "Pending" }));
     await user.click(screen.getByRole("button", { name: "Save guest group" }));
 
     await waitFor(() =>
@@ -463,13 +470,19 @@ describe("GuestManagementWorkspace", () => {
             { name: "Sam Tan" },
           ],
           notes: "Seat near the stage.",
-          status: "opened",
+          status: "pending",
         }),
       ),
     );
     expect(await screen.findByText("Tan Family updated.")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.activeElement).toBe(editTrigger);
+    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue(inviteLink)).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getByText(inviteLink)).toBeTruthy();
   });
 
   it("automatically matches member fields to max pax without manual controls", async () => {
@@ -595,31 +608,51 @@ describe("GuestManagementWorkspace", () => {
 
   it("disables guest groups instead of deleting them", async () => {
     const user = userEvent.setup();
-    const disableGuestGroup = vi.fn<DashboardApiClient["disableGuestGroup"]>(async () => ({
-      guestGroup: {
-        ...guestGroup,
-        status: "disabled",
-      },
-    }));
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/stable-token";
+    const updateGuestGroup = vi.fn<DashboardApiClient["updateGuestGroup"]>(
+      async (_eventId, _groupId, input) => ({
+        guestGroup: {
+          ...guestGroup,
+          status: input.status === "disabled" ? "disabled" : "pending",
+        },
+      }),
+    );
 
     renderWithAuth(
       createApiClientStub({
-        disableGuestGroup,
-        listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
+        listGuestGroups: vi.fn(async () => ({
+          guestGroups: [{ ...guestGroup, inviteLink }],
+        })),
+        updateGuestGroup,
       }),
     );
 
     await screen.findByText("Tan Family");
     await user.click(screen.getByRole("button", { name: "Disable" }));
 
-    expect(disableGuestGroup).not.toHaveBeenCalled();
+    expect(updateGuestGroup).not.toHaveBeenCalled();
     expect(screen.getByText("Disable this guest group?")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Confirm disable" }));
 
-    await waitFor(() => expect(disableGuestGroup).toHaveBeenCalledWith("evt_123", "guest_1"));
+    await waitFor(() =>
+      expect(updateGuestGroup).toHaveBeenCalledWith(
+        "evt_123",
+        "guest_1",
+        expect.objectContaining({ status: "disabled" }),
+      ),
+    );
     expect(await screen.findByText(/Existing invite access is blocked/)).toBeTruthy();
     expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Edit Tan Family" }));
+    await user.click(screen.getByLabelText("Invite status"));
+    await user.click(await screen.findByRole("option", { name: "Pending" }));
+    await user.click(screen.getByRole("button", { name: "Save guest group" }));
+
+    await waitFor(() => expect(updateGuestGroup).toHaveBeenCalledTimes(2));
+    expect(updateGuestGroup.mock.calls[1]?.[2]).toMatchObject({ status: "pending" });
+    expect(await screen.findByDisplayValue(inviteLink)).toBeTruthy();
   });
 });
 

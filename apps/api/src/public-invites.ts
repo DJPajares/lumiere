@@ -130,6 +130,11 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       .where(eq(rsvpResponses.guestGroupId, guestGroup.id))
       .limit(1);
 
+    const currentResponse =
+      guestGroup.status === "responded" || guestGroup.status === "declined"
+        ? rsvpResponse
+        : undefined;
+
     return {
       ...publicEvent,
       guest: {
@@ -139,14 +144,15 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
           maxPax: guestGroup.maxPax,
           status: guestGroup.status,
         },
-        response: rsvpResponse
+        response: currentResponse
           ? {
-              attendeeCount: rsvpResponse.attendeeCount,
-              guestNames: rsvpResponse.guestNames,
-              responseStatus: rsvpResponse.responseStatus,
+              attendeeCount: currentResponse.attendeeCount,
+              guestNames: currentResponse.guestNames,
+              responseStatus: currentResponse.responseStatus,
             }
           : null,
-        responseStatus: rsvpResponse?.responseStatus ?? null,
+        responseRequiredAgain: Boolean(rsvpResponse && !currentResponse),
+        responseStatus: currentResponse?.responseStatus ?? null,
       },
       sections: listGuestSections(publicEvent.sections),
     };

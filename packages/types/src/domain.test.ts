@@ -126,6 +126,21 @@ describe("shared schemas", () => {
         maxPax: 0,
       }),
     ).toThrow();
+
+    expect(
+      guestGroupMutationSchema.parse({
+        label: "Family table",
+        maxPax: 2,
+        status: "disabled",
+      }).status,
+    ).toBe("disabled");
+    expect(
+      guestGroupMutationSchema.parse({
+        label: "Family table",
+        maxPax: 2,
+        status: "responded",
+      }).status,
+    ).toBe("responded");
   });
 
   it("validates ordered guest members against capacity and duplicate names", () => {

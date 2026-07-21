@@ -189,7 +189,10 @@ export const buildEventSummary = (
   };
 
   for (const group of activeGroups) {
-    const response = responsesByGroupId.get(group.id);
+    const response =
+      group.status === "responded" || group.status === "declined"
+        ? responsesByGroupId.get(group.id)
+        : undefined;
 
     if (!response) {
       summary.pending.groups += 1;

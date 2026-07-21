@@ -397,6 +397,7 @@ export const publicGuestContextSchema = z.object({
     })
     .nullable()
     .optional(),
+  responseRequiredAgain: z.boolean().optional(),
   responseStatus: rsvpResponseSchema.shape.responseStatus.nullable(),
 });
 export type PublicGuestContext = z.infer<typeof publicGuestContextSchema>;

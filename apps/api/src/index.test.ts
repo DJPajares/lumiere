@@ -22,9 +22,11 @@ import {
   eventSectionsResponseSchema,
   eventSummaryResponseSchema,
   eventThemeResponseSchema,
+  guestGroupResponseSchema,
   guestGroupInviteResponseSchema,
   publicEventResponseSchema,
   publicGuestInviteResponseSchema,
+  rsvpResponsesResponseSchema,
   rsvpSubmissionResponseSchema,
 } from "@lumiere/types";
 import { createHmac, generateKeyPairSync, sign } from "node:crypto";
@@ -45,7 +47,7 @@ import {
   type GuestDataExportStore,
 } from "./guest-exports";
 import type { GuestGroupStore, InviteTokenRecord } from "./guest-groups";
-import { hashInviteToken } from "./guest-groups";
+import { hashInviteToken, resolveManagerGuestGroupStatus } from "./guest-groups";
 import { createApiApplication, loadApiConfig } from "./bootstrap";
 import type {
   PublicEventRecord,
@@ -2688,7 +2690,7 @@ describe("API app", () => {
       ...baseGuestGroup,
       label: "Tan and Lee Family",
       maxPax: 5,
-      status: "opened" as const,
+      status: "disabled" as const,
     };
     const { authStore } = createTestAuthStore({
       access: roleAccess("editor"),
@@ -2713,7 +2715,7 @@ describe("API app", () => {
           { id: "member_1", name: "Mina Tan" },
         ],
         notes: "Window table",
-        status: "opened",
+        status: "disabled",
       }),
       headers: {
         authorization: `Bearer ${createSupabaseToken()}`,
@@ -2736,8 +2738,34 @@ describe("API app", () => {
         { id: "member_1", name: "Mina Tan" },
       ],
       notes: "Window table",
-      status: "opened",
+      status: "disabled",
     });
+    expect(
+      resolveManagerGuestGroupStatus({
+        currentStatus: "disabled",
+        requestedStatus: "pending",
+        responseStatus: "attending",
+      }),
+    ).toBe("pending");
+    expect(
+      resolveManagerGuestGroupStatus({
+        currentStatus: "disabled",
+        lastOpenedAt: "2026-07-08T03:00:00.000Z",
+        requestedStatus: "opened",
+      }),
+    ).toBe("opened");
+    expect(
+      resolveManagerGuestGroupStatus({
+        currentStatus: "responded",
+        requestedStatus: "pending",
+      }),
+    ).toBe("pending");
+    expect(() =>
+      resolveManagerGuestGroupStatus({
+        currentStatus: "pending",
+        requestedStatus: "responded",
+      }),
+    ).toThrow("Responded requires matching guest activity or RSVP history");
   });
 
   it("disables guest groups instead of exposing hard deletes", async () => {
@@ -3543,6 +3571,7 @@ describe("API app", () => {
         status: "pending",
       },
       response: null,
+      responseRequiredAgain: false,
       responseStatus: null,
     });
     expect(guestInviteBody.sections.map((section) => section.sectionType)).toContain("rsvp");
@@ -3622,6 +3651,71 @@ describe("API app", () => {
       totalGroups: 1,
       totalInvitedPax: 4,
       totalRespondedPax: 2,
+    });
+
+    const resetStatusResponse = await app.request(
+      `/events/${eventId}/guest-groups/${guestGroupId}`,
+      {
+        body: JSON.stringify({
+          contactEmail: "mina@example.com",
+          contactName: "Mina Tan",
+          label: "Tan Family",
+          maxPax: 4,
+          status: "pending",
+        }),
+        headers: managerHeaders,
+        method: "PATCH",
+      },
+    );
+    const resetStatusBody = guestGroupResponseSchema.parse(await resetStatusResponse.json());
+
+    expect(resetStatusResponse.status).toBe(200);
+    expect(resetStatusBody.guestGroup.status).toBe("pending");
+
+    const pendingGuestInviteResponse = await app.request(
+      `/public/events/smoke-wedding/guest/${guestToken}`,
+    );
+    const pendingGuestInviteBody = publicGuestInviteResponseSchema.parse(
+      await pendingGuestInviteResponse.json(),
+    );
+
+    expect(pendingGuestInviteBody.guest).toMatchObject({
+      guestGroup: {
+        status: "pending",
+      },
+      response: null,
+      responseRequiredAgain: true,
+      responseStatus: null,
+    });
+
+    const responseHistoryResponse = await app.request(`/events/${eventId}/responses`, {
+      headers: managerHeaders,
+    });
+    const responseHistoryBody = rsvpResponsesResponseSchema.parse(
+      await responseHistoryResponse.json(),
+    );
+
+    expect(responseHistoryBody.responses).toHaveLength(1);
+    expect(responseHistoryBody.responses[0]).toMatchObject({
+      guestGroupId,
+      responseStatus: "attending",
+    });
+
+    const pendingSummaryResponse = await app.request(`/events/${eventId}/summary`, {
+      headers: managerHeaders,
+    });
+    const pendingSummaryBody = eventSummaryResponseSchema.parse(
+      await pendingSummaryResponse.json(),
+    );
+
+    expect(pendingSummaryBody.summary).toEqual({
+      attending: { groups: 0, pax: 0 },
+      maybe: { groups: 0, pax: 0 },
+      notAttending: { groups: 0, pax: 0 },
+      pending: { groups: 1, pax: 4 },
+      totalGroups: 1,
+      totalInvitedPax: 4,
+      totalRespondedPax: 0,
     });
   });
 
@@ -4407,6 +4501,11 @@ function createIntegrationSmokeStores() {
         return "disabled";
       }
 
+      const currentResponse =
+        guestGroupRecord.status === "responded" || guestGroupRecord.status === "declined"
+          ? responseRecord
+          : null;
+
       return {
         ...publicEvent,
         guest: {
@@ -4415,14 +4514,15 @@ function createIntegrationSmokeStores() {
             maxPax: guestGroupRecord.maxPax,
             status: guestGroupRecord.status,
           },
-          response: responseRecord
+          response: currentResponse
             ? {
-                attendeeCount: responseRecord.attendeeCount,
-                guestNames: responseRecord.guestNames,
-                responseStatus: responseRecord.responseStatus,
+                attendeeCount: currentResponse.attendeeCount,
+                guestNames: currentResponse.guestNames,
+                responseStatus: currentResponse.responseStatus,
               }
             : null,
-          responseStatus: responseRecord?.responseStatus ?? null,
+          responseRequiredAgain: Boolean(responseRecord && !currentResponse),
+          responseStatus: currentResponse?.responseStatus ?? null,
         },
         sections: sections
           .filter(
@@ -4609,29 +4709,32 @@ function buildSmokeSummary(
     };
   }
 
+  const currentResponse =
+    guestGroup.status === "responded" || guestGroup.status === "declined" ? response : null;
+
   return {
     attending:
-      response?.responseStatus === "attending"
+      currentResponse?.responseStatus === "attending"
         ? {
             groups: 1,
-            pax: response.attendeeCount,
+            pax: currentResponse.attendeeCount,
           }
         : empty,
     maybe:
-      response?.responseStatus === "maybe"
+      currentResponse?.responseStatus === "maybe"
         ? {
             groups: 1,
-            pax: response.attendeeCount,
+            pax: currentResponse.attendeeCount,
           }
         : empty,
     notAttending:
-      response?.responseStatus === "not_attending"
+      currentResponse?.responseStatus === "not_attending"
         ? {
             groups: 1,
-            pax: response.attendeeCount,
+            pax: currentResponse.attendeeCount,
           }
         : empty,
-    pending: response
+    pending: currentResponse
       ? empty
       : {
           groups: 1,
@@ -4639,7 +4742,7 @@ function buildSmokeSummary(
         },
     totalGroups: 1,
     totalInvitedPax: guestGroup.maxPax,
-    totalRespondedPax: response ? response.attendeeCount : 0,
+    totalRespondedPax: currentResponse ? currentResponse.attendeeCount : 0,
   };
 }
 
