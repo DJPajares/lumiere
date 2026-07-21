@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   apiErrorSchema,
+  demoEventCatalog,
+  demoEventCatalogEntrySchema,
   eventCreateSchema,
   eventUpdateSchema,
   eventSectionsUpdateSchema,
@@ -12,6 +14,19 @@ import {
 const startsAt = "2026-12-24T18:30:00+08:00";
 
 describe("shared schemas", () => {
+  it("exposes a public-only curated demo event catalog", () => {
+    expect(demoEventCatalog.map((entry) => demoEventCatalogEntrySchema.parse(entry))).toEqual(
+      demoEventCatalog,
+    );
+    expect(demoEventCatalog.map((entry) => entry.publicSlug)).toEqual([
+      "amara-theo-garden-wedding",
+      "milo-turns-eight",
+      "after-hours-studio-18",
+    ]);
+    expect(JSON.stringify(demoEventCatalog)).not.toContain("guestToken");
+    expect(JSON.stringify(demoEventCatalog)).not.toContain("manager");
+  });
+
   it("accepts valid event creation input", () => {
     expect(
       eventCreateSchema.parse({

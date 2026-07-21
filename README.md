@@ -276,8 +276,11 @@ pnpm dev
 
 ### Seed Demo Data
 
-After migrations, seed a published demo invite with sections, guest groups, RSVP
-responses, activity, and notifications:
+After migrations, seed the standalone demo catalog. The command works on an empty
+database and creates its own deterministic synthetic manager plus three published
+events: a garden wedding, a kids birthday party, and an after-dark launch. Each demo
+includes event-specific sections, guest groups, RSVP examples, activity, and
+notifications:
 
 ```bash
 pnpm db:seed
@@ -285,17 +288,22 @@ pnpm db:seed
 
 The command reads `apps/api/.env` by default, including `DATABASE_URL`,
 `INVITE_TOKEN_SECRET`, `PUBLIC_APP_BASE_URL`, and `DASHBOARD_APP_BASE_URL`.
-It prints ready-to-open dashboard, public invite, and guest invite URLs.
+It is safe to run repeatedly: the three deterministic demo events and their related
+records are replaced instead of duplicated. The command prints ready-to-open dashboard,
+public invite, and representative guest invite URLs for every event. Public and guest
+URLs work without a Supabase user because the synthetic owner is created locally by the
+seed itself.
 
-For dashboard access, seed the event against your Supabase auth user. If you
-know your Supabase user id, run:
+Supabase binding is optional and only needed to open the seeded events in the authenticated
+dashboard. If you know your Supabase user id, bind all three events by running:
 
 ```bash
 SEED_MANAGER_EMAIL=you@example.com SEED_SUPABASE_USER_ID=your-supabase-user-id pnpm db:seed
 ```
 
 If you do not know the id, sign in to the dashboard once so the API mirrors your
-user into the local database, then rerun:
+user into the local database, then rerun. The seed finds the local user by email and
+binds all three demo events to it:
 
 ```bash
 SEED_MANAGER_EMAIL=you@example.com pnpm db:seed
