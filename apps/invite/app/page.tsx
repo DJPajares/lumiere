@@ -17,8 +17,7 @@ export const metadata: Metadata = {
   title: "Lumiere Demo Invitations",
   description: "Explore three published Lumiere invitations for a wedding, birthday, and launch.",
   openGraph: {
-    description:
-      "Explore three published Lumiere invitations for a wedding, birthday, and launch.",
+    description: "Explore three published Lumiere invitations for a wedding, birthday, and launch.",
     siteName: "Lumiere Invite",
     title: "Lumiere Demo Invitations",
     type: "website",
@@ -95,9 +94,6 @@ export default async function InviteHome() {
             />
             <span>Lumiere invite app</span>
           </div>
-          <span className="lumiere-type-caption hidden text-[color-mix(in_srgb,var(--foreground)_58%,transparent)] sm:block">
-            Three events. Three distinct rhythms.
-          </span>
         </header>
 
         <section className="mx-auto grid min-h-[calc(100dvh-5rem)] w-full max-w-[90rem] items-end gap-10 px-5 pb-12 pt-14 sm:px-8 sm:pb-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.65fr)] lg:gap-16 lg:px-12 lg:pb-20 lg:pt-20">
