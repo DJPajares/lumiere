@@ -615,7 +615,13 @@ function withResponseStatus(
     return {
       ...state,
       attendeeCount: 0,
-      guestNames: collectGuestNames ? (state.guestNames.length > 0 ? state.guestNames : [""]) : [],
+      guestNames: collectGuestNames
+        ? hasStructuredMembers
+          ? state.guestNames
+          : state.guestNames.length > 0
+            ? state.guestNames
+            : [""]
+        : [],
       responseStatus,
     };
   }

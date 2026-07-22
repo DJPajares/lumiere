@@ -132,6 +132,49 @@ describe("RSVP form flow helpers", () => {
     expect(html).not.toContain("<details");
   });
 
+  it("keeps a one-pax structured member selectable after choosing decline", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+
+    await act(() =>
+      root.render(
+        createElement(RsvpForm, {
+          eventSlug: "garden-evening",
+          guestGroup: {
+            label: "Ari Tan",
+            maxPax: 1,
+            members: [{ name: "Ari Tan", sortOrder: 0 }],
+          },
+          guestToken: "sample-guest-token-for-preview",
+          initialResponseStatus: null,
+          questions: [],
+          rsvpFields: {
+            collectGuestMessage: false,
+            collectGuestNames: true,
+          },
+        }),
+      ),
+    );
+
+    await act(() =>
+      container.querySelector<HTMLInputElement>('input[value="not_attending"]')?.click(),
+    );
+    await act(() =>
+      container.querySelector<HTMLInputElement>('input[value="attending"]')?.click(),
+    );
+
+    const memberCheckbox = container.querySelector<HTMLInputElement>("#guestMember-0");
+    expect(memberCheckbox?.disabled).toBe(false);
+
+    await act(() => memberCheckbox?.click());
+
+    expect(memberCheckbox?.checked).toBe(true);
+    await act(() => root.unmount());
+  });
+
   it("keeps checked members selected when the attending count is reduced", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
