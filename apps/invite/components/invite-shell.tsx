@@ -49,12 +49,17 @@ export function InviteShell({
     mode === "toggleable" &&
     theme.supportedModes.includes("toggleable") &&
     Boolean(theme.tokens.dark);
-  const sectionNavigationPlacement = hasVisibleModeToggle
+  const ambientAudioPlacement = hasVisibleModeToggle
     ? theme.modeToggle.placement === "top-end"
       ? "start"
       : "end"
-    : ambientAudio
-      ? "start"
+    : "end";
+  const sectionNavigationPlacement = ambientAudio
+    ? ambientAudioPlacement
+    : hasVisibleModeToggle
+      ? theme.modeToggle.placement === "top-end"
+        ? "start"
+        : "end"
       : "end";
 
   return (
@@ -84,7 +89,11 @@ export function InviteShell({
         placement={sectionNavigationPlacement}
       />
       {children}
-      <AmbientAudioControls audio={ambientAudio} context={context} themeId={theme.id} />
+      <AmbientAudioControls
+        audio={ambientAudio}
+        eventKey={eventKey}
+        placement={ambientAudioPlacement}
+      />
     </main>
   );
 }

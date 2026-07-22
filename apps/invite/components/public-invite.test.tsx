@@ -787,6 +787,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain('src="https://audio.example.com/garden-strings.mp3"');
     expect(html).toContain("Evening music");
     expect(html).toContain("Play Garden strings");
+    expect(html).toContain("Show playback details for Garden strings");
+    expect(html).toContain("Seek through Garden strings");
+    expect(html).toContain("Mute Garden strings");
     expect(html).toContain("Tap to begin");
     expect(html).toContain("top-20 sm:top-4");
   });
@@ -809,9 +812,22 @@ describe("public invite section renderers", () => {
         invite: disabledInvite,
       }),
     );
+    const invalidInvite = createInvite([]);
+    invalidInvite.event.publicSettings = {
+      ambientAudio: {
+        enabled: true,
+        src: "javascript:alert('not audio')",
+      },
+    };
+    const invalidAudioHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, {
+        invite: invalidInvite,
+      }),
+    );
 
     expect(missingAudioHtml).not.toContain("data-audio-status");
     expect(disabledAudioHtml).not.toContain("data-audio-status");
+    expect(invalidAudioHtml).not.toContain("data-audio-status");
   });
 
   it("derives floating navigation from the final public section order and targets", () => {

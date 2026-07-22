@@ -31,6 +31,9 @@ describe("EventSettingsWorkspace", () => {
         ...(input.accessExpiresAt !== undefined
           ? { accessExpiresAt: input.accessExpiresAt ?? null }
           : {}),
+        ...(input.publicSettings
+          ? { publicSettings: input.publicSettings as Event["publicSettings"] }
+          : {}),
       },
     }));
 
@@ -66,9 +69,31 @@ describe("EventSettingsWorkspace", () => {
 
     expect(updateEvent).toHaveBeenCalledTimes(1);
 
+    await user.type(
+      screen.getByLabelText("Direct audio URL"),
+      "https://media.example.com/summer-dinner.mp3",
+    );
+    await user.click(screen.getByRole("switch", { name: /Enable background music/ }));
+    await user.type(screen.getByLabelText("Track title"), "Summer strings");
+    await user.click(screen.getByRole("button", { name: "Save background music" }));
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(2));
+    expect(updateEvent).toHaveBeenLastCalledWith("evt_123", {
+      publicSettings: {
+        ambientAudio: {
+          autoplay: false,
+          enabled: true,
+          lowDistraction: false,
+          src: "https://media.example.com/summer-dinner.mp3",
+          title: "Summer strings",
+        },
+        shareTitle: "Spring Dinner invitation",
+      },
+    });
+    expect(await screen.findByText("Background music settings saved.")).toBeTruthy();
+
     await user.click(screen.getByRole("button", { name: "Use event end time" }));
     await user.click(screen.getByRole("button", { name: "Save access deadline" }));
-    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(3));
     expect(updateEvent).toHaveBeenLastCalledWith("evt_123", {
       accessExpiresAt: settingsEvent.endsAt,
     });
@@ -269,7 +294,7 @@ const settingsEvent: Event = {
   eventType: "private_event",
   id: "evt_123",
   ownerUserId: "user_123",
-  publicSettings: {},
+  publicSettings: { shareTitle: "Spring Dinner invitation" },
   rsvpSettings: {
     collectGuestMessage: true,
     collectGuestNames: true,

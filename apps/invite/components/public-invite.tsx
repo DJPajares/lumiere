@@ -11,12 +11,13 @@ import {
   type ThemeSectionComposition,
   type ThemeSectionDensity,
 } from "@lumiere/themes";
-import type {
-  EventSection,
-  JsonValue,
-  PublicEventResponse,
-  PublicGuestInviteResponse,
-  RsvpResponseFields,
+import {
+  parseAmbientAudioSettings,
+  type EventSection,
+  type JsonValue,
+  type PublicEventResponse,
+  type PublicGuestInviteResponse,
+  type RsvpResponseFields,
 } from "@lumiere/types";
 
 import type { AmbientAudioConfig } from "./ambient-audio-controls";
@@ -1510,31 +1511,29 @@ export function resolveAmbientAudioConfig(
     return undefined;
   }
 
-  const config =
-    readAmbientAudioObject(invite.themeConfig.ambientAudio) ??
-    readAmbientAudioObject(invite.event.publicSettings.ambientAudio);
+  const publicAudio = isJsonObject(invite.event.publicSettings.ambientAudio)
+    ? invite.event.publicSettings.ambientAudio
+    : undefined;
+  const hasPublicAudioOverride = Boolean(publicAudio);
+  const config = hasPublicAudioOverride
+    ? parseAmbientAudioSettings(publicAudio)
+    : parseAmbientAudioSettings(invite.themeConfig.ambientAudio);
 
-  if (!config || readBoolean(config.enabled, true) === false) {
-    return undefined;
-  }
-
-  const src = readString(config.src) ?? readString(config.url);
-
-  if (!src) {
+  if (
+    (publicAudio && readBoolean(publicAudio.enabled, true) === false) ||
+    !config ||
+    !config.enabled
+  ) {
     return undefined;
   }
 
   return {
-    autoplay: readBoolean(config.autoplay, themeAudio.defaultAutoplay),
-    label: readString(config.label) ?? "Music",
-    lowDistraction: readBoolean(config.lowDistraction, false),
-    src,
-    title: readString(config.title) ?? readString(config.label) ?? "Ambient music",
+    autoplay: config.autoplay ?? themeAudio.defaultAutoplay,
+    label: config.label ?? "Music",
+    lowDistraction: config.lowDistraction,
+    src: config.src,
+    title: config.title ?? config.label ?? "Ambient music",
   };
-}
-
-function readAmbientAudioObject(value: JsonValue | undefined) {
-  return isJsonObject(value) ? value : undefined;
 }
 
 function getRenderableSections(

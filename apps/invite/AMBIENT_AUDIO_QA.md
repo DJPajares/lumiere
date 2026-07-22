@@ -1,6 +1,7 @@
 # Ambient Audio QA
 
-Use a premium theme invite with this metadata in `themeConfig` or `event.publicSettings`:
+Use Event settings → Background music to save a track on `event.publicSettings`, or use a
+premium theme invite with this metadata in `themeConfig`:
 
 ```json
 {
@@ -16,10 +17,17 @@ Use a premium theme invite with this metadata in `themeConfig` or `event.publicS
 
 Manual smoke checks:
 
+- Dashboard configuration: paste a direct HTTP(S) MP3, AAC/M4A, OGG, or WAV file URL, save, and
+  confirm unrelated public settings remain unchanged. A Spotify, Apple Music, SoundCloud, or
+  YouTube page URL is not a direct audio source and should not be used.
+- Remote host: confirm the media host permits browser playback, HTTPS invitations do not reference
+  insecure HTTP audio, and the host supports byte-range requests if seeking is expected.
 - Autoplay allowed: open the public invite in a browser/profile that permits media autoplay and confirm the control changes to `Playing`.
 - Autoplay blocked: open in a fresh tab/profile with default autoplay blocking and confirm the invite still renders, with a visible `Tap to play` control.
-- Manual play/pause: click the control, confirm audio toggles, refresh, and confirm the last play/pause choice is remembered for that browser.
+- Manual playback: use play/pause, expand the player, seek, mute/unmute, refresh, and confirm the
+  last play/pause choice is remembered for that event and source in the current browser.
 - Low distraction: set `lowDistraction` to `true` or enable reduced motion and confirm audio does not start automatically.
 - Missing audio: remove `src` or set `enabled` to `false` and confirm no player UI appears.
-- Failed audio: use a broken `src` and confirm the control reports audio as unavailable without blocking invite sections or RSVP.
+- Failed audio: use a broken or cross-origin-blocked `src`, confirm the player reports audio as
+  unavailable without noisy console errors, and confirm its retry action remains available.
 - Guest page: repeat play/pause on `/e/[eventSlug]/g/[guestToken]` and confirm the control stays clear of RSVP actions on mobile and desktop.

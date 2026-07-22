@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
+import { AmbientAudioSettingsPanel } from "./ambient-audio-settings-panel";
 import { CollaboratorAccessPanel } from "./collaborator-access-panel";
 import { EventBasicsModal } from "../../event-basics-modal";
 import { EventDeletionModal } from "../../event-deletion-modal";
@@ -200,6 +201,20 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
         )}
       </section>
 
+      <AmbientAudioSettingsPanel
+        accessRole={state.accessRole}
+        apiClient={apiClient}
+        event={event}
+        onSaved={(savedEvent) =>
+          setState({
+            accessRole: state.accessRole,
+            error: null,
+            event: savedEvent,
+            status: "ready",
+          })
+        }
+      />
+
       <section className="grid gap-5 rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -284,7 +299,9 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Editors and owners can change this deadline.</p>
+          <p className="text-sm text-muted-foreground">
+            Editors and owners can change this deadline.
+          </p>
         )}
       </section>
 

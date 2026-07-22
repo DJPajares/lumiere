@@ -28,6 +28,7 @@ import {
   publicSlugSchema,
   slugSchema,
   timezoneSchema,
+  type JsonValue,
 } from "./primitives";
 
 export const rsvpResponseFieldsSchema = z.object({
@@ -39,6 +40,51 @@ export type RsvpResponseFields = z.infer<typeof rsvpResponseFieldsSchema>;
 export const defaultRsvpResponseFields: RsvpResponseFields = {
   collectGuestMessage: true,
   collectGuestNames: true,
+};
+
+export const ambientAudioUrlSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter a direct audio URL")
+  .max(2048, "Audio URL must be 2,048 characters or fewer")
+  .url("Enter a valid audio URL")
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+
+    return protocol === "http:" || protocol === "https:";
+  }, "Use an HTTP or HTTPS audio URL");
+
+const optionalAmbientAudioTextSchema = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((value) => (value === "" ? undefined : value));
+
+export const ambientAudioSettingsSchema = z.object({
+  autoplay: z.boolean().default(false),
+  enabled: z.boolean().default(true),
+  label: optionalAmbientAudioTextSchema(80),
+  lowDistraction: z.boolean().default(false),
+  src: ambientAudioUrlSchema,
+  title: optionalAmbientAudioTextSchema(160),
+});
+export type AmbientAudioSettings = z.infer<typeof ambientAudioSettingsSchema>;
+
+export const parseAmbientAudioSettings = (
+  value: JsonValue | undefined,
+): AmbientAudioSettings | undefined => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const result = ambientAudioSettingsSchema.safeParse({
+    ...value,
+    src: value.src ?? value.url,
+  });
+
+  return result.success ? result.data : undefined;
 };
 
 export const eventDeletionRetentionDays = 30;
