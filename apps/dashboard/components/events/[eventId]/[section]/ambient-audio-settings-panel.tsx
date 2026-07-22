@@ -17,6 +17,8 @@ import { DashboardSwitch, DashboardTextInput } from "../../../ui/dashboard-field
 import { toFriendlyApiMessage } from "../../event-basics-form";
 
 type AmbientAudioFormValues = {
+  art: string;
+  artist: string;
   autoplay: boolean;
   enabled: boolean;
   label: string;
@@ -39,6 +41,7 @@ export function AmbientAudioSettingsPanel({
   onSaved,
 }: AmbientAudioSettingsPanelProps) {
   const [values, setValues] = useState(() => readAmbientAudioFormValues(event));
+  const [artError, setArtError] = useState<string>();
   const [sourceError, setSourceError] = useState<string>();
   const [formError, setFormError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -60,6 +63,7 @@ export function AmbientAudioSettingsPanel({
     value: AmbientAudioFormValues[TKey],
   ) => {
     setValues((current) => ({ ...current, [key]: value }));
+    setArtError(undefined);
     setSourceError(undefined);
     setFormError(undefined);
     setNotice(undefined);
@@ -72,6 +76,8 @@ export function AmbientAudioSettingsPanel({
     }
 
     const src = values.src.trim();
+    const art = values.art.trim();
+    const artist = values.artist.trim();
     const title = values.title.trim();
     const label = values.label.trim();
 
@@ -82,6 +88,8 @@ export function AmbientAudioSettingsPanel({
 
     const parsed = src
       ? ambientAudioSettingsSchema.safeParse({
+          art,
+          artist,
           autoplay: values.autoplay,
           enabled: values.enabled,
           label,
@@ -92,9 +100,11 @@ export function AmbientAudioSettingsPanel({
       : undefined;
 
     if (parsed && !parsed.success) {
+      setArtError(parsed.error.issues.find((issue) => issue.path[0] === "art")?.message);
       setSourceError(parsed.error.issues.find((issue) => issue.path[0] === "src")?.message);
       setFormError(
-        parsed.error.issues.find((issue) => issue.path[0] !== "src")?.message ?? undefined,
+        parsed.error.issues.find((issue) => !["art", "src"].includes(String(issue.path[0])))
+          ?.message ?? undefined,
       );
       return;
     }
@@ -106,6 +116,8 @@ export function AmbientAudioSettingsPanel({
     } else if (parsed?.success) {
       const settings = parsed.data;
       publicSettings.ambientAudio = {
+        ...(settings.art ? { art: settings.art } : {}),
+        ...(settings.artist ? { artist: settings.artist } : {}),
         autoplay: settings.autoplay,
         enabled: settings.enabled,
         lowDistraction: settings.lowDistraction,
@@ -116,6 +128,7 @@ export function AmbientAudioSettingsPanel({
     }
 
     setIsSaving(true);
+    setArtError(undefined);
     setSourceError(undefined);
     setFormError(undefined);
     setNotice(undefined);
@@ -192,6 +205,34 @@ export function AmbientAudioSettingsPanel({
           />
           <DashboardTextInput
             disabled={!canEdit || isSaving}
+            id="event-background-music-artist"
+            label="Artist"
+            maxLength={160}
+            onChange={(inputEvent) => updateValue("artist", inputEvent.target.value)}
+            placeholder="The Garden Quartet"
+            type="text"
+            value={values.artist}
+          />
+        </div>
+
+        <DashboardTextInput
+          autoCapitalize="none"
+          autoComplete="url"
+          description="Use a direct HTTP(S) image URL. Lumiere stores the reference and does not upload or proxy the artwork."
+          disabled={!canEdit || isSaving}
+          error={artError}
+          id="event-background-music-art"
+          inputMode="url"
+          label="Album art URL"
+          onChange={(inputEvent) => updateValue("art", inputEvent.target.value)}
+          placeholder="https://images.example.com/our-song-cover.jpg"
+          type="url"
+          value={values.art}
+        />
+
+        <div className="max-w-md">
+          <DashboardTextInput
+            disabled={!canEdit || isSaving}
             id="event-background-music-label"
             label="Player label"
             maxLength={80}
@@ -257,6 +298,8 @@ function readAmbientAudioFormValues(event: Event): AmbientAudioFormValues {
 
   if (!value) {
     return {
+      art: "",
+      artist: "",
       autoplay: false,
       enabled: false,
       label: "",
@@ -267,11 +310,13 @@ function readAmbientAudioFormValues(event: Event): AmbientAudioFormValues {
   }
 
   return {
+    art: config?.art ?? readFirstString(value.art, value.albumArt, value.artworkUrl),
+    artist: config?.artist ?? readString(value.artist),
     autoplay: config?.autoplay ?? readBoolean(value.autoplay, false),
     enabled: config?.enabled ?? readBoolean(value.enabled, false),
     label: config?.label ?? readString(value.label),
     lowDistraction: config?.lowDistraction ?? readBoolean(value.lowDistraction, false),
-    src: config?.src ?? readString(value.src) ?? readString(value.url),
+    src: config?.src ?? readFirstString(value.src, value.url),
     title: config?.title ?? readString(value.title),
   };
 }
@@ -288,9 +333,15 @@ function readString(value: JsonValue | undefined) {
   return typeof value === "string" ? value : "";
 }
 
+function readFirstString(...values: Array<JsonValue | undefined>) {
+  return values.find((value): value is string => typeof value === "string") ?? "";
+}
+
 function serializeValues(values: AmbientAudioFormValues) {
   return JSON.stringify({
     ...values,
+    art: values.art.trim(),
+    artist: values.artist.trim(),
     label: values.label.trim(),
     src: values.src.trim(),
     title: values.title.trim(),

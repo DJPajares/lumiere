@@ -54,6 +54,17 @@ export const ambientAudioUrlSchema = z
     return protocol === "http:" || protocol === "https:";
   }, "Use an HTTP or HTTPS audio URL");
 
+export const ambientAudioArtworkUrlSchema = z
+  .string()
+  .trim()
+  .max(2048, "Album-art URL must be 2,048 characters or fewer")
+  .url("Enter a valid album-art URL")
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+
+    return protocol === "http:" || protocol === "https:";
+  }, "Use an HTTP or HTTPS album-art URL");
+
 const optionalAmbientAudioTextSchema = (max: number) =>
   z
     .string()
@@ -63,6 +74,11 @@ const optionalAmbientAudioTextSchema = (max: number) =>
     .transform((value) => (value === "" ? undefined : value));
 
 export const ambientAudioSettingsSchema = z.object({
+  art: z
+    .union([z.literal(""), ambientAudioArtworkUrlSchema])
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+  artist: optionalAmbientAudioTextSchema(160),
   autoplay: z.boolean().default(false),
   enabled: z.boolean().default(true),
   label: optionalAmbientAudioTextSchema(80),
@@ -81,6 +97,7 @@ export const parseAmbientAudioSettings = (
 
   const result = ambientAudioSettingsSchema.safeParse({
     ...value,
+    art: value.art ?? value.albumArt ?? value.artworkUrl,
     src: value.src ?? value.url,
   });
 

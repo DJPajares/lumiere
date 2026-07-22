@@ -771,6 +771,8 @@ describe("public invite section renderers", () => {
     invite.themeMode = "toggleable";
     invite.themeConfig = {
       ambientAudio: {
+        art: "https://images.example.com/garden-strings.jpg",
+        artist: "The Garden Quartet",
         autoplay: true,
         label: "Evening music",
         lowDistraction: true,
@@ -785,13 +787,17 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-low-distraction="true"');
     expect(html).toContain('preload="metadata"');
     expect(html).toContain('src="https://audio.example.com/garden-strings.mp3"');
-    expect(html).toContain("Evening music");
+    expect(html).toContain('src="https://images.example.com/garden-strings.jpg"');
+    expect(html).toContain("The Garden Quartet");
+    expect(html).toContain("Now playing");
     expect(html).toContain("Play Garden strings");
-    expect(html).toContain("Show playback details for Garden strings");
+    expect(html).toContain("Open music player for Garden strings");
     expect(html).toContain("Seek through Garden strings");
-    expect(html).toContain("Mute Garden strings");
+    expect(html).toContain("Forward 15 seconds in Garden strings");
     expect(html).toContain("Tap to begin");
-    expect(html).toContain("top-20 sm:top-4");
+    expect(html).toContain('data-audio-placement="bottom-end"');
+    expect(html).toContain("safe-area-inset-bottom");
+    expect(html).toContain("fixed top-4");
   });
 
   it("omits ambient audio controls when audio is missing or disabled", () => {

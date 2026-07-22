@@ -1528,6 +1528,8 @@ export function resolveAmbientAudioConfig(
   }
 
   return {
+    art: config.art,
+    artist: config.artist,
     autoplay: config.autoplay ?? themeAudio.defaultAutoplay,
     label: config.label ?? "Music",
     lowDistraction: config.lowDistraction,

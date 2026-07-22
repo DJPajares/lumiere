@@ -1239,6 +1239,107 @@ main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :activ
   }
 }
 
+@keyframes lumiere-music-visualizer {
+  0%,
+  100% {
+    transform: scaleY(0.38);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.lumiere-music-visualizer > span {
+  transform-origin: bottom;
+}
+
+.lumiere-music-visualizer[data-active="true"] > span {
+  animation: lumiere-music-visualizer 0.78s ease-in-out infinite;
+}
+
+.lumiere-music-visualizer[data-active="true"] > span:nth-child(2) {
+  animation-delay: -0.31s;
+  animation-duration: 0.94s;
+}
+
+.lumiere-music-visualizer[data-active="true"] > span:nth-child(3) {
+  animation-delay: -0.54s;
+  animation-duration: 0.7s;
+}
+
+.lumiere-music-visualizer[data-active="true"] > span:nth-child(4) {
+  animation-delay: -0.2s;
+  animation-duration: 0.86s;
+}
+
+.lumiere-music-visualizer[data-active="true"] > span:nth-child(5) {
+  animation-delay: -0.43s;
+  animation-duration: 0.74s;
+}
+
+.lumiere-music-progress {
+  appearance: none;
+  background: transparent;
+  outline: none;
+}
+
+.lumiere-music-progress::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--music-progress),
+    color-mix(in srgb, var(--accent) 24%, transparent) var(--music-progress) 100%
+  );
+}
+
+.lumiere-music-progress::-moz-range-track {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.lumiere-music-progress::-moz-range-progress {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.lumiere-music-progress::-webkit-slider-thumb {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-top: -0.35rem;
+  appearance: none;
+  border: 0.2rem solid #100e0c;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.lumiere-music-progress::-moz-range-thumb {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 0.2rem solid #100e0c;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.lumiere-music-progress:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+.lumiere-music-progress:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumiere-music-visualizer[data-active="true"] > span {
+    animation: none;
+  }
+}
+
 @media (max-width: 639px) {
   .lumiere-visual-layer__image {
     object-position: center;

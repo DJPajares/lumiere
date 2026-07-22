@@ -3,21 +3,17 @@
 import type { CSSProperties, FocusEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { ambientAudioLayoutEvent } from "./ambient-audio-controls";
-
 export type InviteSectionNavigationItem = {
   id: string;
   label: string;
 };
 
 type InviteSectionNavigatorProps = {
-  hasAmbientAudio: boolean;
   items: InviteSectionNavigationItem[];
   placement: "end" | "start";
 };
 
 export function InviteSectionNavigator({
-  hasAmbientAudio,
   items,
   placement,
 }: InviteSectionNavigatorProps) {
@@ -26,27 +22,7 @@ export function InviteSectionNavigator({
   const suppressNextFocusOpenRef = useRef(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [activeId, setActiveId] = useState(items[0]?.id ?? "");
-  const [audioExpanded, setAudioExpanded] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!hasAmbientAudio) {
-      setAudioExpanded(false);
-      return;
-    }
-
-    const syncAudioLayout = (event: Event) => {
-      setAudioExpanded(
-        event instanceof CustomEvent &&
-          typeof event.detail === "object" &&
-          event.detail !== null &&
-          event.detail.expanded === true,
-      );
-    };
-
-    window.addEventListener(ambientAudioLayoutEvent, syncAudioLayout);
-    return () => window.removeEventListener(ambientAudioLayoutEvent, syncAudioLayout);
-  }, [hasAmbientAudio]);
 
   useEffect(() => {
     if (items.length < 2 || typeof IntersectionObserver === "undefined") {
@@ -123,11 +99,7 @@ export function InviteSectionNavigator({
       placement === "start"
         ? "max(1rem, env(safe-area-inset-left))"
         : "max(1rem, env(safe-area-inset-right))",
-    top: hasAmbientAudio
-      ? audioExpanded
-        ? "max(14rem, calc(env(safe-area-inset-top) + 13rem))"
-        : "max(5rem, calc(env(safe-area-inset-top) + 4rem))"
-      : "max(1rem, env(safe-area-inset-top))",
+    top: "max(1rem, env(safe-area-inset-top))",
   } as CSSProperties;
 
   const closeAfterFocusLeaves = (event: FocusEvent<HTMLDivElement>) => {

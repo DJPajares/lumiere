@@ -75,11 +75,18 @@ describe("EventSettingsWorkspace", () => {
     );
     await user.click(screen.getByRole("switch", { name: /Enable background music/ }));
     await user.type(screen.getByLabelText("Track title"), "Summer strings");
+    await user.type(screen.getByLabelText("Artist"), "The Garden Quartet");
+    await user.type(
+      screen.getByLabelText("Album art URL"),
+      "https://images.example.com/summer-strings.jpg",
+    );
     await user.click(screen.getByRole("button", { name: "Save background music" }));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(2));
     expect(updateEvent).toHaveBeenLastCalledWith("evt_123", {
       publicSettings: {
         ambientAudio: {
+          art: "https://images.example.com/summer-strings.jpg",
+          artist: "The Garden Quartet",
           autoplay: false,
           enabled: true,
           lowDistraction: false,

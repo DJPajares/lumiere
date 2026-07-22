@@ -11,7 +11,6 @@ export type ThemeModeVariables = Record<string, string>;
 type InviteThemeModeControlProps = {
   configuredMode: ThemeMode;
   eventKey: string;
-  hasAmbientAudio: boolean;
   initialMode: ResolvedThemeMode;
   presentation?: ThemeModeTogglePresentation;
   variables: {
@@ -43,7 +42,6 @@ const controlStyles: Record<ThemeModeTogglePresentation["style"], string> = {
 export function InviteThemeModeControl({
   configuredMode,
   eventKey,
-  hasAmbientAudio,
   initialMode,
   presentation,
   variables,
@@ -146,13 +144,12 @@ export function InviteThemeModeControl({
       : `${longestLabelLength + 1}ch`,
   } as CSSProperties;
   const placementClass = presentation.placement === "top-end" ? "right-4" : "left-4";
-  const verticalPlacementClass = hasAmbientAudio ? "top-20 sm:top-4" : "top-4";
 
   return (
     <>
       <span aria-hidden="true" data-theme-mode-anchor="true" hidden ref={rootAnchorRef} />
       <div
-        className={`lumiere-theme-mode-control fixed z-50 max-w-[calc(100vw-2rem)] ${placementClass} ${verticalPlacementClass}`}
+        className={`lumiere-theme-mode-control fixed top-4 z-50 max-w-[calc(100vw-2rem)] ${placementClass}`}
         data-theme-mode-control={presentation.style}
       >
         <button

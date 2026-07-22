@@ -49,18 +49,11 @@ export function InviteShell({
     mode === "toggleable" &&
     theme.supportedModes.includes("toggleable") &&
     Boolean(theme.tokens.dark);
-  const ambientAudioPlacement = hasVisibleModeToggle
+  const sectionNavigationPlacement = hasVisibleModeToggle
     ? theme.modeToggle.placement === "top-end"
       ? "start"
       : "end"
     : "end";
-  const sectionNavigationPlacement = ambientAudio
-    ? ambientAudioPlacement
-    : hasVisibleModeToggle
-      ? theme.modeToggle.placement === "top-end"
-        ? "start"
-        : "end"
-      : "end";
 
   return (
     <main
@@ -78,22 +71,16 @@ export function InviteShell({
       <InviteThemeModeControl
         configuredMode={mode}
         eventKey={eventKey}
-        hasAmbientAudio={Boolean(ambientAudio)}
         initialMode={resolvedMode}
         presentation={theme.supportedModes.includes("toggleable") ? theme.modeToggle : undefined}
         variables={modeVariables}
       />
       <InviteSectionNavigator
-        hasAmbientAudio={Boolean(ambientAudio)}
         items={sectionNavigation}
         placement={sectionNavigationPlacement}
       />
       {children}
-      <AmbientAudioControls
-        audio={ambientAudio}
-        eventKey={eventKey}
-        placement={ambientAudioPlacement}
-      />
+      <AmbientAudioControls audio={ambientAudio} eventKey={eventKey} />
     </main>
   );
 }

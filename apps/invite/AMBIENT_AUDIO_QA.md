@@ -8,6 +8,8 @@ premium theme invite with this metadata in `themeConfig`:
   "ambientAudio": {
     "enabled": true,
     "src": "https://example.com/ambient.mp3",
+    "art": "https://example.com/ambient-cover.jpg",
+    "artist": "The Garden Quartet",
     "title": "Garden strings",
     "label": "Evening music",
     "autoplay": true
@@ -24,8 +26,14 @@ Manual smoke checks:
   insecure HTTP audio, and the host supports byte-range requests if seeking is expected.
 - Autoplay allowed: open the public invite in a browser/profile that permits media autoplay and confirm the control changes to `Playing`.
 - Autoplay blocked: open in a fresh tab/profile with default autoplay blocking and confirm the invite still renders, with a visible `Tap to play` control.
-- Manual playback: use play/pause, expand the player, seek, mute/unmute, refresh, and confirm the
-  last play/pause choice is remembered for that event and source in the current browser.
+- Manual playback: open the bottom-right player, use play/pause, drag and press the progress bar,
+  jump forward 15 seconds, refresh, and confirm the last play/pause choice is remembered for that
+  event and source in the current browser.
+- Player presentation: confirm the resting button shows play while paused and an animated visualizer
+  while playing; confirm the expanded player shows album art, title, artist, and automatically hides
+  after five seconds without pointer, keyboard, focus, drag, or playback interaction.
+- Artwork fallback: remove `art` and then try a broken image URL; both cases should show the
+  intentional music-note placeholder without affecting audio playback.
 - Low distraction: set `lowDistraction` to `true` or enable reduced motion and confirm audio does not start automatically.
 - Missing audio: remove `src` or set `enabled` to `false` and confirm no player UI appears.
 - Failed audio: use a broken or cross-origin-blocked `src`, confirm the player reports audio as
