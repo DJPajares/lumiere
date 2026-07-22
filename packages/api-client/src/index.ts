@@ -56,6 +56,7 @@ import {
   type GuestGroupMutationRequest,
   type GuestGroupResponse,
   type GuestGroupsResponse,
+  type GuestInviteSentRequest,
   type GuestDataExportQuery,
   type NotificationDismissResponse,
   type NotificationResponse,
@@ -318,6 +319,19 @@ export const createApiClient = ({
         `/events/${encodePathSegment(eventId)}/notifications/read-all`,
         notificationsMarkAllReadResponseSchema,
         {
+          method: "POST",
+        },
+      ),
+    markGuestGroupSent: (
+      eventId: string,
+      groupId: string,
+      input: GuestInviteSentRequest,
+    ): Promise<GuestGroupResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/guest-groups/${encodePathSegment(groupId)}/mark-sent`,
+        guestGroupResponseSchema,
+        {
+          body: input,
           method: "POST",
         },
       ),

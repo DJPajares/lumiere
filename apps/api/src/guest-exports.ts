@@ -12,11 +12,13 @@ import {
   rsvpResponses,
   sql,
 } from "@lumiere/db";
-import type {
-  GuestDataExportFormat,
-  GuestDataExportScope,
-  GuestGroupStatus,
-  RsvpAnswer,
+import {
+  resolveGuestInviteTrackingStage,
+  type GuestDataExportFormat,
+  type GuestDataExportScope,
+  type GuestGroupStatus,
+  type GuestInviteTrackingStage,
+  type RsvpAnswer,
 } from "@lumiere/types";
 import ExcelJS from "exceljs";
 
@@ -27,6 +29,7 @@ export const guestDataExportRowLimit = 10_000;
 export type GuestDataExportFilters = {
   query?: string;
   status?: GuestGroupStatus;
+  tracking?: GuestInviteTrackingStage;
 };
 
 export type GuestDataExportOptions = {
@@ -40,6 +43,13 @@ export type GuestDataExportRow = {
   contactName: string;
   contactEmail: string;
   inviteStatus: string;
+  trackingStage: string;
+  firstSentAt: string;
+  lastSentAt: string;
+  sendCount: number;
+  lastShareChannel: string;
+  firstOpenedAt: string;
+  lastOpenedAt: string;
   maxPax: number;
   namedMembers: string;
   rsvpStatus: string;
@@ -48,7 +58,6 @@ export type GuestDataExportRow = {
   rsvpAnswers: string;
   guestMessage: string;
   privateNotes: string;
-  inviteOpenedAt: string;
   rsvpSubmittedAt: string;
   rsvpUpdatedAt: string;
   groupCreatedAt: string;
@@ -65,6 +74,7 @@ export type GuestDataExportStore = {
     scope: GuestDataExportScope;
     usedQueryFilter: boolean;
     usedStatusFilter: boolean;
+    usedTrackingFilter: boolean;
   }): Promise<void>;
 };
 
@@ -73,6 +83,13 @@ const exportColumns = [
   { header: "Contact name", key: "contactName", width: 22 },
   { header: "Contact email", key: "contactEmail", width: 30 },
   { header: "Invite status", key: "inviteStatus", width: 16 },
+  { header: "Tracking stage", key: "trackingStage", width: 18 },
+  { header: "First marked sent at", key: "firstSentAt", width: 24 },
+  { header: "Last marked sent at", key: "lastSentAt", width: 24 },
+  { header: "Send count", key: "sendCount", width: 12 },
+  { header: "Last share channel", key: "lastShareChannel", width: 20 },
+  { header: "First opened at", key: "firstOpenedAt", width: 24 },
+  { header: "Last opened at", key: "lastOpenedAt", width: 24 },
   { header: "Max pax", key: "maxPax", width: 11 },
   { header: "Named members", key: "namedMembers", width: 32 },
   { header: "RSVP status", key: "rsvpStatus", width: 16 },
@@ -81,7 +98,6 @@ const exportColumns = [
   { header: "RSVP answers", key: "rsvpAnswers", width: 36 },
   { header: "Guest message", key: "guestMessage", width: 36 },
   { header: "Private notes", key: "privateNotes", width: 36 },
-  { header: "Invite opened at", key: "inviteOpenedAt", width: 24 },
   { header: "RSVP submitted at", key: "rsvpSubmittedAt", width: 24 },
   { header: "RSVP updated at", key: "rsvpUpdatedAt", width: 24 },
   { header: "Group created at", key: "groupCreatedAt", width: 24 },
@@ -99,6 +115,10 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
 
     if (filters.status) {
       conditions.push(eq(guestGroups.status, filters.status));
+    }
+
+    if (filters.tracking) {
+      conditions.push(trackingStageCondition(filters.tracking));
     }
 
     if (normalizedQuery) {
@@ -128,9 +148,14 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         createdAt: guestGroups.createdAt,
         id: guestGroups.id,
         label: guestGroups.label,
+        firstOpenedAt: guestGroups.firstOpenedAt,
+        firstSentAt: guestGroups.firstSentAt,
         lastOpenedAt: guestGroups.lastOpenedAt,
+        lastSentAt: guestGroups.lastSentAt,
+        lastShareChannel: guestGroups.lastShareChannel,
         maxPax: guestGroups.maxPax,
         notes: guestGroups.notes,
+        sendCount: guestGroups.sendCount,
         status: guestGroups.status,
         updatedAt: guestGroups.updatedAt,
       })
@@ -200,16 +225,29 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         groupLabel: group.label,
         groupUpdatedAt: group.updatedAt,
         guestMessage: response?.message ?? "",
-        inviteOpenedAt: group.lastOpenedAt ?? "",
+        firstOpenedAt: group.firstOpenedAt ?? "",
+        firstSentAt: group.firstSentAt ?? "",
         inviteStatus: group.status,
+        lastOpenedAt: group.lastOpenedAt ?? "",
+        lastSentAt: group.lastSentAt ?? "",
+        lastShareChannel: group.lastShareChannel ?? "",
         maxPax: group.maxPax,
         namedMembers: joinNames(membersByGroupId.get(group.id) ?? []),
         privateNotes: group.notes ?? "",
+        sendCount: group.sendCount,
         rsvpAnswers: formatRsvpAnswers(response?.answers ?? []),
         rsvpStatus: response?.responseStatus ?? "No response",
         rsvpSubmittedAt: response?.submittedAt ?? "",
         rsvpUpdatedAt: response?.updatedAt ?? "",
         selectedAttendees: joinNames(response?.guestNames ?? []),
+        trackingStage: resolveGuestInviteTrackingStage({
+          firstOpenedAt: group.firstOpenedAt ?? undefined,
+          firstSentAt: group.firstSentAt ?? undefined,
+          lastOpenedAt: group.lastOpenedAt ?? undefined,
+          lastSentAt: group.lastSentAt ?? undefined,
+          sendCount: group.sendCount,
+          status: group.status,
+        }),
       });
     });
   },
@@ -226,10 +264,28 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         scope: input.scope,
         usedQueryFilter: input.usedQueryFilter,
         usedStatusFilter: input.usedStatusFilter,
+        usedTrackingFilter: input.usedTrackingFilter,
       },
     });
   },
 });
+
+const trackingStageCondition = (tracking: GuestInviteTrackingStage) => {
+  const hasResponse = sql`${guestGroups.status} in ('responded', 'declined')`;
+  const hasOpen = sql`(${guestGroups.firstOpenedAt} is not null or ${guestGroups.lastOpenedAt} is not null)`;
+  const hasSend = sql`(${guestGroups.firstSentAt} is not null or ${guestGroups.lastSentAt} is not null or ${guestGroups.sendCount} > 0)`;
+
+  switch (tracking) {
+    case "responded":
+      return hasResponse;
+    case "opened":
+      return sql`not (${hasResponse}) and (${hasOpen})`;
+    case "sent":
+      return sql`not (${hasResponse}) and not (${hasOpen}) and (${hasSend})`;
+    case "not_sent":
+      return sql`not (${hasResponse}) and not (${hasOpen}) and not (${hasSend})`;
+  }
+};
 
 export const buildGuestDataCsv = (rows: GuestDataExportRow[]) => {
   const lines = [

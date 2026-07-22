@@ -160,7 +160,7 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getByRole("heading", { name: "Export guest data" })).toBeTruthy();
     expect(
       screen
-        .getByRole("button", { name: "Current search and status filters (1)" })
+        .getByRole("button", { name: "Current search, status, and tracking filters (1)" })
         .getAttribute("aria-pressed"),
     ).toBe("true");
     await user.click(screen.getByRole("button", { name: "Download CSV" }));
@@ -210,18 +210,18 @@ describe("GuestManagementWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "Compact list view" }));
 
     expect(window.location.search).toBe("?view=list");
-    expect(screen.getAllByText("Last opened").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Tracking").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
     expect(screen.getByText("tan-code")).toBeTruthy();
 
     cleanup();
     renderWithAuth(createApiClientStub());
-    expect((await screen.findAllByText("Last opened")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Tracking")).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Compact list view" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Card view" }));
     expect(window.location.search).toBe("");
-    expect(screen.queryByText("Last opened")).toBeNull();
+    expect(screen.queryByText("Tracking")).toBeNull();
   });
 
   it("loads guest groups across dashboard states", async () => {
@@ -608,6 +608,39 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByDisplayValue(inviteLink)).toBeTruthy();
   });
 
+  it("records a manager-confirmed share separately from guest status", async () => {
+    const user = userEvent.setup();
+    const markedGroup: GuestGroup = {
+      ...guestGroup,
+      firstSentAt: "2030-01-02T00:00:00.000Z",
+      lastSentAt: "2030-01-02T00:00:00.000Z",
+      lastShareChannel: "whatsapp",
+      sendCount: 1,
+    };
+    const markGuestGroupSent = vi.fn<DashboardApiClient["markGuestGroupSent"]>(async () => ({
+      guestGroup: markedGroup,
+    }));
+
+    renderWithAuth(createApiClientStub({ markGuestGroupSent }));
+
+    await screen.findByText("Tan Family");
+    await user.click(screen.getByRole("button", { name: "Mark sent" }));
+    const dialog = await screen.findByRole("dialog", { name: "Record share for Tan Family" });
+    expect(within(dialog).getByText(/not a delivery or read receipt/i)).toBeTruthy();
+    await user.click(within(dialog).getByLabelText("Share channel"));
+    await user.click(await screen.findByRole("option", { name: "WhatsApp" }));
+    await user.click(within(dialog).getByRole("button", { name: "Mark sent" }));
+
+    await waitFor(() =>
+      expect(markGuestGroupSent).toHaveBeenCalledWith("evt_123", "guest_1", {
+        shareChannel: "whatsapp",
+      }),
+    );
+    expect(await screen.findByText(/Delivery is not verified/)).toBeTruthy();
+    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Sent").length).toBeGreaterThan(0);
+  });
+
   it("disables guest groups instead of deleting them", async () => {
     const user = userEvent.setup();
     const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/stable-token";
@@ -697,6 +730,7 @@ function createApiClientStub(
     downloadGuestData: vi.fn(),
     getEvent: vi.fn(async () => ({ access: ownerAccess, event: dashboardEvent })),
     listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
+    markGuestGroupSent: vi.fn(),
     regenerateGuestGroupInvite: vi.fn(),
     updateGuestGroup: vi.fn(),
     ...overrides,

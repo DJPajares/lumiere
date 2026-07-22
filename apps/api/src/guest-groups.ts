@@ -17,6 +17,7 @@ import {
   type GuestGroup,
   type GuestGroupMember,
   type GuestGroupMutation,
+  type GuestInviteSentMutation,
 } from "@lumiere/types";
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
@@ -43,6 +44,12 @@ export type GuestGroupStore = {
   ): Promise<GuestGroup>;
   disableGuestGroup(eventId: string, groupId: string): Promise<GuestGroup | null>;
   listGuestGroups(eventId: string): Promise<GuestGroupWithInviteToken[]>;
+  markGuestGroupSent(
+    eventId: string,
+    groupId: string,
+    input: GuestInviteSentMutation,
+    actorUserId: string,
+  ): Promise<GuestGroup | null>;
   regenerateInvite(
     eventId: string,
     groupId: string,
@@ -227,6 +234,67 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
     }));
   },
 
+  async markGuestGroupSent(eventId, groupId, input, actorUserId) {
+    const result = await db.transaction(async (tx) => {
+      const [existingGroup] = await tx
+        .select({
+          accessExpiresAt: guestGroups.accessExpiresAt,
+          eventAccessExpiresAt: events.accessExpiresAt,
+          status: guestGroups.status,
+        })
+        .from(guestGroups)
+        .innerJoin(events, eq(events.id, guestGroups.eventId))
+        .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
+        .limit(1);
+
+      if (!existingGroup) return null;
+
+      if (existingGroup.status === "disabled") {
+        throw new ApiHttpError("CONFLICT", "Disabled guest invites cannot be marked as sent");
+      }
+
+      if (
+        (existingGroup.accessExpiresAt &&
+          Date.parse(existingGroup.accessExpiresAt) <= Date.now()) ||
+        (existingGroup.eventAccessExpiresAt &&
+          Date.parse(existingGroup.eventAccessExpiresAt) <= Date.now())
+      ) {
+        throw new ApiHttpError("CONFLICT", "Expired guest invites cannot be marked as sent");
+      }
+
+      const [guestGroup] = await tx
+        .update(guestGroups)
+        .set({
+          firstSentAt: sql`coalesce(${guestGroups.firstSentAt}, now())`,
+          lastSentAt: sql`now()`,
+          lastShareChannel: input.shareChannel ?? null,
+          sendCount: sql`${guestGroups.sendCount} + 1`,
+          updatedAt: sql`now()`,
+        })
+        .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
+        .returning();
+
+      if (!guestGroup) return null;
+
+      await tx.insert(activityEvents).values({
+        actorId: actorUserId,
+        actorType: "manager",
+        activityType: "guest_invite_sent",
+        eventId,
+        metadataJson: {
+          action: "manager_confirmed",
+          guestGroupId: guestGroup.id,
+          sendCount: guestGroup.sendCount,
+          shareChannel: guestGroup.lastShareChannel,
+        },
+      });
+
+      return guestGroup;
+    });
+
+    return result ? toApiGuestGroup(result, await listGuestGroupMembers(db, result.id)) : null;
+  },
+
   async regenerateInvite(eventId, groupId, invite) {
     return withInviteConflictHandling(async () => {
       const [guestGroup] = await db
@@ -235,7 +303,12 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
           inviteCode: invite.inviteCode,
           inviteTokenEncrypted: invite.inviteTokenEncrypted,
           inviteTokenHash: invite.inviteTokenHash,
+          firstOpenedAt: null,
+          firstSentAt: null,
           lastOpenedAt: null,
+          lastSentAt: null,
+          lastShareChannel: null,
+          sendCount: 0,
           status: "pending",
           updatedAt: sql`now()`,
         })
@@ -446,9 +519,7 @@ export const toApiGuestGroup = (
   guestGroup: GuestGroupRow,
   members: GuestGroupMemberRow[] = [],
 ): GuestGroup => ({
-  accessExpiresAt: guestGroup.accessExpiresAt
-    ? toIsoDateTime(guestGroup.accessExpiresAt)
-    : null,
+  accessExpiresAt: guestGroup.accessExpiresAt ? toIsoDateTime(guestGroup.accessExpiresAt) : null,
   contactEmail: guestGroup.contactEmail ?? undefined,
   contactName: guestGroup.contactName ?? undefined,
   createdAt: toIsoDateTime(guestGroup.createdAt),
@@ -456,10 +527,15 @@ export const toApiGuestGroup = (
   id: guestGroup.id,
   inviteCode: guestGroup.inviteCode,
   label: guestGroup.label,
+  firstOpenedAt: guestGroup.firstOpenedAt ? toIsoDateTime(guestGroup.firstOpenedAt) : undefined,
+  firstSentAt: guestGroup.firstSentAt ? toIsoDateTime(guestGroup.firstSentAt) : undefined,
   lastOpenedAt: guestGroup.lastOpenedAt ? toIsoDateTime(guestGroup.lastOpenedAt) : undefined,
+  lastSentAt: guestGroup.lastSentAt ? toIsoDateTime(guestGroup.lastSentAt) : undefined,
+  lastShareChannel: guestGroup.lastShareChannel ?? undefined,
   members: members.map(toApiGuestGroupMember),
   maxPax: guestGroup.maxPax,
   notes: guestGroup.notes ?? undefined,
+  sendCount: guestGroup.sendCount,
   status: guestGroup.status,
   updatedAt: toIsoDateTime(guestGroup.updatedAt),
 });

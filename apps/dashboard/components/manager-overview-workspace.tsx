@@ -980,6 +980,7 @@ function formatActivityTitle(activity: ActivityEvent) {
     guest_group_created: "Guest group created",
     guest_access_expiry_changed: "Guest access deadline changed",
     guest_invite_opened: "Guest invite opened",
+    guest_invite_sent: "Guest invite marked sent",
     notification_created: "Notification created",
     rsvp_submitted: "RSVP submitted",
     rsvp_updated: "RSVP updated",

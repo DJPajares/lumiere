@@ -141,12 +141,13 @@ describe("API client", () => {
       q: "tan",
       scope: "filtered",
       status: "responded",
+      tracking: "responded",
     });
 
     expect(download.filename).toBe("launch-night-guest-data-2026-07-18.csv");
     await expect(download.blob.text()).resolves.toContain("Tan Family");
     expect(fetch).toHaveBeenCalledWith(
-      "https://api.example.test/events/00000000-0000-4000-8000-000000000101/guest-data-export?format=csv&q=tan&scope=filtered&status=responded",
+      "https://api.example.test/events/00000000-0000-4000-8000-000000000101/guest-data-export?format=csv&q=tan&scope=filtered&status=responded&tracking=responded",
       expect.objectContaining({ method: "GET" }),
     );
     expect(requestHeaders(fetch as ReturnType<typeof createFetchMock>).get("authorization")).toBe(

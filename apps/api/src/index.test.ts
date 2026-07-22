@@ -1624,7 +1624,7 @@ describe("API app", () => {
       guestDataExportStore,
     });
     const response = await app.request(
-      `/events/${eventId}/guest-data-export?format=csv&scope=filtered&q=tan&status=responded`,
+      `/events/${eventId}/guest-data-export?format=csv&scope=filtered&q=tan&status=responded&tracking=responded`,
       {
         headers: {
           authorization: `Bearer ${createSupabaseToken()}`,
@@ -1647,6 +1647,7 @@ describe("API app", () => {
     expect(listRows).toHaveBeenCalledWith(eventId, {
       query: "tan",
       status: "responded",
+      tracking: "responded",
     });
     expect(recordExport).toHaveBeenCalledWith({
       actorUserId: localUser.id,
@@ -1656,6 +1657,7 @@ describe("API app", () => {
       scope: "filtered",
       usedQueryFilter: true,
       usedStatusFilter: true,
+      usedTrackingFilter: true,
     });
   });
 
@@ -2731,18 +2733,23 @@ describe("API app", () => {
       guestGroup: updatedGuestGroup,
     });
     expect(response.status).toBe(200);
-    expect(updateGuestGroup).toHaveBeenCalledWith(eventId, guestGroupId, {
-      contactEmail: "mina@example.com",
-      contactName: "Mina Tan",
-      label: "Tan and Lee Family",
-      maxPax: 5,
-      members: [
-        { id: "member_2", name: "Alex Tan" },
-        { id: "member_1", name: "Mina Tan" },
-      ],
-      notes: "Window table",
-      status: "disabled",
-    }, localUser.id);
+    expect(updateGuestGroup).toHaveBeenCalledWith(
+      eventId,
+      guestGroupId,
+      {
+        contactEmail: "mina@example.com",
+        contactName: "Mina Tan",
+        label: "Tan and Lee Family",
+        maxPax: 5,
+        members: [
+          { id: "member_2", name: "Alex Tan" },
+          { id: "member_1", name: "Mina Tan" },
+        ],
+        notes: "Window table",
+        status: "disabled",
+      },
+      localUser.id,
+    );
     expect(
       resolveManagerGuestGroupStatus({
         currentStatus: "disabled",
@@ -2847,6 +2854,46 @@ describe("API app", () => {
       }),
     );
     expect(JSON.stringify(inviteRecord)).not.toContain(guestToken);
+  });
+
+  it("records a manager-confirmed invite share without changing RSVP status", async () => {
+    const markedGuestGroup = {
+      ...baseGuestGroup,
+      firstSentAt: "2026-07-08T04:00:00.000Z",
+      lastSentAt: "2026-07-08T04:00:00.000Z",
+      lastShareChannel: "whatsapp" as const,
+      sendCount: 1,
+    };
+    const { authStore } = createTestAuthStore({ access: roleAccess("editor") });
+    const { guestGroupStore, markGuestGroupSent } = createTestGuestGroupStore({
+      updatedGuestGroup: markedGuestGroup,
+    });
+    const app = createApp({
+      authStore,
+      config: loadTestConfig(),
+      eventStore: createTestEventStore().eventStore,
+      guestGroupStore,
+    });
+    const response = await app.request(
+      `/events/${eventId}/guest-groups/${guestGroupId}/mark-sent`,
+      {
+        body: JSON.stringify({ shareChannel: "whatsapp" }),
+        headers: {
+          authorization: `Bearer ${createSupabaseToken()}`,
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(response.json()).resolves.toEqual({ guestGroup: markedGuestGroup });
+    expect(response.status).toBe(200);
+    expect(markGuestGroupSent).toHaveBeenCalledWith(
+      eventId,
+      guestGroupId,
+      { shareChannel: "whatsapp" },
+      localUser.id,
+    );
   });
 
   it("blocks guest group changes without event access", async () => {
@@ -3994,16 +4041,22 @@ const baseGuestDataExportRow: GuestDataExportRow = {
   groupLabel: "Tan Family",
   groupUpdatedAt: "2026-07-08T04:00:00.000Z",
   guestMessage: "Excited to attend.",
-  inviteOpenedAt: "2026-07-08T03:00:00.000Z",
+  firstOpenedAt: "2026-07-08T03:00:00.000Z",
+  firstSentAt: "2026-07-08T02:00:00.000Z",
   inviteStatus: "responded",
+  lastOpenedAt: "2026-07-08T03:00:00.000Z",
+  lastSentAt: "2026-07-08T02:00:00.000Z",
+  lastShareChannel: "email",
   maxPax: 4,
   namedMembers: "Mina Tan\nAlex Tan",
   privateNotes: "Window table",
+  sendCount: 1,
   rsvpAnswers: "",
   rsvpStatus: "attending",
   rsvpSubmittedAt: "2026-07-08T04:00:00.000Z",
   rsvpUpdatedAt: "2026-07-08T04:00:00.000Z",
   selectedAttendees: "Mina Tan\nAlex Tan",
+  trackingStage: "responded",
 };
 
 function createTestGuestDataExportStore(rows = [baseGuestDataExportRow]) {
@@ -4173,6 +4226,7 @@ function createTestGuestGroupStore({
   );
   const disableGuestGroup = vi.fn(async () => disabledGuestGroup);
   const listGuestGroups = vi.fn(async () => guestGroups);
+  const markGuestGroupSent = vi.fn(async () => updatedGuestGroup);
   const regenerateInvite = vi.fn(
     async (_eventId: string, _groupId: string, _invite: InviteTokenRecord) => regeneratedGuestGroup,
   );
@@ -4183,6 +4237,7 @@ function createTestGuestGroupStore({
     createGuestGroup,
     disableGuestGroup,
     listGuestGroups,
+    markGuestGroupSent,
     regenerateInvite,
     updateGuestGroup,
   };
@@ -4192,6 +4247,7 @@ function createTestGuestGroupStore({
     disableGuestGroup,
     guestGroupStore,
     listGuestGroups,
+    markGuestGroupSent,
     regenerateInvite,
     updateGuestGroup,
   };
@@ -4513,6 +4569,21 @@ function createIntegrationSmokeStores() {
         ? [toSmokeGuestGroup(guestGroupRecord)]
         : [],
     ),
+    markGuestGroupSent: vi.fn(async (_requestedEventId, requestedGroupId) => {
+      if (!guestGroupRecord || requestedGroupId !== guestGroupRecord.id) {
+        return null;
+      }
+
+      guestGroupRecord = {
+        ...guestGroupRecord,
+        firstSentAt: guestGroupRecord.firstSentAt ?? smokeNow,
+        lastSentAt: smokeNow,
+        sendCount: (guestGroupRecord.sendCount ?? 0) + 1,
+        updatedAt: smokeNow,
+      };
+
+      return toSmokeGuestGroup(guestGroupRecord!);
+    }),
     regenerateInvite: vi.fn(async (_requestedEventId, requestedGroupId, invite) => {
       if (!guestGroupRecord || requestedGroupId !== guestGroupRecord.id) {
         return null;

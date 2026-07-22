@@ -15,13 +15,18 @@ import {
   activityEventSchema,
   guestGroupMutationSchema,
   guestGroupSchema,
+  guestInviteSentMutationSchema,
   notificationSchema,
   rsvpResponseFieldsSchema,
   rsvpResponseSchema,
   rsvpSubmissionSchema,
   themeSchema,
 } from "./domain";
-import { collaboratorRoleSchema, guestGroupStatusSchema } from "./enums";
+import {
+  collaboratorRoleSchema,
+  guestGroupStatusSchema,
+  guestInviteTrackingStageSchema,
+} from "./enums";
 import { idSchema, nonEmptyStringSchema, publicSlugSchema } from "./primitives";
 
 export const apiErrorCodeSchema = z.enum([
@@ -208,6 +213,9 @@ export type EventThemeResponse = z.infer<typeof eventThemeResponseSchema>;
 export const guestGroupMutationRequestSchema = guestGroupMutationSchema;
 export type GuestGroupMutationRequest = z.input<typeof guestGroupMutationRequestSchema>;
 
+export const guestInviteSentRequestSchema = guestInviteSentMutationSchema;
+export type GuestInviteSentRequest = z.input<typeof guestInviteSentRequestSchema>;
+
 export const guestGroupResponseSchema = z.object({
   guestGroup: guestGroupSchema,
 });
@@ -229,6 +237,7 @@ export const guestDataExportQuerySchema = z.object({
   scope: guestDataExportScopeSchema,
   q: z.string().trim().max(160).optional(),
   status: guestGroupStatusSchema.optional(),
+  tracking: guestInviteTrackingStageSchema.optional(),
 });
 export type GuestDataExportQuery = z.infer<typeof guestDataExportQuerySchema>;
 

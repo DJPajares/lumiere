@@ -1,8 +1,10 @@
 import type { Database } from "@lumiere/db";
 import {
+  activityEvents,
   and,
   asc,
   eq,
+  eventManagers,
   eventSectionContents,
   eventSections,
   eventThemeSettings,
@@ -13,8 +15,10 @@ import {
   guestGroupMembers,
   guestGroups,
   isNull,
+  notifications,
   or,
   rsvpResponses,
+  sql,
 } from "@lumiere/db";
 import { sanitizePublicLocationContent } from "@lumiere/themes";
 import {
@@ -22,6 +26,7 @@ import {
   rsvpResponseFieldsSchema,
   type Event,
   type EventSection,
+  type GuestGroupStatus,
   type PublicEventSummary,
   type PublicGuestContext,
   type RsvpResponseFields,
@@ -130,6 +135,22 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       return "expired";
     }
 
+    let trackedStatus: GuestGroupStatus = guestGroup.status;
+
+    try {
+      trackedStatus = await recordGuestInviteOpen(db, {
+        eventId: publicEvent.event.id,
+        eventTitle: publicEvent.event.title,
+        guestGroupId: guestGroup.id,
+      });
+    } catch (error) {
+      console.error("Unable to record a valid guest invite open", {
+        cause: error instanceof Error ? error.message : "Unknown tracking error",
+        eventId: publicEvent.event.id,
+        guestGroupId: guestGroup.id,
+      });
+    }
+
     const memberRows = await db
       .select({
         name: guestGroupMembers.name,
@@ -150,9 +171,7 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       .limit(1);
 
     const currentResponse =
-      guestGroup.status === "responded" || guestGroup.status === "declined"
-        ? rsvpResponse
-        : undefined;
+      trackedStatus === "responded" || trackedStatus === "declined" ? rsvpResponse : undefined;
     const {
       accessExpiresAt: _accessExpiresAt,
       publicAccessCodeHash: _publicAccessCodeHash,
@@ -166,7 +185,7 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
           label: guestGroup.label,
           members: memberRows,
           maxPax: guestGroup.maxPax,
-          status: guestGroup.status,
+          status: trackedStatus,
         },
         response: currentResponse
           ? {
@@ -182,6 +201,94 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
     };
   },
 });
+
+const recordGuestInviteOpen = async (
+  db: Database,
+  input: {
+    eventId: string;
+    eventTitle: string;
+    guestGroupId: string;
+  },
+) =>
+  db.transaction(async (tx) => {
+    const [firstOpen] = await tx
+      .update(guestGroups)
+      .set({
+        firstOpenedAt: sql`now()`,
+        lastOpenedAt: sql`now()`,
+        status: sql`case when ${guestGroups.status} = 'pending' then 'opened'::lumiere.guest_group_status else ${guestGroups.status} end`,
+        updatedAt: sql`now()`,
+      })
+      .where(
+        and(
+          eq(guestGroups.eventId, input.eventId),
+          eq(guestGroups.id, input.guestGroupId),
+          isNull(guestGroups.firstOpenedAt),
+          isNull(guestGroups.lastOpenedAt),
+        ),
+      )
+      .returning({ status: guestGroups.status });
+
+    const [trackedGroup] = firstOpen
+      ? [firstOpen]
+      : await tx
+          .update(guestGroups)
+          .set({
+            firstOpenedAt: sql`coalesce(${guestGroups.firstOpenedAt}, ${guestGroups.lastOpenedAt}, now())`,
+            lastOpenedAt: sql`now()`,
+            status: sql`case when ${guestGroups.status} = 'pending' then 'opened'::lumiere.guest_group_status else ${guestGroups.status} end`,
+            updatedAt: sql`now()`,
+          })
+          .where(
+            and(eq(guestGroups.eventId, input.eventId), eq(guestGroups.id, input.guestGroupId)),
+          )
+          .returning({ status: guestGroups.status });
+
+    if (!trackedGroup) {
+      throw new Error("Guest invite disappeared while recording an open");
+    }
+
+    if (firstOpen) {
+      await tx.insert(activityEvents).values({
+        actorId: input.guestGroupId,
+        actorType: "guest",
+        activityType: "guest_invite_opened",
+        eventId: input.eventId,
+        metadataJson: { guestGroupId: input.guestGroupId },
+      });
+
+      const [event] = await tx
+        .select({ ownerUserId: events.ownerUserId })
+        .from(events)
+        .where(eq(events.id, input.eventId))
+        .limit(1);
+      const managerRecipients = await tx
+        .select({ userId: eventManagers.userId })
+        .from(eventManagers)
+        .where(eq(eventManagers.eventId, input.eventId));
+      const recipientUserIds = Array.from(
+        new Set([
+          ...(event ? [event.ownerUserId] : []),
+          ...managerRecipients.map((recipient) => recipient.userId),
+        ]),
+      );
+
+      if (recipientUserIds.length > 0) {
+        await tx.insert(notifications).values(
+          recipientUserIds.map((userId) => ({
+            eventId: input.eventId,
+            message: `A guest invite was opened for ${input.eventTitle}.`,
+            metadataJson: { guestGroupId: input.guestGroupId },
+            notificationType: "guest_opened_invite" as const,
+            title: "Guest invite opened",
+            userId,
+          })),
+        );
+      }
+    }
+
+    return trackedGroup.status;
+  });
 
 const getPublishedEvent = async (db: Database, eventSlug: string) => {
   const [event] = await db
@@ -271,9 +378,7 @@ const toLivePublicEventRecord = (
   accessExpiresAt: string | null;
   publicAccessCodeHash: string | null;
 } => ({
-  accessExpiresAt: event.event.accessExpiresAt
-    ? toIsoDateTime(event.event.accessExpiresAt)
-    : null,
+  accessExpiresAt: event.event.accessExpiresAt ? toIsoDateTime(event.event.accessExpiresAt) : null,
   event: {
     endsAt: event.event.endsAt ? toIsoDateTime(event.event.endsAt) : undefined,
     eventType: event.event.eventType,

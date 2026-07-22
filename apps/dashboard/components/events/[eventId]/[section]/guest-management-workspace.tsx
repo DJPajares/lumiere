@@ -21,6 +21,7 @@ import {
   guestInviteAccessExpiryConstraintSchema,
   guestGroupMutationRequestSchema,
   isInviteAccessExpired,
+  resolveGuestInviteTrackingStage,
   resolveEffectiveInviteAccessExpiry,
   type Event,
   type GuestDataExportFormat,
@@ -29,6 +30,8 @@ import {
   type GuestGroupMemberMutationInput,
   type GuestGroupMutationRequest,
   type GuestGroupStatus,
+  type GuestInviteShareChannel,
+  type GuestInviteTrackingStage,
   type ManagerRole,
 } from "@lumiere/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -97,6 +100,7 @@ type GuestListFilters = {
   query: string;
   sort: GuestSortKey;
   status: GuestGroupStatus | "all";
+  tracking: GuestInviteTrackingStage | "all";
 };
 
 const defaultFormValues: FormValues = {
@@ -123,6 +127,7 @@ const defaultGuestListFilters: GuestListFilters = {
   query: "",
   sort: "createdAt",
   status: "all",
+  tracking: "all",
 };
 
 const guestSortOptions: Array<{ label: string; value: GuestSortKey }> = [
@@ -138,6 +143,20 @@ const guestSortDirectionOptions = [
   { label: "Newest / highest first", value: "desc" },
   { label: "Oldest / lowest first", value: "asc" },
 ] as const;
+
+const guestTrackingStages: GuestInviteTrackingStage[] = ["not_sent", "sent", "opened", "responded"];
+
+const shareChannelOptions: Array<{
+  label: string;
+  value: GuestInviteShareChannel | "unspecified";
+}> = [
+  { label: "Not specified", value: "unspecified" },
+  { label: "Email", value: "email" },
+  { label: "SMS", value: "sms" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "Messenger", value: "messenger" },
+  { label: "Other", value: "other" },
+];
 
 export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const { apiClient } = useDashboardAuth();
@@ -161,6 +180,10 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const [exportFormat, setExportFormat] = useState<GuestDataExportFormat>("csv");
   const [exportScope, setExportScope] = useState<GuestDataExportScope>("all");
   const [exporting, setExporting] = useState(false);
+  const [sentGroup, setSentGroup] = useState<GuestGroup | null>(null);
+  const [shareChannel, setShareChannel] = useState<GuestInviteShareChannel | "unspecified">(
+    "unspecified",
+  );
   const [guestListFilters, setGuestListFilters] = useState<GuestListFilters>(() =>
     readGuestListFilters(),
   );
@@ -270,7 +293,9 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   );
   const hasGuestListFilters = !areGuestListFiltersDefault(guestListFilters);
   const hasSupportedExportFilters =
-    Boolean(guestListFilters.query.trim()) || guestListFilters.status !== "all";
+    Boolean(guestListFilters.query.trim()) ||
+    guestListFilters.status !== "all" ||
+    guestListFilters.tracking !== "all";
 
   const startCreate = () => {
     setEditingGroupId(null);
@@ -548,6 +573,33 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     toast.success(group.label + " invite link opened.");
   };
 
+  const startMarkSent = (group: GuestGroup) => {
+    setShareChannel("unspecified");
+    setSentGroup(group);
+  };
+
+  const markInviteSent = async () => {
+    if (!apiClient || !sentGroup) return;
+
+    setBusyGroupId(sentGroup.id);
+    setActionMessage(null);
+
+    try {
+      const response = await apiClient.markGuestGroupSent(eventId, sentGroup.id, {
+        ...(shareChannel === "unspecified" ? {} : { shareChannel }),
+      });
+      replaceGuestGroup(response.guestGroup);
+      const message = `${response.guestGroup.label} recorded as shared. Delivery is not verified.`;
+      setActionMessage(message);
+      setSentGroup(null);
+      toast.success(message);
+    } catch (error) {
+      toast.error(toFriendlyApiMessage(error));
+    } finally {
+      setBusyGroupId(null);
+    }
+  };
+
   const startExport = () => {
     setExportScope(hasSupportedExportFilters ? "filtered" : "all");
     setExportOpen(true);
@@ -571,6 +623,10 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         status:
           scope === "filtered" && guestListFilters.status !== "all"
             ? guestListFilters.status
+            : undefined,
+        tracking:
+          scope === "filtered" && guestListFilters.tracking !== "all"
+            ? guestListFilters.tracking
             : undefined,
       });
       triggerBrowserDownload(download);
@@ -814,13 +870,13 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
                 All event rows ({guestGroups.length})
               </ToggleGroupItem>
               <ToggleGroupItem disabled={!hasSupportedExportFilters} type="button" value="filtered">
-                Current search and status filters ({filteredGuestGroups.length})
+                Current search, status, and tracking filters ({filteredGuestGroups.length})
               </ToggleGroupItem>
             </ToggleGroup>
             <FieldDescription>
               {hasSupportedExportFilters
-                ? "Current filters include the search text and status shown in this workspace."
-                : "Add search text or a status filter to enable a filtered export."}
+                ? "Current filters include the search text, status, and tracking stage shown in this workspace."
+                : "Add search text, a status filter, or a tracking filter to enable a filtered export."}
             </FieldDescription>
           </FieldSet>
 
@@ -830,6 +886,56 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
           </FieldDescription>
         </FieldGroup>
       </ResponsiveModal>
+
+      {canEdit ? (
+        <ResponsiveModal
+          description="Record a share that happened outside Lumiere. This is manager-confirmed and is not a delivery or read receipt."
+          footer={({ requestClose }) => (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                disabled={Boolean(busyGroupId)}
+                onClick={requestClose}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={Boolean(busyGroupId)}
+                onClick={() => void markInviteSent()}
+                type="button"
+              >
+                {busyGroupId
+                  ? "Recording..."
+                  : sentGroup?.sendCount
+                    ? "Record resend"
+                    : "Mark sent"}
+              </Button>
+            </div>
+          )}
+          onOpenChange={(open) => {
+            if (!open && !busyGroupId) setSentGroup(null);
+          }}
+          open={Boolean(sentGroup)}
+          title={sentGroup ? `Record share for ${sentGroup.label}` : "Record invite share"}
+        >
+          <FieldGroup>
+            <DashboardSelect
+              id="guest-invite-share-channel"
+              label="Share channel"
+              onValueChange={(value) =>
+                setShareChannel(value as GuestInviteShareChannel | "unspecified")
+              }
+              options={shareChannelOptions}
+              value={shareChannel}
+            />
+            <FieldDescription>
+              Choose the channel you used, or leave it unspecified. Opening the guest link and
+              submitting an RSVP are tracked separately.
+            </FieldDescription>
+          </FieldGroup>
+        </ResponsiveModal>
+      ) : null}
 
       <GuestGroupList
         busyGroupId={busyGroupId}
@@ -842,6 +948,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onDisable={(group) => setPendingAction({ groupId: group.id, type: "disable" })}
         onEdit={startEdit}
         onOpen={openInviteLink}
+        onMarkSent={startMarkSent}
         onRegenerate={(group) => setPendingAction({ groupId: group.id, type: "regenerate" })}
         pendingAction={pendingAction}
         onCancelPendingAction={() => setPendingAction(null)}
@@ -856,27 +963,29 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
 function GuestSummary({ guestGroups }: { guestGroups: GuestGroup[] }) {
   const summary = useMemo(() => {
-    const activeGroups = guestGroups.filter((group) => group.status !== "disabled");
-    const totalInvitedPax = activeGroups.reduce((sum, group) => sum + group.maxPax, 0);
+    const countStage = (stage: GuestInviteTrackingStage) =>
+      guestGroups.filter((group) => resolveGuestInviteTrackingStage(group) === stage).length;
 
     return [
       {
-        detail: `${totalInvitedPax} max pax across active groups`,
-        label: "Active groups",
-        value: String(activeGroups.length),
+        detail: "No manager-confirmed share recorded",
+        label: "Not sent",
+        value: String(countStage("not_sent")),
+      },
+      {
+        detail: "Manager-confirmed share; delivery not verified",
+        label: "Sent",
+        value: String(countStage("sent")),
       },
       {
         detail: "Invites opened but not yet responded",
         label: "Opened",
-        value: String(guestGroups.filter((group) => group.status === "opened").length),
+        value: String(countStage("opened")),
       },
       {
         detail: "Groups with submitted RSVP state",
         label: "Responded",
-        value: String(
-          guestGroups.filter((group) => group.status === "responded" || group.status === "declined")
-            .length,
-        ),
+        value: String(countStage("responded")),
       },
       {
         detail: "Invite access intentionally blocked",
@@ -887,7 +996,7 @@ function GuestSummary({ guestGroups }: { guestGroups: GuestGroup[] }) {
   }, [guestGroups]);
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Guest group summary">
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Guest group summary">
       {summary.map((item) => (
         <article
           className="grid gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4"
@@ -942,7 +1051,7 @@ function GuestGroupFilters({
         </Button>
       </div>
 
-      <FieldGroup className="grid items-start gap-4 lg:grid-cols-[minmax(18rem,2fr)_minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)]">
+      <FieldGroup className="grid items-start gap-4 lg:grid-cols-5">
         <Field className="items-start">
           <FieldLabel className="font-semibold leading-normal" htmlFor="guest-group-search">
             Search guest groups
@@ -968,6 +1077,22 @@ function GuestGroupFilters({
             ...guestStatuses.map((status) => ({ label: formatStatus(status), value: status })),
           ]}
           value={filters.status}
+        />
+
+        <DashboardSelect
+          id="guest-group-tracking-filter"
+          label="Tracking filter"
+          onValueChange={(value) =>
+            onUpdate({ tracking: value as GuestInviteTrackingStage | "all" })
+          }
+          options={[
+            { label: "All tracking stages", value: "all" },
+            ...guestTrackingStages.map((stage) => ({
+              label: formatTrackingStage(stage),
+              value: stage,
+            })),
+          ]}
+          value={filters.tracking}
         />
 
         <DashboardSelect
@@ -1199,6 +1324,7 @@ function GuestGroupList({
   onDisable,
   onEdit,
   onOpen,
+  onMarkSent,
   onRegenerate,
   pendingAction,
   totalGuestGroups,
@@ -1217,6 +1343,7 @@ function GuestGroupList({
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
   onOpen: (group: GuestGroup) => void;
+  onMarkSent: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
   totalGuestGroups: number;
@@ -1268,6 +1395,7 @@ function GuestGroupList({
         onDisable={onDisable}
         onEdit={onEdit}
         onOpen={onOpen}
+        onMarkSent={onMarkSent}
         onRegenerate={onRegenerate}
         pendingAction={pendingAction}
         totalGuestGroups={totalGuestGroups}
@@ -1291,6 +1419,12 @@ function GuestGroupList({
         const pending = pendingAction?.groupId === group.id ? pendingAction : null;
         const isBusy = busyGroupId === group.id;
         const isDisabled = group.status === "disabled";
+        const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
+          eventAccessExpiresAt: event.accessExpiresAt ?? null,
+          guestAccessExpiresAt: group.accessExpiresAt ?? null,
+        });
+        const cannotShare =
+          isDisabled || Boolean(effectiveExpiry && isInviteAccessExpired(effectiveExpiry));
 
         return (
           <article
@@ -1302,6 +1436,7 @@ function GuestGroupList({
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-lg font-semibold">{group.label}</h3>
                   <StatusBadge status={group.status} />
+                  <TrackingBadge group={group} />
                   <GuestAccessBadge event={event} group={group} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
@@ -1326,11 +1461,22 @@ function GuestGroupList({
                 <p className="mt-2 text-sm text-muted-foreground">
                   {describeGuestAccessExpiry(event, group)}
                 </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {describeInviteTracking(group)}
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 {canEdit ? (
                   <>
+                    <Button
+                      disabled={isBusy || cannotShare}
+                      onClick={() => onMarkSent(group)}
+                      size="lg"
+                      type="button"
+                    >
+                      {group.sendCount ? "Record resend" : "Mark sent"}
+                    </Button>
                     <Button
                       aria-label={`Edit ${group.label}`}
                       onClick={() => onEdit(group)}
@@ -1448,6 +1594,7 @@ type GuestGroupCompactListProps = {
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
   onOpen: (group: GuestGroup) => void;
+  onMarkSent: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
   totalGuestGroups: number;
@@ -1466,6 +1613,7 @@ function GuestGroupCompactList({
   onDisable,
   onEdit,
   onOpen,
+  onMarkSent,
   onRegenerate,
   pendingAction,
   totalGuestGroups,
@@ -1483,10 +1631,10 @@ function GuestGroupCompactList({
       </div>
 
       <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
-        <div className="hidden grid-cols-[1.35fr_0.8fr_1fr_1fr_1.25fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
+        <div className="hidden grid-cols-[1.25fr_0.75fr_1.1fr_0.9fr_1.15fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
           <span>Guest group</span>
           <span>Status</span>
-          <span>Last opened</span>
+          <span>Tracking</span>
           <span>Access</span>
           <span>Invite link</span>
           <span className="sr-only">Actions</span>
@@ -1497,13 +1645,19 @@ function GuestGroupCompactList({
             const pending = pendingAction?.groupId === group.id ? pendingAction : null;
             const isBusy = busyGroupId === group.id;
             const isDisabled = group.status === "disabled";
+            const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
+              eventAccessExpiresAt: event.accessExpiresAt ?? null,
+              guestAccessExpiresAt: group.accessExpiresAt ?? null,
+            });
+            const cannotShare =
+              isDisabled || Boolean(effectiveExpiry && isInviteAccessExpired(effectiveExpiry));
             const contact = group.members?.length
               ? group.members.map((member) => member.name).join(", ")
               : group.contactName || group.contactEmail || "No contact details";
 
             return (
               <article
-                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.35fr_0.8fr_1fr_1fr_1.25fr_auto] lg:items-start"
+                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.25fr_0.75fr_1.1fr_0.9fr_1.15fr_auto] lg:items-start"
                 key={group.id}
               >
                 <div>
@@ -1519,10 +1673,13 @@ function GuestGroupCompactList({
                 </div>
 
                 <div>
-                  <CompactMobileLabel>Last opened</CompactMobileLabel>
-                  <span>
-                    {group.lastOpenedAt ? formatGuestDate(group.lastOpenedAt) : "Not opened"}
-                  </span>
+                  <CompactMobileLabel>Tracking</CompactMobileLabel>
+                  <div className="grid justify-items-start gap-1">
+                    <TrackingBadge group={group} />
+                    <span className="text-xs text-muted-foreground">
+                      {describeInviteTracking(group)}
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -1561,6 +1718,14 @@ function GuestGroupCompactList({
 
                 {canEdit ? (
                   <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <Button
+                      disabled={isBusy || cannotShare}
+                      onClick={() => onMarkSent(group)}
+                      size="lg"
+                      type="button"
+                    >
+                      {group.sendCount ? "Resend" : "Mark sent"}
+                    </Button>
                     <Button
                       aria-label={`Edit ${group.label}`}
                       onClick={() => onEdit(group)}
@@ -1807,6 +1972,7 @@ function readGuestListFilters(): GuestListFilters {
   const params = new URLSearchParams(window.location.search);
   const query = params.get("q") ?? "";
   const statusParam = params.get("status");
+  const trackingParam = params.get("tracking");
   const sortParam = params.get("sort");
   const directionParam = params.get("direction");
 
@@ -1815,6 +1981,9 @@ function readGuestListFilters(): GuestListFilters {
     query,
     sort: isGuestSortKey(sortParam) ? sortParam : defaultGuestListFilters.sort,
     status: isGuestGroupStatus(statusParam) ? statusParam : defaultGuestListFilters.status,
+    tracking: isGuestTrackingStage(trackingParam)
+      ? trackingParam
+      : defaultGuestListFilters.tracking,
   };
 }
 
@@ -1853,6 +2022,7 @@ function writeGuestListFilters(filters: GuestListFilters) {
 
   params.delete("q");
   params.delete("status");
+  params.delete("tracking");
   params.delete("sort");
   params.delete("direction");
   const query = filters.query.trim();
@@ -1862,6 +2032,9 @@ function writeGuestListFilters(filters: GuestListFilters) {
   }
   if (filters.status !== defaultGuestListFilters.status) {
     params.set("status", filters.status);
+  }
+  if (filters.tracking !== defaultGuestListFilters.tracking) {
+    params.set("tracking", filters.tracking);
   }
   if (filters.sort !== defaultGuestListFilters.sort) {
     params.set("sort", filters.sort);
@@ -1879,6 +2052,7 @@ function areGuestListFiltersDefault(filters: GuestListFilters) {
   return (
     filters.query.trim() === defaultGuestListFilters.query &&
     filters.status === defaultGuestListFilters.status &&
+    filters.tracking === defaultGuestListFilters.tracking &&
     filters.sort === defaultGuestListFilters.sort &&
     filters.direction === defaultGuestListFilters.direction
   );
@@ -1888,6 +2062,10 @@ function filterAndSortGuestGroups(guestGroups: GuestGroup[], filters: GuestListF
   const query = filters.query.trim().toLocaleLowerCase();
   const filtered = guestGroups.filter((group) => {
     if (filters.status !== "all" && group.status !== filters.status) {
+      return false;
+    }
+
+    if (filters.tracking !== "all" && resolveGuestInviteTrackingStage(group) !== filters.tracking) {
       return false;
     }
 
@@ -1964,6 +2142,10 @@ function isGuestGroupStatus(value: string | null): value is GuestGroupStatus {
   return value !== null && guestStatuses.includes(value as GuestGroupStatus);
 }
 
+function isGuestTrackingStage(value: string | null): value is GuestInviteTrackingStage {
+  return value !== null && guestTrackingStages.includes(value as GuestInviteTrackingStage);
+}
+
 function isGuestSortKey(value: string | null): value is GuestSortKey {
   return guestSortOptions.some((option) => option.value === value);
 }
@@ -1991,6 +2173,54 @@ function StatusBadge({ status }: { status: GuestGroupStatus }) {
       {label}
     </span>
   );
+}
+
+function TrackingBadge({ group }: { group: GuestGroup }) {
+  const stage = resolveGuestInviteTrackingStage(group);
+  const variant =
+    stage === "responded"
+      ? "default"
+      : stage === "opened"
+        ? "secondary"
+        : stage === "sent"
+          ? "outline"
+          : "secondary";
+
+  return <Badge variant={variant}>{formatTrackingStage(stage)}</Badge>;
+}
+
+function describeInviteTracking(group: GuestGroup) {
+  const stage = resolveGuestInviteTrackingStage(group);
+
+  if (stage === "responded") {
+    return "RSVP recorded";
+  }
+
+  if (stage === "opened") {
+    return `Opened ${formatGuestDate(group.lastOpenedAt ?? group.firstOpenedAt!)}`;
+  }
+
+  if (stage === "sent") {
+    const sentAt = group.lastSentAt ?? group.firstSentAt;
+    const channel = group.lastShareChannel
+      ? ` via ${formatShareChannel(group.lastShareChannel)}`
+      : "";
+    const count =
+      group.sendCount && group.sendCount > 1 ? ` · ${group.sendCount} shares recorded` : "";
+    return `Manager-confirmed${sentAt ? ` ${formatGuestDate(sentAt)}` : ""}${channel}${count}; delivery not verified`;
+  }
+
+  return "No manager-confirmed share recorded";
+}
+
+function formatTrackingStage(stage: GuestInviteTrackingStage) {
+  return stage === "not_sent" ? "Not sent" : stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+
+function formatShareChannel(channel: GuestInviteShareChannel) {
+  if (channel === "sms") return "SMS";
+  if (channel === "whatsapp") return "WhatsApp";
+  return channel.charAt(0).toUpperCase() + channel.slice(1);
 }
 
 function GuestLoading() {

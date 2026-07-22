@@ -5,6 +5,7 @@ import {
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
+  guestInviteShareChannelSchema,
   managerRoleSchema,
   notificationTypeSchema,
   rsvpStatusSchema,
@@ -77,6 +78,10 @@ export const collaboratorInvitationStatusEnum = lumiereSchema.enum(
 export const guestGroupStatusEnum = lumiereSchema.enum(
   "guest_group_status",
   pgEnumValues(guestGroupStatusSchema.options),
+);
+export const guestInviteShareChannelEnum = lumiereSchema.enum(
+  "guest_invite_share_channel",
+  pgEnumValues(guestInviteShareChannelSchema.options),
 );
 export const activityActorTypeEnum = lumiereSchema.enum(
   "activity_actor_type",
@@ -365,6 +370,11 @@ export const guestGroups = lumiereSchema.table(
     status: guestGroupStatusEnum("status").notNull().default("pending"),
     notes: text("notes"),
     accessExpiresAt: timestamp("access_expires_at", { mode: "string", withTimezone: true }),
+    firstSentAt: timestamp("first_sent_at", { mode: "string", withTimezone: true }),
+    lastSentAt: timestamp("last_sent_at", { mode: "string", withTimezone: true }),
+    sendCount: integer("send_count").notNull().default(0),
+    lastShareChannel: guestInviteShareChannelEnum("last_share_channel"),
+    firstOpenedAt: timestamp("first_opened_at", { mode: "string", withTimezone: true }),
     lastOpenedAt: timestamp("last_opened_at", { mode: "string", withTimezone: true }),
     createdAt: createdAtColumn(),
     updatedAt: updatedAtColumn(),

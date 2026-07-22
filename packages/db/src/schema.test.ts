@@ -5,6 +5,7 @@ import {
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
+  guestInviteShareChannelSchema,
   managerRoleSchema,
   notificationTypeSchema,
   rsvpStatusSchema,
@@ -35,6 +36,7 @@ import {
   guestGroups,
   guestGroupMembers,
   guestGroupStatusEnum,
+  guestInviteShareChannelEnum,
   managerRoleEnum,
   notifications,
   notificationTypeEnum,
@@ -119,7 +121,13 @@ describe("database schema", () => {
     expect(sectionColumns).not.toHaveProperty("contentJson");
     expect(contentColumns).toHaveProperty("contentJson");
     expect(guestGroupColumns).toMatchObject({
+      firstOpenedAt: expect.anything(),
+      firstSentAt: expect.anything(),
+      lastOpenedAt: expect.anything(),
+      lastSentAt: expect.anything(),
+      lastShareChannel: expect.anything(),
       maxPax: expect.anything(),
+      sendCount: expect.anything(),
       status: expect.anything(),
     });
     expect(guestGroupMemberColumns).toMatchObject({
@@ -149,6 +157,7 @@ describe("database schema", () => {
       collaboratorInvitationStatusSchema.options,
     );
     expect(guestGroupStatusEnum.enumValues).toEqual(guestGroupStatusSchema.options);
+    expect(guestInviteShareChannelEnum.enumValues).toEqual(guestInviteShareChannelSchema.options);
     expect(activityActorTypeEnum.enumValues).toEqual(activityActorTypeSchema.options);
     expect(activityTypeEnum.enumValues).toEqual(activityTypeSchema.options);
     expect(notificationTypeEnum.enumValues).toEqual(notificationTypeSchema.options);

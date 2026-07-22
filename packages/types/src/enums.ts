@@ -48,6 +48,18 @@ export const guestGroupStatusSchema = z.enum([
 ]);
 export type GuestGroupStatus = z.infer<typeof guestGroupStatusSchema>;
 
+export const guestInviteShareChannelSchema = z.enum([
+  "email",
+  "sms",
+  "whatsapp",
+  "messenger",
+  "other",
+]);
+export type GuestInviteShareChannel = z.infer<typeof guestInviteShareChannelSchema>;
+
+export const guestInviteTrackingStageSchema = z.enum(["not_sent", "sent", "opened", "responded"]);
+export type GuestInviteTrackingStage = z.infer<typeof guestInviteTrackingStageSchema>;
+
 export const activityActorTypeSchema = z.enum(["manager", "guest", "system"]);
 export type ActivityActorType = z.infer<typeof activityActorTypeSchema>;
 
@@ -63,6 +75,7 @@ export const activityTypeSchema = z.enum([
   "theme_updated",
   "guest_group_created",
   "guest_access_expiry_changed",
+  "guest_invite_sent",
   "guest_data_exported",
   "guest_invite_opened",
   "rsvp_submitted",

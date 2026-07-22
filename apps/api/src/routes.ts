@@ -24,6 +24,7 @@ import {
   eventUpdateRequestSchema,
   guestDataExportQuerySchema,
   guestGroupMutationRequestSchema,
+  guestInviteSentRequestSchema,
   guestInviteParamsSchema,
   managerRoleSchema,
   publicEventParamsSchema,
@@ -43,6 +44,7 @@ import {
   buildGuestDataCsv,
   buildGuestDataExportFilename,
   buildGuestDataXlsx,
+  type GuestDataExportFilters,
   type GuestDataExportStore,
 } from "./guest-exports";
 import {
@@ -1059,6 +1061,7 @@ export const createRoutes = ({
         q: context.req.query("q"),
         scope: context.req.query("scope"),
         status: context.req.query("status"),
+        tracking: context.req.query("tracking"),
       });
 
       if (!queryResult.success) {
@@ -1070,11 +1073,12 @@ export const createRoutes = ({
       const event = await stores.eventStore.getEvent(eventId);
       if (!event) throw new ApiHttpError("NOT_FOUND", "Event not found");
       const { format, scope } = queryResult.data;
-      const filters =
+      const filters: GuestDataExportFilters =
         scope === "filtered"
           ? {
               query: queryResult.data.q,
               status: queryResult.data.status,
+              ...(queryResult.data.tracking ? { tracking: queryResult.data.tracking } : {}),
             }
           : {};
       const rows = await stores.guestDataExportStore.listRows(eventId, filters);
@@ -1090,6 +1094,7 @@ export const createRoutes = ({
         scope,
         usedQueryFilter: Boolean(filters.query),
         usedStatusFilter: Boolean(filters.status),
+        usedTrackingFilter: Boolean(filters.tracking),
       });
 
       return context.body(body, 200, {
@@ -1238,6 +1243,37 @@ export const createRoutes = ({
       return context.json({
         guestGroup,
       });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/guest-groups/:groupId/mark-sent",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerGuestGroupStores({ authStore, eventStore, guestGroupStore });
+      const { eventId, groupId } = parseEventAndGuestGroupIdParams({
+        eventId: context.req.param("eventId"),
+        groupId: context.req.param("groupId"),
+      });
+      const input = await parseJsonBody(context, guestInviteSentRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+      const guestGroup = await stores.guestGroupStore.markGuestGroupSent(
+        eventId,
+        groupId,
+        input,
+        context.get("manager").user.id,
+      );
+
+      if (!guestGroup) {
+        throw new ApiHttpError("NOT_FOUND", "Guest group not found");
+      }
+
+      return context.json({ guestGroup });
     },
   );
 

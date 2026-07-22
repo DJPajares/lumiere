@@ -8,6 +8,8 @@ import {
   eventStatusSchema,
   eventTypeSchema,
   guestGroupStatusSchema,
+  guestInviteShareChannelSchema,
+  guestInviteTrackingStageSchema,
   managerRoleSchema,
   notificationTypeSchema,
   rsvpStatusSchema,
@@ -369,11 +371,44 @@ export const guestGroupSchema = z.object({
   status: guestGroupStatusSchema,
   notes: z.string().trim().max(2000).optional(),
   accessExpiresAt: inviteAccessExpirySchema.optional(),
+  firstSentAt: isoDateTimeSchema.optional(),
+  lastSentAt: isoDateTimeSchema.optional(),
+  sendCount: z.number().int().min(0).optional(),
+  lastShareChannel: guestInviteShareChannelSchema.optional(),
+  firstOpenedAt: isoDateTimeSchema.optional(),
   lastOpenedAt: isoDateTimeSchema.optional(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
 export type GuestGroup = z.infer<typeof guestGroupSchema>;
+
+export const guestInviteSentMutationSchema = z
+  .object({
+    shareChannel: guestInviteShareChannelSchema.optional(),
+  })
+  .strict();
+export type GuestInviteSentMutation = z.infer<typeof guestInviteSentMutationSchema>;
+
+export const resolveGuestInviteTrackingStage = (
+  guestGroup: Pick<
+    GuestGroup,
+    "firstOpenedAt" | "firstSentAt" | "lastOpenedAt" | "lastSentAt" | "sendCount" | "status"
+  >,
+) => {
+  if (guestGroup.status === "responded" || guestGroup.status === "declined") {
+    return guestInviteTrackingStageSchema.enum.responded;
+  }
+
+  if (guestGroup.firstOpenedAt || guestGroup.lastOpenedAt) {
+    return guestInviteTrackingStageSchema.enum.opened;
+  }
+
+  if (guestGroup.firstSentAt || guestGroup.lastSentAt || (guestGroup.sendCount ?? 0) > 0) {
+    return guestInviteTrackingStageSchema.enum.sent;
+  }
+
+  return guestInviteTrackingStageSchema.enum.not_sent;
+};
 
 export const guestGroupMutationSchema = z
   .object({
