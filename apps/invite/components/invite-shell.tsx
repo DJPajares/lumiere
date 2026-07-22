@@ -10,6 +10,10 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { AmbientAudioControls, type AmbientAudioConfig } from "./ambient-audio-controls";
 import {
+  InviteSectionNavigator,
+  type InviteSectionNavigationItem,
+} from "./invite-section-navigator";
+import {
   InviteThemeModeControl,
   type ResolvedThemeMode,
   type ThemeModeVariables,
@@ -21,6 +25,7 @@ type InviteShellProps = {
   context: "guest" | "public";
   eventKey?: string;
   mode?: ThemeMode;
+  sectionNavigation?: InviteSectionNavigationItem[];
   themeId?: string;
 };
 
@@ -30,6 +35,7 @@ export function InviteShell({
   context,
   eventKey = "invite-preview",
   mode = "light",
+  sectionNavigation = [],
   themeId,
 }: InviteShellProps) {
   const theme = resolveTheme(themeId);
@@ -39,6 +45,17 @@ export function InviteShell({
     dark: theme.tokens.dark ? themeTokensToVariables(theme.tokens.dark) : undefined,
     light: themeTokensToVariables(theme.tokens.light),
   };
+  const hasVisibleModeToggle =
+    mode === "toggleable" &&
+    theme.supportedModes.includes("toggleable") &&
+    Boolean(theme.tokens.dark);
+  const sectionNavigationPlacement = hasVisibleModeToggle
+    ? theme.modeToggle.placement === "top-end"
+      ? "start"
+      : "end"
+    : ambientAudio
+      ? "start"
+      : "end";
 
   return (
     <main
@@ -60,6 +77,11 @@ export function InviteShell({
         initialMode={resolvedMode}
         presentation={theme.supportedModes.includes("toggleable") ? theme.modeToggle : undefined}
         variables={modeVariables}
+      />
+      <InviteSectionNavigator
+        hasAmbientAudio={Boolean(ambientAudio)}
+        items={sectionNavigation}
+        placement={sectionNavigationPlacement}
       />
       {children}
       <AmbientAudioControls audio={ambientAudio} context={context} themeId={theme.id} />

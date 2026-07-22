@@ -28,6 +28,7 @@ import { resolveInviteMotionIntensity } from "./invite-motion-config";
 import { InviteMaskedText, invitePressFeedbackProps } from "./invite-motion-primitives";
 import { InviteMotionRuntime } from "./invite-motion-runtime";
 import { InviteShell } from "./invite-shell";
+import type { InviteSectionNavigationItem } from "./invite-section-navigator";
 import { InviteVisualLayer } from "./invite-visual-layer";
 import { RsvpForm, type RsvpQuestion, type RsvpQuestionType } from "./rsvp-form";
 
@@ -106,6 +107,7 @@ function InvitationFrame({
     ? introduction.settings.introAnimation
     : undefined;
   const introAnimationEnabled = readBoolean(introAnimation?.enabled, true);
+  const sectionNavigation = createSectionNavigation(invite, introduction, bodySections);
 
   return (
     <InviteShell
@@ -113,6 +115,7 @@ function InvitationFrame({
       context={context}
       eventKey={invite.event.slug}
       mode={invite.themeMode}
+      sectionNavigation={sectionNavigation}
       themeId={invite.selectedThemeId ?? invite.theme?.id}
     >
       {introAnimationEnabled ? (
@@ -211,9 +214,7 @@ function PublicHero({
   const title = readString(content.title) ?? invite.event.title;
   const subtitle = readString(content.subtitle);
   const body = readString(content.body);
-  const anchorId = section
-    ? (readString(section.settings.anchorId) ?? section.section.sectionKey)
-    : "introduction";
+  const anchorId = section ? getSectionAnchorId(section) : "introduction";
   const layout = section ? (readString(section.settings.layout) ?? "editorial") : "editorial";
   const fullViewport = theme.composition.hero.fullViewport;
   const presentation = theme.presentation.hero;
@@ -235,6 +236,7 @@ function PublicHero({
       data-section-type="introduction"
       data-theme-hero-composition={theme.composition.hero.composition}
       id={anchorId}
+      tabIndex={-1}
     >
       <div
         className={
@@ -388,7 +390,7 @@ function PublicSection({
   theme: ThemeDefinition;
 }) {
   const definition = getSectionDefinition(item.section.sectionType);
-  const anchorId = readString(item.settings.anchorId) ?? item.section.sectionKey;
+  const anchorId = getSectionAnchorId(item);
   const composition = resolveSectionComposition(item, theme);
   const density = resolveSectionDensity(item, theme);
   const layout = resolveSectionLayout(item, theme);
@@ -416,6 +418,7 @@ function PublicSection({
       data-section-type={item.section.sectionType}
       data-section-variant={readString(item.settings.variant) ?? "default"}
       id={anchorId}
+      tabIndex={-1}
     >
       <div className={getSectionInnerClassName(composition, density)}>
         <div className="lumiere-section__kicker">
@@ -1072,8 +1075,8 @@ function RsvpSection({
                 Fresh response requested
               </p>
               <p className="lumiere-type-body mt-2">
-                The host has asked your group to RSVP again. Please send a new response even if
-                your plans have not changed.
+                The host has asked your group to RSVP again. Please send a new response even if your
+                plans have not changed.
               </p>
             </div>
           ) : null}
@@ -1574,6 +1577,39 @@ function getRenderableSections(
         },
       ];
     });
+}
+
+function createSectionNavigation(
+  invite: InviteResponse,
+  introduction: RenderableSection | undefined,
+  bodySections: RenderableSection[],
+): InviteSectionNavigationItem[] {
+  const candidates = [
+    {
+      id: introduction ? getSectionAnchorId(introduction) : "introduction",
+      label: introduction
+        ? (readString(introduction.content.title) ?? invite.event.title)
+        : invite.event.title,
+    },
+    ...bodySections.map((item) => ({
+      id: getSectionAnchorId(item),
+      label: readString(item.content.title) ?? getSectionDefinition(item.section.sectionType).label,
+    })),
+  ];
+  const seenTargets = new Set<string>();
+
+  return candidates.filter((item) => {
+    if (seenTargets.has(item.id)) {
+      return false;
+    }
+
+    seenTargets.add(item.id);
+    return true;
+  });
+}
+
+function getSectionAnchorId(item: RenderableSection) {
+  return readString(item.settings.anchorId) ?? item.section.sectionKey;
 }
 
 function readString(value: JsonValue | undefined) {

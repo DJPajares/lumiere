@@ -212,6 +212,7 @@ main[data-theme-id]
     .lumiere-intro,
     .lumiere-countdown,
     [data-audio-status],
+    [data-section-navigator],
     [data-theme-mode-control]
   )
   :is(
@@ -318,6 +319,7 @@ main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :activ
 
 .lumiere-section {
   position: relative;
+  scroll-margin-top: max(9rem, calc(env(safe-area-inset-top) + 8rem));
 }
 
 .lumiere-invitation {

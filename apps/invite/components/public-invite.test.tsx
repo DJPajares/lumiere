@@ -546,6 +546,10 @@ describe("public invite section renderers", () => {
       unobserve = vi.fn();
 
       constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        if (options?.rootMargin !== "320px 0px") {
+          return;
+        }
+
         observerCallback = callback;
         observerInstance = this;
         expect(options).toMatchObject({
@@ -810,6 +814,204 @@ describe("public invite section renderers", () => {
     expect(disabledAudioHtml).not.toContain("data-audio-status");
   });
 
+  it("derives floating navigation from the final public section order and targets", () => {
+    const invite = createInvite([
+      createSection({
+        content: {
+          paragraphs: [{ body: "How the celebration began." }],
+          title: "Our beginning",
+        },
+        sectionKey: "story-stop",
+        sectionType: "story",
+        sortOrder: 2,
+      }),
+      createSection({
+        content: { title: "Welcome home" },
+        sectionKey: "welcome",
+        sectionType: "introduction",
+        settings: { anchorId: "opening-stop" },
+        sortOrder: 0,
+      }),
+      createSection({
+        content: { title: "Private reply" },
+        sectionKey: "private-rsvp",
+        sectionType: "rsvp",
+        sortOrder: 1,
+        visibility: "guest_only",
+      }),
+    ]);
+    invite.themeMode = "toggleable";
+    invite.themeConfig = {
+      ambientAudio: {
+        label: "Evening music",
+        src: "https://audio.example.com/evening.mp3",
+      },
+    };
+
+    const template = document.createElement("template");
+    template.innerHTML = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
+    const navigator = template.content.querySelector<HTMLElement>("[data-section-navigator]");
+    const navigatorTrigger = template.content.querySelector<HTMLButtonElement>(
+      "[data-section-navigator-trigger]",
+    );
+    const navigatorPanel = template.content.querySelector<HTMLElement>(
+      "[data-section-navigator-panel]",
+    );
+    const navigatorHoverBridge = template.content.querySelector<HTMLElement>(
+      "[data-section-navigator-hover-bridge]",
+    );
+    const items = Array.from(
+      template.content.querySelectorAll<HTMLButtonElement>("[data-section-target]"),
+    );
+
+    expect(navigator?.dataset.sectionNavigatorPlacement).toBe("end");
+    expect(navigator?.getAttribute("style")).toContain("safe-area-inset-top");
+    expect(navigatorTrigger?.textContent?.trim()).toBe("");
+    expect(navigatorTrigger?.getAttribute("aria-label")).toBe("Open invitation sections");
+    expect(navigatorTrigger?.querySelector("svg")).toBeTruthy();
+    expect(navigatorHoverBridge?.className).toContain("pointer-events-none");
+    expect(navigatorPanel?.textContent).toContain("Invitation guide");
+    expect(navigatorPanel?.textContent).toContain("Explore 2 sections");
+    expect(navigatorPanel?.className).toContain("translate-y-1.5");
+    expect(navigatorPanel?.className).not.toContain("scale-[");
+    expect(items.map((item) => item.dataset.sectionTarget)).toEqual(["opening-stop", "story-stop"]);
+    expect(items.map((item) => item.querySelector("[data-section-label]")?.textContent)).toEqual([
+      "Welcome home",
+      "Our beginning",
+    ]);
+    expect(template.content.querySelector("#opening-stop")?.getAttribute("tabindex")).toBe("-1");
+    expect(template.content.querySelector("#story-stop")?.getAttribute("tabindex")).toBe("-1");
+    expect(template.content.querySelector('[data-section-target="private-rsvp"]')).toBeNull();
+  });
+
+  it("omits floating navigation when only the invitation hero is rendered", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicInvitation, {
+        invite: createInvite([]),
+      }),
+    );
+
+    expect(html).not.toContain("data-section-navigator=");
+  });
+
+  it("tracks, opens, dismisses, focuses, and scrolls invitation section navigation", async () => {
+    let navigatorObserverCallback: IntersectionObserverCallback | undefined;
+    let navigatorObserver: IntersectionObserver | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    class MockIntersectionObserver implements IntersectionObserver {
+      readonly root = null;
+      readonly rootMargin: string;
+      readonly scrollMargin = "0px";
+      readonly thresholds: readonly number[];
+      disconnect = disconnect;
+      observe = observe;
+      takeRecords = vi.fn(() => []);
+      unobserve = vi.fn();
+
+      constructor(callback: IntersectionObserverCallback, options: IntersectionObserverInit = {}) {
+        this.rootMargin = options.rootMargin ?? "0px";
+        this.thresholds = Array.isArray(options.threshold)
+          ? options.threshold
+          : [options.threshold ?? 0];
+        navigatorObserverCallback = callback;
+        navigatorObserver = this;
+      }
+    }
+    const invite = createInvite([
+      createSection({
+        content: { title: "Welcome" },
+        sectionKey: "welcome",
+        sectionType: "introduction",
+        sortOrder: 0,
+      }),
+      createSection({
+        content: {
+          paragraphs: [{ body: "A shared chapter." }],
+          title: "Our story",
+        },
+        sectionKey: "story-stop",
+        sectionType: "story",
+        sortOrder: 1,
+      }),
+    ]);
+    const container = document.createElement("div");
+    const root = createRoot(container);
+
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+    window.matchMedia = vi.fn(
+      (query: string): MediaQueryList =>
+        ({
+          addEventListener: vi.fn(),
+          addListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+          matches: query === "(prefers-reduced-motion: reduce)",
+          media: query,
+          onchange: null,
+          removeEventListener: vi.fn(),
+          removeListener: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    document.body.append(container);
+
+    await act(() => root.render(createElement(PublicInvitation, { invite })));
+
+    const trigger = container.querySelector<HTMLButtonElement>(
+      'button[aria-controls][aria-label$="invitation sections"]',
+    );
+    const storyItem = container.querySelector<HTMLButtonElement>(
+      '[data-section-target="story-stop"]',
+    );
+    const storyTarget = container.querySelector<HTMLElement>("#story-stop");
+    const hoverBridge = container.querySelector<HTMLElement>(
+      "[data-section-navigator-hover-bridge]",
+    );
+    const scrollIntoView = vi.fn();
+    const focus = vi.spyOn(storyTarget!, "focus");
+
+    Object.defineProperty(storyTarget, "scrollIntoView", { value: scrollIntoView });
+    expect(observe).toHaveBeenCalledWith(container.querySelector("#welcome"));
+    expect(observe).toHaveBeenCalledWith(storyTarget);
+
+    await act(() => {
+      navigatorObserverCallback?.(
+        [
+          {
+            boundingClientRect: { top: 20 },
+            intersectionRatio: 0.6,
+            isIntersecting: true,
+            target: storyTarget!,
+          } as unknown as IntersectionObserverEntry,
+        ],
+        navigatorObserver!,
+      );
+    });
+    expect(storyItem?.getAttribute("aria-current")).toBe("location");
+
+    await act(() => trigger?.focus());
+    expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+    expect(hoverBridge?.className).toContain("pointer-events-auto");
+    await act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(trigger);
+
+    await act(() => trigger?.click());
+    await act(() => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+
+    await act(() => trigger?.click());
+    await act(() => storyItem?.click());
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start" });
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(storyTarget);
+
+    await act(() => root.unmount());
+  });
+
   it("renders guest-only RSVP sections with guest context", () => {
     const invite: PublicGuestInviteResponse = {
       ...createInvite([
@@ -871,6 +1073,8 @@ describe("public invite section renderers", () => {
     );
 
     expect(html).toContain('data-section-renderer="section.rsvp"');
+    expect(html).toContain('data-section-target="welcome"');
+    expect(html).toContain('data-section-target="rsvp"');
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
