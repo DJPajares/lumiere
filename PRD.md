@@ -482,6 +482,7 @@ Supabase-authenticated manager profile mirror.
 - timezone
 - starts_at
 - ends_at
+- access_expires_at: nullable global public and guest access ceiling
 - venue_name
 - venue_address
 - selected_theme_id
@@ -543,6 +544,7 @@ Photos, gallery images, cover images, maps, or future uploaded media metadata.
 - status: pending, opened, responded, declined, disabled
 - notes
 - last_opened_at
+- access_expires_at: nullable private-link deadline that cannot extend effective access beyond the event ceiling
 - created_at
 - updated_at
 
@@ -614,6 +616,72 @@ Optional table for tracking selected theme metadata at publish time.
 - Secrets remain server-side.
 - Event slugs must be unique and safe for URLs.
 
+### Invite Access Expiration Policy
+
+Lumiere uses explicit access expiration rather than inferring availability from the event schedule. The policy has two levels:
+
+| Term | Contract |
+| --- | --- |
+| Event access expiry | Nullable `events.access_expires_at`. It is the global ceiling for the readable public event URL, every private guest URL, and RSVP submission. |
+| Guest access expiry | Nullable `guest_groups.access_expires_at`. It may end that current private link earlier, but it never extends access beyond the event ceiling. |
+| Effective guest expiry | The earlier non-null value of the event and guest expiry. If both are null, the link does not expire. |
+| Schedule end | `events.ends_at`. It describes when the event ends and never expires access by itself. |
+| RSVP close | The explicit RSVP closed flag or close timestamp. It blocks response writes while the invitation can remain readable. |
+| Unpublish | A publication lifecycle action that immediately makes public and guest routes unavailable without changing either expiry. |
+| Delete | A soft-delete lifecycle action that immediately makes all invite access unavailable and remains higher precedence than expiry. |
+| Guest disable | An immediate manual revocation for one guest group, independent of its expiry. |
+| Token rotation | Replaces the current secret. The old URL becomes invalid immediately; the guest group's expiry is retained for the new URL. |
+
+#### Defaults, scheduling, and time contract
+
+- New events and guest groups default to `null` access expiry. Migration/backfill must write no deadline, so every existing public URL and guest link keeps its current behavior until a manager explicitly opts in.
+- Managers may use an unselected dashboard suggestion based on `endsAt`, such as **Use event end time**, but Lumiere must never copy or recalculate that value automatically. The manager reviews and saves the deadline explicitly because an invitation can remain useful after the scheduled event.
+- Removing or changing `endsAt` never changes access expiry. Changing the event timezone never reinterprets an already-saved expiry instant.
+- Manager inputs accept RFC 3339 timestamps with an explicit UTC offset. API responses serialize them as UTC ISO 8601 timestamps. Dashboard controls display and edit them in the event timezone, show the timezone beside the value, and convert the chosen local time to an instant before submission.
+- Server time is authoritative. Access is expired at exact equality: `now >= accessExpiresAt`. Reads and RSVP writes must use the same rule and effective-expiry calculation.
+- A guest-expiry mutation is valid when the value is null, when the event expiry is null, or when the guest instant is less than or equal to the current event expiry. Equality is valid. A later guest value returns a field-level `VALIDATION_ERROR`; it is never treated as an extension.
+- Event expiry remains the ceiling if it is shortened after guest deadlines exist. Stored guest deadlines do not override it, and the dashboard must show the effective earlier value. Extending or clearing the event deadline does not clear or extend a guest-specific deadline.
+
+#### Manager use cases and reopening behavior
+
+- An owner or editor can set, clear, shorten, or extend event access expiry. Viewers can read it but cannot mutate it.
+- An owner or editor can set, clear, shorten, or extend a guest deadline within the event ceiling. Clearing it means **inherit the event deadline**, not **never expire**, unless the event deadline is also null.
+- Managers may save a past deadline to expire access immediately. The UI must warn that the next request will be blocked and offer unpublish or guest disable when those lifecycle actions better express intent.
+- Clearing or extending an elapsed event deadline makes the published event reachable again on the next request, except for deleted, unpublished, disabled, rotated, independently expired, or otherwise invalid access. Clearing or extending one guest deadline affects only its current token.
+- Deadline changes do not delete RSVP responses, guest activity, or invitation content. They are access-control changes and must be auditable.
+
+#### Request precedence and safe external states
+
+The server evaluates availability in the following order. A higher row wins when multiple states apply.
+
+| Precedence | Condition | Result |
+| --- | --- | --- |
+| 1 | Event deleted, archived, or not published | Generic `NOT_FOUND` (404). No event or guest details are returned. |
+| 2 | Event access expiry reached | Generic `INVITE_EXPIRED` (410) for both public and guest routes. It does not reveal whether a guest token matches. |
+| 3 | Private token missing, malformed, unknown, or rotated | Generic `NOT_FOUND` (404). The old and never-valid tokens are indistinguishable. |
+| 4 | Current guest group disabled | `FORBIDDEN` (403) with the existing disabled-link state. |
+| 5 | Current guest deadline reached | Generic `INVITE_EXPIRED` (410), identical to event-level expiry and without guest identity, title, deadline, or scope. |
+| 6 | RSVP closed | Invitation GET remains readable. RSVP POST returns the existing closed-response `FORBIDDEN` state and preserves entered form data. |
+
+`INVITE_EXPIRED` is the only new public error code. It deliberately does not distinguish event-level from guest-level expiration. Public slugs are identifiers, not secrets; a private expiry state is emitted only for a current high-entropy token or for the event-wide ceiling without resolving a guest. Error payloads and logs must not include tokens, guest labels, response data, or the configured deadline.
+
+An already-rendered page is not forcibly blanked or disconnected at the deadline. Every subsequent API read, refresh, metadata request, and RSVP submission re-evaluates access against server time. A submission that crosses the boundary fails with `INVITE_EXPIRED`, saves no response, and keeps recoverable client input. Public and private invite fetches, error metadata, and expiry responses use private/no-store cache behavior so a CDN or framework cache cannot continue serving invite data after expiration.
+
+#### t116 implementation map
+
+t116 must implement this policy across these exact surfaces:
+
+- **Schema and migration:** add nullable timezone-aware `access_expires_at` columns to `events` and `guest_groups` in `packages/db/src/schema.ts` and a reversible Drizzle migration. Existing rows remain null. Point lookups already resolve by slug/token, so add no expiry index unless an implemented query or cleanup job demonstrates a need.
+- **Shared contracts:** wire `accessExpiresAt` into manager event/guest reads and mutation schemas in `packages/types/src/domain.ts` and `packages/types/src/api.ts`; reuse the shared effective-expiry and equality helpers; keep all serialized values UTC ISO strings.
+- **Manager API:** extend event and guest-group mutations in `apps/api/src/events.ts`, `apps/api/src/guest-groups.ts`, and `apps/api/src/routes.ts`; enforce owner/editor authorization, field errors, optimistic event conflicts where applicable, and preservation of guest expiry during token rotation.
+- **Public API and RSVP:** enforce the same server-authoritative rule in `apps/api/src/public-invites.ts` and `apps/api/src/rsvps.ts`; emit `INVITE_EXPIRED` through `apps/api/src/errors.ts`; apply no-store/private response headers and never rely on dashboard/client checks.
+- **API client:** expose the new manager fields and stable error code through `packages/api-client/src/index.ts` without parsing error-message text.
+- **Dashboard:** add the global control in `apps/dashboard/components/events/[eventId]/[section]/event-settings-workspace.tsx` and the inherited/earlier per-link control in `guest-management-workspace.tsx`; extend the existing API client wiring rather than creating separate state. Show event-timezone labels, effective deadline, expired status, clear/extend actions, past-time warnings, and accessible loading/error/success states at mobile and desktop widths.
+- **Invite state:** add public-expired handling in `apps/invite/app/e/[eventSlug]/page.tsx`, guest-expired handling in `apps/invite/app/e/[eventSlug]/g/[guestToken]/page.tsx`, and presentations in `apps/invite/components/invite-access-state.tsx`; keep `noindex, nofollow` and preserve RSVP input when a submission expires.
+- **Activity and audit:** add `event_access_expiry_changed` and `guest_access_expiry_changed` to the shared/database activity enums and emit them from the corresponding manager mutations. Record actor, target IDs, previous/new timestamps, and action; never record raw or encrypted tokens. No guest notification is implied by changing a deadline.
+- **Verification:** extend `packages/db/src/schema.test.ts`, `packages/types/src/domain.test.ts`, `apps/api/src/index.test.ts`, `packages/api-client/src/index.test.ts`, the existing event-settings and guest-management workspace tests, `apps/invite/tests/invite-routes.test.tsx`, and RSVP form tests. Cover null backfill, UTC offsets, exact equality, event-versus-guest precedence, deleted/unpublished/disabled/rotated distinctions, past deadlines, clear/extend, stale open pages, and token rotation retention.
+- **Smoke checks:** verify one non-expiring legacy event, one event-wide expiry, one earlier guest expiry, a boundary-time RSVP rejection with preserved input, manager reopen behavior, no-store metadata, keyboard access, and dashboard/invite layouts at 390px, 768px, and 1440px.
+
 ## 18. Error Handling Requirements
 
 Common error shape:
@@ -640,6 +708,7 @@ Backend behavior:
 - Return 401 for missing/invalid manager auth.
 - Return 403 for authenticated managers without event access.
 - Return 404 when event or guest token cannot be resolved.
+- Return 410 with `INVITE_EXPIRED` when explicit invitation access expiration is reached.
 - Return 409 for duplicate slugs or conflicting RSVP updates.
 - Return 422 for validation errors.
 

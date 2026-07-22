@@ -7,7 +7,10 @@ import {
   eventCreateSchema,
   eventUpdateSchema,
   eventSectionsUpdateSchema,
+  guestInviteAccessExpiryConstraintSchema,
   guestGroupMutationSchema,
+  isInviteAccessExpired,
+  resolveEffectiveInviteAccessExpiry,
   rsvpSubmissionSchema,
 } from ".";
 
@@ -206,20 +209,35 @@ describe("shared schemas", () => {
     });
   });
 
-  it("validates API error shape", () => {
+  it("validates API error and invite expiration contract shapes", () => {
     expect(
       apiErrorSchema.parse({
         error: {
-          code: "VALIDATION_ERROR",
-          message: "Invalid request",
+          code: "INVITE_EXPIRED",
+          message: "Invitation access has expired",
           requestId: "req_123",
-          fields: [{ path: ["title"], message: "Required" }],
         },
       }),
     ).toMatchObject({
       error: {
-        code: "VALIDATION_ERROR",
+        code: "INVITE_EXPIRED",
       },
     });
+
+    const access = guestInviteAccessExpiryConstraintSchema.parse({
+      eventAccessExpiresAt: "2026-12-25T00:00:00+08:00",
+      guestAccessExpiresAt: "2026-12-24T23:00:00+08:00",
+    });
+
+    expect(resolveEffectiveInviteAccessExpiry(access)).toBe("2026-12-24T23:00:00+08:00");
+    expect(isInviteAccessExpired(access.guestAccessExpiresAt, access.guestAccessExpiresAt!)).toBe(
+      true,
+    );
+    expect(() =>
+      guestInviteAccessExpiryConstraintSchema.parse({
+        eventAccessExpiresAt: "2026-12-25T00:00:00+08:00",
+        guestAccessExpiresAt: "2026-12-25T00:00:01+08:00",
+      }),
+    ).toThrow("Guest access expiry cannot be later than the event access expiry");
   });
 });

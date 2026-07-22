@@ -32,6 +32,7 @@ export const apiErrorCodeSchema = z.enum([
   "CONFLICT",
   "VALIDATION_ERROR",
   "RATE_LIMITED",
+  "INVITE_EXPIRED",
   "INTERNAL_ERROR",
 ]);
 export type ApiErrorCode = z.infer<typeof apiErrorCodeSchema>;

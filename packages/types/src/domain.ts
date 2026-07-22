@@ -41,6 +41,62 @@ export const defaultRsvpResponseFields: RsvpResponseFields = {
 
 export const eventDeletionRetentionDays = 30;
 
+export const inviteAccessExpirySchema = isoDateTimeSchema.nullable();
+export type InviteAccessExpiry = z.infer<typeof inviteAccessExpirySchema>;
+
+export const inviteAccessExpiryUpdateSchema = z
+  .object({
+    accessExpiresAt: inviteAccessExpirySchema,
+  })
+  .strict();
+export type InviteAccessExpiryUpdate = z.infer<typeof inviteAccessExpiryUpdateSchema>;
+
+export const guestInviteAccessExpiryConstraintSchema = z
+  .object({
+    eventAccessExpiresAt: inviteAccessExpirySchema,
+    guestAccessExpiresAt: inviteAccessExpirySchema,
+  })
+  .superRefine((value, context) => {
+    if (
+      value.eventAccessExpiresAt &&
+      value.guestAccessExpiresAt &&
+      Date.parse(value.guestAccessExpiresAt) > Date.parse(value.eventAccessExpiresAt)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Guest access expiry cannot be later than the event access expiry",
+        path: ["guestAccessExpiresAt"],
+      });
+    }
+  });
+export type GuestInviteAccessExpiryConstraint = z.infer<
+  typeof guestInviteAccessExpiryConstraintSchema
+>;
+
+export const resolveEffectiveInviteAccessExpiry = ({
+  eventAccessExpiresAt,
+  guestAccessExpiresAt,
+}: GuestInviteAccessExpiryConstraint): InviteAccessExpiry => {
+  if (!eventAccessExpiresAt) return guestAccessExpiresAt;
+  if (!guestAccessExpiresAt) return eventAccessExpiresAt;
+
+  return Date.parse(guestAccessExpiresAt) < Date.parse(eventAccessExpiresAt)
+    ? guestAccessExpiresAt
+    : eventAccessExpiresAt;
+};
+
+export const isInviteAccessExpired = (
+  accessExpiresAt: InviteAccessExpiry,
+  now: Date | number | string = Date.now(),
+) => {
+  if (!accessExpiresAt) return false;
+
+  const nowTimestamp =
+    now instanceof Date ? now.getTime() : typeof now === "number" ? now : Date.parse(now);
+
+  return nowTimestamp >= Date.parse(accessExpiresAt);
+};
+
 export const rsvpSettingsSchema = z
   .object({
     collectGuestMessage: z.boolean().default(defaultRsvpResponseFields.collectGuestMessage),
