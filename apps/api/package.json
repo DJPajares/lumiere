@@ -11,7 +11,7 @@
     "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@hono/node-server": "^2.0.10",
+    "@hono/node-server": "^2.0.11",
     "@lumiere/config": "workspace:*",
     "@lumiere/db": "workspace:*",
     "@lumiere/themes": "workspace:*",
