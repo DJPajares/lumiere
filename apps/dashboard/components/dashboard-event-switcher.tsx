@@ -2,6 +2,7 @@
 
 import {
   Button,
+  CalendarSyncIcon,
   CheckIcon,
   ChevronDownIcon,
   Popover,
@@ -10,6 +11,9 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@lumiere/dashboard-ui";
 import type { Event } from "@lumiere/types";
 import { cn } from "@lumiere/dashboard-ui/lib/utils";
@@ -26,6 +30,7 @@ export type DashboardEventSwitcherState = {
 
 type DashboardEventSwitcherProps = {
   className?: string;
+  compact?: boolean;
   context: DashboardWorkspaceContext;
   eventListState: DashboardEventSwitcherState;
   mobile?: boolean;
@@ -35,6 +40,7 @@ type DashboardEventSwitcherProps = {
 
 export function DashboardEventSwitcher({
   className,
+  compact = false,
   context,
   eventListState,
   mobile = false,
@@ -46,6 +52,28 @@ export function DashboardEventSwitcher({
   }
 
   if (eventListState.status === "loading") {
+    if (compact) {
+      return (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                aria-busy="true"
+                aria-label="Loading events"
+                className={className}
+                disabled
+                size="icon-lg"
+                variant="ghost"
+              />
+            }
+          >
+            <CalendarSyncIcon data-icon="inline-start" />
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Loading events</TooltipContent>
+        </Tooltip>
+      );
+    }
+
     return (
       <Button
         aria-busy="true"
@@ -63,22 +91,50 @@ export function DashboardEventSwitcher({
   const currentEvent = eventListState.events.find((event) => event.id === context.eventId);
   const triggerLabel =
     currentEvent?.title ?? (context.eventId ? "Event unavailable" : "Choose an event");
+  const accessibleTriggerLabel = currentEvent
+    ? `Switch event, ${currentEvent.title}`
+    : "Switch event";
+  const switcherHint = currentEvent ? `Switch event · ${currentEvent.title}` : "Switch event";
 
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            aria-label={`Switch event${currentEvent ? `, ${currentEvent.title}` : ""}`}
-            className={cn(mobile ? "max-w-none" : "max-w-56", className)}
-            size={mobile ? "lg" : "default"}
-            variant="outline"
-          />
-        }
-      >
-        <span className="min-w-0 truncate">{triggerLabel}</span>
-        <ChevronDownIcon data-icon="inline-end" />
-      </PopoverTrigger>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <PopoverTrigger
+                render={
+                  <Button
+                    aria-label={accessibleTriggerLabel}
+                    className={className}
+                    data-event-switcher-mode="compact"
+                    size="icon-lg"
+                    variant="ghost"
+                  />
+                }
+              />
+            }
+          >
+            <CalendarSyncIcon data-icon="inline-start" />
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{switcherHint}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <PopoverTrigger
+          render={
+            <Button
+              aria-label={accessibleTriggerLabel}
+              className={cn(mobile ? "max-w-none" : "max-w-56", className)}
+              data-event-switcher-mode={mobile ? "mobile" : "default"}
+              size={mobile ? "lg" : "default"}
+              variant="outline"
+            />
+          }
+        >
+          <span className="min-w-0 truncate">{triggerLabel}</span>
+          <ChevronDownIcon data-icon="inline-end" />
+        </PopoverTrigger>
+      )}
       <PopoverContent
         align={mobile ? "center" : "start"}
         aria-label="Select dashboard event"

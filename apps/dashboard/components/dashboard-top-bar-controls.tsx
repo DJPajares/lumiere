@@ -29,7 +29,7 @@ import type { Notification } from "@lumiere/types";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../auth/dashboard-auth-provider";
 import { getNotificationDestination } from "../lib/notification-destinations";
@@ -37,6 +37,7 @@ import { getNotificationDestination } from "../lib/notification-destinations";
 type DashboardTopBarControlsProps = {
   className?: string;
   eventId?: string;
+  eventSwitcher?: ReactNode;
 };
 
 type ManagerIdentity = {
@@ -55,7 +56,11 @@ type NotificationState =
 type NotificationAction =
   { id: string; type: "dismiss" | "read" } | { type: "mark-all-read" } | null;
 
-export function DashboardTopBarControls({ className, eventId }: DashboardTopBarControlsProps) {
+export function DashboardTopBarControls({
+  className,
+  eventId,
+  eventSwitcher,
+}: DashboardTopBarControlsProps) {
   const { apiClient, signOut, status, user } = useDashboardAuth();
   const router = useRouter();
   const [notificationRevision, setNotificationRevision] = useState(0);
@@ -277,6 +282,8 @@ export function DashboardTopBarControls({ className, eventId }: DashboardTopBarC
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
+      {eventSwitcher}
+
       <NotificationControl
         eventId={eventId}
         isMarkingAllRead={notificationAction?.type === "mark-all-read"}

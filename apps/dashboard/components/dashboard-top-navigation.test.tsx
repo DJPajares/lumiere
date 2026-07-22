@@ -18,7 +18,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("./dashboard-top-bar-controls", () => ({
-  DashboardTopBarControls: () => <div data-testid="top-bar-controls">Account controls</div>,
+  DashboardTopBarControls: ({ eventSwitcher }: { eventSwitcher?: React.ReactNode }) => (
+    <div data-testid="top-bar-controls">
+      {eventSwitcher}
+      <span>Account controls</span>
+    </div>
+  ),
 }));
 
 describe("DashboardTopNavigation", () => {
@@ -184,11 +189,13 @@ describe("DashboardTopNavigation", () => {
       </DashboardAuthProvider>,
     );
 
-    await user.click(
-      await screen.findByRole("button", {
-        name: `Switch event, ${springDinner.title}`,
-      }),
-    );
+    const compactTrigger = await screen.findByRole("button", {
+      name: `Switch event, ${springDinner.title}`,
+    });
+
+    await user.hover(compactTrigger);
+    expect(await screen.findByText(`Switch event · ${springDinner.title}`)).toBeTruthy();
+    await user.click(compactTrigger);
 
     const eventPicker = screen.getByRole("dialog", { name: "Switch event" });
     const selectedEventContext = document.querySelector<HTMLElement>(
@@ -197,6 +204,8 @@ describe("DashboardTopNavigation", () => {
     const currentEvent = within(eventPicker).getByRole("button", { name: /Spring Dinner/ });
     const nextEvent = within(eventPicker).getByRole("button", { name: /Autumn Launch/ });
 
+    expect(compactTrigger.getAttribute("data-event-switcher-mode")).toBe("compact");
+    expect(compactTrigger.className).toContain("size-9");
     expect(currentEvent.getAttribute("aria-current")).toBe("page");
     expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/responses`);
     expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/responses`);

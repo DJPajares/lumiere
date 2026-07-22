@@ -71,7 +71,18 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
 
           <DashboardDesktopNavigation workspaceItems={navigation.workspace} />
 
-          <DashboardTopBarControls className="ml-auto" eventId={navigation.context.eventId} />
+          <DashboardTopBarControls
+            className="ml-auto"
+            eventId={navigation.context.eventId}
+            eventSwitcher={
+              <DashboardEventSwitcher
+                compact
+                context={navigation.context}
+                eventListState={eventListState}
+                onRetry={retryEventList}
+              />
+            }
+          />
         </div>
 
         <Separator className="hidden lg:block" />
@@ -87,11 +98,6 @@ export function DashboardTopNavigation({ activePath }: DashboardTopNavigationPro
               eventListState={eventListState}
             />
           </div>
-          <DashboardEventSwitcher
-            context={navigation.context}
-            eventListState={eventListState}
-            onRetry={retryEventList}
-          />
         </div>
       </div>
     </header>

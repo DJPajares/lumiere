@@ -1,4 +1,5 @@
 export {
+  CalendarSyncIcon,
   CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
