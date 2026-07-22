@@ -243,10 +243,10 @@ main[data-theme-id]
 main[data-theme-id] .lumiere-theme-mode-control button {
   --mode-toggle-icon-column: 1.75rem;
   --mode-toggle-label-width: 12ch;
-  width: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
-  min-width: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
-  height: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
-  min-height: calc(var(--mode-toggle-icon-column) + 1rem + 2px);
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  min-height: 3rem;
   align-items: center;
   grid-template-columns: var(--mode-toggle-icon-column) 0fr;
   padding: 0.5rem;
@@ -1311,7 +1311,7 @@ main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :activ
   height: 0.95rem;
   margin-top: -0.35rem;
   appearance: none;
-  border: 0.2rem solid #100e0c;
+  border: 0.2rem solid var(--surface);
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
@@ -1320,7 +1320,7 @@ main[data-theme-id] .lumiere-theme-mode-control button:is(:hover, :focus, :activ
 .lumiere-music-progress::-moz-range-thumb {
   width: 0.7rem;
   height: 0.7rem;
-  border: 0.2rem solid #100e0c;
+  border: 0.2rem solid var(--surface);
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);

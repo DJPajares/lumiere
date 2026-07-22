@@ -30,8 +30,12 @@ Manual smoke checks:
   jump forward 15 seconds, refresh, and confirm the last play/pause choice is remembered for that
   event and source in the current browser.
 - Player presentation: confirm the resting button shows play while paused and an animated visualizer
-  while playing; confirm the expanded player shows album art, title, artist, and automatically hides
-  after five seconds without pointer, keyboard, focus, drag, or playback interaction.
+  while playing; confirm it matches the 48px translucent floating controls and the expanded player
+  replaces that button at the same bottom-right anchor. Check both light and dark mode for themed
+  surface, text, border, progress, control, and focus colors.
+- Player dismissal: confirm the panel minimizes with its header action, Escape, an outside click, or
+  five seconds of inactivity; it must stay open during a seek drag and while keyboard focus remains
+  within the player.
 - Artwork fallback: remove `art` and then try a broken image URL; both cases should show the
   intentional music-note placeholder without affecting audio playback.
 - Low distraction: set `lowDistraction` to `true` or enable reduced motion and confirm audio does not start automatically.

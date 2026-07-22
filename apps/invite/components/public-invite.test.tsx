@@ -792,11 +792,17 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Now playing");
     expect(html).toContain("Play Garden strings");
     expect(html).toContain("Open music player for Garden strings");
+    expect(html).toContain("Minimize music player for Garden strings");
     expect(html).toContain("Seek through Garden strings");
     expect(html).toContain("Forward 15 seconds in Garden strings");
     expect(html).toContain("Tap to begin");
     expect(html).toContain('data-audio-placement="bottom-end"');
     expect(html).toContain("safe-area-inset-bottom");
+    expect(html).toContain("bottom-0 right-0");
+    expect(html).toContain("size-12");
+    expect(html).toContain("var(--surface)_82%");
+    expect(html).not.toContain("#100e0c");
+    expect(html).not.toContain("scale-[0.97]");
     expect(html).toContain("fixed top-4");
   });
 

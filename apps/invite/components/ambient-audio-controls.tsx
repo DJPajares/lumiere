@@ -29,8 +29,11 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
   const detailsId = useId();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
+  const minimizeRef = useRef<HTMLButtonElement | null>(null);
+  const openedWithKeyboardRef = useRef(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const pointerIsDownRef = useRef(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [status, setStatus] = useState<AudioStatus>("idle");
   const [isReducedMotion, setIsReducedMotion] = useState<boolean | null>(null);
@@ -43,13 +46,15 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
     [audio, eventKey],
   );
 
-  const closePlayer = useCallback(() => {
+  const closePlayer = useCallback((restoreFocus = true) => {
     const shouldRestoreFocus =
-      document.activeElement instanceof Node && panelRef.current?.contains(document.activeElement);
+      restoreFocus &&
+      document.activeElement instanceof Node &&
+      panelRef.current?.contains(document.activeElement);
 
     setIsExpanded(false);
     if (shouldRestoreFocus) {
-      queueMicrotask(() => triggerRef.current?.focus());
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
     }
   }, []);
 
@@ -60,7 +65,11 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
 
     hideTimeoutRef.current = window.setTimeout(function hideWhenIdle() {
       hideTimeoutRef.current = null;
-      if (pointerIsDownRef.current) {
+      if (
+        pointerIsDownRef.current ||
+        (document.activeElement instanceof Node &&
+          panelRef.current?.contains(document.activeElement))
+      ) {
         hideTimeoutRef.current = window.setTimeout(hideWhenIdle, playerIdleTimeout);
         return;
       }
@@ -133,7 +142,26 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
     }
 
     scheduleAutoHide();
+    if (openedWithKeyboardRef.current) {
+      openedWithKeyboardRef.current = false;
+      window.requestAnimationFrame(() => minimizeRef.current?.focus());
+    }
   }, [isExpanded, scheduleAutoHide]);
+
+  useEffect(() => {
+    if (!isExpanded) {
+      return;
+    }
+
+    const minimizeOnOutsidePress = (event: PointerEvent) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
+        closePlayer(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", minimizeOnOutsidePress);
+    return () => document.removeEventListener("pointerdown", minimizeOnOutsidePress);
+  }, [closePlayer, isExpanded]);
 
   useEffect(
     () => () => {
@@ -221,7 +249,7 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
 
   return (
     <div
-      className="fixed z-50 max-w-[calc(100vw-2rem)]"
+      className="pointer-events-none fixed z-50 w-[min(20rem,calc(100vw-2rem))]"
       data-audio-expanded={isExpanded ? "true" : "false"}
       data-audio-placement="bottom-end"
       data-audio-status={status}
@@ -247,6 +275,7 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
         pointerIsDownRef.current = false;
         scheduleAutoHide();
       }}
+      ref={rootRef}
       style={positionStyle}
     >
       <audio
@@ -277,23 +306,37 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
       />
 
       <div
+        aria-labelledby={`${detailsId}-title`}
         aria-hidden={!isExpanded}
-        className={`absolute bottom-[4.5rem] right-0 w-[min(20rem,calc(100vw-2rem))] origin-bottom-right rounded-[calc(var(--radius-lg)+0.35rem)] border border-[color-mix(in_srgb,var(--accent)_42%,transparent)] bg-[color-mix(in_srgb,#100e0c_92%,var(--accent))] p-4 text-[#f5f1e8] shadow-[0_22px_64px_color-mix(in_srgb,#080706_68%,transparent)] backdrop-blur-xl transition-[opacity,transform] duration-300 motion-reduce:transition-none ${
+        className={`absolute bottom-0 right-0 max-h-[calc(100dvh-2rem)] w-full origin-bottom-right overflow-y-auto overscroll-contain rounded-[calc(var(--radius-lg)+0.35rem)] border border-[color-mix(in_srgb,var(--border)_64%,transparent)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] p-4 text-[var(--foreground)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_16%,transparent)] backdrop-blur-2xl backdrop-saturate-150 transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none motion-reduce:transition-none ${
           isExpanded
-            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-2 scale-[0.97] opacity-0"
+            ? "pointer-events-auto translate-y-0 opacity-100 duration-500"
+            : "pointer-events-none translate-y-4 opacity-0 duration-200"
         }`}
+        data-state={isExpanded ? "open" : "closed"}
         id={detailsId}
         inert={!isExpanded}
         ref={panelRef}
+        role="region"
       >
-        <p className="lumiere-type-eyebrow flex items-center gap-2 text-[var(--accent)]">
-          <span aria-hidden="true" className="size-1 rotate-45 bg-current" />
-          Now playing
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="lumiere-type-eyebrow flex min-w-0 items-center gap-2 text-[var(--accent-strong)]">
+            <span aria-hidden="true" className="size-1 shrink-0 rotate-45 bg-current" />
+            <span className="truncate">Now playing</span>
+          </p>
+          <button
+            aria-label={`Minimize music player for ${audio.title}`}
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-transparent text-[color-mix(in_srgb,var(--foreground)_68%,transparent)] transition-[background-color,border-color,transform] duration-200 hover:border-[color-mix(in_srgb,var(--border)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_68%,transparent)] hover:text-[var(--foreground)] active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] motion-reduce:transition-none"
+            onClick={() => closePlayer()}
+            ref={minimizeRef}
+            type="button"
+          >
+            <MinimizeIcon />
+          </button>
+        </div>
 
-        <div className="mt-4 grid grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-3">
-          <div className="grid aspect-square overflow-hidden rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--accent)_45%,transparent)] bg-[color-mix(in_srgb,#f5f1e8_8%,transparent)] p-0.5">
+        <div className="mt-3 grid grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-3">
+          <div className="grid aspect-square overflow-hidden rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[color-mix(in_srgb,var(--surface-muted)_72%,transparent)] p-0.5">
             {audio.art && !artFailed ? (
               <InviteImage
                 alt=""
@@ -308,7 +351,7 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
             ) : (
               <span
                 aria-label="Album art unavailable"
-                className="grid size-full place-items-center rounded-[calc(var(--radius-md)-0.15rem)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]"
+                className="grid size-full place-items-center rounded-[calc(var(--radius-md)-0.15rem)] bg-[color-mix(in_srgb,var(--surface-muted)_78%,transparent)] text-[var(--accent-strong)]"
                 role="img"
               >
                 <MusicNoteIcon />
@@ -317,8 +360,10 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
           </div>
 
           <div className="min-w-0">
-            <p className="lumiere-type-label truncate text-[#f5f1e8]">{audio.title}</p>
-            <p className="lumiere-type-body mt-1 truncate italic text-[var(--accent)]">
+            <p className="lumiere-type-label truncate text-[var(--foreground)]" id={`${detailsId}-title`}>
+              {audio.title}
+            </p>
+            <p className="lumiere-type-body mt-1 truncate text-[var(--accent-strong)]">
               {audio.artist ?? audio.label}
             </p>
             <span aria-live="polite" className="sr-only">
@@ -343,24 +388,28 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
             type="range"
             value={canSeek ? Math.min(currentTime, duration) : 0}
           />
+          <span className="lumiere-type-caption mt-0.5 flex justify-between gap-3 tabular-nums text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+            <span>{formatAudioTime(currentTime)}</span>
+            <span>{canSeek ? formatAudioTime(duration) : "—:—"}</span>
+          </span>
         </label>
 
-        <div className="mt-3 flex items-center justify-between gap-4">
+        <div className="mt-2 flex items-center justify-between gap-4">
           <AudioVisualizer active={isVisualizerActive} size="panel" />
 
           <div className="flex items-center gap-2.5">
             <button
               aria-label={`Forward 15 seconds in ${audio.title}`}
-              className="grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm transition-[filter,transform] hover:brightness-95 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0c] disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none"
+              className="grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm transition-[filter,transform] hover:brightness-95 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none"
               disabled={!canSeek}
               onClick={() => seekTo(Math.min(currentTime + 15, duration))}
               type="button"
             >
-              <ForwardIcon />
+              <Forward15Icon />
             </button>
             <button
               aria-label={`${status === "error" ? "Retry" : isPlaying ? "Pause" : "Play"} ${audio.title}`}
-              className="grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_58%,transparent)] text-[var(--accent)] transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0c] motion-reduce:transition-none"
+              className="grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_58%,var(--border))] text-[var(--accent-strong)] transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] motion-reduce:transition-none"
               onClick={togglePlayback}
               type="button"
             >
@@ -370,21 +419,25 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div
+        className={`flex justify-end transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none motion-reduce:transition-none ${
+          isExpanded
+            ? "pointer-events-none translate-y-2 opacity-0 duration-150"
+            : "pointer-events-auto translate-y-0 opacity-100 duration-300"
+        }`}
+        inert={isExpanded}
+      >
         <button
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? "Close" : "Open"} music player for ${audio.title}. ${statusLabel}`}
-          className="grid size-14 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_52%,transparent)] bg-[color-mix(in_srgb,#100e0c_92%,var(--accent))] text-[var(--accent)] shadow-[0_14px_38px_color-mix(in_srgb,#080706_54%,transparent)] backdrop-blur-xl transition-[background-color,filter,transform] hover:brightness-110 active:scale-[0.95] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none"
-          onClick={() => {
-            if (isExpanded) {
-              closePlayer();
-              return;
-            }
-
+          className="relative grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-[color-mix(in_srgb,var(--surface)_44%,transparent)] text-[var(--foreground)] opacity-75 shadow-[0_12px_38px_color-mix(in_srgb,var(--foreground)_10%,transparent)] backdrop-blur-xl backdrop-saturate-150 transition-[opacity,transform,background-color,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_46%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_68%,transparent)] hover:opacity-100 active:translate-y-0 active:scale-[0.96] focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none"
+          onClick={(event) => {
+            openedWithKeyboardRef.current = event.detail === 0;
             setIsExpanded(true);
           }}
           ref={triggerRef}
+          tabIndex={isExpanded ? -1 : 0}
           type="button"
         >
           {isPlaying ? (
@@ -451,11 +504,41 @@ function PlayIcon() {
   );
 }
 
-function ForwardIcon() {
+function Forward15Icon() {
   return (
-    <svg aria-hidden="true" className="size-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M6.25 7.1a.8.8 0 0 1 1.23-.67l6.4 4.22a.8.8 0 0 1 0 1.34l-6.4 4.22a.8.8 0 0 1-1.23-.67V7.1Z" />
-      <rect height="10" rx="1" width="2" x="15.75" y="7" />
+    <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M6.1 8.1A7 7 0 1 1 5 14M6 4.75V8.5h3.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+      <text
+        fill="currentColor"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fontSize="6.5"
+        fontWeight="700"
+        textAnchor="middle"
+        x="12"
+        y="14.35"
+      >
+        15
+      </text>
+    </svg>
+  );
+}
+
+function MinimizeIcon() {
+  return (
+    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
+      <path
+        d="m7 10 5 5 5-5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
     </svg>
   );
 }
