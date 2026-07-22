@@ -198,6 +198,18 @@ describe("invite app routes", () => {
     expect(html).not.toContain("draft-event");
     expect(html).not.toContain("Try again");
 
+    mockApiError(410, "Invitation access has expired");
+    const expiredElement = await PublicEventPage({
+      params: Promise.resolve({
+        eventSlug: "expired-event",
+      }),
+    });
+    const expiredHtml = renderToStaticMarkup(expiredElement);
+
+    expect(expiredHtml).toContain('data-invite-access-state="public-expired"');
+    expect(expiredHtml).toContain("This invitation has expired.");
+    expect(expiredHtml).not.toContain("expired-event");
+
     mockApiError(503, "Public invite service unavailable");
     const retryableElement = await PublicEventPage({
       params: Promise.resolve({
@@ -371,7 +383,14 @@ function mockApiError(status: number, message: string) {
     Response.json(
       {
         error: {
-          code: status === 404 ? "NOT_FOUND" : status === 403 ? "FORBIDDEN" : "INTERNAL_ERROR",
+          code:
+            status === 404
+              ? "NOT_FOUND"
+              : status === 403
+                ? "FORBIDDEN"
+                : status === 410
+                  ? "INVITE_EXPIRED"
+                  : "INTERNAL_ERROR",
           message,
           requestId: "invite-test-request",
         },

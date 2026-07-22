@@ -104,11 +104,13 @@ describe("database schema", () => {
     expect(eventColumns).not.toHaveProperty("selectedThemeId");
     expect(eventColumns).not.toHaveProperty("rsvpSettingsJson");
     expect(eventColumns).toMatchObject({
+      accessExpiresAt: expect.anything(),
       deletedAt: expect.anything(),
       deletedByUserId: expect.anything(),
       purgeAfter: expect.anything(),
     });
     expect(themeColumns).toHaveProperty("selectedThemeId");
+    expect(guestGroupColumns).toHaveProperty("accessExpiresAt");
     expect(rsvpColumns).toHaveProperty("settingsJson");
     expect(sectionColumns).toMatchObject({
       enabled: expect.anything(),

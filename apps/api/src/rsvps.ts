@@ -13,6 +13,7 @@ import {
   sql,
 } from "@lumiere/db";
 import {
+  isInviteAccessExpired,
   rsvpSettingsSchema,
   type Event,
   type RsvpResponse,
@@ -38,7 +39,7 @@ export type RsvpSubmissionRejected =
   | { reason: "updates_disabled" };
 
 export type RsvpSubmissionResult =
-  RsvpSubmissionRecord | RsvpSubmissionRejected | "disabled" | null;
+  RsvpSubmissionRecord | RsvpSubmissionRejected | "disabled" | "expired" | null;
 
 export type RsvpStore = {
   submitGuestRsvp(input: {
@@ -52,6 +53,7 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
   async submitGuestRsvp({ eventSlug, inviteTokenHash, submission }) {
     const [event] = await db
       .select({
+        accessExpiresAt: events.accessExpiresAt,
         id: events.id,
         ownerUserId: events.ownerUserId,
         rsvpSettingsJson: eventPublications.rsvpSettingsJson,
@@ -73,18 +75,15 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
       return null;
     }
 
+    if (isInviteAccessExpired(event.accessExpiresAt)) {
+      return "expired";
+    }
+
     const settings = readRsvpSettings(event.rsvpSettingsJson as Event["rsvpSettings"]);
-
-    if (!settings.enabled || settings.closed || isPast(settings.closesAt)) {
-      return { reason: "closed" };
-    }
-
-    if (submission.responseStatus === "maybe" && !settings.allowMaybe) {
-      return { reason: "maybe_disabled" };
-    }
 
     const [guestGroup] = await db
       .select({
+        accessExpiresAt: guestGroups.accessExpiresAt,
         eventId: guestGroups.eventId,
         id: guestGroups.id,
         inviteTokenHash: guestGroups.inviteTokenHash,
@@ -104,6 +103,18 @@ export const createDrizzleRsvpStore = (db: Database): RsvpStore => ({
 
     if (guestGroup.status === "disabled") {
       return "disabled";
+    }
+
+    if (isInviteAccessExpired(guestGroup.accessExpiresAt)) {
+      return "expired";
+    }
+
+    if (!settings.enabled || settings.closed || isPast(settings.closesAt)) {
+      return { reason: "closed" };
+    }
+
+    if (submission.responseStatus === "maybe" && !settings.allowMaybe) {
+      return { reason: "maybe_disabled" };
     }
 
     if (submission.attendeeCount > guestGroup.maxPax) {

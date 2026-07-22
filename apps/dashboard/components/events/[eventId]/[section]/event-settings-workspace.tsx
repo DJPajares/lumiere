@@ -3,7 +3,12 @@
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
-import { eventDeletionRetentionDays, type Event, type ManagerRole } from "@lumiere/types";
+import {
+  eventDeletionRetentionDays,
+  isInviteAccessExpired,
+  type Event,
+  type ManagerRole,
+} from "@lumiere/types";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
@@ -11,6 +16,12 @@ import { EventTabs } from "../../../placeholder-panels";
 import { CollaboratorAccessPanel } from "./collaborator-access-panel";
 import { EventBasicsModal } from "../../event-basics-modal";
 import { EventDeletionModal } from "../../event-deletion-modal";
+import {
+  EventDateTimeField,
+  eventIsoToLocalDateTime,
+  eventLocalDateTimeToIso,
+  isCompleteEventLocalDateTime,
+} from "../../../ui/event-date-time-picker";
 import {
   formatDateTime,
   formatEventType,
@@ -31,6 +42,10 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
   });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [accessExpiry, setAccessExpiry] = useState("");
+  const [accessExpiryError, setAccessExpiryError] = useState<string>();
+  const [accessExpiryNotice, setAccessExpiryNotice] = useState<string>();
+  const [savingAccessExpiry, setSavingAccessExpiry] = useState(false);
 
   const loadEvent = useCallback(async () => {
     if (!apiClient) {
@@ -60,6 +75,14 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
   useEffect(() => {
     void loadEvent();
   }, [loadEvent]);
+
+  useEffect(() => {
+    if (state.status === "ready") {
+      setAccessExpiry(
+        eventIsoToLocalDateTime(state.event.accessExpiresAt ?? undefined, state.event.timezone),
+      );
+    }
+  }, [state]);
 
   if (state.status === "loading") {
     return (
@@ -92,6 +115,56 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
   const event = state.event;
   const canEdit = state.accessRole !== "viewer";
   const isOwner = state.accessRole === "owner";
+  const savedAccessExpiry = event.accessExpiresAt ?? null;
+  const selectedAccessExpiry = accessExpiry
+    ? eventLocalDateTimeToIso(accessExpiry, event.timezone)
+    : null;
+  const accessExpiryChanged = selectedAccessExpiry !== savedAccessExpiry;
+  const selectedExpiryIsPast = Boolean(
+    selectedAccessExpiry && isInviteAccessExpired(selectedAccessExpiry),
+  );
+
+  const saveAccessExpiry = async () => {
+    if (!apiClient) {
+      setAccessExpiryError("Dashboard API is not configured.");
+      return;
+    }
+
+    if (accessExpiry && !isCompleteEventLocalDateTime(accessExpiry)) {
+      setAccessExpiryError("Choose both a date and time, or leave the deadline blank.");
+      return;
+    }
+
+    if (accessExpiry && !selectedAccessExpiry) {
+      setAccessExpiryError("Choose a valid date and time in the event timezone.");
+      return;
+    }
+
+    setSavingAccessExpiry(true);
+    setAccessExpiryError(undefined);
+    setAccessExpiryNotice(undefined);
+
+    try {
+      const response = await apiClient.updateEvent(event.id, {
+        accessExpiresAt: selectedAccessExpiry,
+      });
+      setState({
+        accessRole: state.accessRole,
+        error: null,
+        event: response.event,
+        status: "ready",
+      });
+      setAccessExpiryNotice(
+        selectedAccessExpiry
+          ? "Invitation access deadline saved."
+          : "Invitation access deadline removed.",
+      );
+    } catch (error) {
+      setAccessExpiryError(toFriendlyApiMessage(error));
+    } finally {
+      setSavingAccessExpiry(false);
+    }
+  };
 
   return (
     <>
@@ -124,6 +197,94 @@ export function EventSettingsWorkspace({ eventId }: { eventId: string }) {
           <Badge className="w-fit" variant="outline">
             View-only access
           </Badge>
+        )}
+      </section>
+
+      <section className="grid gap-5 rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-primary">Invitation access</p>
+            <h2 className="mt-2 text-lg font-semibold">Set an access deadline</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              This optional deadline closes the public invitation, every private guest link, and
+              RSVP submissions. It is separate from the event end time.
+            </p>
+          </div>
+          <Badge
+            className="w-fit"
+            variant={
+              savedAccessExpiry && isInviteAccessExpired(savedAccessExpiry)
+                ? "destructive"
+                : "outline"
+            }
+          >
+            {savedAccessExpiry
+              ? isInviteAccessExpired(savedAccessExpiry)
+                ? "Access expired"
+                : "Deadline active"
+              : "No deadline"}
+          </Badge>
+        </div>
+
+        <EventDateTimeField
+          description="After this moment, visitors see an expired-invitation page and can no longer RSVP."
+          disabled={!canEdit || savingAccessExpiry}
+          error={accessExpiryError}
+          id="event-access-expiry"
+          label="Access expires optional"
+          onValueChange={(value) => {
+            setAccessExpiry(value);
+            setAccessExpiryError(undefined);
+            setAccessExpiryNotice(undefined);
+          }}
+          timezone={event.timezone}
+          value={accessExpiry}
+        />
+
+        {selectedExpiryIsPast ? (
+          <p
+            className="rounded-[var(--radius-md)] border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
+            Saving this time will expire invitation access immediately. If you mean to pause the
+            entire invitation instead, use the publishing controls on Overview.
+          </p>
+        ) : null}
+
+        {accessExpiryNotice ? (
+          <p className="text-sm text-muted-foreground" role="status">
+            {accessExpiryNotice}
+          </p>
+        ) : null}
+
+        {canEdit ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {event.endsAt ? (
+              <Button
+                className="min-h-10"
+                disabled={savingAccessExpiry}
+                onClick={() => {
+                  setAccessExpiry(eventIsoToLocalDateTime(event.endsAt, event.timezone));
+                  setAccessExpiryError(undefined);
+                  setAccessExpiryNotice(undefined);
+                }}
+                type="button"
+                variant="outline"
+              >
+                Use event end time
+              </Button>
+            ) : null}
+            <Button
+              className="min-h-10 sm:ml-auto"
+              disabled={!accessExpiryChanged || savingAccessExpiry}
+              onClick={() => void saveAccessExpiry()}
+              type="button"
+            >
+              {savingAccessExpiry ? "Saving..." : "Save access deadline"}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Editors and owners can change this deadline.</p>
         )}
       </section>
 

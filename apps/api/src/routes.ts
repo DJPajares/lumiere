@@ -167,6 +167,10 @@ export const createRoutes = ({
       throw new ApiHttpError("NOT_FOUND", "Public event not found");
     }
 
+    if (publicEvent === "expired") {
+      throw new ApiHttpError("INVITE_EXPIRED", "Invitation access has expired");
+    }
+
     if (publicEvent === "access_required") {
       throw new ApiHttpError("FORBIDDEN", "Public event access code is required");
     }
@@ -187,6 +191,10 @@ export const createRoutes = ({
 
     if (!publicGuestInvite) {
       throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
+    }
+
+    if (publicGuestInvite === "expired") {
+      throw new ApiHttpError("INVITE_EXPIRED", "Invitation access has expired");
     }
 
     if (publicGuestInvite === "disabled") {
@@ -214,6 +222,10 @@ export const createRoutes = ({
 
       if (!result) {
         throw new ApiHttpError("NOT_FOUND", "Guest invite not found");
+      }
+
+      if (result === "expired") {
+        throw new ApiHttpError("INVITE_EXPIRED", "Invitation access has expired");
       }
 
       if (result === "disabled") {
@@ -778,7 +790,7 @@ export const createRoutes = ({
     const { publicAccessCode, ...eventInput } = input;
     const event = await stores.eventStore.updateEvent(eventId, {
       ...eventInput,
-      ...(eventInput.status === "published" ? { actorUserId: context.get("manager").user.id } : {}),
+      actorUserId: context.get("manager").user.id,
       ...(publicAccessCode !== undefined
         ? {
             publicAccessCodeHash: publicAccessCode
@@ -1152,6 +1164,7 @@ export const createRoutes = ({
         eventId,
         input,
         toInviteTokenRecord(invite),
+        context.get("manager").user.id,
       );
 
       return context.json(
@@ -1184,7 +1197,12 @@ export const createRoutes = ({
         manager: context.get("manager"),
         minimumRole: "editor",
       });
-      const guestGroup = await stores.guestGroupStore.updateGuestGroup(eventId, groupId, input);
+      const guestGroup = await stores.guestGroupStore.updateGuestGroup(
+        eventId,
+        groupId,
+        input,
+        context.get("manager").user.id,
+      );
 
       if (!guestGroup) {
         throw new ApiHttpError("NOT_FOUND", "Guest group not found");

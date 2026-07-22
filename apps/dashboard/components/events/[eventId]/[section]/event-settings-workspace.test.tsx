@@ -25,8 +25,13 @@ describe("EventSettingsWorkspace", () => {
       title: "Summer Dinner",
       updatedAt: "2030-01-01T01:00:00.000Z",
     };
-    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async () => ({
-      event: updatedEvent,
+    const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async (_eventId, input) => ({
+      event: {
+        ...updatedEvent,
+        ...(input.accessExpiresAt !== undefined
+          ? { accessExpiresAt: input.accessExpiresAt ?? null }
+          : {}),
+      },
     }));
 
     renderWithAuth({
@@ -60,6 +65,14 @@ describe("EventSettingsWorkspace", () => {
     expect(screen.getAllByText("Summer Dinner").length).toBeGreaterThan(0);
 
     expect(updateEvent).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Use event end time" }));
+    await user.click(screen.getByRole("button", { name: "Save access deadline" }));
+    await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(2));
+    expect(updateEvent).toHaveBeenLastCalledWith("evt_123", {
+      accessExpiresAt: settingsEvent.endsAt,
+    });
+    expect(await screen.findByText("Invitation access deadline saved.")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Delete event" }));
     const deleteDialog = await screen.findByRole("dialog", { name: "Delete Summer Dinner" });
@@ -250,7 +263,9 @@ function createAuthValue(apiClient: Partial<DashboardApiClient>): DashboardAuthC
 }
 
 const settingsEvent: Event = {
+  accessExpiresAt: null,
   createdAt: "2030-01-01T00:00:00.000Z",
+  endsAt: "2030-06-01T13:30:00.000Z",
   eventType: "private_event",
   id: "evt_123",
   ownerUserId: "user_123",

@@ -530,6 +530,30 @@ export const createDrizzleEventStore = (db: Database): EventStore => ({
           }
         }
 
+        if (
+          input.accessExpiresAt !== undefined &&
+          !inviteAccessExpiriesMatch(current.event.accessExpiresAt, input.accessExpiresAt) &&
+          input.actorUserId
+        ) {
+          await tx.insert(activityEvents).values({
+            actorId: input.actorUserId,
+            actorType: "manager",
+            activityType: "event_access_expiry_changed",
+            eventId,
+            metadataJson: {
+              action: input.accessExpiresAt
+                ? current.event.accessExpiresAt
+                  ? "changed"
+                  : "set"
+                : "cleared",
+              accessExpiresAt: input.accessExpiresAt,
+              previousAccessExpiresAt: current.event.accessExpiresAt
+                ? toIsoDateTime(current.event.accessExpiresAt)
+                : null,
+            },
+          });
+        }
+
         return managerEvent;
       }),
     );
@@ -728,6 +752,7 @@ export const toApiEvent = (
   themeSettings?: ThemeSettingsRow | null,
   rsvpSettings?: RsvpSettingsRow | null,
 ): Event => ({
+  accessExpiresAt: event.accessExpiresAt ? toIsoDateTime(event.accessExpiresAt) : null,
   createdAt: toIsoDateTime(event.createdAt),
   deletedAt: event.deletedAt ? toIsoDateTime(event.deletedAt) : undefined,
   endsAt: event.endsAt ? toIsoDateTime(event.endsAt) : undefined,
@@ -889,6 +914,7 @@ const updateRsvpSettings = async (
 };
 
 const toEventUpdateSet = (input: EventUpdatePersistence) => ({
+  ...(input.accessExpiresAt !== undefined ? { accessExpiresAt: input.accessExpiresAt } : {}),
   ...(input.slug !== undefined ? { publicSlug: input.slug } : {}),
   ...(input.title !== undefined ? { title: input.title } : {}),
   ...(input.eventType !== undefined ? { eventType: input.eventType } : {}),
@@ -903,6 +929,9 @@ const toEventUpdateSet = (input: EventUpdatePersistence) => ({
     ? { publicAccessCodeHash: input.publicAccessCodeHash }
     : {}),
 });
+
+const inviteAccessExpiriesMatch = (left: string | null, right: string | null) =>
+  left === right || Boolean(left && right && Date.parse(left) === Date.parse(right));
 
 const withDuplicateSlugHandling = async <TValue>(operation: () => Promise<TValue>) => {
   try {

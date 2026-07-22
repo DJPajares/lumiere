@@ -754,6 +754,14 @@ export function readRsvpRecoveryState(error: unknown): RsvpRecoveryState | undef
   const message = error.apiError.error.message || error.message;
   const normalized = message.toLowerCase();
 
+  if (error.apiError.error.code === "INVITE_EXPIRED") {
+    return {
+      body: "This RSVP link has expired. Ask the host for a fresh invite link.",
+      kind: "expired",
+      title: "This invite link has expired.",
+    };
+  }
+
   if (error.apiError.error.code === "RATE_LIMITED") {
     return {
       body: "Too many reply attempts were sent in a short time. Please wait a moment, then try again.",

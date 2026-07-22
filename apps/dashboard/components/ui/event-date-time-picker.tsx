@@ -410,7 +410,7 @@ export function EventDateTimeField({
           variant="ghost"
         >
           <ClearPickerIcon />
-          Clear end date and time
+          Clear date and time
         </Button>
       ) : null}
     </DashboardField>

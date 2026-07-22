@@ -160,6 +160,7 @@ export const events = lumiereSchema.table(
     timezone: varchar("timezone", { length: 80 }).notNull(),
     startsAt: timestamp("starts_at", { mode: "string", withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { mode: "string", withTimezone: true }),
+    accessExpiresAt: timestamp("access_expires_at", { mode: "string", withTimezone: true }),
     venueName: varchar("venue_name", { length: 160 }),
     venueAddress: varchar("venue_address", { length: 500 }),
     publicSettingsJson: jsonb("public_settings_json")
@@ -363,6 +364,7 @@ export const guestGroups = lumiereSchema.table(
     inviteCode: varchar("invite_code", { length: 120 }).notNull(),
     status: guestGroupStatusEnum("status").notNull().default("pending"),
     notes: text("notes"),
+    accessExpiresAt: timestamp("access_expires_at", { mode: "string", withTimezone: true }),
     lastOpenedAt: timestamp("last_opened_at", { mode: "string", withTimezone: true }),
     createdAt: createdAtColumn(),
     updatedAt: updatedAtColumn(),

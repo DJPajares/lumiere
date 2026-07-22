@@ -79,6 +79,13 @@ async function loadPublicEvent(eventSlug: string, accessCode?: string) {
       status: "ready" as const,
     };
   } catch (error) {
+    if (error instanceof ApiClientError && error.apiError.error.code === "INVITE_EXPIRED") {
+      return {
+        state: "public-expired" as const satisfies InviteAccessState,
+        status: "unavailable" as const,
+      };
+    }
+
     if (error instanceof ApiClientError && (error.status === 403 || error.status === 404)) {
       return {
         state: "public-missing" as const satisfies InviteAccessState,

@@ -10,6 +10,7 @@ const ownerUserId = "00000000-0000-4000-8000-000000000001";
 const managerUserId = "00000000-0000-4000-8000-000000000002";
 
 const eventRow = {
+  accessExpiresAt: null,
   id: eventId,
   ownerUserId,
   rsvpSettingsJson: {
@@ -21,6 +22,7 @@ const eventRow = {
 };
 
 const guestGroupRow = {
+  accessExpiresAt: null,
   id: guestGroupId,
   eventId,
   inviteTokenHash: "hashed-token",
@@ -145,6 +147,42 @@ describe("RSVP store", () => {
         },
       ],
     });
+
+    const expiredEventDb = new FakeRsvpDb(
+      [[{ ...eventRow, accessExpiresAt: "2020-01-01T00:00:00.000Z" }]],
+      responseRow,
+    );
+    await expect(
+      createDrizzleRsvpStore(expiredEventDb.asDatabase()).submitGuestRsvp({
+        eventSlug: "launch-night",
+        inviteTokenHash: "hashed-token",
+        submission: {
+          answers: [],
+          attendeeCount: 2,
+          guestNames: ["Mina Tan", "Alex Tan"],
+          message: undefined,
+          responseStatus: "attending",
+        },
+      }),
+    ).resolves.toBe("expired");
+
+    const expiredGuestDb = new FakeRsvpDb(
+      [[eventRow], [{ ...guestGroupRow, accessExpiresAt: "2020-01-01T00:00:00.000Z" }]],
+      responseRow,
+    );
+    await expect(
+      createDrizzleRsvpStore(expiredGuestDb.asDatabase()).submitGuestRsvp({
+        eventSlug: "launch-night",
+        inviteTokenHash: "hashed-token",
+        submission: {
+          answers: [],
+          attendeeCount: 2,
+          guestNames: ["Mina Tan", "Alex Tan"],
+          message: undefined,
+          responseStatus: "attending",
+        },
+      }),
+    ).resolves.toBe("expired");
   });
 
   it("updates an existing response and records updated activity", async () => {

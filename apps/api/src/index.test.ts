@@ -1066,6 +1066,7 @@ describe("API app", () => {
 
   it("serializes database event timestamps as shared API datetimes", () => {
     const event = toApiEvent({
+      accessExpiresAt: null,
       createdAt: "2026-07-08 00:00:00+00",
       deletedAt: null,
       deletedByUserId: null,
@@ -1952,6 +1953,7 @@ describe("API app", () => {
       exceptEventId: eventId,
     });
     expect(updateEvent).toHaveBeenCalledWith(eventId, {
+      actorUserId: localUser.id,
       slug: "updated-launch",
     });
   });
@@ -2641,6 +2643,7 @@ describe("API app", () => {
         inviteCode: expect.any(String),
         inviteTokenHash: hashInviteToken(guestToken, validApiEnv.INVITE_TOKEN_SECRET),
       }),
+      localUser.id,
     );
     expect(JSON.stringify(inviteRecord)).not.toContain(guestToken);
   });
@@ -2739,7 +2742,7 @@ describe("API app", () => {
       ],
       notes: "Window table",
       status: "disabled",
-    });
+    }, localUser.id);
     expect(
       resolveManagerGuestGroupStatus({
         currentStatus: "disabled",
@@ -2911,6 +2914,23 @@ describe("API app", () => {
       eventSlug: baseEvent.slug,
       publicAccessCodeHash: undefined,
     });
+
+    const expiredApp = createApp({
+      config: loadTestConfig(),
+      publicInviteStore: createTestPublicInviteStore({ publicEvent: "expired" }).publicInviteStore,
+    });
+    const expiredResponse = await expiredApp.request(`/public/events/${baseEvent.slug}`, {
+      headers: { "x-request-id": "expired-public-event-request-id" },
+    });
+
+    await expect(expiredResponse.json()).resolves.toEqual({
+      error: {
+        code: "INVITE_EXPIRED",
+        message: "Invitation access has expired",
+        requestId: "expired-public-event-request-id",
+      },
+    });
+    expect(expiredResponse.status).toBe(410);
   });
 
   it("returns 404 for unpublished or archived public events", async () => {
@@ -3046,6 +3066,24 @@ describe("API app", () => {
       },
     });
     expect(response.status).toBe(403);
+
+    const expiredApp = createApp({
+      config: loadTestConfig(),
+      publicInviteStore: createTestPublicInviteStore({ guestInvite: "expired" }).publicInviteStore,
+    });
+    const expiredResponse = await expiredApp.request(
+      `/public/events/${baseEvent.slug}/guest/expired-token-for-public-route`,
+      { headers: { "x-request-id": "expired-guest-token-request-id" } },
+    );
+
+    await expect(expiredResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "INVITE_EXPIRED",
+        message: "Invitation access has expired",
+        requestId: "expired-guest-token-request-id",
+      },
+    });
+    expect(expiredResponse.status).toBe(410);
   });
 
   it("submits attending RSVPs for valid guest tokens", async () => {
@@ -3317,6 +3355,31 @@ describe("API app", () => {
       },
     });
     expect(response.status).toBe(403);
+
+    const expiredApp = createApp({
+      config: loadTestConfig(),
+      rsvpStore: createTestRsvpStore({ result: "expired" }).rsvpStore,
+    });
+    const expiredResponse = await expiredApp.request(
+      `/public/events/${baseEvent.slug}/guest/expired-rsvp-token/rsvp`,
+      {
+        body: JSON.stringify({ responseStatus: "attending", attendeeCount: 1 }),
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "expired-rsvp-request-id",
+        },
+        method: "POST",
+      },
+    );
+
+    await expect(expiredResponse.json()).resolves.toMatchObject({
+      error: {
+        code: "INVITE_EXPIRED",
+        message: "Invitation access has expired",
+        requestId: "expired-rsvp-request-id",
+      },
+    });
+    expect(expiredResponse.status).toBe(410);
   });
 
   it("rejects maybe RSVPs unless enabled", async () => {
@@ -4138,8 +4201,8 @@ function createTestPublicInviteStore({
   guestInvite = publicGuestInviteRecord,
   publicEvent = publicEventRecord,
 }: {
-  guestInvite?: PublicGuestInviteRecord | "disabled" | null;
-  publicEvent?: PublicEventRecord | null;
+  guestInvite?: PublicGuestInviteRecord | "disabled" | "expired" | null;
+  publicEvent?: PublicEventRecord | "access_required" | "expired" | null;
 } = {}) {
   const getPublicEventBySlug = vi.fn(async () => publicEvent);
   const getPublicGuestInvite = vi.fn(async () => guestInvite);

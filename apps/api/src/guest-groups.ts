@@ -1,16 +1,23 @@
 import type { Database } from "@lumiere/db";
 import {
+  activityEvents,
   and,
   asc,
   desc,
   eq,
+  events,
   guestGroupMembers,
   guestGroups,
   inArray,
   rsvpResponses,
   sql,
 } from "@lumiere/db";
-import type { GuestGroup, GuestGroupMember, GuestGroupMutation } from "@lumiere/types";
+import {
+  guestInviteAccessExpiryConstraintSchema,
+  type GuestGroup,
+  type GuestGroupMember,
+  type GuestGroupMutation,
+} from "@lumiere/types";
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
 import { ApiHttpError } from "./errors";
@@ -32,6 +39,7 @@ export type GuestGroupStore = {
     eventId: string,
     input: GuestGroupMutation,
     invite: InviteTokenRecord,
+    actorUserId?: string,
   ): Promise<GuestGroup>;
   disableGuestGroup(eventId: string, groupId: string): Promise<GuestGroup | null>;
   listGuestGroups(eventId: string): Promise<GuestGroupWithInviteToken[]>;
@@ -44,6 +52,7 @@ export type GuestGroupStore = {
     eventId: string,
     groupId: string,
     input: GuestGroupMutation,
+    actorUserId?: string,
   ): Promise<GuestGroup | null>;
 };
 
@@ -103,13 +112,25 @@ export const resolveManagerGuestGroupStatus = ({
 };
 
 export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => ({
-  async createGuestGroup(eventId, input, invite) {
+  async createGuestGroup(eventId, input, invite, actorUserId) {
     return withInviteConflictHandling(async () => {
       const status = resolveManagerGuestGroupStatus({
         currentStatus: "pending",
         requestedStatus: input.status,
       });
       const result = await db.transaction(async (tx) => {
+        const [event] = await tx
+          .select({ accessExpiresAt: events.accessExpiresAt })
+          .from(events)
+          .where(eq(events.id, eventId))
+          .limit(1);
+
+        if (!event) {
+          throw new ApiHttpError("NOT_FOUND", "Event not found");
+        }
+
+        assertGuestAccessExpiry(event.accessExpiresAt, input.accessExpiresAt);
+
         const [guestGroup] = await tx
           .insert(guestGroups)
           .values({
@@ -123,6 +144,7 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
             maxPax: input.maxPax,
             notes: input.notes,
             status,
+            accessExpiresAt: input.accessExpiresAt,
           })
           .returning();
 
@@ -138,6 +160,21 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
               sortOrder,
             })),
           );
+        }
+
+        if (input.accessExpiresAt && actorUserId) {
+          await tx.insert(activityEvents).values({
+            actorId: actorUserId,
+            actorType: "manager",
+            activityType: "guest_access_expiry_changed",
+            eventId,
+            metadataJson: {
+              action: "set",
+              accessExpiresAt: input.accessExpiresAt,
+              guestGroupId: guestGroup.id,
+              previousAccessExpiresAt: null,
+            },
+          });
         }
 
         return guestGroup;
@@ -211,10 +248,23 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
     });
   },
 
-  async updateGuestGroup(eventId, groupId, input) {
+  async updateGuestGroup(eventId, groupId, input, actorUserId) {
     const result = await db.transaction(async (tx) => {
+      const [event] = await tx
+        .select({ accessExpiresAt: events.accessExpiresAt })
+        .from(events)
+        .where(eq(events.id, eventId))
+        .limit(1);
+
+      if (!event) {
+        return null;
+      }
+
+      assertGuestAccessExpiry(event.accessExpiresAt, input.accessExpiresAt);
+
       const [existingGroup] = await tx
         .select({
+          accessExpiresAt: guestGroups.accessExpiresAt,
           lastOpenedAt: guestGroups.lastOpenedAt,
           status: guestGroups.status,
         })
@@ -277,6 +327,9 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
           maxPax: input.maxPax,
           notes: input.notes,
           status,
+          ...(input.accessExpiresAt !== undefined
+            ? { accessExpiresAt: input.accessExpiresAt }
+            : {}),
           updatedAt: sql`now()`,
         })
         .where(and(eq(guestGroups.eventId, eventId), eq(guestGroups.id, groupId)))
@@ -301,6 +354,31 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
             })),
           );
         }
+      }
+
+      if (
+        input.accessExpiresAt !== undefined &&
+        !inviteAccessExpiriesMatch(existingGroup.accessExpiresAt, input.accessExpiresAt) &&
+        actorUserId
+      ) {
+        await tx.insert(activityEvents).values({
+          actorId: actorUserId,
+          actorType: "manager",
+          activityType: "guest_access_expiry_changed",
+          eventId,
+          metadataJson: {
+            action: input.accessExpiresAt
+              ? existingGroup.accessExpiresAt
+                ? "changed"
+                : "set"
+              : "cleared",
+            accessExpiresAt: input.accessExpiresAt,
+            guestGroupId: guestGroup.id,
+            previousAccessExpiresAt: existingGroup.accessExpiresAt
+              ? toIsoDateTime(existingGroup.accessExpiresAt)
+              : null,
+          },
+        });
       }
 
       return guestGroup;
@@ -368,6 +446,9 @@ export const toApiGuestGroup = (
   guestGroup: GuestGroupRow,
   members: GuestGroupMemberRow[] = [],
 ): GuestGroup => ({
+  accessExpiresAt: guestGroup.accessExpiresAt
+    ? toIsoDateTime(guestGroup.accessExpiresAt)
+    : null,
   contactEmail: guestGroup.contactEmail ?? undefined,
   contactName: guestGroup.contactName ?? undefined,
   createdAt: toIsoDateTime(guestGroup.createdAt),
@@ -410,6 +491,28 @@ const toApiGuestGroupMember = (member: GuestGroupMemberRow): GuestGroupMember =>
 
 const formatGuestGroupStatus = (status: GuestGroup["status"]) =>
   status.charAt(0).toUpperCase() + status.slice(1);
+
+const assertGuestAccessExpiry = (
+  eventAccessExpiresAt: string | null,
+  guestAccessExpiresAt: string | null | undefined,
+) => {
+  const result = guestInviteAccessExpiryConstraintSchema.safeParse({
+    eventAccessExpiresAt: eventAccessExpiresAt ? toIsoDateTime(eventAccessExpiresAt) : null,
+    guestAccessExpiresAt: guestAccessExpiresAt ?? null,
+  });
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Guest access expiry is invalid", {
+      fields: result.error.issues.map((issue) => ({
+        message: issue.message,
+        path: ["accessExpiresAt"],
+      })),
+    });
+  }
+};
+
+const inviteAccessExpiriesMatch = (left: string | null, right: string | null) =>
+  left === right || Boolean(left && right && Date.parse(left) === Date.parse(right));
 
 const withInviteConflictHandling = async <TValue>(operation: () => Promise<TValue>) => {
   try {

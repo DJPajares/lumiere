@@ -18,6 +18,7 @@ import {
 } from "@lumiere/db";
 import { sanitizePublicLocationContent } from "@lumiere/themes";
 import {
+  isInviteAccessExpired,
   rsvpResponseFieldsSchema,
   type Event,
   type EventSection,
@@ -51,11 +52,11 @@ export type PublicInviteStore = {
   getPublicEventBySlug(input: {
     eventSlug: string;
     publicAccessCodeHash?: string;
-  }): Promise<PublicEventRecord | "access_required" | null>;
+  }): Promise<PublicEventRecord | "access_required" | "expired" | null>;
   getPublicGuestInvite(input: {
     eventSlug: string;
     inviteTokenHash: string;
-  }): Promise<PublicGuestInviteRecord | "disabled" | null>;
+  }): Promise<PublicGuestInviteRecord | "disabled" | "expired" | null>;
 };
 
 export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore => ({
@@ -66,6 +67,10 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       return null;
     }
 
+    if (isInviteAccessExpired(publicEvent.accessExpiresAt)) {
+      return "expired";
+    }
+
     if (
       publicEvent.publicAccessCodeHash &&
       publicEvent.publicAccessCodeHash !== publicAccessCodeHash
@@ -73,9 +78,14 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       return "access_required";
     }
 
+    const {
+      accessExpiresAt: _accessExpiresAt,
+      publicAccessCodeHash: _publicAccessCodeHash,
+      ...safePublicEvent
+    } = publicEvent;
+
     return {
-      ...publicEvent,
-      publicAccessCodeHash: undefined,
+      ...safePublicEvent,
       sections: listPublicSections(publicEvent.sections),
     };
   },
@@ -87,8 +97,13 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       return null;
     }
 
+    if (isInviteAccessExpired(publicEvent.accessExpiresAt)) {
+      return "expired";
+    }
+
     const [guestGroup] = await db
       .select({
+        accessExpiresAt: guestGroups.accessExpiresAt,
         id: guestGroups.id,
         label: guestGroups.label,
         maxPax: guestGroups.maxPax,
@@ -109,6 +124,10 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
 
     if (guestGroup.status === "disabled") {
       return "disabled";
+    }
+
+    if (isInviteAccessExpired(guestGroup.accessExpiresAt)) {
+      return "expired";
     }
 
     const memberRows = await db
@@ -134,9 +153,14 @@ export const createDrizzlePublicInviteStore = (db: Database): PublicInviteStore 
       guestGroup.status === "responded" || guestGroup.status === "declined"
         ? rsvpResponse
         : undefined;
+    const {
+      accessExpiresAt: _accessExpiresAt,
+      publicAccessCodeHash: _publicAccessCodeHash,
+      ...safePublicEvent
+    } = publicEvent;
 
     return {
-      ...publicEvent,
+      ...safePublicEvent,
       guest: {
         guestGroup: {
           label: guestGroup.label,
@@ -243,7 +267,13 @@ type LivePublicEventRow = {
 
 const toLivePublicEventRecord = (
   event: LivePublicEventRow,
-): PublicEventRecord & { publicAccessCodeHash: string | null } => ({
+): PublicEventRecord & {
+  accessExpiresAt: string | null;
+  publicAccessCodeHash: string | null;
+} => ({
+  accessExpiresAt: event.event.accessExpiresAt
+    ? toIsoDateTime(event.event.accessExpiresAt)
+    : null,
   event: {
     endsAt: event.event.endsAt ? toIsoDateTime(event.event.endsAt) : undefined,
     eventType: event.event.eventType,

@@ -123,6 +123,7 @@ export const eventSchema = z.object({
   timezone: timezoneSchema,
   startsAt: isoDateTimeSchema,
   endsAt: isoDateTimeSchema.optional(),
+  accessExpiresAt: inviteAccessExpirySchema.optional(),
   venueName: z.string().trim().max(160).optional(),
   venueAddress: z.string().trim().max(500).optional(),
   selectedThemeId: z.string().trim().max(120).optional(),
@@ -176,6 +177,7 @@ export const eventUpdateSchema = z
     timezone: timezoneSchema.optional(),
     startsAt: isoDateTimeSchema.optional(),
     endsAt: isoDateTimeSchema.nullable().optional(),
+    accessExpiresAt: inviteAccessExpirySchema.optional(),
     venueName: z
       .string()
       .trim()
@@ -366,6 +368,7 @@ export const guestGroupSchema = z.object({
   inviteLink: z.string().url().optional(),
   status: guestGroupStatusSchema,
   notes: z.string().trim().max(2000).optional(),
+  accessExpiresAt: inviteAccessExpirySchema.optional(),
   lastOpenedAt: isoDateTimeSchema.optional(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -381,6 +384,7 @@ export const guestGroupMutationSchema = z
     members: z.array(guestGroupMemberMutationSchema).max(50).optional(),
     status: guestGroupStatusSchema.optional(),
     notes: optionalTextSchema,
+    accessExpiresAt: inviteAccessExpirySchema.optional(),
   })
   .superRefine((value, context) => {
     if (!value.members) return;

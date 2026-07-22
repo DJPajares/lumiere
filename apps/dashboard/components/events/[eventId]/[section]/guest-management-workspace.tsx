@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError, type GuestDataExportDownload } from "@lumiere/api-client";
+import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import {
   Field,
@@ -17,7 +18,10 @@ import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { DownloadIcon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
+  guestInviteAccessExpiryConstraintSchema,
   guestGroupMutationRequestSchema,
+  isInviteAccessExpired,
+  resolveEffectiveInviteAccessExpiry,
   type Event,
   type GuestDataExportFormat,
   type GuestDataExportScope,
@@ -32,6 +36,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
 import { DashboardSelect } from "../../../ui/dashboard-fields";
+import {
+  EventDateTimeField,
+  eventIsoToLocalDateTime,
+  eventLocalDateTimeToIso,
+  isCompleteEventLocalDateTime,
+} from "../../../ui/event-date-time-picker";
 import { ResponsiveModal } from "../../../ui/responsive-modal";
 
 type GuestWorkspaceData = {
@@ -57,6 +67,7 @@ type GuestWorkspaceState =
     };
 
 type FormValues = {
+  accessExpiresAt: string;
   contactEmail: string;
   contactName: string;
   label: string;
@@ -89,6 +100,7 @@ type GuestListFilters = {
 };
 
 const defaultFormValues: FormValues = {
+  accessExpiresAt: "",
   contactEmail: "",
   contactName: "",
   label: "",
@@ -275,6 +287,10 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       group.members?.map(({ id, name }) => ({ id, name })) ??
       (group.contactName ? [{ name: group.contactName }] : []);
     const values = {
+      accessExpiresAt: eventIsoToLocalDateTime(
+        group.accessExpiresAt ?? undefined,
+        readyState?.data.event.timezone ?? "UTC",
+      ),
       contactEmail: group.contactEmail ?? "",
       contactName: group.contactName ?? "",
       label: group.label,
@@ -357,7 +373,11 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       return;
     }
 
-    const parsed = parseGuestGroupForm(formValues);
+    const parsed = parseGuestGroupForm(
+      formValues,
+      state.data.event.timezone,
+      state.data.event.accessExpiresAt ?? null,
+    );
 
     if (!parsed.ok) {
       setFormErrors(parsed.errors);
@@ -710,6 +730,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
             <GuestGroupForm
               editingGroup={editingGroup}
               errors={formErrors}
+              event={readyState.data.event}
               onUpdate={updateField}
               onUpdateMember={updateMember}
               values={formValues}
@@ -813,6 +834,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       <GuestGroupList
         busyGroupId={busyGroupId}
         canEdit={canEdit}
+        event={readyState.data.event}
         guestGroups={filteredGuestGroups}
         inviteLinks={readyState.inviteLinks}
         onClearFilters={clearGuestListFilters}
@@ -1017,16 +1039,22 @@ function GuestGroupViewControls({
 function GuestGroupForm({
   editingGroup,
   errors,
+  event,
   onUpdate,
   onUpdateMember,
   values,
 }: {
   editingGroup?: GuestGroup;
   errors: FormErrors;
+  event: Event;
   onUpdate: (field: TextFormField, value: string) => void;
   onUpdateMember: (index: number, name: string) => void;
   values: FormValues;
 }) {
+  const previewAccessExpiry = values.accessExpiresAt
+    ? eventLocalDateTimeToIso(values.accessExpiresAt, event.timezone)
+    : null;
+
   return (
     <div className="grid gap-4">
       {errors._form ? (
@@ -1110,6 +1138,37 @@ function GuestGroupForm({
         />
       ) : null}
 
+      <FieldSet className="rounded-[var(--radius-md)] border border-border bg-muted/20 p-4">
+        <FieldLegend variant="label">Private link expiration</FieldLegend>
+        <FieldDescription>
+          Leave blank to inherit the event-wide deadline
+          {event.accessExpiresAt
+            ? ` (${formatAccessExpiry(event.accessExpiresAt, event.timezone)}).`
+            : ". The event currently has no deadline."}
+        </FieldDescription>
+        <FieldGroup>
+          <EventDateTimeField
+            description="This guest link cannot remain active later than the event-wide deadline."
+            disabled={false}
+            error={errors.accessExpiresAt}
+            id="guest-access-expiry"
+            label="Guest link expires optional"
+            onValueChange={(value) => onUpdate("accessExpiresAt", value)}
+            timezone={event.timezone}
+            value={values.accessExpiresAt}
+          />
+          {previewAccessExpiry && isInviteAccessExpired(previewAccessExpiry) ? (
+            <p
+              className="rounded-[var(--radius-md)] border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              Saving this time will expire this private link immediately. Use Disable instead when
+              you want an immediate manual revocation with no scheduled deadline.
+            </p>
+          ) : null}
+        </FieldGroup>
+      </FieldSet>
+
       <Field data-invalid={Boolean(errors.notes)}>
         <FieldLabel htmlFor="guest-notes">Notes</FieldLabel>
         <Textarea
@@ -1129,6 +1188,7 @@ function GuestGroupForm({
 function GuestGroupList({
   busyGroupId,
   canEdit,
+  event,
   guestGroups,
   inviteLinks,
   onCancelPendingAction,
@@ -1146,6 +1206,7 @@ function GuestGroupList({
 }: {
   busyGroupId: string | null;
   canEdit: boolean;
+  event: Event;
   guestGroups: GuestGroup[];
   inviteLinks: Record<string, string>;
   onCancelPendingAction: () => void;
@@ -1197,6 +1258,7 @@ function GuestGroupList({
       <GuestGroupCompactList
         busyGroupId={busyGroupId}
         canEdit={canEdit}
+        event={event}
         guestGroups={guestGroups}
         inviteLinks={inviteLinks}
         onCancelPendingAction={onCancelPendingAction}
@@ -1240,6 +1302,7 @@ function GuestGroupList({
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-lg font-semibold">{group.label}</h3>
                   <StatusBadge status={group.status} />
+                  <GuestAccessBadge event={event} group={group} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
                   {group.maxPax} max pax
@@ -1260,6 +1323,9 @@ function GuestGroupList({
                     {group.notes}
                   </p>
                 ) : null}
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {describeGuestAccessExpiry(event, group)}
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -1372,6 +1438,7 @@ function GuestGroupList({
 type GuestGroupCompactListProps = {
   busyGroupId: string | null;
   canEdit: boolean;
+  event: Event;
   guestGroups: GuestGroup[];
   inviteLinks: Record<string, string>;
   onCancelPendingAction: () => void;
@@ -1389,6 +1456,7 @@ type GuestGroupCompactListProps = {
 function GuestGroupCompactList({
   busyGroupId,
   canEdit,
+  event,
   guestGroups,
   inviteLinks,
   onCancelPendingAction,
@@ -1415,10 +1483,11 @@ function GuestGroupCompactList({
       </div>
 
       <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
-        <div className="hidden grid-cols-[1.35fr_0.8fr_1fr_1.25fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
+        <div className="hidden grid-cols-[1.35fr_0.8fr_1fr_1fr_1.25fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
           <span>Guest group</span>
           <span>Status</span>
           <span>Last opened</span>
+          <span>Access</span>
           <span>Invite link</span>
           <span className="sr-only">Actions</span>
         </div>
@@ -1434,7 +1503,7 @@ function GuestGroupCompactList({
 
             return (
               <article
-                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.35fr_0.8fr_1fr_1.25fr_auto] lg:items-start"
+                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.35fr_0.8fr_1fr_1fr_1.25fr_auto] lg:items-start"
                 key={group.id}
               >
                 <div>
@@ -1454,6 +1523,16 @@ function GuestGroupCompactList({
                   <span>
                     {group.lastOpenedAt ? formatGuestDate(group.lastOpenedAt) : "Not opened"}
                   </span>
+                </div>
+
+                <div>
+                  <CompactMobileLabel>Access</CompactMobileLabel>
+                  <div className="grid justify-items-start gap-1">
+                    <GuestAccessBadge event={event} group={group} />
+                    <span className="text-xs text-muted-foreground">
+                      {describeGuestAccessExpiry(event, group)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="min-w-0">
@@ -1613,6 +1692,49 @@ function formatGuestDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatAccessExpiry(value: string, timezone: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: timezone,
+  }).format(new Date(value));
+}
+
+function describeGuestAccessExpiry(event: Event, group: GuestGroup) {
+  const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
+    eventAccessExpiresAt: event.accessExpiresAt ?? null,
+    guestAccessExpiresAt: group.accessExpiresAt ?? null,
+  });
+
+  if (!effectiveExpiry) {
+    return "No access deadline";
+  }
+
+  const source = !group.accessExpiresAt
+    ? "Inherits event deadline"
+    : Date.parse(group.accessExpiresAt) === Date.parse(effectiveExpiry)
+      ? "Guest deadline"
+      : "Event deadline";
+  return `${source}: ${formatAccessExpiry(effectiveExpiry, event.timezone)}`;
+}
+
+function GuestAccessBadge({ event, group }: { event: Event; group: GuestGroup }) {
+  const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
+    eventAccessExpiresAt: event.accessExpiresAt ?? null,
+    guestAccessExpiresAt: group.accessExpiresAt ?? null,
+  });
+
+  if (!effectiveExpiry) {
+    return <Badge variant="outline">No expiry</Badge>;
+  }
+
+  return (
+    <Badge variant={isInviteAccessExpired(effectiveExpiry) ? "destructive" : "secondary"}>
+      {isInviteAccessExpired(effectiveExpiry) ? "Expired" : "Deadline set"}
+    </Badge>
+  );
 }
 
 function TextField({
@@ -1891,7 +2013,11 @@ function GuestLoading() {
   );
 }
 
-function parseGuestGroupForm(values: FormValues):
+function parseGuestGroupForm(
+  values: FormValues,
+  timezone: string,
+  eventAccessExpiresAt: string | null,
+):
   | {
       input: GuestGroupMutationRequest;
       ok: true;
@@ -1901,7 +2027,40 @@ function parseGuestGroupForm(values: FormValues):
       ok: false;
     } {
   const maxPax = Number(values.maxPax);
+  const guestAccessExpiresAt = values.accessExpiresAt
+    ? eventLocalDateTimeToIso(values.accessExpiresAt, timezone)
+    : null;
+
+  if (
+    (values.accessExpiresAt && !isCompleteEventLocalDateTime(values.accessExpiresAt)) ||
+    (values.accessExpiresAt && !guestAccessExpiresAt)
+  ) {
+    return {
+      errors: {
+        _form: "Check the private link expiration.",
+        accessExpiresAt: "Choose both a valid date and time, or leave the deadline blank.",
+      },
+      ok: false,
+    };
+  }
+
+  const expiryConstraint = guestInviteAccessExpiryConstraintSchema.safeParse({
+    eventAccessExpiresAt,
+    guestAccessExpiresAt,
+  });
+
+  if (!expiryConstraint.success) {
+    return {
+      errors: {
+        _form: "Check the private link expiration.",
+        accessExpiresAt: expiryConstraint.error.issues[0]?.message,
+      },
+      ok: false,
+    };
+  }
+
   const result = guestGroupMutationRequestSchema.safeParse({
+    accessExpiresAt: guestAccessExpiresAt,
     contactEmail: emptyToUndefined(values.contactEmail),
     contactName: emptyToUndefined(values.contactName),
     label: values.label,
@@ -1955,6 +2114,7 @@ function toGuestGroupMutationRequest(
   status: "disabled" | "pending",
 ): GuestGroupMutationRequest {
   return {
+    accessExpiresAt: group.accessExpiresAt ?? null,
     contactEmail: group.contactEmail,
     contactName: group.contactName,
     label: group.label,

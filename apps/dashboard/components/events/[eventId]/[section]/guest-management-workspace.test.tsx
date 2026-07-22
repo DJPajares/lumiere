@@ -340,6 +340,7 @@ describe("GuestManagementWorkspace", () => {
     expect(createGuestGroup).toHaveBeenCalledWith(
       "evt_123",
       expect.objectContaining({
+        accessExpiresAt: null,
         members: [{ name: "Mina Tan" }, { name: "Alex Tan" }],
       }),
     );
@@ -460,6 +461,7 @@ describe("GuestManagementWorkspace", () => {
         "evt_123",
         "guest_1",
         expect.objectContaining({
+          accessExpiresAt: guestGroup.accessExpiresAt,
           contactName: "Mina Tan",
           maxPax: 5,
           members: [
@@ -702,6 +704,7 @@ function createApiClientStub(
 }
 
 const dashboardEvent: Event = {
+  accessExpiresAt: "2030-06-01T15:30:00.000Z",
   createdAt: "2030-01-01T00:00:00.000Z",
   eventType: "dinner",
   id: "evt_123",
@@ -730,6 +733,7 @@ const ownerAccess = {
 };
 
 const guestGroup: GuestGroup = {
+  accessExpiresAt: "2030-05-31T15:30:00.000Z",
   contactEmail: "tan@example.com",
   contactName: "Mina Tan",
   createdAt: "2030-01-01T00:00:00.000Z",

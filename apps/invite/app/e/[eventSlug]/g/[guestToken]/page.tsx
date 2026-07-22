@@ -72,7 +72,7 @@ async function loadGuestInvite(eventSlug: string, guestToken: string) {
     };
   } catch (error) {
     if (error instanceof ApiClientError) {
-      if (error.status === 410) {
+      if (error.apiError.error.code === "INVITE_EXPIRED") {
         return {
           state: "guest-expired" as const satisfies GuestInviteAccessState,
           status: "unavailable" as const,

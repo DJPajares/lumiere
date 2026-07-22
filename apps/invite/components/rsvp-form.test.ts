@@ -619,7 +619,7 @@ describe("RSVP form flow helpers", () => {
       title: "This guest invite is disabled.",
     });
     expect(
-      readRsvpRecoveryState(createApiError("FORBIDDEN", "Guest invite expired")),
+      readRsvpRecoveryState(createApiError("INVITE_EXPIRED", "Invitation access has expired")),
     ).toMatchObject({
       kind: "expired",
       title: "This invite link has expired.",

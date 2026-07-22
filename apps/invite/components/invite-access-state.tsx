@@ -8,10 +8,14 @@ export type InviteAccessState =
   | "guest-expired"
   | "guest-invalid"
   | "guest-rsvp-closed"
+  | "public-expired"
   | "public-missing"
   | "service-error";
 
-export type GuestInviteAccessState = Exclude<InviteAccessState, "public-missing">;
+export type GuestInviteAccessState = Exclude<
+  InviteAccessState,
+  "public-expired" | "public-missing"
+>;
 
 type InviteAccessViewProps =
   | {
@@ -20,7 +24,7 @@ type InviteAccessViewProps =
     }
   | {
       context: "public";
-      state: "public-missing" | "service-error";
+      state: "public-expired" | "public-missing" | "service-error";
     };
 
 type AccessStatePresentation = {
@@ -85,6 +89,15 @@ const statePresentations: Record<InviteAccessState, AccessStatePresentation> = {
     guidance: "Check the address you received or return to the Lumiere demo gallery.",
     marker: "404",
     title: "This event is not available.",
+  },
+  "public-expired": {
+    action: { href: "/", kind: "home", label: "Explore demo invitations" },
+    description:
+      "The host's access window for this invitation has ended, so its event details are no longer available.",
+    eyebrow: "Invitation access expired",
+    guidance: "Contact the host directly if you still need the event details or a renewed invitation.",
+    marker: "TIME",
+    title: "This invitation has expired.",
   },
   "service-error": {
     action: { kind: "retry", label: "Try again" },
