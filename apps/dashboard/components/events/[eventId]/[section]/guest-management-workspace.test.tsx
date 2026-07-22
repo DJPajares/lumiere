@@ -21,6 +21,10 @@ describe("GuestManagementWorkspace", () => {
       configurable: true,
       value: undefined,
     });
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it("filters by searchable guest data, status, and sort direction while updating the URL", async () => {
@@ -198,30 +202,39 @@ describe("GuestManagementWorkspace", () => {
     ).toBeTruthy();
   });
 
-  it("switches between detail cards and a URL-persisted compact list with shared actions", async () => {
+  it("defaults desktop guest groups to an accessible row list and persists the card preference", async () => {
     const user = userEvent.setup();
+    const matchMedia = mockDesktopViewport();
 
     renderWithAuth(createApiClientStub());
 
     await screen.findByText("Tan Family");
-    expect(screen.getByRole("button", { name: "Compact list view" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
+    await waitFor(() => expect(matchMedia).toHaveBeenCalledWith("(min-width: 1024px)"));
+    const guestList = await screen.findByRole("table", { name: "Guest group list" });
+    expect(screen.getByRole("button", { name: "Guest list view" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(within(guestList).getByRole("columnheader", { name: "Guest group" })).toBeTruthy();
+    expect(within(guestList).getByRole("columnheader", { name: "Party" })).toBeTruthy();
+    expect(within(guestList).getByRole("columnheader", { name: "Sent and opened" })).toBeTruthy();
+    expect(within(guestList).getByRole("columnheader", { name: "Invite access" })).toBeTruthy();
+    expect(within(guestList).getByRole("columnheader", { name: "RSVP state" })).toBeTruthy();
+    expect(within(guestList).getByRole("columnheader", { name: "Actions" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "More actions for Tan Family" })).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    await user.click(screen.getByRole("button", { name: "Card view" }));
 
-    expect(window.location.search).toBe("?view=list");
-    expect(screen.getAllByText("Tracking").length).toBeGreaterThan(0);
+    expect(window.location.search).toBe("?view=cards");
     expect(screen.getByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
-    expect(screen.getByText("tan-code")).toBeTruthy();
 
     cleanup();
     renderWithAuth(createApiClientStub());
-    expect((await screen.findAllByText("Tracking")).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "Compact list view" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Edit Tan Family" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Card view" }).getAttribute("aria-pressed")).toBe("true");
 
-    await user.click(screen.getByRole("button", { name: "Card view" }));
+    await user.click(screen.getByRole("button", { name: "Guest list view" }));
     expect(window.location.search).toBe("");
-    expect(screen.queryByText("Tracking")).toBeNull();
+    expect(await screen.findByRole("table", { name: "Guest group list" })).toBeTruthy();
   });
 
   it("loads guest groups across dashboard states", async () => {
@@ -264,16 +277,23 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getByText("Lee Family")).toBeTruthy();
     expect(screen.getByText("Mina and Alex")).toBeTruthy();
     expect(screen.getByText("Old Vendor List")).toBeTruthy();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Awaiting RSVP").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Opened").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Responded").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("RSVP received").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Party")).toHaveLength(4);
+    expect(screen.getAllByText("Sent and opened")).toHaveLength(4);
+    expect(screen.getAllByText("Invite access")).toHaveLength(4);
+    expect(screen.getAllByText("RSVP state")).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: "Regenerate link" })).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: "Disable" })).toHaveLength(4);
   });
 
   it("validates label and max pax before creating", async () => {
     const user = userEvent.setup();
     const createGuestGroup = vi.fn<DashboardApiClient["createGuestGroup"]>();
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         createGuestGroup,
@@ -321,6 +341,7 @@ describe("GuestManagementWorkspace", () => {
       },
     });
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         createGuestGroup,
@@ -368,7 +389,7 @@ describe("GuestManagementWorkspace", () => {
     expect(openWindow).toHaveBeenCalledWith(inviteLink, "_blank", "noopener,noreferrer");
     expect(await screen.findByText("Tan Family invite link opened.")).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    await user.click(screen.getByRole("button", { name: "Guest list view" }));
     await user.click(screen.getByRole("button", { name: "Open link" }));
     expect(openWindow).toHaveBeenCalledTimes(2);
   });
@@ -388,6 +409,7 @@ describe("GuestManagementWorkspace", () => {
       status: "disabled",
     };
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({ guestGroups: [legacyGroup, disabledGroup] })),
@@ -399,7 +421,7 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getByText(/Full URL unavailable for this older invite/)).toBeTruthy();
     expect(screen.getByText("Invite access is disabled for this group.")).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Compact list view" }));
+    await user.click(screen.getByRole("button", { name: "Guest list view" }));
     expect(screen.queryByRole("button", { name: "Open link" })).toBeNull();
     expect(screen.getByText(/Full URL unavailable\. Regenerate this group/)).toBeTruthy();
   });
@@ -430,6 +452,7 @@ describe("GuestManagementWorkspace", () => {
       guestGroup: updatedGroup,
     }));
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({ guestGroups: [respondedGroup] })),
@@ -482,9 +505,9 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
     expect(screen.getByDisplayValue(inviteLink)).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Compact list view" }));
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
-    expect(screen.getByText(inviteLink)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Guest list view" }));
+    expect(screen.getAllByText("Awaiting RSVP").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
   });
 
   it("automatically matches member fields to max pax without manual controls", async () => {
@@ -509,6 +532,7 @@ describe("GuestManagementWorkspace", () => {
       ],
     };
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({ guestGroups: [structuredGroup] })),
@@ -516,7 +540,8 @@ describe("GuestManagementWorkspace", () => {
       }),
     );
 
-    await screen.findByText("Mina Tan · Alex Tan");
+    await screen.findByText("Tan Family");
+    expect(screen.getByText("Mina Tan · Alex Tan")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Edit Tan Family" }));
     await screen.findByRole("dialog", { name: "Edit Tan Family" });
 
@@ -554,6 +579,7 @@ describe("GuestManagementWorkspace", () => {
     const user = userEvent.setup();
     const createGuestGroup = vi.fn<DashboardApiClient["createGuestGroup"]>();
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         createGuestGroup,
@@ -587,6 +613,7 @@ describe("GuestManagementWorkspace", () => {
       }),
     );
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({ guestGroups: [guestGroup] })),
@@ -637,7 +664,7 @@ describe("GuestManagementWorkspace", () => {
       }),
     );
     expect(await screen.findByText(/Delivery is not verified/)).toBeTruthy();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Awaiting RSVP").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Sent").length).toBeGreaterThan(0);
   });
 
@@ -653,6 +680,7 @@ describe("GuestManagementWorkspace", () => {
       }),
     );
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({
@@ -690,6 +718,21 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByDisplayValue(inviteLink)).toBeTruthy();
   });
 });
+
+function mockDesktopViewport() {
+  const matchMedia = vi.fn().mockImplementation(() => ({
+    addEventListener: vi.fn(),
+    matches: true,
+    removeEventListener: vi.fn(),
+  }));
+
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: matchMedia,
+  });
+
+  return matchMedia;
+}
 
 function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
   return render(

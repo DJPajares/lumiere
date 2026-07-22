@@ -4,6 +4,14 @@ import { ApiClientError, type GuestDataExportDownload } from "@lumiere/api-clien
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@lumiere/dashboard-ui/components/dropdown-menu";
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -13,7 +21,17 @@ import {
   FieldSet,
 } from "@lumiere/dashboard-ui/components/field";
 import { Input } from "@lumiere/dashboard-ui/components/input";
+import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@lumiere/dashboard-ui/components/table";
 import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { DownloadIcon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
@@ -34,7 +52,7 @@ import {
   type GuestInviteTrackingStage,
   type ManagerRole,
 } from "@lumiere/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
@@ -1130,7 +1148,7 @@ function GuestGroupViewControls({
       <div>
         <p className="text-sm font-semibold">View guest groups</p>
         <p className="mt-1 text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-          Use cards for detail or a compact list for quick scanning.
+          Rows are best for scanning. Switch to cards when you need full invite detail.
         </p>
       </div>
       <ToggleGroup
@@ -1152,9 +1170,9 @@ function GuestGroupViewControls({
           <LayoutGridIcon data-icon="inline-start" />
           Cards
         </ToggleGroupItem>
-        <ToggleGroupItem aria-label="Compact list view" type="button" value="list">
+        <ToggleGroupItem aria-label="Guest list view" type="button" value="list">
           <ListIcon data-icon="inline-start" />
-          Compact list
+          List
         </ToggleGroupItem>
       </ToggleGroup>
     </section>
@@ -1618,6 +1636,8 @@ function GuestGroupCompactList({
   pendingAction,
   totalGuestGroups,
 }: GuestGroupCompactListProps) {
+  const isDesktop = useDesktopGuestList();
+
   return (
     <section className="grid gap-3" aria-label="Guest groups">
       <div className="flex items-center justify-between gap-3">
@@ -1630,150 +1650,398 @@ function GuestGroupCompactList({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
-        <div className="hidden grid-cols-[1.25fr_0.75fr_1.1fr_0.9fr_1.15fr_auto] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm font-semibold lg:grid">
-          <span>Guest group</span>
-          <span>Status</span>
-          <span>Tracking</span>
-          <span>Access</span>
-          <span>Invite link</span>
-          <span className="sr-only">Actions</span>
-        </div>
-        <div className="grid divide-y divide-[var(--border)]">
-          {guestGroups.map((group) => {
-            const inviteLink = inviteLinks[group.id];
-            const pending = pendingAction?.groupId === group.id ? pendingAction : null;
-            const isBusy = busyGroupId === group.id;
-            const isDisabled = group.status === "disabled";
-            const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
-              eventAccessExpiresAt: event.accessExpiresAt ?? null,
-              guestAccessExpiresAt: group.accessExpiresAt ?? null,
-            });
-            const cannotShare =
-              isDisabled || Boolean(effectiveExpiry && isInviteAccessExpired(effectiveExpiry));
-            const contact = group.members?.length
-              ? group.members.map((member) => member.name).join(", ")
-              : group.contactName || group.contactEmail || "No contact details";
+      {isDesktop ? (
+        <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]">
+          <Table aria-label="Guest group list">
+            <TableCaption className="sr-only">
+              Guest groups with invite tracking, access, RSVP state, and actions
+            </TableCaption>
+            <TableHeader className="bg-[var(--surface-muted)]">
+              <TableRow>
+                <TableHead scope="col">Guest group</TableHead>
+                <TableHead scope="col">Party</TableHead>
+                <TableHead scope="col">Sent and opened</TableHead>
+                <TableHead scope="col">Invite access</TableHead>
+                <TableHead scope="col">RSVP state</TableHead>
+                <TableHead scope="col" className="text-right">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {guestGroups.map((group) => {
+                const pending = pendingAction?.groupId === group.id ? pendingAction : null;
 
-            return (
-              <article
-                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.25fr_0.75fr_1.1fr_0.9fr_1.15fr_auto] lg:items-start"
-                key={group.id}
-              >
-                <div>
-                  <p className="font-semibold">{group.label}</p>
-                  <p className="mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
-                    {group.maxPax} max pax · {contact}
-                  </p>
-                </div>
-
-                <div>
-                  <CompactMobileLabel>Status</CompactMobileLabel>
-                  <StatusBadge status={group.status} />
-                </div>
-
-                <div>
-                  <CompactMobileLabel>Tracking</CompactMobileLabel>
-                  <div className="grid justify-items-start gap-1">
-                    <TrackingBadge group={group} />
-                    <span className="text-xs text-muted-foreground">
-                      {describeInviteTracking(group)}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <CompactMobileLabel>Access</CompactMobileLabel>
-                  <div className="grid justify-items-start gap-1">
-                    <GuestAccessBadge event={event} group={group} />
-                    <span className="text-xs text-muted-foreground">
-                      {describeGuestAccessExpiry(event, group)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <CompactMobileLabel>Invite link</CompactMobileLabel>
-                  {inviteLink && !isDisabled ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate font-mono text-xs">
-                        {inviteLink}
-                      </span>
-                      <Button onClick={() => onCopy(group)} size="lg" type="button">
-                        Copy link
-                      </Button>
-                      <Button
-                        onClick={() => onOpen(group)}
-                        size="lg"
-                        type="button"
-                        variant="outline"
-                      >
-                        Open link
-                      </Button>
-                    </div>
-                  ) : (
-                    <InviteLinkUnavailable compact group={group} />
-                  )}
-                </div>
-
-                {canEdit ? (
-                  <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <Button
-                      disabled={isBusy || cannotShare}
-                      onClick={() => onMarkSent(group)}
-                      size="lg"
-                      type="button"
-                    >
-                      {group.sendCount ? "Resend" : "Mark sent"}
-                    </Button>
-                    <Button
-                      aria-label={`Edit ${group.label}`}
-                      onClick={() => onEdit(group)}
-                      size="lg"
-                      type="button"
-                      variant="outline"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      disabled={isBusy || isDisabled}
-                      onClick={() => onRegenerate(group)}
-                      size="lg"
-                      type="button"
-                      variant="outline"
-                    >
-                      Regenerate
-                    </Button>
-                    <Button
-                      disabled={isBusy || isDisabled}
-                      onClick={() => onDisable(group)}
-                      size="lg"
-                      type="button"
-                      variant="destructive"
-                    >
-                      Disable
-                    </Button>
-                  </div>
-                ) : null}
-
-                {pending ? (
-                  <CompactPendingAction
-                    busy={isBusy}
-                    onCancel={onCancelPendingAction}
-                    onConfirm={() =>
-                      pending.type === "regenerate"
-                        ? onConfirmRegenerate(group)
-                        : onConfirmDisable(group)
-                    }
-                    type={pending.type}
+                return (
+                  <GuestGroupDesktopRows
+                    busy={busyGroupId === group.id}
+                    canEdit={canEdit}
+                    event={event}
+                    group={group}
+                    inviteLink={inviteLinks[group.id]}
+                    key={group.id}
+                    onCancelPendingAction={onCancelPendingAction}
+                    onConfirmDisable={onConfirmDisable}
+                    onConfirmRegenerate={onConfirmRegenerate}
+                    onCopy={onCopy}
+                    onDisable={onDisable}
+                    onEdit={onEdit}
+                    onMarkSent={onMarkSent}
+                    onOpen={onOpen}
+                    onRegenerate={onRegenerate}
+                    pendingAction={pending}
                   />
-                ) : null}
-              </article>
-            );
-          })}
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-3">
+          {guestGroups.map((group) => (
+            <GuestGroupMobileRow
+              busy={busyGroupId === group.id}
+              canEdit={canEdit}
+              event={event}
+              group={group}
+              inviteLink={inviteLinks[group.id]}
+              key={group.id}
+              onCancelPendingAction={onCancelPendingAction}
+              onConfirmDisable={onConfirmDisable}
+              onConfirmRegenerate={onConfirmRegenerate}
+              onCopy={onCopy}
+              onDisable={onDisable}
+              onEdit={onEdit}
+              onMarkSent={onMarkSent}
+              onOpen={onOpen}
+              onRegenerate={onRegenerate}
+              pendingAction={pendingAction?.groupId === group.id ? pendingAction : null}
+            />
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+type GuestGroupRowProps = Omit<
+  GuestGroupCompactListProps,
+  "busyGroupId" | "guestGroups" | "inviteLinks" | "totalGuestGroups"
+> & {
+  busy: boolean;
+  group: GuestGroup;
+  inviteLink?: string;
+  pendingAction: PendingAction;
+};
+
+function GuestGroupDesktopRows({
+  busy,
+  canEdit,
+  event,
+  group,
+  inviteLink,
+  onCancelPendingAction,
+  onConfirmDisable,
+  onConfirmRegenerate,
+  onCopy,
+  onDisable,
+  onEdit,
+  onMarkSent,
+  onOpen,
+  onRegenerate,
+  pendingAction,
+}: GuestGroupRowProps) {
+  const isDisabled = group.status === "disabled";
+  const cannotShare = isGuestShareUnavailable(event, group);
+
+  return (
+    <>
+      <TableRow>
+        <TableCell className="max-w-64 whitespace-normal">
+          <p className="truncate font-semibold" title={group.label}>
+            {group.label}
+          </p>
+          <p className="mt-1 truncate text-xs text-muted-foreground" title={guestContactSummary(group)}>
+            {guestContactSummary(group)}
+          </p>
+        </TableCell>
+        <TableCell>
+          <p className="font-medium">{group.maxPax} max</p>
+          <p className="mt-1 text-xs text-muted-foreground">{guestNamedMemberSummary(group)}</p>
+        </TableCell>
+        <TableCell className="whitespace-normal">
+          <TrackingBadge group={group} />
+          <p className="mt-1 text-xs text-muted-foreground">{describeGuestTrackingDates(group)}</p>
+        </TableCell>
+        <TableCell className="whitespace-normal">
+          <GuestAccessBadge event={event} group={group} />
+          <p className="mt-1 text-xs text-muted-foreground">{describeGuestAccessExpiry(event, group)}</p>
+        </TableCell>
+        <TableCell className="whitespace-normal">
+          <RsvpStateBadge status={group.status} />
+          <p className="mt-1 text-xs text-muted-foreground">{describeRsvpState(group.status)}</p>
+        </TableCell>
+        <TableCell className="whitespace-normal text-right">
+          <GuestGroupRowActions
+            busy={busy}
+            canEdit={canEdit}
+            cannotShare={cannotShare}
+            group={group}
+            inviteLink={inviteLink}
+            isDisabled={isDisabled}
+            onCopy={onCopy}
+            onDisable={onDisable}
+            onEdit={onEdit}
+            onMarkSent={onMarkSent}
+            onOpen={onOpen}
+            onRegenerate={onRegenerate}
+          />
+        </TableCell>
+      </TableRow>
+      {pendingAction ? (
+        <TableRow>
+          <TableCell colSpan={6} className="whitespace-normal">
+            <GuestGroupPendingAction
+              busy={busy}
+              onCancel={onCancelPendingAction}
+              onConfirm={() =>
+                pendingAction.type === "regenerate"
+                  ? onConfirmRegenerate(group)
+                  : onConfirmDisable(group)
+              }
+              type={pendingAction.type}
+            />
+          </TableCell>
+        </TableRow>
+      ) : null}
+    </>
+  );
+}
+
+function GuestGroupMobileRow({
+  busy,
+  canEdit,
+  event,
+  group,
+  inviteLink,
+  onCancelPendingAction,
+  onConfirmDisable,
+  onConfirmRegenerate,
+  onCopy,
+  onDisable,
+  onEdit,
+  onMarkSent,
+  onOpen,
+  onRegenerate,
+  pendingAction,
+}: GuestGroupRowProps) {
+  const isDisabled = group.status === "disabled";
+  const cannotShare = isGuestShareUnavailable(event, group);
+
+  return (
+    <article
+      aria-labelledby={`guest-group-${group.id}`}
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4"
+    >
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold" id={`guest-group-${group.id}`} title={group.label}>
+          {group.label}
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">{guestContactSummary(group)}</p>
+      </div>
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <GuestGroupMobileDetail label="Party">
+          {group.maxPax} max · {guestNamedMemberSummary(group)}
+        </GuestGroupMobileDetail>
+        <GuestGroupMobileDetail label="Sent and opened">
+          <TrackingBadge group={group} />
+          <span className="text-xs text-muted-foreground">{describeGuestTrackingDates(group)}</span>
+        </GuestGroupMobileDetail>
+        <GuestGroupMobileDetail label="Invite access">
+          <GuestAccessBadge event={event} group={group} />
+          <span className="text-xs text-muted-foreground">{describeGuestAccessExpiry(event, group)}</span>
+        </GuestGroupMobileDetail>
+        <GuestGroupMobileDetail label="RSVP state">
+          <RsvpStateBadge status={group.status} />
+          <span className="text-xs text-muted-foreground">{describeRsvpState(group.status)}</span>
+        </GuestGroupMobileDetail>
+      </dl>
+      <GuestGroupRowActions
+        busy={busy}
+        canEdit={canEdit}
+        cannotShare={cannotShare}
+        group={group}
+        inviteLink={inviteLink}
+        isDisabled={isDisabled}
+        onCopy={onCopy}
+        onDisable={onDisable}
+        onEdit={onEdit}
+        onMarkSent={onMarkSent}
+        onOpen={onOpen}
+        onRegenerate={onRegenerate}
+        mobile
+      />
+      {!inviteLink || isDisabled ? <InviteLinkUnavailable compact group={group} /> : null}
+      {pendingAction ? (
+        <GuestGroupPendingAction
+          busy={busy}
+          onCancel={onCancelPendingAction}
+          onConfirm={() =>
+            pendingAction.type === "regenerate"
+              ? onConfirmRegenerate(group)
+              : onConfirmDisable(group)
+          }
+          type={pendingAction.type}
+        />
+      ) : null}
+    </article>
+  );
+}
+
+function GuestGroupMobileDetail({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <div className="grid gap-1">
+      <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="grid justify-items-start gap-1 text-sm">{children}</dd>
+    </div>
+  );
+}
+
+function GuestGroupRowActions({
+  busy,
+  canEdit,
+  cannotShare,
+  group,
+  inviteLink,
+  isDisabled,
+  onCopy,
+  onDisable,
+  onEdit,
+  onMarkSent,
+  onOpen,
+  onRegenerate,
+  mobile = false,
+}: {
+  busy: boolean;
+  canEdit: boolean;
+  cannotShare: boolean;
+  group: GuestGroup;
+  inviteLink?: string;
+  isDisabled: boolean;
+  onCopy: (group: GuestGroup) => void;
+  onDisable: (group: GuestGroup) => void;
+  onEdit: (group: GuestGroup) => void;
+  onMarkSent: (group: GuestGroup) => void;
+  onOpen: (group: GuestGroup) => void;
+  onRegenerate: (group: GuestGroup) => void;
+  mobile?: boolean;
+}) {
+  if (mobile) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {inviteLink && !isDisabled ? (
+          <>
+            <Button onClick={() => onCopy(group)} size="lg" type="button">
+              Copy link
+            </Button>
+            <Button onClick={() => onOpen(group)} size="lg" type="button" variant="outline">
+              Open link
+            </Button>
+          </>
+        ) : null}
+        {canEdit ? (
+          <>
+            <Button
+              disabled={busy || cannotShare}
+              onClick={() => onMarkSent(group)}
+              size="lg"
+              type="button"
+            >
+              {group.sendCount ? "Record resend" : "Mark sent"}
+            </Button>
+            <Button
+              aria-label={`Edit ${group.label}`}
+              onClick={() => onEdit(group)}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              Edit
+            </Button>
+            <Button
+              disabled={busy || isDisabled}
+              onClick={() => onRegenerate(group)}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              Regenerate link
+            </Button>
+            <Button
+              disabled={busy || isDisabled}
+              onClick={() => onDisable(group)}
+              size="lg"
+              type="button"
+              variant="destructive"
+            >
+              Disable
+            </Button>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap justify-end gap-2">
+      {inviteLink && !isDisabled ? (
+        <>
+          <Button aria-label={`Copy invite link for ${group.label}`} onClick={() => onCopy(group)} size="sm" type="button" variant="outline">
+            Copy
+          </Button>
+          <Button aria-label={`Open invite link for ${group.label}`} onClick={() => onOpen(group)} size="sm" type="button" variant="outline">
+            Open
+          </Button>
+        </>
+      ) : null}
+      {canEdit ? (
+        <>
+          <Button
+            disabled={busy || cannotShare}
+            onClick={() => onMarkSent(group)}
+            size="sm"
+            type="button"
+          >
+            {group.sendCount ? "Resend" : "Mark sent"}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button aria-label={`More actions for ${group.label}`} size="sm" type="button" variant="outline" />}>
+              More
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => onEdit(group)}>Edit group</DropdownMenuItem>
+                <DropdownMenuItem disabled={busy || isDisabled} onClick={() => onRegenerate(group)}>
+                  Regenerate link
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  disabled={busy || isDisabled}
+                  onClick={() => onDisable(group)}
+                  variant="destructive"
+                >
+                  Disable invite
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      ) : null}
+    </div>
   );
 }
 
@@ -1802,7 +2070,7 @@ function InviteLinkUnavailable({
   );
 }
 
-function CompactPendingAction({
+function GuestGroupPendingAction({
   busy,
   onCancel,
   onConfirm,
@@ -1815,7 +2083,7 @@ function CompactPendingAction({
 }) {
   return (
     <div
-      className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface))] p-3 lg:col-span-5"
+      className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface))] p-3"
       role="alert"
     >
       <p className="font-semibold">
@@ -1841,14 +2109,6 @@ function CompactPendingAction({
         </Button>
       </div>
     </div>
-  );
-}
-
-function CompactMobileLabel({ children }: { children: string }) {
-  return (
-    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] lg:hidden">
-      {children}
-    </span>
   );
 }
 
@@ -1989,10 +2249,10 @@ function readGuestListFilters(): GuestListFilters {
 
 function readGuestViewMode(): GuestViewMode {
   if (typeof window === "undefined") {
-    return "cards";
+    return "list";
   }
 
-  return new URLSearchParams(window.location.search).get("view") === "list" ? "list" : "cards";
+  return new URLSearchParams(window.location.search).get("view") === "cards" ? "cards" : "list";
 }
 
 function writeGuestViewMode(viewMode: GuestViewMode) {
@@ -2002,10 +2262,10 @@ function writeGuestViewMode(viewMode: GuestViewMode) {
 
   const params = new URLSearchParams(window.location.search);
 
-  if (viewMode === "cards") {
+  if (viewMode === "list") {
     params.delete("view");
   } else {
-    params.set("view", viewMode);
+    params.set("view", "cards");
   }
 
   const queryString = params.toString();
@@ -2175,6 +2435,61 @@ function StatusBadge({ status }: { status: GuestGroupStatus }) {
   );
 }
 
+function RsvpStateBadge({ status }: { status: GuestGroupStatus }) {
+  if (status === "declined") {
+    return <Badge variant="destructive">Declined</Badge>;
+  }
+
+  if (status === "responded") {
+    return <Badge>RSVP received</Badge>;
+  }
+
+  return <Badge variant="secondary">Awaiting RSVP</Badge>;
+}
+
+function describeRsvpState(status: GuestGroupStatus) {
+  if (status === "declined") return "Guest declined";
+  if (status === "responded") return "Guest response recorded";
+  if (status === "disabled") return "Invite access is disabled";
+  return "No RSVP submitted";
+}
+
+function guestContactSummary(group: GuestGroup) {
+  if (group.members?.length) {
+    return group.members.map((member) => member.name).join(", ");
+  }
+
+  return group.contactName || group.contactEmail || "No contact details";
+}
+
+function guestNamedMemberSummary(group: GuestGroup) {
+  if (group.members?.length) {
+    return `${group.members.length} named`;
+  }
+
+  return group.contactName ? "Contact named" : "No named guests";
+}
+
+function describeGuestTrackingDates(group: GuestGroup) {
+  const sentAt = group.lastSentAt ?? group.firstSentAt;
+  const openedAt = group.lastOpenedAt ?? group.firstOpenedAt;
+  const sent = sentAt
+    ? `Sent ${formatGuestDate(sentAt)}${group.lastShareChannel ? ` via ${formatShareChannel(group.lastShareChannel)}` : ""}`
+    : "Not sent";
+  const opened = openedAt ? `Opened ${formatGuestDate(openedAt)}` : "Not opened";
+
+  return `${sent} · ${opened}`;
+}
+
+function isGuestShareUnavailable(event: Event, group: GuestGroup) {
+  const effectiveExpiry = resolveEffectiveInviteAccessExpiry({
+    eventAccessExpiresAt: event.accessExpiresAt ?? null,
+    guestAccessExpiresAt: group.accessExpiresAt ?? null,
+  });
+
+  return group.status === "disabled" || Boolean(effectiveExpiry && isInviteAccessExpired(effectiveExpiry));
+}
+
 function TrackingBadge({ group }: { group: GuestGroup }) {
   const stage = resolveGuestInviteTrackingStage(group);
   const variant =
@@ -2223,20 +2538,63 @@ function formatShareChannel(channel: GuestInviteShareChannel) {
   return channel.charAt(0).toUpperCase() + channel.slice(1);
 }
 
+function useDesktopGuestList() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia?.("(min-width: 1024px)");
+
+    if (!query) return;
+
+    const update = () => setIsDesktop(query.matches);
+    update();
+    query.addEventListener("change", update);
+
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return isDesktop;
+}
+
 function GuestLoading() {
   return (
     <section
       aria-label="Loading guest groups"
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4"
     >
-      <div className="h-5 w-40 animate-pulse rounded-full bg-[var(--surface-muted)]" />
-      <div className="h-8 w-72 max-w-full animate-pulse rounded-full bg-[var(--surface-muted)]" />
-      <div className="grid gap-3 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((item) => (
-          <div
-            className="h-24 animate-pulse rounded-[var(--radius-md)] bg-[var(--surface-muted)]"
-            key={item}
-          />
+      <Skeleton className="h-5 w-40" />
+      <div className="hidden lg:block">
+        <Table>
+          <TableCaption className="sr-only">Loading guest group rows</TableCaption>
+          <TableHeader>
+            <TableRow>
+              {Array.from({ length: 6 }, (_, index) => (
+                <TableHead key={index}>
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 4 }, (_, rowIndex) => (
+              <TableRow key={rowIndex}>
+                {Array.from({ length: 6 }, (_, columnIndex) => (
+                  <TableCell key={columnIndex}>
+                    <Skeleton className="h-8 w-full min-w-16" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="grid gap-3 lg:hidden">
+        {Array.from({ length: 2 }, (_, index) => (
+          <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-4" key={index}>
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+          </div>
         ))}
       </div>
     </section>
