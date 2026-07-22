@@ -39,20 +39,32 @@ describe("DashboardTopNavigation", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders centered horizontal desktop navigation and a leftmost mobile burger", () => {
+  it("renders a centered desktop rail and a leftmost mobile and tablet trigger", () => {
     render(<DashboardTopNavigation activePath="/events/demo-event/theme" />);
 
     const desktopNavigation = screen.getByRole("navigation", { name: "Dashboard navigation" });
     const mobileTrigger = screen.getByRole("button", { name: "Open dashboard navigation" });
     const brand = screen.getByRole("link", { name: "Lumiere Dashboard" });
+    const topBar = screen.getByRole("banner");
+    const shell = topBar.firstElementChild;
+    const activeLink = screen.getByRole("link", { name: "Theme" });
 
-    expect(desktopNavigation.className).toContain("md:justify-center");
-    expect(mobileTrigger.className).toContain("md:hidden");
+    expect(desktopNavigation.className).toContain("justify-self-center");
+    expect(desktopNavigation.className).toContain("lg:flex");
+    expect(mobileTrigger.className).toContain("lg:hidden");
+    expect(topBar.className).not.toContain("px-3");
+    expect(topBar.className).not.toContain("pt-3");
+    expect(shell?.className).toContain("w-full");
+    expect(shell?.className).not.toContain("max-w-7xl");
+    expect(shell?.className).not.toContain("rounded-2xl");
+    expect(shell?.className).not.toContain("border-b");
     expect(mobileTrigger.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(screen.getByRole("link", { name: "Theme" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("link", { name: "Home" })).toBeTruthy();
+    expect(activeLink.getAttribute("aria-current")).toBe("page");
+    expect(activeLink.className).toContain("aria-[current=page]:after:scale-x-100");
+    expect(activeLink.className).not.toContain("aria-[current=page]:bg-background");
+    expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
     expect(brand.getAttribute("href")).toBe("/");
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
     expect({
@@ -74,34 +86,36 @@ describe("DashboardTopNavigation", () => {
     }).toMatchInlineSnapshot(`
       {
         "desktop1440": {
-          "navigation": "tablet-desktop",
+          "navigation": "desktop",
           "responsiveClasses": [
-            "md:flex",
-            "md:justify-center",
+            "lg:flex",
           ],
           "shell": [
             "sm:px-6",
+            "lg:grid-cols-[auto_minmax(0,1fr)_auto]",
+            "lg:gap-3",
             "lg:px-8",
           ],
         },
         "mobile390": {
-          "navigation": "mobile-only",
+          "navigation": "mobile-tablet",
           "responsiveClasses": [
-            "md:hidden",
+            "lg:hidden",
           ],
           "shell": [
             "sm:px-6",
+            "lg:grid-cols-[auto_minmax(0,1fr)_auto]",
+            "lg:gap-3",
             "lg:px-8",
           ],
         },
         "tablet768": {
-          "navigation": "tablet-desktop",
+          "navigation": "desktop",
           "responsiveClasses": [
-            "md:flex",
-            "md:justify-center",
+            "lg:flex",
           ],
           "triggerClasses": [
-            "md:hidden",
+            "lg:hidden",
           ],
         },
       }
@@ -177,16 +191,22 @@ describe("DashboardTopNavigation", () => {
     );
 
     const eventPicker = screen.getByRole("dialog", { name: "Switch event" });
+    const selectedEventContext = document.querySelector<HTMLElement>(
+      '[data-slot="desktop-event-context"] [data-slot="selected-event-context"]',
+    );
     const currentEvent = within(eventPicker).getByRole("button", { name: /Spring Dinner/ });
     const nextEvent = within(eventPicker).getByRole("button", { name: /Autumn Launch/ });
 
     expect(currentEvent.getAttribute("aria-current")).toBe("page");
     expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/responses`);
     expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/responses`);
+    expect(selectedEventContext).toBeTruthy();
+    expect(within(selectedEventContext as HTMLElement).getByText("Spring Dinner")).toBeTruthy();
+    expect(within(selectedEventContext as HTMLElement).getByText("Responses")).toBeTruthy();
     expect(listEvents).toHaveBeenCalledOnce();
   });
 
-  it("closes open mobile navigation when the viewport crosses into tablet width", async () => {
+  it("keeps the drawer at tablet width and closes it at the desktop breakpoint", async () => {
     const user = userEvent.setup();
     render(<DashboardTopNavigation activePath="/events/demo-event" />);
 
@@ -194,6 +214,10 @@ describe("DashboardTopNavigation", () => {
     expect(await screen.findByRole("dialog")).toBeTruthy();
 
     act(() => media.setMatches("(min-width: 768px)", true));
+
+    expect(screen.getByRole("dialog")).toBeTruthy();
+
+    act(() => media.setMatches("(min-width: 1024px)", true));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

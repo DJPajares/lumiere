@@ -1,20 +1,22 @@
 import Image from "next/image";
+import { cn } from "@lumiere/dashboard-ui/lib/utils";
 
 type DashboardBrandLockupProps = {
   className?: string;
+  compact?: boolean;
 };
 
-export function DashboardBrandLockup({ className = "" }: DashboardBrandLockupProps) {
+export function DashboardBrandLockup({ className, compact = false }: DashboardBrandLockupProps) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
+    <span className={cn("inline-flex items-center gap-2", className)}>
       <Image
         alt=""
         aria-hidden="true"
-        className="size-10 object-contain"
-        height={40}
-        sizes="40px"
+        className={cn("object-contain", compact ? "size-8" : "size-10")}
+        height={compact ? 32 : 40}
+        sizes={compact ? "32px" : "40px"}
         src="/logo.png"
-        width={40}
+        width={compact ? 32 : 40}
       />
       <span>Lumiere Dashboard</span>
     </span>

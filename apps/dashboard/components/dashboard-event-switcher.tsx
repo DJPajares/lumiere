@@ -2,6 +2,8 @@
 
 import {
   Button,
+  CheckIcon,
+  ChevronDownIcon,
   Popover,
   PopoverContent,
   PopoverDescription,
@@ -10,11 +12,11 @@ import {
   PopoverTrigger,
 } from "@lumiere/dashboard-ui";
 import type { Event } from "@lumiere/types";
+import { cn } from "@lumiere/dashboard-ui/lib/utils";
 import Link from "next/link";
-import type { ComponentProps } from "react";
 
 import { formatEventType } from "./events/event-basics-form";
-import { getDashboardWorkspaceContext } from "./dashboard-navigation";
+import type { DashboardWorkspaceContext } from "./dashboard-navigation";
 
 export type DashboardEventSwitcherState = {
   error: string | null;
@@ -23,8 +25,8 @@ export type DashboardEventSwitcherState = {
 };
 
 type DashboardEventSwitcherProps = {
-  activePath: string;
   className?: string;
+  context: DashboardWorkspaceContext;
   eventListState: DashboardEventSwitcherState;
   mobile?: boolean;
   onNavigate?: () => void;
@@ -32,8 +34,8 @@ type DashboardEventSwitcherProps = {
 };
 
 export function DashboardEventSwitcher({
-  activePath,
   className,
+  context,
   eventListState,
   mobile = false,
   onNavigate,
@@ -58,7 +60,6 @@ export function DashboardEventSwitcher({
     );
   }
 
-  const context = getDashboardWorkspaceContext(activePath);
   const currentEvent = eventListState.events.find((event) => event.id === context.eventId);
   const triggerLabel =
     currentEvent?.title ?? (context.eventId ? "Event unavailable" : "Choose an event");
@@ -69,14 +70,14 @@ export function DashboardEventSwitcher({
         render={
           <Button
             aria-label={`Switch event${currentEvent ? `, ${currentEvent.title}` : ""}`}
-            className={`${mobile ? "max-w-none" : "max-w-56"} ${className ?? ""}`}
+            className={cn(mobile ? "max-w-none" : "max-w-56", className)}
             size={mobile ? "lg" : "default"}
             variant="outline"
           />
         }
       >
         <span className="min-w-0 truncate">{triggerLabel}</span>
-        <ChevronDownIcon />
+        <ChevronDownIcon data-icon="inline-end" />
       </PopoverTrigger>
       <PopoverContent
         align={mobile ? "center" : "start"}
@@ -123,7 +124,7 @@ function EventSwitcherOption({
   isCurrent,
   onNavigate,
 }: {
-  context: ReturnType<typeof getDashboardWorkspaceContext>;
+  context: DashboardWorkspaceContext;
   event: Event;
   isCurrent: boolean;
   onNavigate?: () => void;
@@ -142,7 +143,7 @@ function EventSwitcherOption({
           {formatEventType(event.eventType)}
         </span>
       </span>
-      {isCurrent ? <CheckIcon /> : null}
+      {isCurrent ? <CheckIcon data-icon="inline-end" /> : null}
     </Button>
   );
 }
@@ -160,7 +161,7 @@ function EventSwitcherError({ error, onRetry }: { error: string | null; onRetry:
 
 function eventWorkspaceHref(
   eventId: string,
-  context: ReturnType<typeof getDashboardWorkspaceContext>,
+  context: DashboardWorkspaceContext,
 ) {
   const basePath = `/events/${encodeURIComponent(eventId)}`;
   const knownSection =
@@ -170,37 +171,4 @@ function eventWorkspaceHref(
       : null;
 
   return knownSection ? `${basePath}/${knownSection}` : basePath;
-}
-
-function ChevronDownIcon(props: ComponentProps<"svg">) {
-  return (
-    <svg aria-hidden="true" className="size-4 shrink-0" fill="none" viewBox="0 0 24 24" {...props}>
-      <path
-        d="m6 9 6 6 6-6"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4 shrink-0 text-primary"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="m5 12 4.5 4.5L19 7"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-    </svg>
-  );
 }
