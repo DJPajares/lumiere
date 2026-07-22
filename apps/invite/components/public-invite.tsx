@@ -190,65 +190,6 @@ function ScrollProgress() {
   );
 }
 
-export function PublicInvitationUnavailable({
-  eventSlug,
-  message = "This invitation was not found, is not published, or is no longer available.",
-}: {
-  eventSlug: string;
-  message?: string;
-}) {
-  return <InvitationUnavailable context="public" eventSlug={eventSlug} message={message} />;
-}
-
-export function GuestInvitationUnavailable({
-  eventSlug,
-  message = "This guest invite link is invalid, expired, disabled, or no longer available.",
-}: {
-  eventSlug: string;
-  message?: string;
-}) {
-  return (
-    <InvitationUnavailable
-      context="guest"
-      eventSlug={eventSlug}
-      label="Guest invite unavailable"
-      message={message}
-      title="We could not open this guest invite."
-    />
-  );
-}
-
-function InvitationUnavailable({
-  context,
-  eventSlug,
-  label = "Invitation unavailable",
-  message,
-  title = "We could not open this invite.",
-}: {
-  context: InvitationContext;
-  eventSlug: string;
-  label?: string;
-  message: string;
-  title?: string;
-}) {
-  return (
-    <InviteShell context={context}>
-      <section className="lumiere-invite-surface grid min-h-[100dvh] place-items-center px-5 py-10 sm:px-8">
-        <div className="grid max-w-xl gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_24px_70px_color-mix(in_srgb,var(--accent)_14%,transparent)]">
-          <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">{label}</p>
-          <h1 className="lumiere-type-title">{title}</h1>
-          <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            {message}
-          </p>
-          <p className="lumiere-type-body rounded-[var(--radius-md)] bg-[var(--surface-muted)] px-4 py-3">
-            Requested event: <span className="lumiere-type-label">{eventSlug}</span>
-          </p>
-        </div>
-      </section>
-    </InviteShell>
-  );
-}
-
 function PublicHero({
   invite,
   guest,

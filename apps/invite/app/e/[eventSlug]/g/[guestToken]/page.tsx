@@ -2,9 +2,10 @@ import { ApiClientError } from "@lumiere/api-client";
 import type { Metadata } from "next";
 
 import {
-  GuestInvitation,
-  GuestInvitationUnavailable,
-} from "../../../../../components/public-invite";
+  InviteAccessView,
+  type GuestInviteAccessState,
+} from "../../../../../components/invite-access-state";
+import { GuestInvitation } from "../../../../../components/public-invite";
 import { createInviteApiClient } from "../../../../../lib/invite-api";
 
 export const dynamic = "force-dynamic";
@@ -38,8 +39,14 @@ export async function generateMetadata({ params }: GuestEventPageProps): Promise
   }
 
   return {
-    title: `${eventSlug} RSVP`,
+    title: "Private invitation unavailable",
     description: "Private RSVP invitation link.",
+    openGraph: {
+      description: "Private RSVP invitation link.",
+      siteName: "Lumiere Invite",
+      title: "Private invitation unavailable",
+      type: "website",
+    },
     robots: getGuestInviteRobots(),
   };
 }
@@ -52,7 +59,7 @@ export default async function GuestEventPage({ params }: GuestEventPageProps) {
     return <GuestInvitation guestToken={guestToken} invite={result.invite} />;
   }
 
-  return <GuestInvitationUnavailable eventSlug={eventSlug} message={result.message} />;
+  return <InviteAccessView context="guest" state={result.state} />;
 }
 
 async function loadGuestInvite(eventSlug: string, guestToken: string) {
@@ -65,28 +72,37 @@ async function loadGuestInvite(eventSlug: string, guestToken: string) {
     };
   } catch (error) {
     if (error instanceof ApiClientError) {
+      if (error.status === 410) {
+        return {
+          state: "guest-expired" as const satisfies GuestInviteAccessState,
+          status: "unavailable" as const,
+        };
+      }
+
       if (error.status === 404) {
         return {
-          message: "This guest invite link is invalid, expired, or no longer available.",
+          state: "guest-invalid" as const satisfies GuestInviteAccessState,
           status: "unavailable" as const,
         };
       }
 
       if (error.status === 403) {
         const apiMessage = error.apiError.error.message.toLowerCase();
-        const message = apiMessage.includes("rsvp")
-          ? "RSVP is closed for this event. You can still contact the host for help."
-          : "This guest invite is disabled. Ask the host for a fresh link.";
+        const state: GuestInviteAccessState = apiMessage.includes("expired")
+          ? "guest-expired"
+          : apiMessage.includes("rsvp")
+            ? "guest-rsvp-closed"
+            : "guest-disabled";
 
         return {
-          message,
+          state,
           status: "unavailable" as const,
         };
       }
     }
 
     return {
-      message: "This guest invite is temporarily unavailable. Please try again later.",
+      state: "service-error" as const satisfies GuestInviteAccessState,
       status: "error" as const,
     };
   }

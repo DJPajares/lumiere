@@ -167,6 +167,19 @@ describe("invite app routes", () => {
       follow: false,
       index: false,
     });
+
+    mockApiError(404, "Public event not found");
+    const unavailableMetadata = await generatePublicEventMetadata({
+      params: Promise.resolve({
+        eventSlug: "untrusted-public-event-name",
+      }),
+    });
+
+    expect(unavailableMetadata).toMatchObject({
+      description: "This public invitation could not be opened.",
+      title: "Invitation unavailable",
+    });
+    expect(JSON.stringify(unavailableMetadata)).not.toContain("untrusted-public-event-name");
   });
 
   it("renders an unavailable state for missing or unpublished public events", async () => {
@@ -179,9 +192,25 @@ describe("invite app routes", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("Invitation unavailable");
-    expect(html).toContain("not published");
-    expect(html).toContain("draft-event");
+    expect(html).toContain('data-invite-access-state="public-missing"');
+    expect(html).toContain("This event is not available.");
+    expect(html).toContain("Explore demo invitations");
+    expect(html).not.toContain("draft-event");
+    expect(html).not.toContain("Try again");
+
+    mockApiError(503, "Public invite service unavailable");
+    const retryableElement = await PublicEventPage({
+      params: Promise.resolve({
+        eventSlug: "draft-event",
+      }),
+    });
+    const retryableHtml = renderToStaticMarkup(retryableElement);
+
+    expect(retryableHtml).toContain('data-invite-access-state="service-error"');
+    expect(retryableHtml).toContain("We could not load the invitation.");
+    expect(retryableHtml).toContain("Try again");
+    expect(retryableHtml).not.toContain("draft-event");
+    expect(retryableHtml).not.toContain("invite-test-request");
   });
 
   it("renders a valid guest event route with public, guest-only, and RSVP context", async () => {
@@ -233,6 +262,21 @@ describe("invite app routes", () => {
       follow: false,
       index: false,
     });
+
+    mockApiError(404, "Guest invite not found");
+    const invalidMetadata = await generateGuestInviteMetadata({
+      params: Promise.resolve({
+        eventSlug: "untrusted-event-name",
+        guestToken: "untrusted-private-token",
+      }),
+    });
+
+    expect(invalidMetadata).toMatchObject({
+      description: "Private RSVP invitation link.",
+      title: "Private invitation unavailable",
+    });
+    expect(JSON.stringify(invalidMetadata)).not.toContain("untrusted-event-name");
+    expect(JSON.stringify(invalidMetadata)).not.toContain("untrusted-private-token");
   });
 
   it("renders an unavailable state for invalid guest tokens", async () => {
@@ -246,9 +290,26 @@ describe("invite app routes", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("Guest invite unavailable");
-    expect(html).toContain("invalid, expired, or no longer available");
-    expect(html).toContain("launch-night");
+    expect(html).toContain('data-invite-access-state="guest-invalid"');
+    expect(html).toContain("This private link does not work.");
+    expect(html).toContain("Contact the host");
+    expect(html).not.toContain("Try again");
+    expect(html).not.toContain("launch-night");
+    expect(html).not.toContain("invalid-guest-token");
+
+    mockApiError(503, "Guest invite service unavailable");
+    const retryableElement = await GuestEventPage({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "invalid-guest-token",
+      }),
+    });
+    const retryableHtml = renderToStaticMarkup(retryableElement);
+
+    expect(retryableHtml).toContain('data-invite-access-state="service-error"');
+    expect(retryableHtml).toContain("Try again");
+    expect(retryableHtml).not.toContain("Contact the host");
+    expect(retryableHtml).not.toContain("invite-test-request");
   });
 
   it("renders a disabled state for disabled guest groups", async () => {
@@ -262,9 +323,38 @@ describe("invite app routes", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("Guest invite unavailable");
-    expect(html).toContain("disabled");
-    expect(html).toContain("fresh link");
+    expect(html).toContain('data-invite-access-state="guest-disabled"');
+    expect(html).toContain("This private link has been disabled.");
+    expect(html).toContain("Request another link");
+    expect(html).not.toContain("Try again");
+
+    mockApiError(410, "Guest invite expired");
+    const expiredElement = await GuestEventPage({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "expired-guest-token",
+      }),
+    });
+    const expiredHtml = renderToStaticMarkup(expiredElement);
+
+    expect(expiredHtml).toContain('data-invite-access-state="guest-expired"');
+    expect(expiredHtml).toContain("This private link has expired.");
+    expect(expiredHtml).toContain("Request a fresh link");
+    expect(expiredHtml).not.toContain("disabled");
+    expect(expiredHtml).not.toContain("expired-guest-token");
+
+    mockApiError(403, "RSVP is closed");
+    const closedElement = await GuestEventPage({
+      params: Promise.resolve({
+        eventSlug: "launch-night",
+        guestToken: "closed-rsvp-token",
+      }),
+    });
+    const closedHtml = renderToStaticMarkup(closedElement);
+
+    expect(closedHtml).toContain('data-invite-access-state="guest-rsvp-closed"');
+    expect(closedHtml).toContain("RSVP is closed for this event.");
+    expect(closedHtml).toContain("Ask the host");
   });
 });
 

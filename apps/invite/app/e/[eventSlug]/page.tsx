@@ -2,7 +2,11 @@ import { ApiClientError } from "@lumiere/api-client";
 import type { PublicEventSummary } from "@lumiere/types";
 import type { Metadata } from "next";
 
-import { PublicInvitation, PublicInvitationUnavailable } from "../../../components/public-invite";
+import {
+  InviteAccessView,
+  type InviteAccessState,
+} from "../../../components/invite-access-state";
+import { PublicInvitation } from "../../../components/public-invite";
 import { createInviteApiClient } from "../../../lib/invite-api";
 
 export const dynamic = "force-dynamic";
@@ -42,8 +46,14 @@ export async function generateMetadata({
   }
 
   return {
-    title: eventSlug,
-    description: "Public invitation without guest-only RSVP details.",
+    title: "Invitation unavailable",
+    description: "This public invitation could not be opened.",
+    openGraph: {
+      description: "This public invitation could not be opened.",
+      siteName: "Lumiere Invite",
+      title: "Invitation unavailable",
+      type: "website",
+    },
     robots: getPublicInviteRobots(),
   };
 }
@@ -57,7 +67,7 @@ export default async function PublicEventPage({ params, searchParams }: PublicEv
     return <PublicInvitation invite={result.invite} />;
   }
 
-  return <PublicInvitationUnavailable eventSlug={eventSlug} message={result.message} />;
+  return <InviteAccessView context="public" state={result.state} />;
 }
 
 async function loadPublicEvent(eventSlug: string, accessCode?: string) {
@@ -71,13 +81,13 @@ async function loadPublicEvent(eventSlug: string, accessCode?: string) {
   } catch (error) {
     if (error instanceof ApiClientError && (error.status === 403 || error.status === 404)) {
       return {
-        message: "This invitation was not found, is not published, or is no longer available.",
+        state: "public-missing" as const satisfies InviteAccessState,
         status: "unavailable" as const,
       };
     }
 
     return {
-      message: "This invitation is temporarily unavailable. Please try again later.",
+      state: "service-error" as const satisfies InviteAccessState,
       status: "error" as const,
     };
   }
