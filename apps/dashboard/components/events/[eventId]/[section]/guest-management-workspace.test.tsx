@@ -21,6 +21,10 @@ describe("GuestManagementWorkspace", () => {
       configurable: true,
       value: undefined,
     });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: undefined,
+    });
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
       value: undefined,
@@ -392,6 +396,131 @@ describe("GuestManagementWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "Guest list view" }));
     await user.click(screen.getByRole("button", { name: "Open link" }));
     expect(openWindow).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares active invite links through the device share sheet and records the handoff", async () => {
+    const user = userEvent.setup();
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/private-token";
+    const share = vi.fn(async () => undefined);
+    const markedGroup: GuestGroup = {
+      ...guestGroup,
+      firstSentAt: "2030-01-02T00:00:00.000Z",
+      lastSentAt: "2030-01-02T00:00:00.000Z",
+      lastShareChannel: "other",
+      sendCount: 1,
+    };
+    const markGuestGroupSent = vi.fn<DashboardApiClient["markGuestGroupSent"]>(async () => ({
+      guestGroup: markedGroup,
+    }));
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: share,
+    });
+
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [{ ...guestGroup, inviteLink }] })),
+        markGuestGroupSent,
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    expect(screen.getByRole("button", { name: "Share invite for Tan Family" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Guest list view" }));
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Share from device" }));
+
+    expect(share).toHaveBeenCalledWith({
+      text: `You’re invited to Spring Dinner. RSVP using your private invitation link: ${inviteLink}`,
+      title: "You’re invited to Spring Dinner",
+      url: inviteLink,
+    });
+    await waitFor(() =>
+      expect(markGuestGroupSent).toHaveBeenCalledWith("evt_123", "guest_1", {
+        shareChannel: "other",
+      }),
+    );
+    expect(await screen.findByText(/share handoff recorded\. Delivery is not verified/)).toBeTruthy();
+  });
+
+  it("uses encoded email and WhatsApp fallbacks without hard-coding Messenger", async () => {
+    const user = userEvent.setup();
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/private-token?source=guest";
+    const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
+    const markGuestGroupSent = vi.fn<DashboardApiClient["markGuestGroupSent"]>(async () => ({
+      guestGroup,
+    }));
+    const subject = "You’re invited to Spring Dinner";
+    const text = `${subject}. RSVP using your private invitation link: ${inviteLink}`;
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [{ ...guestGroup, inviteLink }] })),
+        markGuestGroupSent,
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Email" }));
+
+    expect(openWindow).toHaveBeenCalledWith(
+      `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    await waitFor(() =>
+      expect(markGuestGroupSent).toHaveBeenLastCalledWith("evt_123", "guest_1", {
+        shareChannel: "email",
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "WhatsApp" }));
+
+    expect(openWindow).toHaveBeenLastCalledWith(
+      `https://wa.me/?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    await waitFor(() =>
+      expect(markGuestGroupSent).toHaveBeenLastCalledWith("evt_123", "guest_1", {
+        shareChannel: "whatsapp",
+      }),
+    );
+    expect(screen.queryByText(/Messenger/)).toBeNull();
+  });
+
+  it("does not record cancelled or popup-blocked share attempts", async () => {
+    const user = userEvent.setup();
+    const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/private-token";
+    const markGuestGroupSent = vi.fn<DashboardApiClient["markGuestGroupSent"]>();
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: vi.fn(async () => {
+        throw new DOMException("Cancelled", "AbortError");
+      }),
+    });
+    vi.spyOn(window, "open").mockImplementation(() => null);
+
+    renderWithAuth(
+      createApiClientStub({
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [{ ...guestGroup, inviteLink }] })),
+        markGuestGroupSent,
+      }),
+    );
+
+    await screen.findByText("Tan Family");
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Share from device" }));
+    expect(await screen.findByText(/Share cancelled/)).toBeTruthy();
+    expect(markGuestGroupSent).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "WhatsApp" }));
+    expect(await screen.findByText(/WhatsApp composer could not open/)).toBeTruthy();
+    expect(markGuestGroupSent).not.toHaveBeenCalled();
   });
 
   it("keeps open unavailable for disabled and legacy guest groups", async () => {

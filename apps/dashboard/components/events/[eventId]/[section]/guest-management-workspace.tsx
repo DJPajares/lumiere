@@ -109,6 +109,8 @@ type PendingAction = {
   type: "disable" | "regenerate";
 } | null;
 
+type InviteShareMethod = "email" | "native" | "whatsapp";
+
 type GuestSortKey = "label" | "createdAt" | "updatedAt" | "lastOpenedAt" | "maxPax" | "status";
 type GuestSortDirection = "asc" | "desc";
 type GuestViewMode = "cards" | "list";
@@ -568,11 +570,21 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
   const openInviteLink = (group: GuestGroup) => {
     const inviteLink = state.inviteLinks[group.id];
 
-    if (!inviteLink || group.status === "disabled") {
+    if (!inviteLink || state.status !== "ready") {
       const message =
         group.status === "disabled"
           ? "This guest group is disabled. Invite access is unavailable."
           : "Regenerate this invite link before opening a shareable URL.";
+      setActionMessage(message);
+      toast.warning(message);
+      return;
+    }
+
+    if (isGuestShareUnavailable(state.data.event, group)) {
+      const message =
+        group.status === "disabled"
+          ? "This guest group is disabled. Invite access is unavailable."
+          : "Invite access has expired. Extend access before opening or sharing this link.";
       setActionMessage(message);
       toast.warning(message);
       return;
@@ -589,6 +601,102 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
 
     setActionMessage(group.label + " invite link opened.");
     toast.success(group.label + " invite link opened.");
+  };
+
+  const recordInviteShare = async (group: GuestGroup, channel: GuestInviteShareChannel) => {
+    if (!apiClient || state.status !== "ready") {
+      const message = "Lumiere could not record this share. You can record it manually when ready.";
+      setActionMessage(message);
+      toast.warning(message);
+      return;
+    }
+
+    if (state.data.accessRole === "viewer") {
+      const message = "Share handoff started. View-only access cannot record invite sharing.";
+      setActionMessage(message);
+      toast.success(message);
+      return;
+    }
+
+    setBusyGroupId(group.id);
+    setActionMessage(null);
+
+    try {
+      const response = await apiClient.markGuestGroupSent(eventId, group.id, {
+        shareChannel: channel,
+      });
+      replaceGuestGroup(response.guestGroup);
+      const message = `${response.guestGroup.label} share handoff recorded. Delivery is not verified.`;
+      setActionMessage(message);
+      toast.success(message);
+    } catch (error) {
+      const message = `${toFriendlyApiMessage(error)} Record the share manually if you completed it.`;
+      setActionMessage(message);
+      toast.error(message);
+    } finally {
+      setBusyGroupId(null);
+    }
+  };
+
+  const shareInviteLink = async (group: GuestGroup, method: InviteShareMethod) => {
+    if (state.status !== "ready") return;
+
+    const inviteLink = state.inviteLinks[group.id];
+    if (!inviteLink || isGuestShareUnavailable(state.data.event, group)) {
+      const message = !inviteLink
+        ? "Regenerate this invite link before sharing a URL."
+        : group.status === "disabled"
+          ? "This guest group is disabled. Invite access is unavailable."
+          : "Invite access has expired. Extend access before sharing this link.";
+      setActionMessage(message);
+      toast.warning(message);
+      return;
+    }
+
+    if (navigator.onLine === false) {
+      const message = "You appear to be offline. Copy the invite link and share it when you are connected.";
+      setActionMessage(message);
+      toast.warning(message);
+      return;
+    }
+
+    const shareContent = createGuestInviteShareContent(state.data.event, inviteLink);
+
+    if (method === "native") {
+      if (typeof navigator.share !== "function") {
+        const message = "Sharing from this device is unavailable. Use Copy, Email, or WhatsApp instead.";
+        setActionMessage(message);
+        toast.warning(message);
+        return;
+      }
+
+      try {
+        await navigator.share(shareContent);
+        await recordInviteShare(group, "other");
+      } catch (error) {
+        const message = isShareCancellation(error)
+          ? "Share cancelled. Copy the link or choose Email or WhatsApp instead."
+          : "The device share sheet could not open. Use Copy, Email, or WhatsApp instead.";
+        setActionMessage(message);
+        toast.warning(message);
+      }
+      return;
+    }
+
+    const destination =
+      method === "email"
+        ? createGuestInviteEmailUrl(shareContent)
+        : createGuestInviteWhatsAppUrl(shareContent);
+    const openedWindow = window.open(destination, "_blank", "noopener,noreferrer");
+
+    if (!openedWindow) {
+      const message = `The ${method === "email" ? "email" : "WhatsApp"} composer could not open. Allow pop-ups and try again, or copy the invite link.`;
+      setActionMessage(message);
+      toast.error(message);
+      return;
+    }
+
+    await recordInviteShare(group, method === "email" ? "email" : "whatsapp");
   };
 
   const startMarkSent = (group: GuestGroup) => {
@@ -966,6 +1074,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         onDisable={(group) => setPendingAction({ groupId: group.id, type: "disable" })}
         onEdit={startEdit}
         onOpen={openInviteLink}
+        onShare={(group, method) => void shareInviteLink(group, method)}
         onMarkSent={startMarkSent}
         onRegenerate={(group) => setPendingAction({ groupId: group.id, type: "regenerate" })}
         pendingAction={pendingAction}
@@ -1342,6 +1451,7 @@ function GuestGroupList({
   onDisable,
   onEdit,
   onOpen,
+  onShare,
   onMarkSent,
   onRegenerate,
   pendingAction,
@@ -1361,6 +1471,7 @@ function GuestGroupList({
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
   onOpen: (group: GuestGroup) => void;
+  onShare: (group: GuestGroup, method: InviteShareMethod) => void;
   onMarkSent: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
@@ -1413,6 +1524,7 @@ function GuestGroupList({
         onDisable={onDisable}
         onEdit={onEdit}
         onOpen={onOpen}
+        onShare={onShare}
         onMarkSent={onMarkSent}
         onRegenerate={onRegenerate}
         pendingAction={pendingAction}
@@ -1529,7 +1641,7 @@ function GuestGroupList({
 
             <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-3">
               <p className="text-sm font-semibold">Invite link</p>
-              {inviteLink && !isDisabled ? (
+              {inviteLink && !cannotShare ? (
                 <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                   <Input
                     aria-label={`${group.label} invite link`}
@@ -1538,6 +1650,12 @@ function GuestGroupList({
                     value={inviteLink}
                   />
                   <div className="flex flex-wrap gap-2">
+                    <GuestInviteShareMenu
+                      group={group}
+                      onCopy={onCopy}
+                      onShare={onShare}
+                      size="lg"
+                    />
                     <Button onClick={() => onCopy(group)} size="lg" type="button">
                       Copy link
                     </Button>
@@ -1547,7 +1665,7 @@ function GuestGroupList({
                   </div>
                 </div>
               ) : (
-                <InviteLinkUnavailable group={group} />
+                <InviteLinkUnavailable event={event} group={group} />
               )}
             </div>
 
@@ -1612,6 +1730,7 @@ type GuestGroupCompactListProps = {
   onDisable: (group: GuestGroup) => void;
   onEdit: (group: GuestGroup) => void;
   onOpen: (group: GuestGroup) => void;
+  onShare: (group: GuestGroup, method: InviteShareMethod) => void;
   onMarkSent: (group: GuestGroup) => void;
   onRegenerate: (group: GuestGroup) => void;
   pendingAction: PendingAction;
@@ -1631,6 +1750,7 @@ function GuestGroupCompactList({
   onDisable,
   onEdit,
   onOpen,
+  onShare,
   onMarkSent,
   onRegenerate,
   pendingAction,
@@ -1688,6 +1808,7 @@ function GuestGroupCompactList({
                     onEdit={onEdit}
                     onMarkSent={onMarkSent}
                     onOpen={onOpen}
+                    onShare={onShare}
                     onRegenerate={onRegenerate}
                     pendingAction={pending}
                   />
@@ -1714,6 +1835,7 @@ function GuestGroupCompactList({
               onEdit={onEdit}
               onMarkSent={onMarkSent}
               onOpen={onOpen}
+              onShare={onShare}
               onRegenerate={onRegenerate}
               pendingAction={pendingAction?.groupId === group.id ? pendingAction : null}
             />
@@ -1748,6 +1870,7 @@ function GuestGroupDesktopRows({
   onEdit,
   onMarkSent,
   onOpen,
+  onShare,
   onRegenerate,
   pendingAction,
 }: GuestGroupRowProps) {
@@ -1794,8 +1917,14 @@ function GuestGroupDesktopRows({
             onEdit={onEdit}
             onMarkSent={onMarkSent}
             onOpen={onOpen}
+            onShare={onShare}
             onRegenerate={onRegenerate}
           />
+          {!inviteLink || cannotShare ? (
+            <div className="mt-2 text-left">
+              <InviteLinkUnavailable compact event={event} group={group} />
+            </div>
+          ) : null}
         </TableCell>
       </TableRow>
       {pendingAction ? (
@@ -1832,6 +1961,7 @@ function GuestGroupMobileRow({
   onEdit,
   onMarkSent,
   onOpen,
+  onShare,
   onRegenerate,
   pendingAction,
 }: GuestGroupRowProps) {
@@ -1878,10 +2008,11 @@ function GuestGroupMobileRow({
         onEdit={onEdit}
         onMarkSent={onMarkSent}
         onOpen={onOpen}
+        onShare={onShare}
         onRegenerate={onRegenerate}
         mobile
       />
-      {!inviteLink || isDisabled ? <InviteLinkUnavailable compact group={group} /> : null}
+      {!inviteLink || cannotShare ? <InviteLinkUnavailable compact event={event} group={group} /> : null}
       {pendingAction ? (
         <GuestGroupPendingAction
           busy={busy}
@@ -1921,6 +2052,7 @@ function GuestGroupRowActions({
   onEdit,
   onMarkSent,
   onOpen,
+  onShare,
   onRegenerate,
   mobile = false,
 }: {
@@ -1935,14 +2067,16 @@ function GuestGroupRowActions({
   onEdit: (group: GuestGroup) => void;
   onMarkSent: (group: GuestGroup) => void;
   onOpen: (group: GuestGroup) => void;
+  onShare: (group: GuestGroup, method: InviteShareMethod) => void;
   onRegenerate: (group: GuestGroup) => void;
   mobile?: boolean;
 }) {
   if (mobile) {
     return (
       <div className="flex flex-wrap gap-2">
-        {inviteLink && !isDisabled ? (
+        {inviteLink && !cannotShare ? (
           <>
+            <GuestInviteShareMenu group={group} onCopy={onCopy} onShare={onShare} size="lg" />
             <Button onClick={() => onCopy(group)} size="lg" type="button">
               Copy link
             </Button>
@@ -1996,8 +2130,9 @@ function GuestGroupRowActions({
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      {inviteLink && !isDisabled ? (
+      {inviteLink && !cannotShare ? (
         <>
+          <GuestInviteShareMenu group={group} onCopy={onCopy} onShare={onShare} size="sm" />
           <Button aria-label={`Copy invite link for ${group.label}`} onClick={() => onCopy(group)} size="sm" type="button" variant="outline">
             Copy
           </Button>
@@ -2045,17 +2180,64 @@ function GuestGroupRowActions({
   );
 }
 
+function GuestInviteShareMenu({
+  group,
+  onCopy,
+  onShare,
+  size,
+}: {
+  group: GuestGroup;
+  onCopy: (group: GuestGroup) => void;
+  onShare: (group: GuestGroup, method: InviteShareMethod) => void;
+  size: "lg" | "sm";
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button aria-label={`Share invite for ${group.label}`} size={size} type="button" variant="outline" />
+        }
+      >
+        Share
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => onShare(group, "native")}>
+            Share from device
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => onCopy(group)}>Copy link</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onShare(group, "email")}>Email</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onShare(group, "whatsapp")}>WhatsApp</DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function InviteLinkUnavailable({
   compact = false,
+  event,
   group,
 }: {
   compact?: boolean;
+  event?: Event;
   group: GuestGroup;
 }) {
   if (group.status === "disabled") {
     return (
       <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
         Invite access is disabled for this group.
+      </p>
+    );
+  }
+
+  if (event && isGuestShareUnavailable(event, group)) {
+    return (
+      <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+        Invite access has expired for this group. Extend access before sharing this private link.
       </p>
     );
   }
@@ -2142,7 +2324,10 @@ function describeGuestAccessExpiry(event: Event, group: GuestGroup) {
     : Date.parse(group.accessExpiresAt) === Date.parse(effectiveExpiry)
       ? "Guest deadline"
       : "Event deadline";
-  return `${source}: ${formatAccessExpiry(effectiveExpiry, event.timezone)}`;
+  const formattedExpiry = formatAccessExpiry(effectiveExpiry, event.timezone);
+  return isInviteAccessExpired(effectiveExpiry)
+    ? `${source} expired: ${formattedExpiry}. Extend access before sharing.`
+    : `${source}: ${formattedExpiry}`;
 }
 
 function GuestAccessBadge({ event, group }: { event: Event; group: GuestGroup }) {
@@ -2536,6 +2721,28 @@ function formatShareChannel(channel: GuestInviteShareChannel) {
   if (channel === "sms") return "SMS";
   if (channel === "whatsapp") return "WhatsApp";
   return channel.charAt(0).toUpperCase() + channel.slice(1);
+}
+
+function createGuestInviteShareContent(event: Event, inviteLink: string) {
+  const subject = `You’re invited to ${event.title}`;
+
+  return {
+    text: `${subject}. RSVP using your private invitation link: ${inviteLink}`,
+    title: subject,
+    url: inviteLink,
+  } satisfies ShareData;
+}
+
+function createGuestInviteEmailUrl(shareContent: ShareData) {
+  return `mailto:?subject=${encodeURIComponent(shareContent.title ?? "Invitation")}&body=${encodeURIComponent(shareContent.text ?? "")}`;
+}
+
+function createGuestInviteWhatsAppUrl(shareContent: ShareData) {
+  return `https://wa.me/?text=${encodeURIComponent(shareContent.text ?? shareContent.url ?? "")}`;
+}
+
+function isShareCancellation(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 function useDesktopGuestList() {
