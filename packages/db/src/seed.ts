@@ -741,8 +741,19 @@ function weddingSections(eventId: string, startsAt: string): DemoSection[] {
     }),
     section(1, eventId, "story", "story", 3, {
       paragraphs: [
-        "What began as a shared table at a friend's dinner became weekend walks, family introductions, and a quiet certainty.",
-        "We are grateful to celebrate this next chapter with the people who shaped our lives.",
+        {
+          body: "What began as a shared table at a friend's dinner became weekend walks, family introductions, and a quiet certainty.",
+          image: {
+            alt: "A couple sharing a quiet walk beneath garden trees",
+            caption: "The beginning of our story",
+            url: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1200&q=82",
+          },
+          title: "A seat at the same table",
+        },
+        {
+          body: "We are grateful to celebrate this next chapter with the people who shaped our lives.",
+          title: "The next chapter",
+        },
       ],
       title: "Our story",
     }),
@@ -924,8 +935,19 @@ function launchSections(eventId: string, startsAt: string): DemoSection[] {
     }),
     section(3, eventId, "story", "manifesto", 3, {
       paragraphs: [
-        "Studio 18 is a release built in public: one instrument, three rooms, and a live system that changes with the crowd.",
-        "This first signal is for collaborators, press, and the people who shaped the work before it had a name.",
+        {
+          body: "Studio 18 is a release built in public: one instrument, three rooms, and a live system that changes with the crowd.",
+          image: {
+            alt: "Electronic instruments illuminated by blue studio light",
+            caption: "Field test 01",
+            url: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=82",
+          },
+          title: "Built in public",
+        },
+        {
+          body: "This first signal is for collaborators, press, and the people who shaped the work before it had a name.",
+          title: "The first signal",
+        },
       ],
       title: "Why after hours",
     }),

@@ -2175,7 +2175,7 @@ const rsvpQuestionPresets = {
 } as const;
 
 function StoryFields({ controller }: { controller: SectionFieldController }) {
-  const paragraphs = normalizeStoryParagraphs(controller.content.paragraphs);
+  const paragraphs = normalizeStoryParagraphsForEditor(controller.content.paragraphs);
 
   return (
     <div className="grid gap-5">
@@ -2183,6 +2183,7 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
       <RepeaterField
         addLabel="Add story paragraph"
         controller={controller}
+        description="Each paragraph can stand alone as text or include one optional photo with accessible alt text."
         emptyLabel="No story paragraphs yet."
         items={paragraphs}
         label="Story paragraphs"
@@ -2217,10 +2218,20 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
               required
               scope="content"
             />
+            <AssetField
+              collapsible
+              controller={controller}
+              label="Paragraph photo (optional)"
+              path={["paragraphs", index, "image"]}
+            />
           </div>
         )}
       />
-      <AssetField controller={controller} label="Story image" path={["image"]} />
+      <AssetField
+        controller={controller}
+        label="Section feature image (optional)"
+        path={["image"]}
+      />
     </div>
   );
 }
@@ -2626,22 +2637,33 @@ function CommaListField({
 }
 
 function AssetField({
+  collapsible = false,
   controller,
   label,
   path,
 }: {
+  collapsible?: boolean;
   controller: SectionFieldController;
   label: string;
   path: JsonPath;
 }) {
-  return <NestedAssetField controller={controller} label={label} path={path} />;
+  return (
+    <NestedAssetField
+      collapsible={collapsible}
+      controller={controller}
+      label={label}
+      path={path}
+    />
+  );
 }
 
 function NestedAssetField({
+  collapsible = false,
   controller,
   label,
   path,
 }: {
+  collapsible?: boolean;
   controller: SectionFieldController;
   label: string;
   path: JsonPath;
@@ -2649,6 +2671,17 @@ function NestedAssetField({
   const asset = isJsonObject(getJsonValue(controller.content, path))
     ? (getJsonValue(controller.content, path) as JsonObject)
     : {};
+  const hasAssetDraft = Boolean(
+    readString(asset.url) || readString(asset.alt) || readString(asset.caption),
+  );
+  const [isExpanded, setIsExpanded] = useState(hasAssetDraft);
+
+  useEffect(() => {
+    if (hasAssetDraft) {
+      setIsExpanded(true);
+    }
+  }, [hasAssetDraft]);
+
   const setAssetValue = (field: "alt" | "caption" | "url", value: string) => {
     controller.updateContentObject((draft) => {
       const current = isJsonObject(getJsonValue(draft, path))
@@ -2664,34 +2697,55 @@ function NestedAssetField({
       setJsonPathValue(draft, path, current);
     });
   };
+  const fields = (
+    <div className="grid gap-3">
+      <AssetTextField
+        controller={controller}
+        label="Image URL"
+        onChange={(value) => setAssetValue("url", value)}
+        path={[...path, "url"]}
+        type="url"
+        value={getJsonString(asset, ["url"])}
+      />
+      <AssetTextField
+        controller={controller}
+        label="Alt text"
+        onChange={(value) => setAssetValue("alt", value)}
+        path={[...path, "alt"]}
+        value={getJsonString(asset, ["alt"])}
+      />
+      <AssetTextField
+        controller={controller}
+        label="Caption"
+        onChange={(value) => setAssetValue("caption", value)}
+        path={[...path, "caption"]}
+        value={getJsonString(asset, ["caption"])}
+      />
+    </div>
+  );
+
+  if (collapsible) {
+    return (
+      <details
+        className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5"
+        onToggle={(event) => setIsExpanded(event.currentTarget.open)}
+        open={isExpanded}
+      >
+        <summary className="cursor-pointer text-sm font-semibold">
+          {label}
+          <span className="mt-1 block text-xs font-normal leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+            Add a photo when it strengthens this moment; text-only entries keep the same rhythm.
+          </span>
+        </summary>
+        <div className="pt-3">{fields}</div>
+      </details>
+    );
+  }
 
   return (
     <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
       <p className="text-sm font-semibold">{label}</p>
-      <div className="grid gap-3">
-        <AssetTextField
-          controller={controller}
-          label="Image URL"
-          onChange={(value) => setAssetValue("url", value)}
-          path={[...path, "url"]}
-          type="url"
-          value={getJsonString(asset, ["url"])}
-        />
-        <AssetTextField
-          controller={controller}
-          label="Alt text"
-          onChange={(value) => setAssetValue("alt", value)}
-          path={[...path, "alt"]}
-          value={getJsonString(asset, ["alt"])}
-        />
-        <AssetTextField
-          controller={controller}
-          label="Caption"
-          onChange={(value) => setAssetValue("caption", value)}
-          path={[...path, "caption"]}
-          value={getJsonString(asset, ["caption"])}
-        />
-      </div>
+      {fields}
     </div>
   );
 }
@@ -3296,6 +3350,11 @@ function PreviewStory({ content }: { content: JsonObject }) {
                 <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
                   {paragraph.body}
                 </p>
+                {paragraph.image ? (
+                  <div className="mt-2 max-w-sm">
+                    <PreviewImage asset={paragraph.image} compact />
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -3800,8 +3859,29 @@ function normalizeSectionContentForEditor(sectionType: SectionType, content: Jso
 
   return {
     ...normalizedContent,
-    paragraphs: normalizeStoryParagraphs(content.paragraphs),
+    paragraphs: normalizeStoryParagraphsForEditor(content.paragraphs),
   };
+}
+
+function normalizeStoryParagraphsForEditor(value: JsonValue | undefined): JsonObject[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((paragraph) => {
+    if (typeof paragraph === "string") {
+      return { body: paragraph };
+    }
+
+    if (!isJsonObject(paragraph)) {
+      return { body: "" };
+    }
+
+    return {
+      ...paragraph,
+      body: typeof paragraph.body === "string" ? paragraph.body : "",
+    };
+  });
 }
 
 export function parseSectionDrafts(

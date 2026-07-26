@@ -152,13 +152,23 @@ export const storyParagraphSchema = z.preprocess(
     .object({
       title: z.string().trim().max(storyParagraphTitleMaxLength).optional(),
       body: nonEmptyString.max(storyParagraphBodyMaxLength),
+      image: assetSchema.optional(),
     })
-    .transform(({ title, body }): StoryParagraph => (title ? { title, body } : { body })),
+    .transform(({ title, body, image }): StoryParagraph => ({
+      ...(title ? { title } : {}),
+      body,
+      ...(image ? { image } : {}),
+    })),
 );
 
 export type StoryParagraph = {
   title?: string;
   body: string;
+  image?: {
+    alt: string;
+    caption?: string;
+    url: string;
+  };
 };
 
 export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
@@ -178,8 +188,39 @@ export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
     const title =
       "title" in paragraph && typeof paragraph.title === "string" ? paragraph.title : undefined;
     const body = "body" in paragraph && typeof paragraph.body === "string" ? paragraph.body : "";
+    const rawImage =
+      "image" in paragraph &&
+      typeof paragraph.image === "object" &&
+      paragraph.image !== null &&
+      !Array.isArray(paragraph.image)
+        ? paragraph.image
+        : undefined;
+    const imageUrl =
+      rawImage && "url" in rawImage && typeof rawImage.url === "string"
+        ? rawImage.url
+        : undefined;
+    const imageAlt =
+      rawImage && "alt" in rawImage && typeof rawImage.alt === "string"
+        ? rawImage.alt
+        : undefined;
+    const imageCaption =
+      rawImage && "caption" in rawImage && typeof rawImage.caption === "string"
+        ? rawImage.caption
+        : undefined;
+    const image =
+      imageUrl && imageAlt
+        ? {
+            alt: imageAlt,
+            ...(imageCaption ? { caption: imageCaption } : {}),
+            url: imageUrl,
+          }
+        : undefined;
 
-    return title === undefined ? { body } : { title, body };
+    return {
+      ...(title === undefined ? {} : { title }),
+      body,
+      ...(image ? { image } : {}),
+    };
   });
 }
 
@@ -573,7 +614,7 @@ export const sectionDefinitions = {
   }),
   story: createSectionDefinition("story", {
     label: "Story",
-    description: "Editorial text section for event story or background.",
+    description: "Editorial event story with ordered entries and optional photos for each moment.",
     defaultVisibility: "public",
     requiresGuestContext: false,
   }),

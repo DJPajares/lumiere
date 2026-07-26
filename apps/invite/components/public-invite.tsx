@@ -716,6 +716,14 @@ function StorySection({
               <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
                 {paragraph.body}
               </p>
+              {paragraph.image ? (
+                <div
+                  className="lumiere-story-entry-photo mt-4 max-w-xl"
+                  data-story-entry-photo="true"
+                >
+                  <SectionImage asset={paragraph.image} compact />
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

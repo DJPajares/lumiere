@@ -818,7 +818,15 @@ describe("theme registry", () => {
       visibility: "public",
       content: {
         paragraphs: [
-          { title: "Chapter one", body: "A titled paragraph." },
+          {
+            title: "Chapter one",
+            body: "A titled paragraph.",
+            image: {
+              alt: "Two people walking through a garden",
+              caption: "The first chapter",
+              url: "https://images.example.com/chapter-one.jpg",
+            },
+          },
           { title: "", body: "An untitled paragraph." },
         ],
         title: "Our story",
@@ -847,7 +855,15 @@ describe("theme registry", () => {
     expect(structuredStory.ok).toBe(true);
     if (structuredStory.ok) {
       expect(structuredStory.section.content.paragraphs).toEqual([
-        { title: "Chapter one", body: "A titled paragraph." },
+        {
+          title: "Chapter one",
+          body: "A titled paragraph.",
+          image: {
+            alt: "Two people walking through a garden",
+            caption: "The first chapter",
+            url: "https://images.example.com/chapter-one.jpg",
+          },
+        },
         { body: "An untitled paragraph." },
       ]);
     }

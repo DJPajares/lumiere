@@ -184,9 +184,16 @@ describe("SectionBuilderWorkspace", () => {
     const titleInputs = storyEditor.getAllByLabelText("Paragraph title (optional)");
     const bodyInputs = storyEditor.getAllByLabelText("Paragraph body");
 
+    await user.click(storyEditor.getAllByText("Paragraph photo (optional)")[1]!);
+
+    const imageUrlInputs = storyEditor.getAllByLabelText("Image URL");
+    const imageAltInputs = storyEditor.getAllByLabelText("Alt text");
+
     await user.type(titleInputs[1]!, "Second chapter");
     await user.clear(bodyInputs[1]!);
     await user.type(bodyInputs[1]!, "A structured paragraph with a title.");
+    await user.type(imageUrlInputs[1]!, "https://images.example.com/second-chapter.jpg");
+    await user.type(imageAltInputs[1]!, "A candlelit table shared with friends");
     await user.click(storyEditor.getAllByRole("button", { name: "Move up" })[1]!);
 
     expect(
@@ -194,6 +201,12 @@ describe("SectionBuilderWorkspace", () => {
     ).toBe("Second chapter");
     expect((storyEditor.getAllByLabelText("Paragraph body")[0] as HTMLTextAreaElement).value).toBe(
       "A structured paragraph with a title.",
+    );
+    expect((storyEditor.getAllByLabelText("Image URL")[0] as HTMLInputElement).value).toBe(
+      "https://images.example.com/second-chapter.jpg",
+    );
+    expect((storyEditor.getAllByLabelText("Alt text")[0] as HTMLInputElement).value).toBe(
+      "A candlelit table shared with friends",
     );
 
     await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);

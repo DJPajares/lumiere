@@ -385,7 +385,17 @@ describe("public invite section renderers", () => {
           }),
           createSection({
             content: {
-              paragraphs: ["First the quiet hello.", "Then a life gathered around one table."],
+              paragraphs: [
+                {
+                  body: "First the quiet hello.",
+                  image: {
+                    alt: "A couple walking beneath garden trees",
+                    caption: "Where the story began",
+                    url: "https://images.example.com/first-hello.jpg",
+                  },
+                },
+                "Then a life gathered around one table.",
+              ],
               title: "Our story",
             },
             sectionKey: "story",
@@ -484,6 +494,9 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Dinner, dancing, and garden lights.");
     expect(html).toContain("First the quiet hello.");
     expect(html).toContain("Then a life gathered around one table.");
+    expect(html).toContain("A couple walking beneath garden trees");
+    expect(html).toContain("Where the story began");
+    expect(html).toContain('data-story-entry-photo="true"');
     expect(html).toContain("Together in 42 days");
     expect(html).toContain('data-countdown-state="loading"');
     expect(html).toContain('data-countdown-unit="days"');
