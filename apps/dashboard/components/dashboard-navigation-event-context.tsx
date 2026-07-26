@@ -1,8 +1,55 @@
-import { Badge } from "@lumiere/dashboard-ui";
+import { Badge, buttonVariants, Separator } from "@lumiere/dashboard-ui";
 import type { Event } from "@lumiere/types";
+import Link from "next/link";
 
 import type { DashboardEventSwitcherState } from "./dashboard-event-switcher";
-import type { DashboardWorkspaceContext } from "./dashboard-navigation";
+import type {
+  DashboardNavigationItem,
+  DashboardWorkspaceContext,
+} from "./dashboard-navigation";
+
+export function DashboardEventContextBar({
+  context,
+  currentEvent,
+  eventListState,
+  settingsItem,
+}: {
+  context: DashboardWorkspaceContext;
+  currentEvent?: Event;
+  eventListState: DashboardEventSwitcherState;
+  settingsItem?: DashboardNavigationItem;
+}) {
+  if (!context.eventId) {
+    return null;
+  }
+
+  return (
+    <section aria-label="Selected event context" data-slot="event-context-bar">
+      <div className="mx-auto flex min-h-12 max-w-7xl items-center gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        <div className="min-w-0 flex-1">
+          <DashboardSelectedEventSummary
+            context={context}
+            currentEvent={currentEvent}
+            eventListState={eventListState}
+          />
+        </div>
+        {settingsItem?.href ? (
+          <Link
+            aria-current={settingsItem.active ? "page" : undefined}
+            className={buttonVariants({
+              size: "lg",
+              variant: settingsItem.active ? "secondary" : "ghost",
+            })}
+            href={settingsItem.href}
+          >
+            Event settings
+          </Link>
+        ) : null}
+      </div>
+      <Separator />
+    </section>
+  );
+}
 
 export function DashboardSelectedEventSummary({
   context,

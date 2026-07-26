@@ -78,8 +78,11 @@ export function getDashboardNavigation(activePath: string) {
 
   return {
     context,
+    eventSettings: items.find((item) => item.id === "event-settings"),
     manager: items.filter((item) => item.scope === "manager"),
-    workspace: items.filter((item) => item.scope === "workspace"),
+    workspace: items.filter(
+      (item) => item.scope === "workspace" && item.id !== "event-settings",
+    ),
   };
 }
 

@@ -34,6 +34,14 @@ describe("dashboard navigation model", () => {
         href: "/events/demo-event/guests",
       }),
     );
+    expect(navigation.workspace.some((item) => item.id === "event-settings")).toBe(false);
+    expect(navigation.eventSettings).toEqual(
+      expect.objectContaining({
+        active: false,
+        disabled: false,
+        href: "/events/demo-event/settings",
+      }),
+    );
     expect(navigation.workspace.filter((item) => item.active)).toHaveLength(1);
     expect(navigation.context).toEqual({
       eventId: "demo-event",
@@ -47,6 +55,9 @@ describe("dashboard navigation model", () => {
 
     expect(navigation.workspace.every((item) => item.disabled)).toBe(true);
     expect(navigation.workspace.every((item) => item.href === undefined)).toBe(true);
+    expect(navigation.eventSettings).toEqual(
+      expect.objectContaining({ disabled: true, href: undefined }),
+    );
     expect(navigation.workspace[0]?.disabledReason).toMatch(/Choose an event/);
     expect(getDashboardWorkspaceContext("/events/").sectionLabel).toBe("Event list");
     expect(getEventSectionDefinition("settings")?.label).toBe("Settings");

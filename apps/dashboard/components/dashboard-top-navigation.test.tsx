@@ -70,6 +70,10 @@ describe("DashboardTopNavigation", () => {
     expect(activeLink.className).toContain("aria-[current=page]:after:scale-x-100");
     expect(activeLink.className).not.toContain("aria-[current=page]:bg-background");
     expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+    expect(within(desktopNavigation).queryByRole("link", { name: "Settings" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Event settings" }).getAttribute("href")).toBe(
+      "/events/demo-event/settings",
+    );
     expect(brand.getAttribute("href")).toBe("/");
     expect(screen.queryByRole("button", { name: "Open event workspace navigation" })).toBeNull();
     expect({
@@ -136,6 +140,11 @@ describe("DashboardTopNavigation", () => {
 
     expect(await screen.findByRole("dialog", { name: "Dashboard navigation" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Guests" }).getAttribute("aria-current")).toBe("page");
+    expect(
+      within(screen.getByRole("dialog", { name: "Dashboard navigation" })).queryByRole("link", {
+        name: "Settings",
+      }),
+    ).toBeNull();
 
     await user.keyboard("{Escape}");
 
@@ -198,8 +207,9 @@ describe("DashboardTopNavigation", () => {
     await user.click(compactTrigger);
 
     const eventPicker = screen.getByRole("dialog", { name: "Switch event" });
-    const selectedEventContext = document.querySelector<HTMLElement>(
-      '[data-slot="desktop-event-context"] [data-slot="selected-event-context"]',
+    const eventContextBar = document.querySelector<HTMLElement>('[data-slot="event-context-bar"]');
+    const selectedEventContext = eventContextBar?.querySelector<HTMLElement>(
+      '[data-slot="selected-event-context"]',
     );
     const currentEvent = within(eventPicker).getByRole("button", { name: /Spring Dinner/ });
     const nextEvent = within(eventPicker).getByRole("button", { name: /Autumn Launch/ });
@@ -209,6 +219,8 @@ describe("DashboardTopNavigation", () => {
     expect(currentEvent.getAttribute("aria-current")).toBe("page");
     expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/responses`);
     expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/responses`);
+    expect(eventContextBar).toBeTruthy();
+    expect(screen.getByRole("banner").contains(eventContextBar)).toBe(false);
     expect(selectedEventContext).toBeTruthy();
     expect(within(selectedEventContext as HTMLElement).getByText("Spring Dinner")).toBeTruthy();
     expect(within(selectedEventContext as HTMLElement).getByText("Responses")).toBeTruthy();
