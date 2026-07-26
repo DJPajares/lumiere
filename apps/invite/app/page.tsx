@@ -1,25 +1,18 @@
-import {
-  demoEventCatalog,
-  type DemoEventCatalogEntry,
-  type DemoEventKey,
-  type PublicEventSummary,
-} from "@lumiere/types";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { InviteImage } from "../components/invite-image";
 import { InviteShell } from "../components/invite-shell";
-import { createInviteApiClient } from "../lib/invite-api";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Lumiere Demo Invitations",
-  description: "Explore three published Lumiere invitations for a wedding, birthday, and launch.",
+  title: "Lumiere Invitation and RSVP Platform",
+  description:
+    "Create distinct event invitations, share private guest links, collect RSVPs, and follow guest activity with Lumiere.",
   openGraph: {
-    description: "Explore three published Lumiere invitations for a wedding, birthday, and launch.",
+    description:
+      "Create distinct event invitations, share private guest links, collect RSVPs, and follow guest activity with Lumiere.",
     siteName: "Lumiere Invite",
-    title: "Lumiere Demo Invitations",
+    title: "Lumiere Invitation and RSVP Platform",
     type: "website",
   },
   robots: {
@@ -28,61 +21,37 @@ export const metadata: Metadata = {
   },
 };
 
-type DemoEventState =
-  | {
-      catalog: DemoEventCatalogEntry;
-      event: PublicEventSummary;
-      status: "ready";
-    }
-  | {
-      catalog: DemoEventCatalogEntry;
-      status: "unavailable";
-    };
-
-const demoPresentation = {
-  wedding: {
-    artifact: "A / T",
-    artifactClass:
-      "border-[#a36a2f]/35 bg-[#fff9ef] font-serif text-[#76502c] shadow-[0_24px_70px_rgba(118,80,44,0.12)]",
-    eyebrow: "01 / Garden wedding",
-    rowClass: "bg-[#f2e7d6] text-[#2f241b]",
-    signalClass: "bg-[#a36a2f]",
-  },
-  "kids-birthday": {
-    artifact: "08",
-    artifactClass:
-      "rotate-[-4deg] border-[#ef7b45]/45 bg-[#fff4b8] font-sans text-[#b94d22] shadow-[12px_12px_0_#3f68b5]",
-    eyebrow: "02 / Sunroom birthday",
-    rowClass: "bg-[#fff2ca] text-[#263238]",
-    signalClass: "bg-[#ef7b45]",
-  },
-  launch: {
-    artifact: "18",
-    artifactClass:
-      "border-[#37e6ff]/45 bg-[#11191f] font-mono text-[#37e6ff] shadow-[0_0_42px_rgba(55,230,255,0.22)]",
-    eyebrow: "03 / Night launch",
-    rowClass: "bg-[#12191f] text-[#edf9fb]",
-    signalClass: "bg-[#37e6ff] shadow-[0_0_18px_rgba(55,230,255,0.7)]",
-  },
-} satisfies Record<
-  DemoEventKey,
+const productSteps = [
   {
-    artifact: string;
-    artifactClass: string;
-    eyebrow: string;
-    rowClass: string;
-    signalClass: string;
-  }
->;
+    description:
+      "Create one or many events, then choose the theme, mode, content, and section rhythm that fit each occasion.",
+    number: "01",
+    title: "Shape the event",
+  },
+  {
+    description:
+      "Publish a public invitation for event details and share unique links that unlock the right RSVP for each guest group.",
+    number: "02",
+    title: "Invite with context",
+  },
+  {
+    description:
+      "Track guest groups, response status, attendee counts, updates, and activity from one calm manager workspace.",
+    number: "03",
+    title: "Know who is coming",
+  },
+] as const;
 
-export default async function InviteHome() {
-  const demos = await loadDemoEvents();
-
+export default function InviteHome() {
   return (
     <InviteShell context="public">
       <div className="lumiere-invite-surface min-h-[100dvh] overflow-hidden">
-        <header className="mx-auto flex w-full max-w-[90rem] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
-          <div className="lumiere-type-eyebrow inline-flex items-center gap-2 text-[var(--accent-strong)]">
+        <header className="mx-auto flex w-full max-w-[90rem] items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-12">
+          <Link
+            aria-label="Lumiere home"
+            className="lumiere-type-eyebrow inline-flex items-center gap-2 rounded-[var(--radius-sm)] text-[var(--accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]"
+            href="/"
+          >
             <InviteImage
               alt=""
               aria-hidden="true"
@@ -92,174 +61,163 @@ export default async function InviteHome() {
               src="/logo.png?v=20260726"
               width={40}
             />
-            <span>Lumiere invite app</span>
-          </div>
+            <span>Lumiere</span>
+          </Link>
+          <p className="lumiere-type-caption hidden text-[color-mix(in_srgb,var(--foreground)_62%,transparent)] sm:block">
+            Invitation and RSVP platform
+          </p>
         </header>
 
-        <section className="mx-auto grid min-h-[calc(100dvh-5rem)] w-full max-w-[90rem] items-end gap-10 px-5 pb-12 pt-14 sm:px-8 sm:pb-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.65fr)] lg:gap-16 lg:px-12 lg:pb-20 lg:pt-20">
-          <div className="max-w-4xl self-center">
+        <section className="mx-auto grid min-h-[calc(100dvh-5rem)] w-full max-w-[90rem] items-center gap-12 px-5 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.7fr)] lg:gap-16 lg:px-12 lg:py-20">
+          <div className="max-w-4xl">
             <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">
-              Curated public invitations
+              Invitations and RSVP, thoughtfully connected
             </p>
             <h1 className="lumiere-type-hero mt-5 max-w-4xl text-balance">
-              Begin with the event, not the template.
+              Create the invitation. Share the right link. Know who is coming.
             </h1>
             <p className="lumiere-type-description mt-6 max-w-2xl text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
-              Move from a candlelit garden to a bright eighth birthday, then follow a neon signal
-              through an after-dark launch. Each demo is published from the same event system and
-              keeps its own voice.
+              Lumiere is a multi-event platform for hosts who want every invitation to feel
+              personal without losing control of guest groups, responses, and activity. Guests get
+              a beautiful, mobile-first experience with no account required.
             </p>
             <Link
               className="lumiere-type-control mt-8 inline-flex min-h-12 items-center justify-center gap-3 rounded-[var(--radius-md)] bg-[var(--accent)] px-6 text-[var(--accent-contrast)] shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--background)] active:scale-[0.99] motion-reduce:transition-none"
-              href="#demo-events"
+              href="/demos"
             >
               View demo events
-              <span aria-hidden="true">↓</span>
+              <span aria-hidden="true">↗</span>
             </Link>
           </div>
 
-          <div
-            aria-hidden="true"
-            className="relative hidden min-h-[28rem] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] lg:block"
+          <aside
+            aria-labelledby="invitation-flow-title"
+            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_24px_80px_color-mix(in_srgb,var(--foreground)_8%,transparent)] sm:p-7"
           >
-            <div className="absolute inset-x-[12%] top-[12%] h-px bg-[var(--border)]" />
-            <div className="absolute bottom-[12%] left-[18%] top-[12%] w-px bg-[var(--border)]" />
-            <div className="absolute right-[8%] top-[18%] size-52 rounded-full border border-[#a36a2f]/30 bg-[#f2e7d6]" />
-            <div className="absolute bottom-[15%] left-[8%] grid size-40 rotate-[-5deg] place-items-center bg-[#fff2ca] text-6xl font-black text-[#b94d22] shadow-[14px_14px_0_#3f68b5]">
-              08
-            </div>
-            <div className="absolute bottom-[9%] right-[7%] h-[45%] w-[44%] bg-[#12191f] p-5 text-[#37e6ff] shadow-[0_18px_60px_rgba(18,25,31,0.24)]">
-              <div className="h-full border-l border-[#37e6ff]/60 pl-4 font-mono text-xs uppercase tracking-[0.2em]">
-                Signal 18
+            <div className="absolute right-[-3rem] top-[-4rem] size-48 rounded-full bg-[color-mix(in_srgb,var(--accent)_13%,transparent)] blur-2xl" />
+            <div className="relative">
+              <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">One managed event</p>
+              <h2 className="lumiere-type-title mt-3 text-balance" id="invitation-flow-title">
+                Two ways to arrive. One clear response story.
+              </h2>
+
+              <div className="mt-7 grid gap-3">
+                <div className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-4">
+                  <p className="lumiere-type-label">Event manager</p>
+                  <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                    Theme, sections, guest groups, and access are configured together.
+                  </p>
+                </div>
+
+                <div aria-hidden="true" className="mx-auto h-5 w-px bg-[var(--border)]" />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[var(--radius-md)] border border-[var(--border)] p-4">
+                    <p className="lumiere-type-label">Public invitation</p>
+                    <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                      Event details without private RSVP access.
+                    </p>
+                  </div>
+                  <div className="rounded-[var(--radius-md)] border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))] p-4">
+                    <p className="lumiere-type-label">Private guest link</p>
+                    <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                      A group-aware RSVP with the correct party limit.
+                    </p>
+                  </div>
+                </div>
+
+                <div aria-hidden="true" className="mx-auto h-5 w-px bg-[var(--border)]" />
+
+                <div className="rounded-[var(--radius-md)] bg-[var(--foreground)] p-4 text-[var(--background)]">
+                  <p className="lumiere-type-label">Responses and activity</p>
+                  <p className="lumiere-type-caption mt-1 opacity-75">
+                    The manager sees who replied, who is attending, and what changed.
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="lumiere-type-caption absolute left-[24%] top-[25%] max-w-40 uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
-              One platform, event-owned art direction
-            </p>
-          </div>
+          </aside>
         </section>
 
-        <section aria-labelledby="demo-events-title" id="demo-events">
-          <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-4 px-5 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-8 lg:px-12">
+        <section className="border-y border-[var(--border)] bg-[var(--surface)]">
+          <div className="mx-auto grid w-full max-w-[90rem] gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[minmax(17rem,0.7fr)_minmax(0,1.15fr)] lg:gap-20 lg:px-12 lg:py-24">
             <div>
-              <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">Demo collection</p>
-              <h2 className="lumiere-type-title mt-3" id="demo-events-title">
-                Choose an invitation to enter
+              <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">The full journey</p>
+              <h2 className="lumiere-type-title mt-4 max-w-xl text-balance">
+                Built around the event, not a rigid template.
               </h2>
+              <p className="lumiere-type-description mt-5 max-w-xl text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                Weddings, birthdays, dinners, holidays, launches, and private gatherings can each
+                keep their own visual language while using the same dependable invitation system.
+              </p>
             </div>
-            <p className="lumiere-type-caption max-w-md text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-              These routes use published seed data. Private guest links are intentionally excluded
-              from this showcase.
-            </p>
+
+            <ol className="border-t border-[var(--border)]">
+              {productSteps.map((step) => (
+                <li
+                  className="grid gap-3 border-b border-[var(--border)] py-6 sm:grid-cols-[5rem_minmax(10rem,0.45fr)_minmax(0,1fr)] sm:items-start sm:gap-4"
+                  key={step.number}
+                >
+                  <span className="lumiere-type-numeric text-[var(--accent-strong)]">
+                    {step.number}
+                  </span>
+                  <h3 className="lumiere-type-label">{step.title}</h3>
+                  <p className="lumiere-type-caption text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                    {step.description}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="mx-auto grid w-full max-w-[90rem] gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[minmax(0,0.8fr)_minmax(22rem,1fr)] lg:gap-20 lg:px-12 lg:py-24">
+          <div>
+            <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">Clear by design</p>
+            <h2 className="lumiere-type-title mt-4 max-w-2xl text-balance">
+              The right experience for every person opening the invitation.
+            </h2>
           </div>
 
-          <ol className="border-y border-[var(--border)]">
-            {demos.map((demo) => (
-              <DemoEventRow demo={demo} key={demo.catalog.key} />
-            ))}
-          </ol>
+          <dl className="border-t border-[var(--border)]">
+            <div className="grid gap-2 border-b border-[var(--border)] py-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-6">
+              <dt className="lumiere-type-label">Public visitor</dt>
+              <dd className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                Opens the event page and sees the public story, details, location, and gallery
+                without private RSVP controls.
+              </dd>
+            </div>
+            <div className="grid gap-2 border-b border-[var(--border)] py-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-6">
+              <dt className="lumiere-type-label">Invited guest</dt>
+              <dd className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                Uses a unique group link to respond within the assigned party size—without creating
+                a guest account.
+              </dd>
+            </div>
+            <div className="grid gap-2 border-b border-[var(--border)] py-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-6">
+              <dt className="lumiere-type-label">Event manager</dt>
+              <dd className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+                Manages separate events, guest access, RSVP status, attendee counts, notifications,
+                and activity from the dashboard.
+              </dd>
+            </div>
+          </dl>
         </section>
+
+        <footer className="border-t border-[var(--border)]">
+          <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-3 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
+            <p className="lumiere-type-caption text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+              Lumiere — invitations, guest links, and RSVP in one event system.
+            </p>
+            <Link
+              className="lumiere-type-control w-fit rounded-[var(--radius-sm)] text-[var(--accent-strong)] underline decoration-[var(--border)] underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[var(--focus)]"
+              href="/demos"
+            >
+              View demo events
+            </Link>
+          </div>
+        </footer>
       </div>
     </InviteShell>
   );
-}
-
-function DemoEventRow({ demo }: { demo: DemoEventState }) {
-  const presentation = demoPresentation[demo.catalog.key];
-  const content = (
-    <article
-      className={`relative overflow-hidden px-5 py-9 transition-[filter] group-hover:brightness-[0.97] group-active:brightness-95 motion-reduce:transition-none sm:px-8 sm:py-11 lg:px-12 ${presentation.rowClass}`}
-    >
-      <span
-        aria-hidden="true"
-        className={`absolute inset-y-0 left-0 w-1 ${presentation.signalClass}`}
-      />
-      <div className="mx-auto grid w-full max-w-[90rem] gap-7 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center lg:grid-cols-[11rem_minmax(0,1fr)_minmax(15rem,0.45fr)] lg:gap-12">
-        <div
-          aria-hidden="true"
-          className={`grid aspect-square w-24 place-items-center rounded-[var(--radius-lg)] border text-3xl font-semibold sm:w-28 lg:w-36 lg:text-5xl ${presentation.artifactClass}`}
-        >
-          {presentation.artifact}
-        </div>
-
-        <div>
-          <p className="lumiere-type-eyebrow opacity-70">{presentation.eyebrow}</p>
-          <h3 className="lumiere-type-title mt-3 text-balance">{demo.catalog.title}</h3>
-          <p className="lumiere-type-description mt-3 max-w-2xl opacity-75">
-            {demo.catalog.summary}
-          </p>
-        </div>
-
-        {demo.status === "ready" ? (
-          <div className="grid gap-2 border-t border-current/20 pt-5 sm:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-            <p className="lumiere-type-label">{formatEventDate(demo.event)}</p>
-            <p className="lumiere-type-caption opacity-70">
-              {demo.event.venueName ?? "Venue details inside"}
-            </p>
-            <p className="lumiere-type-control mt-2 inline-flex items-center gap-2">
-              Open invitation <span aria-hidden="true">↗</span>
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-2 border-t border-current/20 pt-5 sm:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-            <p className="lumiere-type-label">Demo not seeded</p>
-            <p className="lumiere-type-caption max-w-xs opacity-75">
-              Run <code className="font-mono">pnpm db:seed</code>, then refresh this page. Other
-              available demos still work.
-            </p>
-          </div>
-        )}
-      </div>
-    </article>
-  );
-
-  if (demo.status === "unavailable") {
-    return <li className="border-b border-[var(--border)] last:border-b-0">{content}</li>;
-  }
-
-  return (
-    <li className="border-b border-[var(--border)] last:border-b-0">
-      <Link
-        aria-label={`Open ${demo.catalog.title} demo invitation`}
-        className="group block focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[var(--focus)]"
-        href={`/e/${demo.catalog.publicSlug}`}
-      >
-        {content}
-      </Link>
-    </li>
-  );
-}
-
-async function loadDemoEvents(): Promise<DemoEventState[]> {
-  const apiClient = createInviteApiClient();
-
-  return Promise.all(
-    demoEventCatalog.map(async (catalog): Promise<DemoEventState> => {
-      try {
-        const invite = await apiClient.getPublicEvent(catalog.publicSlug);
-
-        return {
-          catalog,
-          event: invite.event,
-          status: "ready",
-        };
-      } catch {
-        return {
-          catalog,
-          status: "unavailable",
-        };
-      }
-    }),
-  );
-}
-
-function formatEventDate(event: PublicEventSummary) {
-  try {
-    return new Intl.DateTimeFormat("en", {
-      dateStyle: "medium",
-      timeZone: event.timezone,
-    }).format(new Date(event.startsAt));
-  } catch {
-    return "Date details inside";
-  }
 }

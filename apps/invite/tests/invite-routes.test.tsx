@@ -12,13 +12,14 @@ import PublicEventPage, {
 } from "../app/e/[eventSlug]/page";
 import { metadata as inviteAppMetadata } from "../app/layout";
 import InviteHome, { metadata as inviteHomeMetadata } from "../app/page";
+import DemoInvitationsPage, { metadata as demoInvitationsMetadata } from "../app/demos/page";
 
 describe("invite app routes", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the root scaffold with links to available curated demos", async () => {
+  it("renders the product introduction and keeps curated demos on their own page", async () => {
     const fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
 
@@ -49,18 +50,22 @@ describe("invite app routes", () => {
     });
     vi.stubGlobal("fetch", fetch);
 
-    const element = await InviteHome();
-    const html = renderToStaticMarkup(element);
+    const homeHtml = renderToStaticMarkup(InviteHome());
+    const demoElement = await DemoInvitationsPage();
+    const demoHtml = renderToStaticMarkup(demoElement);
 
-    expect(html).toContain("Lumiere invite app");
-    expect(html).toContain("View demo events");
-    expect(html).toContain("/e/amara-theo-garden-wedding");
-    expect(html).toContain("/e/after-hours-studio-18");
-    expect(html).not.toContain('href="/e/milo-turns-eight"');
-    expect(html).toContain("Demo not seeded");
-    expect(html).toContain("pnpm db:seed");
-    expect(html).not.toContain("/g/");
-    expect(html).not.toContain("guestToken");
+    expect(homeHtml).toContain("Invitation and RSVP platform");
+    expect(homeHtml).toContain("Create the invitation. Share the right link.");
+    expect(homeHtml).toContain('href="/demos"');
+    expect(homeHtml).not.toContain("/e/amara-theo-garden-wedding");
+    expect(demoHtml).toContain("Public invitation gallery");
+    expect(demoHtml).toContain("/e/amara-theo-garden-wedding");
+    expect(demoHtml).toContain("/e/after-hours-studio-18");
+    expect(demoHtml).not.toContain('href="/e/milo-turns-eight"');
+    expect(demoHtml).toContain("Temporarily unavailable");
+    expect(demoHtml).not.toContain("pnpm db:seed");
+    expect(demoHtml).not.toContain("/g/");
+    expect(demoHtml).not.toContain("guestToken");
   });
 
   it("declares invite PWA metadata and icons", () => {
@@ -80,6 +85,13 @@ describe("invite app routes", () => {
       index: false,
     });
     expect(inviteHomeMetadata).toMatchObject({
+      title: "Lumiere Invitation and RSVP Platform",
+      robots: {
+        follow: false,
+        index: false,
+      },
+    });
+    expect(demoInvitationsMetadata).toMatchObject({
       title: "Lumiere Demo Invitations",
       robots: {
         follow: false,
