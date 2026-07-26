@@ -83,8 +83,12 @@ export type ThemeRsvpRendererId =
   | "basecamp-reply"
   | "check-in-console"
   | "common"
+  | "conservatory-reply"
+  | "courtyard-reply"
   | "editorial-ledger"
   | "festival-gate"
+  | "guest-list-reply"
+  | "place-setting-reply"
   | "shoreline-reply";
 
 export type ThemeRsvpPresentation = {
@@ -120,19 +124,23 @@ export type ThemeBackdropType = "editorial-whitespace" | "gradient" | "image" | 
 export type ThemeTexturePolicy = "fine-noise" | "frost" | "none" | "paper-grain" | "soft-speckle";
 
 export type ThemeOrnamentSet =
+  | "architectural-shadows"
   | "botanical"
   | "candlelight"
   | "confetti"
+  | "contact-sheet"
   | "contour-lines"
   | "constellation"
   | "drapery"
   | "editorial-rules"
   | "geometric-planes"
+  | "night-foliage"
   | "none"
   | "porcelain-rings"
   | "signal-grid"
   | "signature-thread"
   | "snowfall"
+  | "table-axis"
   | "tide-lines";
 
 export type ThemeDividerStyle =
@@ -205,8 +213,12 @@ export type ThemeComposition = {
   hero: {
     composition:
       | "centered-media"
+      | "architectural-courtyard"
+      | "banquet-axis"
+      | "botanical-canopy"
       | "color-plane"
       | "editorial-split"
+      | "flash-frame"
       | "fluid-horizon"
       | "layered-portrait"
       | "route-led"
@@ -224,9 +236,13 @@ export type ThemeComposition = {
   rsvpDesign:
     | "basecamp"
     | "check-in"
+    | "conservatory"
+    | "courtyard"
     | "default"
     | "editorial"
     | "festival"
+    | "guest-list"
+    | "place-setting"
     | "playful"
     | "seasonal"
     | "shoreline";
@@ -358,5 +374,9 @@ export const themeIds = [
   "tidal-glass",
   "solar-pop",
   "terrain-line",
+  "sienna-courtyard",
+  "ember-table",
+  "night-garden",
+  "monochrome-flash",
 ] as const;
 export type ThemeId = (typeof themeIds)[number];

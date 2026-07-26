@@ -13,7 +13,9 @@ import {
 } from "@lumiere/dashboard-ui/components/alert-dialog";
 import { Badge } from "@lumiere/dashboard-ui/components/badge";
 import { Button } from "@lumiere/dashboard-ui/components/button";
+import { Field, FieldLabel } from "@lumiere/dashboard-ui/components/field";
 import { Grid2X2Icon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
+import { Input } from "@lumiere/dashboard-ui/components/input";
 import { Skeleton } from "@lumiere/dashboard-ui/components/skeleton";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
@@ -223,6 +225,7 @@ function ThemeSelectorContent({
   const [galleryView, setGalleryView] = useState<ThemeGalleryView>("large");
   const [galleryViewStorageReady, setGalleryViewStorageReady] = useState(false);
   const [showIncompatible, setShowIncompatible] = useState(false);
+  const [themeQuery, setThemeQuery] = useState("");
   const [previewEntry, setPreviewEntry] = useState<ThemeGalleryEntry | null>(null);
   const [pendingTheme, setPendingTheme] = useState<ThemeGalleryEntry | null>(null);
   const [pendingThemeMode, setPendingThemeMode] = useState<ThemeMode | null>(null);
@@ -265,9 +268,9 @@ function ThemeSelectorContent({
           return false;
         }
 
-        return true;
+        return themeMatchesQuery(entry, themeQuery);
       }),
-    [galleryEntries, readinessFilter, showIncompatible],
+    [galleryEntries, readinessFilter, showIncompatible, themeQuery],
   );
   const incompatibleCount = galleryEntries.filter((entry) => !entry.isCompatible).length;
   const compatibleCount = galleryEntries.length - incompatibleCount;
@@ -471,7 +474,8 @@ function ThemeSelectorContent({
           <div>
             <h3 className="text-lg font-semibold">Theme gallery</h3>
             <p className="mt-1 text-sm text-muted-foreground" role="status">
-              {compatibleCount} compatible · {incompatibleCount} unavailable for this setup
+              {visibleEntries.length} shown · {compatibleCount} compatible · {incompatibleCount}{" "}
+              unavailable for this setup
             </p>
           </div>
           <div className="grid min-w-0 gap-5 lg:max-w-4xl lg:justify-self-end">
@@ -523,6 +527,17 @@ function ThemeSelectorContent({
             </div>
             <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] sm:items-end sm:border-t sm:border-border sm:pt-4">
               <p className="col-span-full hidden text-sm font-medium sm:block">Filter themes</p>
+              <Field className="min-w-0 sm:col-span-full">
+                <FieldLabel htmlFor="theme-search">Find a theme</FieldLabel>
+                <Input
+                  autoComplete="off"
+                  id="theme-search"
+                  onChange={(event) => setThemeQuery(event.currentTarget.value)}
+                  placeholder="Search by mood, event, venue, or theme name"
+                  type="search"
+                  value={themeQuery}
+                />
+              </Field>
               <div className="min-w-0">
                 <DashboardSelect
                   id="theme-mode-filter"
@@ -576,7 +591,7 @@ function ThemeSelectorContent({
           />
         ) : visibleEntries.length === 0 ? (
           <ThemeEmptyState
-            body="Adjust mode or readiness filters, or reveal incompatible themes to review their conflicts."
+            body="Try a different search, adjust mode or readiness filters, or reveal incompatible themes to review their conflicts."
             title="No themes match these filters"
           />
         ) : (
@@ -1158,6 +1173,27 @@ function readThemeSummary(theme: Theme) {
   }
 
   return typeof theme.metadata.description === "string" ? theme.metadata.description : theme.name;
+}
+
+function themeMatchesQuery(entry: ThemeGalleryEntry, query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [
+    entry.theme.name,
+    readThemeSummary(entry.theme),
+    entry.previewDefinition.description,
+    entry.previewDefinition.designRead,
+    entry.previewDefinition.previewData.eventTitle,
+    entry.previewDefinition.previewData.venueName,
+    ...entry.previewDefinition.supportedEventTypes,
+  ]
+    .join(" ")
+    .toLocaleLowerCase()
+    .includes(normalizedQuery);
 }
 
 function getThemeCompatibility(theme: Theme, eventType: EventType, mode: ThemeMode) {

@@ -88,6 +88,30 @@ export const basecampRsvpPresentation = createSpatialRsvpPresentation({
   rendererId: "basecamp-reply",
 });
 
+export const courtyardRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] shadow-[0_32px_96px_color-mix(in_srgb,var(--accent)_16%,transparent)]",
+  rendererId: "courtyard-reply",
+});
+
+export const placeSettingRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden border-y border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] shadow-[0_28px_88px_color-mix(in_srgb,var(--foreground)_20%,transparent)]",
+  rendererId: "place-setting-reply",
+});
+
+export const conservatoryRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--accent)_48%,var(--border))] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] shadow-[0_32px_104px_color-mix(in_srgb,var(--accent)_20%,transparent)]",
+  rendererId: "conservatory-reply",
+});
+
+export const guestListRsvpPresentation = createSpatialRsvpPresentation({
+  cardClassName:
+    "grid overflow-hidden border-2 border-[var(--foreground)] bg-[var(--surface)] shadow-[0.75rem_0.75rem_0_color-mix(in_srgb,var(--accent)_84%,transparent)]",
+  rendererId: "guest-list-reply",
+});
+
 export function createThemePresentation({
   hero,
   rsvp = defaultRsvpPresentation,

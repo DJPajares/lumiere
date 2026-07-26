@@ -83,7 +83,16 @@ describe("RSVP form flow helpers", () => {
     expect(editorialHtml).toContain('id="guestName-0"');
     expect(editorialHtml).toContain('id="rsvp-message"');
 
-    for (const themeId of ["neon-signal", "tidal-glass", "solar-pop", "terrain-line"] as const) {
+    for (const themeId of [
+      "neon-signal",
+      "tidal-glass",
+      "solar-pop",
+      "terrain-line",
+      "sienna-courtyard",
+      "ember-table",
+      "night-garden",
+      "monochrome-flash",
+    ] as const) {
       const theme = themeRegistry[themeId];
       const spatialHtml = renderToStaticMarkup(
         createElement(RsvpForm, {
@@ -102,7 +111,9 @@ describe("RSVP form flow helpers", () => {
       expect(spatialHtml).toContain('data-rsvp-details="closed"');
       expect(spatialHtml).toContain("lumiere-spatial-rsvp__body");
       expect(spatialHtml).toContain("Capacity");
-      expect(spatialHtml).toContain("4 guests");
+      expect(spatialHtml).toContain(
+        `4 ${resolveThemeRsvpCopy(theme).guestLabelPlural.toLowerCase()}`,
+      );
       expect(spatialHtml).toContain('aria-label="Attendance"');
       expect(spatialHtml).toContain('type="radio"');
     }

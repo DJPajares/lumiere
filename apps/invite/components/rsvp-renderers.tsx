@@ -69,8 +69,12 @@ const rsvpRenderers = {
   "basecamp-reply": BasecampRsvpRenderer,
   "check-in-console": CheckInConsoleRsvpRenderer,
   common: CommonRsvpRenderer,
+  "conservatory-reply": ConservatoryRsvpRenderer,
+  "courtyard-reply": CourtyardRsvpRenderer,
   "editorial-ledger": EditorialLedgerRsvpRenderer,
   "festival-gate": FestivalGateRsvpRenderer,
+  "guest-list-reply": GuestListRsvpRenderer,
+  "place-setting-reply": PlaceSettingRsvpRenderer,
   "shoreline-reply": ShorelineRsvpRenderer,
 } satisfies Record<ThemeRsvpRendererId, ComponentType<RsvpRendererContract>>;
 
@@ -214,6 +218,50 @@ function BasecampRsvpRenderer(contract: RsvpRendererContract) {
       layout="basecamp-reply"
       partyLabel="Route party"
       stationLabel="Basecamp"
+    />
+  );
+}
+
+function CourtyardRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="courtyard-reply"
+      partyLabel="Your gathering"
+      stationLabel="Courtyard reply"
+    />
+  );
+}
+
+function PlaceSettingRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="place-setting-reply"
+      partyLabel="Places held"
+      stationLabel="Your place at the table"
+    />
+  );
+}
+
+function ConservatoryRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="conservatory-reply"
+      partyLabel="Your party"
+      stationLabel="Conservatory reply"
+    />
+  );
+}
+
+function GuestListRsvpRenderer(contract: RsvpRendererContract) {
+  return (
+    <SpatialRsvpRenderer
+      contract={contract}
+      layout="guest-list-reply"
+      partyLabel="Guest list"
+      stationLabel="Final frame"
     />
   );
 }

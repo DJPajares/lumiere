@@ -1,5 +1,6 @@
 import {
   resolveThemeRendererSlot,
+  resolveThemeTypographyRoles,
   type ThemeDefinition,
   type ThemeTokenSet,
 } from "@lumiere/themes";
@@ -28,6 +29,7 @@ export function InviteThemePreviewRenderer({
   const sections = theme.previewData.sections.slice(0, thumbnail ? 1 : 3);
   const effects = theme.composition.effects;
   const compactThumbnail = thumbnail && thumbnailSize === "compact";
+  const typographyRoles = resolveThemeTypographyRoles(theme.typography.scale, theme.typography.roles);
 
   return (
     <div
@@ -98,6 +100,7 @@ export function InviteThemePreviewRenderer({
             position: "relative",
             textAlign: theme.composition.hero.composition === "centered-media" ? "center" : "left",
             zIndex: 1,
+            ...previewHeroTreatment(theme, tokens),
           }}
         >
           <p
@@ -105,11 +108,12 @@ export function InviteThemePreviewRenderer({
               color: tokens.accentStrong,
               fontFamily: theme.typography.css.bodyFamily,
               fontSize: thumbnail ? (compactThumbnail ? "8px" : "9px") : "11px",
-              fontWeight: 700,
+              fontStyle: typographyRoles.eyebrow.fontStyle,
+              fontWeight: typographyRoles.eyebrow.fontWeight,
               letterSpacing: theme.typography.css.eyebrowLetterSpacing,
-              lineHeight: 1.2,
+              lineHeight: typographyRoles.eyebrow.lineHeight,
               margin: 0,
-              textTransform: "uppercase",
+              textTransform: typographyRoles.eyebrow.textTransform,
             }}
           >
             {theme.previewData.eyebrow}
@@ -125,11 +129,13 @@ export function InviteThemePreviewRenderer({
                 : viewport === "mobile"
                   ? "42px"
                   : "54px",
-              fontWeight: 600,
-              letterSpacing: "-0.035em",
-              lineHeight: 0.98,
+              fontStyle: typographyRoles.hero.fontStyle,
+              fontWeight: typographyRoles.hero.fontWeight,
+              letterSpacing: typographyRoles.hero.letterSpacing,
+              lineHeight: typographyRoles.hero.lineHeight,
               margin: 0,
               maxWidth: "14ch",
+              textTransform: typographyRoles.hero.textTransform,
               ...(theme.composition.hero.composition === "centered-media"
                 ? { marginInline: "auto" }
                 : {}),
@@ -245,6 +251,7 @@ function RepresentativeSection({
   tokens: ThemeTokenSet;
 }) {
   const renderer = resolveThemeRendererSlot(theme, section.type);
+  const typographyRoles = resolveThemeTypographyRoles(theme.typography.scale, theme.typography.roles);
   const treatment = sectionTreatment(renderer.composition, tokens, thumbnail);
   const sectionForeground =
     renderer.composition === "full-bleed" ? tokens.background : tokens.foreground;
@@ -281,9 +288,12 @@ function RepresentativeSection({
           color: sectionForeground,
           fontFamily: theme.typography.css.displayFamily,
           fontSize: thumbnail ? "15px" : "22px",
-          fontWeight: 600,
-          lineHeight: 1.1,
+          fontStyle: typographyRoles.title.fontStyle,
+          fontWeight: typographyRoles.title.fontWeight,
+          letterSpacing: typographyRoles.title.letterSpacing,
+          lineHeight: typographyRoles.title.lineHeight,
           margin: thumbnail ? "7px 0 0" : "12px 0 0",
+          textTransform: typographyRoles.title.textTransform,
         }}
       >
         {section.title}
@@ -305,6 +315,32 @@ function RepresentativeSection({
   );
 }
 
+function previewHeroTreatment(theme: ThemeDefinition, tokens: ThemeTokenSet): CSSProperties {
+  switch (theme.composition.hero.composition) {
+    case "architectural-courtyard":
+      return {
+        background: `linear-gradient(112deg, transparent 0 68%, ${withAlpha(tokens.accent, "22")} 68%)`,
+        borderLeft: `4px solid ${tokens.accent}`,
+      };
+    case "banquet-axis":
+      return {
+        alignContent: "end",
+        background: `radial-gradient(ellipse at 50% 12%, ${withAlpha(tokens.accent, "28")}, transparent 48%)`,
+      };
+    case "botanical-canopy":
+      return {
+        background: `radial-gradient(ellipse at 82% 6%, ${withAlpha(tokens.accent, "24")}, transparent 38%)`,
+      };
+    case "flash-frame":
+      return {
+        background: `linear-gradient(96deg, transparent 0 70%, ${tokens.accent} 70% 72%, ${withAlpha(tokens.surfaceMuted, "88")} 72%)`,
+        borderBottom: `2px solid ${tokens.foreground}`,
+      };
+    default:
+      return {};
+  }
+}
+
 function PreviewOrnament({ theme, tokens }: { theme: ThemeDefinition; tokens: ThemeTokenSet }) {
   const ornaments = theme.composition.effects.ornaments;
 
@@ -314,55 +350,100 @@ function PreviewOrnament({ theme, tokens }: { theme: ThemeDefinition; tokens: Th
 
   const style: CSSProperties = {
     border: `1px solid ${withAlpha(tokens.accent, "66")}`,
-    borderRadius:
-      ornaments.set === "botanical"
-        ? "75% 15% 75% 15%"
-        : ornaments.set === "geometric-planes" || ornaments.set === "signal-grid"
-          ? "0"
-          : "999px",
-    background:
-      ornaments.set === "signal-grid"
-        ? `repeating-linear-gradient(90deg, transparent 0 11px, ${withAlpha(tokens.accent, "66")} 11px 12px)`
-        : ornaments.set === "geometric-planes"
-          ? `linear-gradient(135deg, ${tokens.accent} 0 48%, ${tokens.warning} 48% 72%, ${tokens.surfaceMuted} 72%)`
-          : ornaments.set === "contour-lines"
-            ? `repeating-radial-gradient(ellipse, transparent 0 9px, ${withAlpha(tokens.accent, "66")} 10px 11px)`
-            : ornaments.set === "tide-lines"
-              ? `radial-gradient(ellipse at 50% 100%, transparent 0 48%, ${withAlpha(tokens.accent, "66")} 49% 50%, transparent 51%)`
-              : "transparent",
-    boxShadow:
-      ornaments.set === "constellation"
-        ? `22px 18px 0 -3px ${tokens.accent}, 48px -10px 0 -4px ${tokens.accentStrong}`
-        : ornaments.set === "confetti"
-          ? `18px 28px 0 -2px ${tokens.warning}, 44px 8px 0 -3px ${tokens.accentStrong}`
-          : `0 0 36px ${withAlpha(tokens.accent, "44")}`,
-    height:
-      ornaments.set === "editorial-rules"
-        ? "1px"
-        : ornaments.set === "signal-grid"
-          ? "88%"
-          : "72px",
+    borderRadius: "999px",
+    background: "transparent",
+    boxShadow: `0 0 36px ${withAlpha(tokens.accent, "44")}`,
+    height: "72px",
     opacity: ornaments.density === "sparse" ? 0.45 : 0.7,
     pointerEvents: "none",
     position: "absolute",
     right: "7%",
     top: "8%",
-    transform:
-      ornaments.set === "botanical"
-        ? "rotate(28deg)"
-        : ornaments.set === "geometric-planes"
-          ? "rotate(-8deg)"
-          : "none",
-    width:
-      ornaments.set === "editorial-rules"
-        ? "34%"
-        : ornaments.set === "signal-grid"
-          ? "34%"
-          : "72px",
+    transform: "none",
+    width: "72px",
     zIndex: 0,
+    ...previewOrnamentTreatment(ornaments.set, tokens),
   };
 
   return <span aria-hidden="true" data-preview-ornament={ornaments.set} style={style} />;
+}
+
+function previewOrnamentTreatment(
+  ornamentSet: ThemeDefinition["composition"]["effects"]["ornaments"]["set"],
+  tokens: ThemeTokenSet,
+): CSSProperties {
+  switch (ornamentSet) {
+    case "architectural-shadows":
+      return {
+        background: `linear-gradient(118deg, transparent 0 52%, ${withAlpha(tokens.accent, "33")} 52%)`,
+        borderRadius: "999px 999px 0 0",
+        boxShadow: `12px 12px 0 ${withAlpha(tokens.accent, "22")}`,
+        height: "86px",
+        width: "66px",
+      };
+    case "botanical":
+      return { borderRadius: "75% 15% 75% 15%", transform: "rotate(28deg)" };
+    case "confetti":
+      return {
+        boxShadow: `18px 28px 0 -2px ${tokens.warning}, 44px 8px 0 -3px ${tokens.accentStrong}`,
+      };
+    case "constellation":
+      return {
+        boxShadow: `22px 18px 0 -3px ${tokens.accent}, 48px -10px 0 -4px ${tokens.accentStrong}`,
+      };
+    case "contact-sheet":
+      return {
+        background: `linear-gradient(90deg, ${tokens.accent} 0 4%, transparent 4% 96%, ${tokens.accent} 96%)`,
+        borderRadius: "0",
+        boxShadow: "none",
+        height: "82px",
+        width: "64px",
+      };
+    case "contour-lines":
+      return {
+        background: `repeating-radial-gradient(ellipse, transparent 0 9px, ${withAlpha(tokens.accent, "66")} 10px 11px)`,
+      };
+    case "editorial-rules":
+      return { height: "1px", width: "34%" };
+    case "geometric-planes":
+      return {
+        background: `linear-gradient(135deg, ${tokens.accent} 0 48%, ${tokens.warning} 48% 72%, ${tokens.surfaceMuted} 72%)`,
+        borderRadius: "0",
+        transform: "rotate(-8deg)",
+      };
+    case "night-foliage":
+      return {
+        background: `linear-gradient(142deg, ${withAlpha(tokens.accent, "44")}, transparent 68%)`,
+        borderRadius: "82% 18% 72% 28% / 68% 24% 76% 32%",
+        boxShadow: `inset 18px -12px 0 ${withAlpha(tokens.accent, "18")}`,
+        height: "92px",
+        transform: "rotate(-22deg)",
+        width: "70px",
+      };
+    case "signal-grid":
+      return {
+        background: `repeating-linear-gradient(90deg, transparent 0 11px, ${withAlpha(tokens.accent, "66")} 11px 12px)`,
+        borderRadius: "0",
+        height: "88%",
+        width: "34%",
+      };
+    case "table-axis":
+      return {
+        background: `linear-gradient(90deg, transparent, ${tokens.accentStrong} 18% 82%, transparent)`,
+        border: "0",
+        borderRadius: "0",
+        boxShadow: `24px 0 0 -22px ${tokens.accent}, -24px 0 0 -22px ${tokens.accent}`,
+        height: "1px",
+        top: "18%",
+        width: "46%",
+      };
+    case "tide-lines":
+      return {
+        background: `radial-gradient(ellipse at 50% 100%, transparent 0 48%, ${withAlpha(tokens.accent, "66")} 49% 50%, transparent 51%)`,
+      };
+    default:
+      return {};
+  }
 }
 
 function sectionTreatment(

@@ -186,14 +186,28 @@ describe("public invite section renderers", () => {
       ]
     `);
 
-    const nonPaperDirections = [
+    const spatialDirections = [
       ["neon-signal", "neon-signal", "lumiere-hero--neon-signal", "signal-route"],
       ["tidal-glass", "tidal-glass", "lumiere-hero--tidal-glass", "fluid-horizon"],
       ["solar-pop", "solar-pop", "lumiere-hero--solar-pop", "color-plane"],
       ["terrain-line", "terrain-line", "lumiere-hero--terrain-line", "route-led"],
+      [
+        "sienna-courtyard",
+        "sienna-courtyard",
+        "lumiere-hero--sienna-courtyard",
+        "architectural-courtyard",
+      ],
+      ["ember-table", "ember-table", "lumiere-hero--ember-table", "banquet-axis"],
+      ["night-garden", "night-garden", "lumiere-hero--night-garden", "botanical-canopy"],
+      [
+        "monochrome-flash",
+        "monochrome-flash",
+        "lumiere-hero--monochrome-flash",
+        "flash-frame",
+      ],
     ] as const;
 
-    for (const [themeId, compositionMap, heroClassName, heroComposition] of nonPaperDirections) {
+    for (const [themeId, compositionMap, heroClassName, heroComposition] of spatialDirections) {
       const invite = createInvite([
         createSection({
           content: {
@@ -219,7 +233,10 @@ describe("public invite section renderers", () => {
         }),
       ]);
       invite.selectedThemeId = themeId;
-      invite.themeMode = themeId === "neon-signal" ? "dark" : "light";
+      invite.themeMode =
+        themeId === "neon-signal" || themeId === "ember-table" || themeId === "night-garden"
+          ? "dark"
+          : "light";
 
       const html = renderToStaticMarkup(createElement(PublicInvitation, { invite }));
 
@@ -654,6 +671,19 @@ describe("public invite section renderers", () => {
 
     vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
     vi.stubGlobal("fetch", fetchMock);
+    window.matchMedia = vi.fn(
+      (query: string): MediaQueryList =>
+        ({
+          addEventListener: vi.fn(),
+          addListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+          matches: false,
+          media: query,
+          onchange: null,
+          removeEventListener: vi.fn(),
+          removeListener: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
     (
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;

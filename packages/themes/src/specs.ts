@@ -109,14 +109,18 @@ const createExpansionThemeTemplateSpec = (
   themeId:
     | "celestial-gold"
     | "editorial-ivory"
+    | "ember-table"
     | "evergreen-folio"
     | "garden-light"
     | "modern-minimal"
+    | "monochrome-flash"
     | "neon-signal"
+    | "night-garden"
     | "noel-v2"
     | "porcelain-blue"
     | "solar-pop"
     | "signature"
+    | "sienna-courtyard"
     | "terrain-line"
     | "tidal-glass"
     | "velvet-dusk",
@@ -991,6 +995,110 @@ export const themeTemplateSpecs = {
     ],
     namingGuidance:
       "Avoid national-park marks, trail-app language, outdoor brands, and expedition stereotypes.",
+  }),
+  "sienna-courtyard": createExpansionThemeTemplateSpec("sienna-courtyard", {
+    moodBoardNotes: [
+      "Warm limestone, directional sunlight, terracotta structure, and real architectural thresholds.",
+      "Sculptural Roman serif titles balance restrained humanist copy and generous breathing room.",
+      "Portal portraits, courtyard studies, and a long horizontal reply table create the destination rhythm.",
+    ],
+    antiSlopConstraints: [
+      "No tile motifs, olive-branch clip art, faux travel posters, or generalized Mediterranean stereotypes.",
+      "Do not place copy directly on uncontrolled sunlit photography or clip titles inside portal masks.",
+      "Avoid recoloring Signature or Garden Light; preserve the stone threshold and courtyard progression.",
+    ],
+    lightGuidance:
+      "Use limestone and plaster fields with espresso copy and terracotta only for structure, focus, and primary action.",
+    darkGuidance:
+      "Use umber-black and warm ivory with sun-baked coral accents and readable opaque surfaces.",
+    statusGuidance:
+      "Terracotta and coral remain decorative; every RSVP state uses semantic color, structure, and explicit copy.",
+    reducedMotion:
+      "Remove threshold reveals and light passes while preserving portals, sunlines, and the complete reading order.",
+    dashboardRequirements: [
+      "Show Supper in the Courtyard, Casa Loma Courtyard, and the portal portrait geometry.",
+      "Include the long reply-table cue so the preview reads as architecture rather than a warm color swatch.",
+    ],
+    namingGuidance:
+      "Sienna Courtyard is an original descriptive name; avoid hospitality, travel, venue, and architecture-studio trademarks.",
+  }),
+  "ember-table": createExpansionThemeTemplateSpec("ember-table", {
+    moodBoardNotes: [
+      "Coal brown, oat, live-ember accents, and wide documentary dining photography establish intimacy.",
+      "Confident grotesk titles and compact sequence labels follow one continuous table axis.",
+      "Hands, hosts, room atmosphere, shared plates, and a place-setting reply keep the gathering human.",
+    ],
+    antiSlopConstraints: [
+      "Do not use faux menus, cutlery icons, flames, steam, candle flicker, or food-themed clip art.",
+      "Culinary language supplements rather than replaces standard RSVP labels and accessibility meaning.",
+      "Avoid recoloring Velvet Dusk; preserve the documentary table axis and visible places-held flow.",
+    ],
+    lightGuidance:
+      "Use oat and cream surfaces with espresso copy and oxblood reserved for structure and action.",
+    darkGuidance:
+      "Use coal-brown atmosphere, bone copy, charred surfaces, and a restrained live-ember signal.",
+    statusGuidance:
+      "Ember is never reused as an error state; semantic response colors and labels remain distinct.",
+    reducedMotion:
+      "Remove axis reveals and image drift while retaining the entire evening sequence and table structure.",
+    dashboardRequirements: [
+      "Show A Table for Twelve, The Long Room, and one wide documentary room image.",
+      "Include the places-held reply cue without turning the preview into a restaurant menu.",
+    ],
+    namingGuidance:
+      "Ember Table is an original descriptive name; avoid restaurant, chef, hospitality, and culinary-brand references.",
+  }),
+  "night-garden": createExpansionThemeTemplateSpec("night-garden", {
+    moodBoardNotes: [
+      "Forest-black atmosphere, moon ivory, orchid light, and real greenhouse photography create a romantic evening field.",
+      "Lyrical flared serif titles sit inside opaque clearings framed by abstract canopy shadow.",
+      "Vertical story growth, macro nocturnal imagery, and a conservatory reply establish the chapter rhythm.",
+    ],
+    antiSlopConstraints: [
+      "No vintage botanical plates, falling petals, drifting leaves, floral clip art, or ambient animation loops.",
+      "Foliage remains outside text-safe fields and photography keeps faces and details inspectable.",
+      "Avoid recoloring Garden Light or Velvet Dusk; preserve glasshouse geometry and the illuminated clearing.",
+    ],
+    lightGuidance:
+      "Use chalk garden fields, deep leaf copy, warm bloom surfaces, and restrained wine structure.",
+    darkGuidance:
+      "Use forest-black, moon ivory, canopy green, and orchid light without losing opaque reading surfaces.",
+    statusGuidance:
+      "Orchid never carries attendance or validation alone; explicit state copy and semantic colors remain visible.",
+    reducedMotion:
+      "Remove canopy, mask, bloom, and image movement while showing every section in its final readable state.",
+    dashboardRequirements: [
+      "Show After the Garden Closes, Orchid House, and the abstract canopy portrait.",
+      "Include the conservatory reply clearing without reducing the design to a dark floral card.",
+    ],
+    namingGuidance:
+      "Night Garden is a generic mood name; avoid gardens, conservatories, florists, illustrators, and venue trademarks.",
+  }),
+  "monochrome-flash": createExpansionThemeTemplateSpec("monochrome-flash", {
+    moodBoardNotes: [
+      "Gallery gray, camera black, high-contrast documentary photography, and one red splice create immediacy.",
+      "Oversized condensed grotesk titles, neutral sans copy, and mono timestamps separate display from reading.",
+      "Portrait diptychs, a contact sequence, and a hard-edged guest-list close make photography the structure.",
+    ],
+    antiSlopConstraints: [
+      "Never simulate a camera flash, strobe, flicker, rapid alternating contrast, or transient success effect.",
+      "Do not crush photographs into decorative thumbnails or use condensed and mono type for body copy.",
+      "Avoid magazine mastheads, camera brands, film logos, and a recolored Editorial Ivory layout.",
+    ],
+    lightGuidance:
+      "Use gallery gray and clean surfaces with near-black copy and a single restrained signal-red splice.",
+    darkGuidance:
+      "Use camera black, flash-white copy, graphite surfaces, and coral-red structure without glow.",
+    statusGuidance:
+      "Red remains a structural cue; RSVP and validation always use explicit labels and dedicated semantic colors.",
+    reducedMotion:
+      "Remove every clip and opacity cut while retaining hard registration lines and the complete contact sequence.",
+    dashboardRequirements: [
+      "Show One Night Only, Framehouse 24, a high-contrast portrait, and the 21:30 timestamp.",
+      "Include the guest-list frame while avoiding fake film controls or a magazine-cover thumbnail.",
+    ],
+    namingGuidance:
+      "Monochrome Flash is an original descriptive name; avoid photographers, publications, camera makers, studios, and nightlife brands.",
   }),
 } satisfies Record<ThemeId, ThemeTemplateSpec>;
 

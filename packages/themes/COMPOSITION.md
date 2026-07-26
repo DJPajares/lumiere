@@ -39,3 +39,14 @@ Use real event imagery for inspectable subjects: couple/hosts, celebrant, venue,
 - Birthday Feature: full-bleed celebrant hero, editorial details, feature gallery, framed family RSVP.
 
 These maps are exported as `sampleInviteCompositionMaps` and should guide event-type defaults without preventing theme-specific variation.
+
+## Premium Portfolio Maps
+
+`portfolioInviteCompositionMaps` adds four stable, metadata-driven rhythms:
+
+- Sienna Courtyard: architectural threshold, portrait arcade, room-sequence story, courtyard study, arrival threshold, and courtyard reply.
+- Ember Table: table-axis opening, evening sequence, host band, gathering story, banquet chapter, and place-setting reply.
+- Night Garden: canopy opening, paired understory, vertical-bloom story, macro garden, glasshouse arrival, conservatory reply, and closing bloom.
+- Monochrome Flash: hard-frame opening, registration strip, portrait diptychs, scene cuts, contact sequence, arrival frame, and guest-list reply.
+
+Their hero and RSVP variants are resolved from typed theme metadata. Apps must not branch on concrete theme IDs.

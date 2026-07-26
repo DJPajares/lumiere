@@ -270,6 +270,46 @@ Complete this as one small shared-contract preparation patch at the start of the
 
 This contract patch is an implementation prerequisite, not a fifth visual direction. If an enum addition has no consumer in one of the approved maps, do not add it.
 
+## Premium Portfolio Wave
+
+These four directions extend the collection through event-specific spatial metaphors rather than another luxury-paper variation. All support light, dark, system, and toggleable modes, preserve the complete section contract, and own distinct composition maps, hero structures, ornament systems, and RSVP renderers.
+
+### Sienna Courtyard
+
+- Fit: weddings, dinners, milestone birthdays, private events, and destination-led gatherings.
+- Design read: warm limestone, espresso copy, terracotta structure, directional sunlight, and sculptural Roman serif type.
+- Composition: architectural threshold hero → portrait arcade → room-sequence story → courtyard image study → arrival threshold → long courtyard reply.
+- Imagery: real architecture, people framed by openings, long tables, and directional light. Avoid tile motifs, olive branches, and travel-poster stereotypes.
+- RSVP: **Courtyard Reply**, a horizontal gathering surface that makes party capacity visible before attendance and becomes a clear vertical flow on mobile.
+- Motion: one-time threshold reveals only. Reduced motion shows final portals, lines, and reading order immediately.
+
+### Ember Table
+
+- Fit: dinners, rehearsal dinners, intimate weddings, holidays, milestone birthdays, and private gatherings.
+- Design read: coal brown, oat, live-ember accent, confident grotesk type, and warm documentary room photography.
+- Composition: table-axis hero → evening sequence → host band → gathering story → banquet image chapter → place-setting reply.
+- Imagery: hands, hosts, shared plates, room atmosphere, and candlelit faces. Avoid faux menus, cutlery icons, flames, steam, and culinary clip art.
+- RSVP: **Your Place at the Table**, keeping places held, attendance, names, dietary answers, and host notes explicit.
+- Motion: restrained axis reveals and image entry, never flicker or flame simulation. Reduced motion preserves the entire table sequence.
+
+### Night Garden
+
+- Fit: weddings, dinners, milestone birthdays, private events, and romantic evening occasions.
+- Design read: forest-black atmosphere, moon ivory, orchid light, lyrical serif type, greenhouse geometry, and abstract leaf shadow.
+- Composition: canopy hero → moon date → paired hosts → vertical-bloom story → macro garden → glasshouse arrival → conservatory reply.
+- Imagery: real night gardens, greenhouse glass, macro petals, shadowed foliage, and candlelit people. Avoid botanical plates and falling-petal effects.
+- RSVP: **Conservatory Reply**, an illuminated clearing with visible capacity, explicit states, and a static confirmed outcome.
+- Motion: one-time canopy and image reveals. Reduced motion removes every mask and bloom transition.
+
+### Monochrome Flash
+
+- Fit: launches, milestone birthdays, dinners, private events, and art- or nightlife-led occasions.
+- Design read: gallery gray, camera black, high-contrast photography, oversized condensed grotesk type, mono timestamps, and one red splice.
+- Composition: hard-frame hero → registration date → portrait diptychs → scene-cut story → contact sequence → arrival frame → guest-list reply.
+- Imagery: direct candids, sharp portrait crops, room details, and inspectable monochrome range. Avoid fake film controls, camera brands, and magazine mastheads.
+- RSVP: **Guest List**, a full-width hard frame with visibly labelled party capacity, attendance, names, questions, and a stable named confirmation.
+- Motion: quick opacity and translate cuts only; never simulate flash, strobe, flicker, or rapidly alternating contrast. Reduced motion is fully static.
+
 ## Naming And IP
 
 Theme names must stay generic unless licensing is resolved. Avoid protected characters, fashion labels, venue names, songs, films, or franchise cues. Mood references are fine; direct imitation is not.

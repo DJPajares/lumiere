@@ -26,12 +26,16 @@ export type ThemeParallaxProfile = "none" | "hero-only" | "hero-and-media" | "st
 export type InviteCompositionMapId =
   | "birthday-feature"
   | "celestial-evening"
+  | "ember-table"
   | "garden-celebration"
   | "ivory-editorial"
   | "minimal-modern"
+  | "monochrome-flash"
   | "neon-signal"
+  | "night-garden"
   | "neutral-basic"
   | "porcelain-gallery"
+  | "sienna-courtyard"
   | "signature-suite"
   | "solar-pop"
   | "terrain-line"
@@ -807,6 +811,196 @@ export const nonPaperInviteCompositionMaps: Record<
   },
 };
 
+export const portfolioInviteCompositionMaps: Record<
+  "emberTable" | "monochromeFlash" | "nightGarden" | "siennaCourtyard",
+  InviteCompositionMap
+> = {
+  siennaCourtyard: {
+    eventTypes: ["wedding", "dinner", "birthday", "private_event", "other"],
+    id: "sienna-courtyard",
+    name: "Sienna Courtyard Progression",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open through a warm architectural threshold with one protected title field.",
+        section: "introduction",
+      },
+      {
+        composition: "editorial-split",
+        motion: "media-reveal",
+        note: "Frame hosts or celebrants inside a measured arcade rather than a card pair.",
+        section: "profile",
+      },
+      {
+        composition: "timeline",
+        motion: "timeline-reveal",
+        note: "Move the story room by room along one quiet sunline.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Lead with one architectural photograph and two human-scale supporting moments.",
+        section: "gallery",
+      },
+      {
+        composition: "layered-media",
+        motion: "section-reveal",
+        note: "Treat arrival as a threshold with the practical map kept fully inspectable.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Resolve the invitation at one long courtyard reply table.",
+        section: "rsvp",
+      },
+    ],
+  },
+  emberTable: {
+    eventTypes: ["dinner", "wedding", "holiday", "birthday", "private_event", "other"],
+    id: "ember-table",
+    name: "Ember Table Sequence",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Begin on a long table axis with hosts, time, and place held in one scene.",
+        section: "introduction",
+      },
+      {
+        composition: "timeline",
+        motion: "section-reveal",
+        note: "Arrange the evening as a course-like sequence without menu cosplay.",
+        section: "details",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Use a documentary host band with hands, faces, and room atmosphere.",
+        section: "profile",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Pair the gathering story with one service detail or room photograph.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "gallery-drift",
+        note: "Build a banquet image chapter around one wide overhead or room view.",
+        section: "gallery",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Finish with a clear place-setting reply and visible places held.",
+        section: "rsvp",
+      },
+    ],
+  },
+  nightGarden: {
+    eventTypes: ["wedding", "dinner", "birthday", "private_event", "other"],
+    id: "night-garden",
+    name: "Night Garden Chapters",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open under an abstract canopy with an opaque, moonlit reading field.",
+        section: "introduction",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Pair hosts with shadowed greenhouse depth while keeping faces inspectable.",
+        section: "profile",
+      },
+      {
+        composition: "timeline",
+        motion: "timeline-reveal",
+        note: "Let the story grow vertically along one restrained bloom rail.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "gallery-drift",
+        note: "Lead with a nocturnal garden image and support it with macro and human moments.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Set arrival details beside a clear glasshouse map and address.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Open a calm illuminated clearing for the conservatory reply.",
+        section: "rsvp",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Close on one static bloom or final host message rather than a decorative card.",
+        section: "outro",
+      },
+    ],
+  },
+  monochromeFlash: {
+    eventTypes: ["launch", "birthday", "dinner", "private_event", "other"],
+    id: "monochrome-flash",
+    name: "Monochrome Flash Cut",
+    rhythm: [
+      {
+        composition: "full-bleed",
+        motion: "hero-reveal",
+        note: "Open on one high-contrast frame with a protected title and timestamp.",
+        section: "introduction",
+      },
+      {
+        composition: "framed",
+        motion: "section-reveal",
+        note: "Present time and place as a sharp registration strip, not a dashboard card.",
+        section: "date",
+      },
+      {
+        composition: "editorial-split",
+        motion: "media-reveal",
+        note: "Use direct portrait diptychs with neutral body copy and one red structural cue.",
+        section: "profile",
+      },
+      {
+        composition: "layered-media",
+        motion: "media-reveal",
+        note: "Cut between story scenes without simulating flashes, strobes, or flicker.",
+        section: "story",
+      },
+      {
+        composition: "gallery-feature",
+        motion: "media-reveal",
+        note: "Make the contact sequence inspectable through one lead frame and crisp supporting crops.",
+        section: "gallery",
+      },
+      {
+        composition: "editorial-split",
+        motion: "section-reveal",
+        note: "Keep arrival data grounded beside a practical monochrome map.",
+        section: "location",
+      },
+      {
+        composition: "full-bleed",
+        motion: "section-reveal",
+        note: "Resolve the sequence with a stable guest-list entry and no transient success effect.",
+        section: "rsvp",
+      },
+    ],
+  },
+};
+
 export const inviteVisualCompositionSystem = {
   antiCardStackPrinciple:
     "Only the neutral/basic theme may rely on framed cards as the dominant rhythm; premium themes must mix full-bleed, editorial, timeline, gallery, and layered-media moments.",
@@ -819,5 +1013,6 @@ export const inviteVisualCompositionSystem = {
   motionRules: inviteMotionRules,
   expansionMaps: expansionInviteCompositionMaps,
   nonPaperMaps: nonPaperInviteCompositionMaps,
+  portfolioMaps: portfolioInviteCompositionMaps,
   sampleMaps: sampleInviteCompositionMaps,
 } as const;

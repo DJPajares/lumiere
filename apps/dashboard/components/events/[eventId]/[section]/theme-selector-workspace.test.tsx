@@ -51,7 +51,11 @@ describe("ThemeSelectorWorkspace", () => {
     await screen.findByRole("heading", { name: "Premium" });
 
     expect(screen.queryByRole("heading", { name: "Kids" })).toBeNull();
-    expect(screen.getByText("1 compatible · 1 unavailable for this setup")).toBeTruthy();
+    expect(screen.getByText("1 shown · 1 compatible · 1 unavailable for this setup")).toBeTruthy();
+    const themeSearch = screen.getByRole("searchbox", { name: "Find a theme" });
+    await user.type(themeSearch, "editorial");
+    expect(screen.getByRole("heading", { name: "Premium" })).toBeTruthy();
+    await user.clear(themeSearch);
     expect(
       (screen.getByRole("button", { name: "Use Premium" }) as HTMLButtonElement).disabled,
     ).toBe(true);

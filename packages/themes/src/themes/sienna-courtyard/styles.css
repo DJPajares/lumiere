@@ -1,0 +1,106 @@
+[data-theme-id="sienna-courtyard"] .lumiere-invitation {
+  background:
+    linear-gradient(
+      112deg,
+      transparent 0 68%,
+      color-mix(in srgb, var(--accent) 7%, transparent) 68% 84%,
+      transparent 84%
+    ),
+    var(--background);
+}
+
+[data-theme-id="sienna-courtyard"]
+  [data-ornament-set="architectural-shadows"]
+  .lumiere-ornament {
+  border: 1px solid color-mix(in srgb, currentColor 46%, transparent);
+  border-radius: 50% 50% 0 0;
+  background: linear-gradient(
+    118deg,
+    transparent 0 54%,
+    color-mix(in srgb, currentColor 13%, transparent) 54%
+  );
+  box-shadow: 1.25rem 1.25rem 0 color-mix(in srgb, currentColor 8%, transparent);
+}
+
+[data-theme-id="sienna-courtyard"] .lumiere-hero-copy {
+  position: relative;
+  padding-block: clamp(1rem, 4vw, 3rem);
+}
+
+[data-theme-id="sienna-courtyard"] .lumiere-hero-copy::after {
+  display: block;
+  width: min(9rem, 32vw);
+  height: 0.2rem;
+  margin-top: 2rem;
+  content: "";
+  background: var(--accent);
+}
+
+[data-theme-id="sienna-courtyard"] .lumiere-hero-media {
+  border: 0;
+  box-shadow:
+    1rem 1rem 0 color-mix(in srgb, var(--accent) 18%, transparent),
+    0 2.5rem 6rem color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+[data-theme-id="sienna-courtyard"] [data-section-composition="timeline"] .lumiere-story-rail {
+  border-color: var(--accent);
+}
+
+[data-theme-id="sienna-courtyard"] :is(.lumiere-detail-item, .lumiere-profile-card) {
+  border-width: 1px 0 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme-id="sienna-courtyard"] .lumiere-section-image {
+  border-radius: 50% 50% var(--radius-sm) var(--radius-sm);
+}
+
+[data-theme-id="sienna-courtyard"] .lumiere-map-preview {
+  --map-caption-background: color-mix(in srgb, var(--surface) 96%, transparent);
+  --map-caption-border: var(--accent);
+  --map-embed-filter: sepia(0.18) saturate(0.82) contrast(1.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0.75rem 0.75rem 0 color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+[data-theme-id="sienna-courtyard"] [data-rsvp-renderer="courtyard-reply"] {
+  border-block-width: 1px;
+  border-inline-width: 0;
+}
+
+[data-theme-id="sienna-courtyard"] :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-id="sienna-courtyard"]
+    [data-motion-state="visible"]
+    :is(.lumiere-section__inner, .lumiere-hero-copy) {
+    animation: sienna-threshold 760ms cubic-bezier(0.2, 0.72, 0.2, 1) both;
+  }
+}
+
+@keyframes sienna-threshold {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+
+@media (max-width: 639px) {
+  [data-theme-id="sienna-courtyard"] .lumiere-section-image {
+    border-radius: 3.5rem 3.5rem var(--radius-sm) var(--radius-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme-id="sienna-courtyard"] * {
+    animation: none !important;
+    transform: none !important;
+  }
+}

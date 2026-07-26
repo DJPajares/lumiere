@@ -17,6 +17,7 @@ import {
   inviteVisualCompositionSystem,
   normalizeLocationContent,
   nonPaperInviteCompositionMaps,
+  portfolioInviteCompositionMaps,
   reverieReferenceLinks,
   resolveTheme,
   resolveThemeRsvpCopy,
@@ -44,6 +45,12 @@ const expansionThemeIds = [
 ] as const;
 
 const nonPaperThemeIds = ["neon-signal", "tidal-glass", "solar-pop", "terrain-line"] as const;
+const portfolioThemeIds = [
+  "sienna-courtyard",
+  "ember-table",
+  "night-garden",
+  "monochrome-flash",
+] as const;
 
 const baseSections = [
   {
@@ -135,6 +142,10 @@ describe("theme registry", () => {
       "tidal-glass",
       "solar-pop",
       "terrain-line",
+      "sienna-courtyard",
+      "ember-table",
+      "night-garden",
+      "monochrome-flash",
     ]);
     expect(themeRegistry.premium.supportedModes).toContain("toggleable");
     expect(themeRegistry.kids.supportedEventTypes).toContain("kids_party");
@@ -225,8 +236,12 @@ describe("theme registry", () => {
         "basecamp-reply",
         "check-in-console",
         "common",
+        "conservatory-reply",
+        "courtyard-reply",
         "editorial-ledger",
         "festival-gate",
+        "guest-list-reply",
+        "place-setting-reply",
         "shoreline-reply",
       ]).toContain(theme.presentation.rsvp.rendererId);
       expect(
@@ -247,7 +262,12 @@ describe("theme registry", () => {
   });
 
   it("keeps each expansion direction structurally distinct instead of recoloring one layout", () => {
-    const signatures = [...expansionThemeIds, ...nonPaperThemeIds].map((themeId) => {
+    const structurallyDirectedThemeIds = [
+      ...expansionThemeIds,
+      ...nonPaperThemeIds,
+      ...portfolioThemeIds,
+    ];
+    const signatures = structurallyDirectedThemeIds.map((themeId) => {
       const theme = themeRegistry[themeId];
 
       return JSON.stringify({
@@ -265,7 +285,7 @@ describe("theme registry", () => {
       });
     });
 
-    expect(new Set(signatures).size).toBe(expansionThemeIds.length + nonPaperThemeIds.length);
+    expect(new Set(signatures).size).toBe(structurallyDirectedThemeIds.length);
     expect(
       new Set(expansionThemeIds.map((themeId) => themeRegistry[themeId].typography.display)).size,
     ).toBe(expansionThemeIds.length);
@@ -683,6 +703,15 @@ describe("theme registry", () => {
     expect(nonPaperMaps.every((map) => map.rhythm.length >= 5)).toBe(true);
     expect(
       nonPaperMaps.every((map) => !map.rhythm.every((item) => item.composition === "framed")),
+    ).toBe(true);
+
+    const portfolioMaps = Object.values(portfolioInviteCompositionMaps);
+
+    expect(portfolioMaps).toHaveLength(portfolioThemeIds.length);
+    expect(new Set(portfolioMaps.map((map) => map.id)).size).toBe(portfolioThemeIds.length);
+    expect(portfolioMaps.every((map) => map.rhythm.length >= 6)).toBe(true);
+    expect(
+      portfolioMaps.every((map) => !map.rhythm.every((item) => item.composition === "framed")),
     ).toBe(true);
   });
 
