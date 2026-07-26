@@ -285,12 +285,8 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getAllByText("Opened").length).toBeGreaterThan(0);
     expect(screen.getAllByText("RSVP received").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Party")).toHaveLength(4);
-    expect(screen.getAllByText("Sent and opened")).toHaveLength(4);
-    expect(screen.getAllByText("Invite access")).toHaveLength(4);
-    expect(screen.getAllByText("RSVP state")).toHaveLength(4);
-    expect(screen.getAllByRole("button", { name: "Regenerate link" })).toHaveLength(4);
-    expect(screen.getAllByRole("button", { name: "Disable" })).toHaveLength(4);
+    expect(screen.getAllByText("4 max · Contact named")).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /More actions for/ })).toHaveLength(4);
   });
 
   it("validates label and max pax before creating", async () => {
@@ -382,6 +378,7 @@ describe("GuestManagementWorkspace", () => {
     const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/active-token";
     const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
 
+    window.history.replaceState({}, "", "/events/evt_123/guests?view=cards");
     renderWithAuth(
       createApiClientStub({
         listGuestGroups: vi.fn(async () => ({ guestGroups: [{ ...guestGroup, inviteLink }] })),
@@ -394,7 +391,8 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByText("Tan Family invite link opened.")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Guest list view" }));
-    await user.click(screen.getByRole("button", { name: "Open link" }));
+    await user.click(screen.getByRole("button", { name: "More actions for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Open invite" }));
     expect(openWindow).toHaveBeenCalledTimes(2);
   });
 
@@ -636,7 +634,7 @@ describe("GuestManagementWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: "Guest list view" }));
     expect(screen.getAllByText("Awaiting RSVP").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Share invite for Tan Family" })).toBeTruthy();
   });
 
   it("automatically matches member fields to max pax without manual controls", async () => {
@@ -780,7 +778,8 @@ describe("GuestManagementWorkspace", () => {
     renderWithAuth(createApiClientStub({ markGuestGroupSent }));
 
     await screen.findByText("Tan Family");
-    await user.click(screen.getByRole("button", { name: "Mark sent" }));
+    await user.click(screen.getByRole("button", { name: "More actions for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Mark sent" }));
     const dialog = await screen.findByRole("dialog", { name: "Record share for Tan Family" });
     expect(within(dialog).getByText(/not a delivery or read receipt/i)).toBeTruthy();
     await user.click(within(dialog).getByLabelText("Share channel"));

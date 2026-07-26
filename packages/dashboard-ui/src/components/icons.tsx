@@ -3,6 +3,7 @@ export {
   CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
+  EllipsisIcon,
   Grid2X2Icon,
   LayoutGridIcon,
   ListIcon,

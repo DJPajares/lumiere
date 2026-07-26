@@ -34,7 +34,12 @@ import {
 } from "@lumiere/dashboard-ui/components/table";
 import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
-import { DownloadIcon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
+import {
+  DownloadIcon,
+  EllipsisIcon,
+  LayoutGridIcon,
+  ListIcon,
+} from "@lumiere/dashboard-ui/components/icons";
 import {
   guestInviteAccessExpiryConstraintSchema,
   guestGroupMutationRequestSchema,
@@ -52,7 +57,7 @@ import {
   type GuestInviteTrackingStage,
   type ManagerRole,
 } from "@lumiere/types";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardAuth } from "../../../../auth/dashboard-auth-provider";
 import { EventTabs } from "../../../placeholder-panels";
@@ -1967,51 +1972,75 @@ function GuestGroupMobileRow({
 }: GuestGroupRowProps) {
   const isDisabled = group.status === "disabled";
   const cannotShare = isGuestShareUnavailable(event, group);
+  const accessDescription = describeGuestAccessExpiry(event, group);
 
   return (
     <article
       aria-labelledby={`guest-group-${group.id}`}
-      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4"
+      className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3"
     >
-      <div className="min-w-0">
-        <h3 className="truncate font-semibold" id={`guest-group-${group.id}`} title={group.label}>
-          {group.label}
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">{guestContactSummary(group)}</p>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-semibold" id={`guest-group-${group.id}`} title={group.label}>
+            {group.label}
+          </h3>
+          <p
+            className="mt-0.5 truncate text-sm text-muted-foreground"
+            title={guestContactSummary(group)}
+          >
+            {guestContactSummary(group)}
+          </p>
+        </div>
+        <GuestGroupRowActions
+          busy={busy}
+          canEdit={canEdit}
+          cannotShare={cannotShare}
+          group={group}
+          inviteLink={inviteLink}
+          isDisabled={isDisabled}
+          onCopy={onCopy}
+          onDisable={onDisable}
+          onEdit={onEdit}
+          onMarkSent={onMarkSent}
+          onOpen={onOpen}
+          onShare={onShare}
+          onRegenerate={onRegenerate}
+          mobile
+        />
       </div>
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <GuestGroupMobileDetail label="Party">
-          {group.maxPax} max · {guestNamedMemberSummary(group)}
-        </GuestGroupMobileDetail>
-        <GuestGroupMobileDetail label="Sent and opened">
-          <TrackingBadge group={group} />
-          <span className="text-xs text-muted-foreground">{describeGuestTrackingDates(group)}</span>
-        </GuestGroupMobileDetail>
-        <GuestGroupMobileDetail label="Invite access">
-          <GuestAccessBadge event={event} group={group} />
-          <span className="text-xs text-muted-foreground">{describeGuestAccessExpiry(event, group)}</span>
-        </GuestGroupMobileDetail>
-        <GuestGroupMobileDetail label="RSVP state">
-          <RsvpStateBadge status={group.status} />
-          <span className="text-xs text-muted-foreground">{describeRsvpState(group.status)}</span>
-        </GuestGroupMobileDetail>
+
+      <dl className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <dt className="sr-only">RSVP state</dt>
+          <dd>
+            <RsvpStateBadge status={group.status} />
+          </dd>
+          <dt className="sr-only">Sent and opened</dt>
+          <dd>
+            <TrackingBadge group={group} />
+          </dd>
+          <dt className="sr-only">Invite access</dt>
+          <dd>
+            <GuestAccessBadge event={event} group={group} />
+          </dd>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          <dt className="sr-only">Party</dt>
+          <dd>
+            {group.maxPax} max · {guestNamedMemberSummary(group)}
+          </dd>
+        </div>
+        <div className="text-xs leading-5 text-muted-foreground">
+          <dt className="sr-only">Tracking details</dt>
+          <dd>{describeGuestTrackingDates(group)}</dd>
+        </div>
+        {accessDescription === "No access deadline" ? null : (
+          <div className="text-xs leading-5 text-muted-foreground">
+            <dt className="sr-only">Access deadline</dt>
+            <dd>{accessDescription}</dd>
+          </div>
+        )}
       </dl>
-      <GuestGroupRowActions
-        busy={busy}
-        canEdit={canEdit}
-        cannotShare={cannotShare}
-        group={group}
-        inviteLink={inviteLink}
-        isDisabled={isDisabled}
-        onCopy={onCopy}
-        onDisable={onDisable}
-        onEdit={onEdit}
-        onMarkSent={onMarkSent}
-        onOpen={onOpen}
-        onShare={onShare}
-        onRegenerate={onRegenerate}
-        mobile
-      />
       {!inviteLink || cannotShare ? <InviteLinkUnavailable compact event={event} group={group} /> : null}
       {pendingAction ? (
         <GuestGroupPendingAction
@@ -2026,17 +2055,6 @@ function GuestGroupMobileRow({
         />
       ) : null}
     </article>
-  );
-}
-
-function GuestGroupMobileDetail({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <div className="grid gap-1">
-      <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="grid justify-items-start gap-1 text-sm">{children}</dd>
-    </div>
   );
 }
 
@@ -2072,58 +2090,75 @@ function GuestGroupRowActions({
   mobile?: boolean;
 }) {
   if (mobile) {
+    const canUseInvite = Boolean(inviteLink) && !cannotShare;
+
+    if (!canUseInvite && !canEdit) {
+      return null;
+    }
+
     return (
-      <div className="flex flex-wrap gap-2">
-        {inviteLink && !cannotShare ? (
-          <>
-            <GuestInviteShareMenu group={group} onCopy={onCopy} onShare={onShare} size="lg" />
-            <Button onClick={() => onCopy(group)} size="lg" type="button">
-              Copy link
-            </Button>
-            <Button onClick={() => onOpen(group)} size="lg" type="button" variant="outline">
-              Open link
-            </Button>
-          </>
+      <div className="flex shrink-0 items-center gap-1">
+        {canUseInvite ? (
+          <GuestInviteShareMenu
+            group={group}
+            onCopy={onCopy}
+            onShare={onShare}
+            size="sm"
+            variant="default"
+          />
         ) : null}
-        {canEdit ? (
-          <>
-            <Button
-              disabled={busy || cannotShare}
-              onClick={() => onMarkSent(group)}
-              size="lg"
-              type="button"
-            >
-              {group.sendCount ? "Record resend" : "Mark sent"}
-            </Button>
-            <Button
-              aria-label={`Edit ${group.label}`}
-              onClick={() => onEdit(group)}
-              size="lg"
-              type="button"
-              variant="outline"
-            >
-              Edit
-            </Button>
-            <Button
-              disabled={busy || isDisabled}
-              onClick={() => onRegenerate(group)}
-              size="lg"
-              type="button"
-              variant="outline"
-            >
-              Regenerate link
-            </Button>
-            <Button
-              disabled={busy || isDisabled}
-              onClick={() => onDisable(group)}
-              size="lg"
-              type="button"
-              variant="destructive"
-            >
-              Disable
-            </Button>
-          </>
-        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                aria-label={`More actions for ${group.label}`}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              />
+            }
+          >
+            <EllipsisIcon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              {canUseInvite ? (
+                <DropdownMenuItem onClick={() => onOpen(group)}>Open invite</DropdownMenuItem>
+              ) : null}
+              {canEdit ? (
+                <>
+                  <DropdownMenuItem
+                    disabled={busy || cannotShare}
+                    onClick={() => onMarkSent(group)}
+                  >
+                    {group.sendCount ? "Record resend" : "Mark sent"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(group)}>Edit group</DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuGroup>
+            {canEdit ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    disabled={busy || isDisabled}
+                    onClick={() => onRegenerate(group)}
+                  >
+                    Regenerate link
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={busy || isDisabled}
+                    onClick={() => onDisable(group)}
+                    variant="destructive"
+                  >
+                    Disable invite
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }
@@ -2185,17 +2220,24 @@ function GuestInviteShareMenu({
   onCopy,
   onShare,
   size,
+  variant = "outline",
 }: {
   group: GuestGroup;
   onCopy: (group: GuestGroup) => void;
   onShare: (group: GuestGroup, method: InviteShareMethod) => void;
   size: "lg" | "sm";
+  variant?: "default" | "outline";
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button aria-label={`Share invite for ${group.label}`} size={size} type="button" variant="outline" />
+          <Button
+            aria-label={`Share invite for ${group.label}`}
+            size={size}
+            type="button"
+            variant={variant}
+          />
         }
       >
         Share
