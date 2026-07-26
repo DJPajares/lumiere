@@ -45,7 +45,7 @@ describe("dashboard routes", () => {
 
   it("declares dashboard PWA metadata and icons", () => {
     expect(dashboardAppMetadata.applicationName).toBe("Lumiere Dashboard");
-    expect(dashboardAppMetadata.manifest).toBe("/manifest.webmanifest");
+    expect(dashboardAppMetadata.manifest).toBe("/manifest.webmanifest?v=20260726");
     expect(dashboardAppMetadata.appleWebApp).toMatchObject({
       capable: true,
       title: "Lumiere Dashboard",
@@ -68,20 +68,20 @@ describe("dashboard routes", () => {
       background_color: "#f7f5f0",
       name: "Lumiere Dashboard",
       short_name: "Dashboard",
-      theme_color: "#6f5a38",
+      theme_color: "#f1ede5",
     });
     expect(manifest.icons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          src: "/icons/icon-192.png",
+          src: "/icons/icon-192.png?v=20260726",
           purpose: "any",
         }),
         expect.objectContaining({
-          src: "/icons/maskable-icon-192.png",
+          src: "/icons/maskable-icon-192.png?v=20260726",
           purpose: "maskable",
         }),
         expect.objectContaining({
-          src: "/icons/maskable-icon-512.png",
+          src: "/icons/maskable-icon-512.png?v=20260726",
           purpose: "maskable",
         }),
       ]),

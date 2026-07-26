@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Lumiere Invite app icon</title>
+  <desc id="description">A warm ivory L and a single champagne light flare on a deep warm-black field.</desc>
+  <defs>
+    <linearGradient id="invite-background" x1="112" y1="72" x2="912" y2="952" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B241B" />
+      <stop offset="0.52" stop-color="#191510" />
+      <stop offset="1" stop-color="#100E0C" />
+    </linearGradient>
+    <radialGradient id="invite-glow" cx="0" cy="0" r="1" gradientTransform="translate(659 350) rotate(90) scale(338)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9A85C" stop-opacity="0.18" />
+      <stop offset="0.48" stop-color="#D9A85C" stop-opacity="0.04" />
+      <stop offset="1" stop-color="#D9A85C" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect data-canvas="true" x="32" y="32" width="960" height="960" rx="224" fill="url(#invite-background)" />
+  <rect data-canvas="true" x="32" y="32" width="960" height="960" rx="224" fill="url(#invite-glow)" />
+  <rect data-role="keyline" x="52" y="52" width="920" height="920" rx="204" fill="none" stroke="#FFF8EB" stroke-opacity="0.1" stroke-width="4" />
+  <g data-role="mark">
+    <path fill="#FBF3E5" d="M304 242c0-17 14-31 31-31h79v396c0 44 22 66 66 66h224v84H463c-106 0-159-53-159-159V242Z" />
+    <path fill="#D9A85C" d="M650 250c8 72 28 92 100 100-72 8-92 28-100 100-8-72-28-92-100-100 72-8 92-28 100-100Z" />
+  </g>
+</svg>

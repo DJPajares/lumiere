@@ -89,7 +89,7 @@ export default async function InviteHome() {
               className="h-10 w-auto object-contain"
               height={40}
               sizes="40px"
-              src="/logo.png"
+              src="/logo.png?v=20260726"
               width={40}
             />
             <span>Lumiere invite app</span>

@@ -1,7 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+
+const brandAssetVersion = "20260726";
+const brandAsset = (path: string) => `${path}?v=${brandAssetVersion}`;
 
 export const metadata: Metadata = {
   title: {
@@ -10,17 +13,25 @@ export const metadata: Metadata = {
   },
   description: "A luminous invitation and RSVP experience.",
   applicationName: "Lumiere Invite",
-  manifest: "/manifest.webmanifest",
+  manifest: brandAsset("/manifest.webmanifest"),
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/x-icon", sizes: "any" },
-      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
-      { url: "/icons/maskable-icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/maskable-icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: brandAsset("/favicon.ico"), type: "image/x-icon", sizes: "any" },
+      { url: brandAsset("/icons/icon-192.png"), type: "image/png", sizes: "192x192" },
+      { url: brandAsset("/icons/icon-512.png"), type: "image/png", sizes: "512x512" },
+      {
+        url: brandAsset("/icons/maskable-icon-192.png"),
+        type: "image/png",
+        sizes: "192x192",
+      },
+      {
+        url: brandAsset("/icons/maskable-icon-512.png"),
+        type: "image/png",
+        sizes: "512x512",
+      },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: brandAsset("/favicon.ico"),
+    apple: [{ url: brandAsset("/apple-touch-icon.png"), type: "image/png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,
@@ -40,6 +51,10 @@ export const metadata: Metadata = {
     follow: false,
     index: false,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#191510",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

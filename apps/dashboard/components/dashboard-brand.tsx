@@ -15,7 +15,7 @@ export function DashboardBrandLockup({ className, compact = false }: DashboardBr
         className={cn("object-contain", compact ? "size-8" : "size-10")}
         height={compact ? 32 : 40}
         sizes={compact ? "32px" : "40px"}
-        src="/logo.png"
+        src="/logo.png?v=20260726"
         width={compact ? 32 : 40}
       />
       <span>Lumiere Dashboard</span>

@@ -65,7 +65,7 @@ describe("invite app routes", () => {
 
   it("declares invite PWA metadata and icons", () => {
     expect(inviteAppMetadata.applicationName).toBe("Lumiere Invite");
-    expect(inviteAppMetadata.manifest).toBe("/manifest.webmanifest");
+    expect(inviteAppMetadata.manifest).toBe("/manifest.webmanifest?v=20260726");
     expect(inviteAppMetadata.appleWebApp).toMatchObject({
       capable: true,
       title: "Lumiere Invite",
@@ -97,20 +97,20 @@ describe("invite app routes", () => {
       background_color: "#fffaf1",
       name: "Lumiere Invite",
       short_name: "Lumiere",
-      theme_color: "#b97732",
+      theme_color: "#191510",
     });
     expect(manifest.icons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          src: "/icons/icon-192.png",
+          src: "/icons/icon-192.png?v=20260726",
           purpose: "any",
         }),
         expect.objectContaining({
-          src: "/icons/maskable-icon-192.png",
+          src: "/icons/maskable-icon-192.png?v=20260726",
           purpose: "maskable",
         }),
         expect.objectContaining({
-          src: "/icons/maskable-icon-512.png",
+          src: "/icons/maskable-icon-512.png?v=20260726",
           purpose: "maskable",
         }),
       ]),

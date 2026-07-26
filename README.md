@@ -447,7 +447,9 @@ Each app should include its own:
 - `manifest.webmanifest`
 - metadata/head tags in the app layout
 
-When updating the logo pack, use `logo.png` as the visible brand source for each app and keep the public invite logo distinct from the dashboard logo. Install surfaces should use the PNG icon files, including maskable PNGs when a background or safe mask area is needed. The invite brand should appear in install surfaces, metadata, and top-level app chrome without overpowering event-specific themes. The dashboard brand can appear in the manager app shell because it frames operational work. Guest-specific URLs must avoid private guest data in Open Graph, title, description, and share metadata.
+Approved editable source artwork and usage rules live in `assets/brand/`. Run `pnpm brand:assets` to regenerate both complete public packs and `pnpm brand:assets --check` to verify that checked-in PNG/ICO outputs still match the SVG sources. `logo.png` remains the visible app-shell image for each app; standard icons retain transparent rounded corners, while Apple touch and maskable exports use full-bleed backgrounds with the mark inside the maskable safe area.
+
+The public Invite treatment is warm ivory and champagne on warm black. The Dashboard treatment uses the same geometry in charcoal and bronze on warm stone, keeping the apps distinct while preserving one Lumiere identity. Visible lockups pair the icon with live text and treat the duplicate image as decorative. Asset URLs use a date-version query in layouts and manifests; bump that token whenever source artwork changes to avoid stale browser and installed-PWA caches. Guest-specific URLs must continue to avoid private guest data in Open Graph, title, description, and share metadata.
 
 ## Frontend Development
 

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Lumiere Dashboard app icon</title>
+  <desc id="description">A precise charcoal L and a single bronze light flare on a warm stone field.</desc>
+  <defs>
+    <linearGradient id="dashboard-background" x1="96" y1="64" x2="928" y2="960" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBF9F4" />
+      <stop offset="0.55" stop-color="#F1EDE5" />
+      <stop offset="1" stop-color="#E3DCCE" />
+    </linearGradient>
+    <radialGradient id="dashboard-glow" cx="0" cy="0" r="1" gradientTransform="translate(659 350) rotate(90) scale(330)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B78443" stop-opacity="0.16" />
+      <stop offset="0.52" stop-color="#B78443" stop-opacity="0.035" />
+      <stop offset="1" stop-color="#B78443" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect data-canvas="true" x="32" y="32" width="960" height="960" rx="224" fill="url(#dashboard-background)" />
+  <rect data-canvas="true" x="32" y="32" width="960" height="960" rx="224" fill="url(#dashboard-glow)" />
+  <rect data-role="keyline" x="52" y="52" width="920" height="920" rx="204" fill="none" stroke="#2B2721" stroke-opacity="0.1" stroke-width="4" />
+  <g data-role="mark">
+    <path fill="#29251F" d="M304 242c0-17 14-31 31-31h79v396c0 44 22 66 66 66h224v84H463c-106 0-159-53-159-159V242Z" />
+    <path fill="#A87438" d="M650 250c8 72 28 92 100 100-72 8-92 28-100 100-8-72-28-92-100-100 72-8 92-28 100-100Z" />
+  </g>
+</svg>
