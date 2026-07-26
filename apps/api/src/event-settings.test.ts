@@ -71,6 +71,18 @@ describe("event settings model", () => {
       sectionKey: "brand-story",
       sectionType: "profile",
     });
+    const customSection = existing.find((section) => section.sectionType === "custom");
+
+    if (!customSection) {
+      throw new Error("Expected launch defaults to include Custom Text");
+    }
+
+    existing.push({
+      ...customSection,
+      content: { blocks: [{ body: "A second note" }], title: "Travel details" },
+      id: "00000000-0000-4000-8000-000000000998",
+      sectionKey: "custom-2",
+    });
 
     const reconciled = reconcileEventTypeSections({ ...event, eventType: "kids_party" }, existing);
 
@@ -80,6 +92,11 @@ describe("event settings model", () => {
     });
     expect(reconciled.some((section) => section.sectionType === "profile")).toBe(false);
     expect(reconciled.map((section) => section.sectionType)).toContain("rsvp");
+    expect(
+      reconciled
+        .filter((section) => section.sectionType === "custom")
+        .map((section) => section.sectionKey),
+    ).toEqual(["custom", "custom-2"]);
   });
 
   it("reports enablement and required-content issues before publishing", () => {

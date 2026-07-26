@@ -346,6 +346,8 @@ function SectionBuilderContent({
   const editingPreview = editingSectionKey
     ? previewModels.find((model) => model.section.sectionKey === editingSectionKey)
     : undefined;
+  const supportedSectionTypes = readSectionTypes(state.theme.metadata.supportedSections);
+  const supportsCustomText = supportedSectionTypes.includes("custom");
   const nextSuggestedSection = getNextSuggestedSection(previewModels);
   const changedSectionKeys = useMemo(
     () => getDirtySectionKeys(state.sections, state.savedSections),
@@ -434,7 +436,14 @@ function SectionBuilderContent({
       );
 
       if (!savedSection) {
-        return current;
+        return {
+          ...current,
+          formMessage: null,
+          sectionErrors: withoutSectionErrors(current.sectionErrors, sectionKey),
+          sections: current.sections
+            .filter((section) => section.sectionKey !== sectionKey)
+            .map((section, index) => ({ ...section, sortOrder: index })),
+        };
       }
 
       return {
@@ -631,6 +640,55 @@ function SectionBuilderContent({
     });
   };
 
+  const addCustomTextSection = () => {
+    if (!canEdit || state.isSaving || !supportsCustomText) {
+      return;
+    }
+
+    const reusableDraft = state.sections.find(
+      (section) => section.sectionType === "custom" && !section.enabled && !section.id,
+    );
+
+    if (reusableDraft) {
+      updateSection(reusableDraft.sectionKey, { enabled: true });
+      setEditingSectionKey(reusableDraft.sectionKey);
+      return;
+    }
+
+    const blueprint = getSectionBlueprint(state.event.eventType, "custom");
+    const sectionKey = createUniqueSectionKey(
+      "custom",
+      new Set(state.sections.map((section) => section.sectionKey)),
+    );
+    const content =
+      blueprint?.createDefaultContent(state.event) ??
+      defaultContentForSection("custom", state.event);
+
+    updateState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            formMessage: null,
+            sections: [
+              ...current.sections,
+              {
+                contentText: formatJsonText(
+                  normalizeSectionContentForEditor("custom", content as JsonObject),
+                ),
+                enabled: true,
+                sectionKey,
+                sectionType: "custom",
+                settingsText: formatJsonText(blueprint?.createDefaultSettings() ?? {}),
+                sortOrder: current.sections.length,
+                visibility: blueprint?.defaultVisibility ?? "public",
+              },
+            ],
+          }
+        : current,
+    );
+    setEditingSectionKey(sectionKey);
+  };
+
   return (
     <div className="grid gap-5">
       <EventTabs active="content" eventId={eventId} />
@@ -643,8 +701,8 @@ function SectionBuilderContent({
               Configure content for {state.event.title}
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              {state.theme.name} supports {state.sections.length} section types. Arrange and edit
-              the invitation here, then preview the complete draft before saving.
+              {state.theme.name} supports {supportedSectionTypes.length} section types. Arrange and
+              edit the invitation here, then preview the complete draft before saving.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -725,11 +783,13 @@ function SectionBuilderContent({
       </section>
 
       <SectionOrderPanel
+        canAddCustomText={supportsCustomText}
         canEdit={canEdit}
         dirtySectionKeys={dirtySectionKeys}
         isSaving={state.isSaving}
         models={previewModels}
         moveSection={moveSection}
+        onAddCustomText={addCustomTextSection}
         onEdit={openSectionEditor}
         onViewChange={setSectionOrderView}
         sectionErrors={state.sectionErrors}
@@ -827,22 +887,26 @@ function SectionBuilderContent({
 }
 
 function SectionOrderPanel({
+  canAddCustomText,
   canEdit,
   dirtySectionKeys,
   isSaving,
   models,
   moveSection,
+  onAddCustomText,
   onEdit,
   onViewChange,
   sectionErrors,
   updateSection,
   view,
 }: {
+  canAddCustomText: boolean;
   canEdit: boolean;
   dirtySectionKeys: Set<string>;
   isSaving: boolean;
   models: SectionPreviewModel[];
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
+  onAddCustomText: () => void;
   onEdit: (sectionKey: string) => void;
   onViewChange: (view: SectionOrderView) => void;
   sectionErrors: SectionErrorMap;
@@ -864,34 +928,47 @@ function SectionOrderPanel({
           </p>
         </div>
 
-        <div className="grid shrink-0 gap-2">
-          <span className="text-sm font-medium" id="content-section-view-label">
-            Section view
-          </span>
-          <ToggleGroup
-            aria-labelledby="content-section-view-label"
-            className="w-full sm:w-fit"
-            onValueChange={(value) => {
-              const nextView = value[0];
+        <div className="grid shrink-0 gap-3">
+          {canAddCustomText ? (
+            <Button
+              disabled={!canEdit || isSaving}
+              onClick={onAddCustomText}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Add custom text
+            </Button>
+          ) : null}
+          <div className="grid gap-2">
+            <span className="text-sm font-medium" id="content-section-view-label">
+              Section view
+            </span>
+            <ToggleGroup
+              aria-labelledby="content-section-view-label"
+              className="w-full sm:w-fit"
+              onValueChange={(value) => {
+                const nextView = value[0];
 
-              if (nextView === "detailed" || nextView === "list") {
-                onViewChange(nextView);
-              }
-            }}
-            size="sm"
-            spacing={0}
-            value={[view]}
-            variant="outline"
-          >
-            <ToggleGroupItem aria-label="Detailed section view" type="button" value="detailed">
-              <LayoutGridIcon data-icon="inline-start" />
-              Detailed
-            </ToggleGroupItem>
-            <ToggleGroupItem aria-label="List section view" type="button" value="list">
-              <ListIcon data-icon="inline-start" />
-              List
-            </ToggleGroupItem>
-          </ToggleGroup>
+                if (nextView === "detailed" || nextView === "list") {
+                  onViewChange(nextView);
+                }
+              }}
+              size="sm"
+              spacing={0}
+              value={[view]}
+              variant="outline"
+            >
+              <ToggleGroupItem aria-label="Detailed section view" type="button" value="detailed">
+                <LayoutGridIcon data-icon="inline-start" />
+                Detailed
+              </ToggleGroupItem>
+              <ToggleGroupItem aria-label="List section view" type="button" value="list">
+                <ListIcon data-icon="inline-start" />
+                List
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
       </div>
 
@@ -905,7 +982,7 @@ function SectionOrderPanel({
         data-section-order-view={view}
       >
         {models.map((model, index) => {
-          const definition = getSectionDefinition(model.section.sectionType);
+          const displayLabel = getSectionDisplayLabel(model, index, models);
           const isDirty = dirtySectionKeys.has(model.section.sectionKey);
           const errors = {
             ...model.errors,
@@ -929,7 +1006,7 @@ function SectionOrderPanel({
               />
               <div className="flex shrink-0 items-center gap-1">
                 <Button
-                  aria-label={`${definition.label} move up`}
+                  aria-label={`${displayLabel} move up`}
                   disabled={!canEdit || isSaving || index === 0}
                   onClick={() => moveSection(model.section.sectionKey, -1)}
                   size="icon-sm"
@@ -940,7 +1017,7 @@ function SectionOrderPanel({
                   <ArrowUpIcon />
                 </Button>
                 <Button
-                  aria-label={`${definition.label} move down`}
+                  aria-label={`${displayLabel} move down`}
                   disabled={!canEdit || isSaving || index === models.length - 1}
                   onClick={() => moveSection(model.section.sectionKey, 1)}
                   size="icon-sm"
@@ -951,7 +1028,7 @@ function SectionOrderPanel({
                   <ArrowDownIcon />
                 </Button>
                 <Button
-                  aria-label={`Edit ${definition.label}`}
+                  aria-label={`Edit ${displayLabel}`}
                   disabled={isSaving}
                   onClick={() => onEdit(model.section.sectionKey)}
                   size="sm"
@@ -975,7 +1052,7 @@ function SectionOrderPanel({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate font-semibold">{definition.label}</p>
+                  <p className="truncate font-semibold">{displayLabel}</p>
                   <p className="truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
                     {formatRequirement(model.requirement)} · {model.statusLabel}
                     {isDirty ? " · Unsaved" : ""}
@@ -990,6 +1067,7 @@ function SectionOrderPanel({
                     canEdit={canEdit}
                     index={index}
                     isSaving={isSaving}
+                    label={displayLabel}
                     model={model}
                     modelCount={models.length}
                     moveSection={moveSection}
@@ -1011,7 +1089,7 @@ function SectionOrderPanel({
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <div className="min-w-0">
-                      <h3 className="truncate font-semibold">{definition.label}</h3>
+                      <h3 className="truncate font-semibold">{displayLabel}</h3>
                       <p className="mt-0.5 truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
                         {formatRequirement(model.requirement)} · {formatVisibility(model)}
                         {isDirty ? " · Unsaved" : ""}
@@ -1041,6 +1119,7 @@ function SectionMobileActions({
   canEdit,
   index,
   isSaving,
+  label,
   model,
   modelCount,
   moveSection,
@@ -1050,13 +1129,13 @@ function SectionMobileActions({
   canEdit: boolean;
   index: number;
   isSaving: boolean;
+  label: string;
   model: SectionPreviewModel;
   modelCount: number;
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
   onEdit: (sectionKey: string) => void;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
 }) {
-  const definition = getSectionDefinition(model.section.sectionType);
   const enabledControlDisabled =
     !canEdit || isSaving || (model.section.enabled && !model.canDisable);
   const visibilityDisabled = !canEdit || isSaving || !model.section.enabled;
@@ -1064,7 +1143,7 @@ function SectionMobileActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`${definition.label} actions`}
+        aria-label={`${label} actions`}
         render={
           <Button size="icon-sm" type="button" variant="ghost">
             <EllipsisIcon />
@@ -1073,7 +1152,7 @@ function SectionMobileActions({
       />
       <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{definition.label}</DropdownMenuLabel>
+          <DropdownMenuLabel>{label}</DropdownMenuLabel>
           <DropdownMenuCheckboxItem
             checked={model.section.enabled}
             disabled={enabledControlDisabled}
@@ -3791,6 +3870,30 @@ function getNextSuggestedSection(models: SectionPreviewModel[]) {
   );
 }
 
+function getSectionDisplayLabel(
+  model: SectionPreviewModel,
+  index: number,
+  models: SectionPreviewModel[],
+) {
+  const definition = getSectionDefinition(model.section.sectionType);
+
+  if (model.section.sectionType !== "custom") {
+    return definition.label;
+  }
+
+  const title = readString(model.content?.title);
+
+  if (title) {
+    return `${definition.label}: ${title}`;
+  }
+
+  const instanceNumber = models
+    .slice(0, index + 1)
+    .filter((item) => item.section.sectionType === "custom").length;
+
+  return `${definition.label} ${instanceNumber}`;
+}
+
 function formatRequirement(requirement: SectionBlueprintRequirement) {
   return requirement.charAt(0).toUpperCase() + requirement.slice(1);
 }
@@ -4001,16 +4104,22 @@ function createSectionDrafts({
 }) {
   const supportedTypes = readSectionTypes(theme.metadata.supportedSections);
   const blueprintTypes = getBlueprintSectionOrder(event.eventType, supportedTypes);
-  const existingByType = new Map(
-    existingSections
-      .filter((section) => supportedTypes.includes(section.sectionType))
-      .sort((first, second) => first.sortOrder - second.sortOrder)
-      .map((section) => [section.sectionType, section] as const),
+  const supportedExistingSections = existingSections
+    .filter((section) => supportedTypes.includes(section.sectionType))
+    .sort((first, second) => first.sortOrder - second.sortOrder);
+  const existingTypes = new Set(supportedExistingSections.map((section) => section.sectionType));
+  const missingBlueprintTypes = blueprintTypes.filter(
+    (sectionType) => !existingTypes.has(sectionType),
   );
-  const orderedTypes = uniqueSectionTypes([...existingByType.keys(), ...blueprintTypes]);
+  const orderedSections = [
+    ...supportedExistingSections.map((section) => ({
+      existing: section,
+      sectionType: section.sectionType,
+    })),
+    ...missingBlueprintTypes.map((sectionType) => ({ existing: undefined, sectionType })),
+  ];
 
-  return orderedTypes.map((sectionType, index) => {
-    const existing = existingByType.get(sectionType);
+  return orderedSections.map(({ existing, sectionType }, index) => {
     const definition = getSectionDefinition(sectionType);
     const blueprint = getSectionBlueprint(event.eventType, sectionType);
     const content =
@@ -4455,8 +4564,18 @@ function readSectionTypes(value: unknown) {
   return value.filter(isSectionType);
 }
 
-function uniqueSectionTypes(values: SectionType[]) {
-  return Array.from(new Set(values));
+function createUniqueSectionKey(baseKey: string, existingKeys: Set<string>) {
+  if (!existingKeys.has(baseKey)) {
+    return baseKey;
+  }
+
+  let suffix = 2;
+
+  while (existingKeys.has(`${baseKey}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseKey}-${suffix}`;
 }
 
 function isSectionType(value: unknown): value is SectionType {
@@ -4489,6 +4608,13 @@ function defaultContentForSection(sectionType: SectionType, event: Event): JsonO
   if (sectionType === "rsvp") {
     return {
       title: "RSVP",
+    };
+  }
+
+  if (sectionType === "custom") {
+    return {
+      blocks: [{ body: "Add a custom note for guests." }],
+      title: "More information",
     };
   }
 

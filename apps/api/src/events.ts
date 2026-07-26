@@ -576,22 +576,39 @@ export const reconcileEventTypeSections = (
   existingSections: EventSection[],
 ): EventSectionMutation[] => {
   const existingByType = new Map(existingSections.map((section) => [section.sectionType, section]));
+  const existingCustomSections = existingSections.filter(
+    (section) => section.sectionType === "custom",
+  );
 
-  return buildEventSectionDefaults(event).map((section) => {
-    const existing = existingByType.get(section.sectionType);
-
-    return existing
-      ? {
+  return buildEventSectionDefaults(event)
+    .flatMap((section) => {
+      if (section.sectionType === "custom" && existingCustomSections.length > 0) {
+        return existingCustomSections.map((existing) => ({
           content: existing.content,
           enabled: existing.enabled,
-          sectionKey: section.sectionKey,
-          sectionType: section.sectionType,
+          sectionKey: existing.sectionKey,
+          sectionType: existing.sectionType,
           settings: existing.settings,
           sortOrder: section.sortOrder,
           visibility: existing.visibility,
-        }
-      : section;
-  });
+        }));
+      }
+
+      const existing = existingByType.get(section.sectionType);
+
+      return existing
+        ? {
+            content: existing.content,
+            enabled: existing.enabled,
+            sectionKey: section.sectionKey,
+            sectionType: section.sectionType,
+            settings: existing.settings,
+            sortOrder: section.sortOrder,
+            visibility: existing.visibility,
+          }
+        : section;
+    })
+    .map((section, sortOrder) => ({ ...section, sortOrder }));
 };
 
 export const evaluatePublishingReadiness = ({

@@ -19,7 +19,17 @@ describe("SectionBuilderWorkspace", () => {
   });
 
   it("loads sections supported by the selected theme", async () => {
-    renderWithAuth(createApiClientStub());
+    const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
+      selectedThemeId: "premium",
+      theme: premiumThemeWithCustom,
+      themeConfig: {},
+      themeMode: "toggleable",
+    }));
+    const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({
+      sections: [savedCustomSection, savedSecondCustomSection],
+    }));
+
+    renderWithAuth(createApiClientStub({ getEventTheme, listEventSections }));
 
     expect(screen.getByLabelText("Loading sections")).toBeTruthy();
     expect(await screen.findByText("Configure content for Spring Dinner")).toBeTruthy();
@@ -28,7 +38,13 @@ describe("SectionBuilderWorkspace", () => {
     expect(screen.getByText("Recommended next section")).toBeTruthy();
     expect(screen.queryByText(/Preview contract:/)).toBeNull();
     expect(screen.getByRole("button", { name: "Preview" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add custom text" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit Introduction" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit Custom Text: Arrival notes" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Edit Custom Text: Shuttle schedule" }),
+    ).toBeTruthy();
+    expect(document.querySelectorAll('[data-section-card-key^="custom"]')).toHaveLength(2);
     expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
     ["Introduction", "Date and Time", "Story", "Dress Code", "Location", "RSVP"].forEach(
       (label) => {
@@ -361,6 +377,12 @@ describe("SectionBuilderWorkspace", () => {
 
   it("saves typed field edits, repeatable content, visibility, and accessible reordering", async () => {
     const user = userEvent.setup();
+    const getEventTheme = vi.fn<DashboardApiClient["getEventTheme"]>(async () => ({
+      selectedThemeId: "premium",
+      theme: premiumThemeWithCustom,
+      themeConfig: {},
+      themeMode: "toggleable",
+    }));
     const updateEventSections = vi.fn<DashboardApiClient["updateEventSections"]>(
       async (eventId, input) => ({
         sections: input.sections.map((section, index): EventSection => ({
@@ -391,12 +413,31 @@ describe("SectionBuilderWorkspace", () => {
 
     renderWithAuth(
       createApiClientStub({
+        getEventTheme,
         updateEvent,
         updateEventSections,
       }),
     );
 
     await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByRole("button", { name: "Add custom text" }));
+    const firstCustomEditor = within(screen.getByRole("region", { name: "Custom Text" }));
+    await user.clear(firstCustomEditor.getByLabelText("Title"));
+    await user.type(firstCustomEditor.getByLabelText("Title"), "Arrival notes");
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Custom Text" })).toBeNull(),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add custom text" }));
+    const secondCustomEditor = within(screen.getByRole("region", { name: "Custom Text" }));
+    await user.clear(secondCustomEditor.getByLabelText("Title"));
+    await user.type(secondCustomEditor.getByLabelText("Title"), "Shuttle schedule");
+    await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Custom Text" })).toBeNull(),
+    );
+
     await user.click(screen.getByLabelText("Enable Introduction"));
     await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
@@ -453,23 +494,25 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
     await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
-    await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(6));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
 
     const payload = updateEventSections.mock.calls.at(-1)?.[1];
 
     expect(payload?.sections.map((section) => section.sectionType)).toEqual([
+      "custom",
+      "custom",
       "date",
       "introduction",
       "rsvp",
       "details",
       "dress_code",
     ]);
-    expect(payload?.sections[1]?.visibility).toBe("guest_only");
-    expect(payload?.sections[1]?.content).toMatchObject({
+    expect(payload?.sections[3]?.visibility).toBe("guest_only");
+    expect(payload?.sections[3]?.content).toMatchObject({
       title: "Garden Supper",
     });
-    expect(payload?.sections[3]?.content).toMatchObject({
+    expect(payload?.sections[5]?.content).toMatchObject({
       items: [
         {
           label: "Schedule",
@@ -482,11 +525,19 @@ describe("SectionBuilderWorkspace", () => {
       ],
       title: "Details",
     });
-    expect(payload?.sections[4]?.content).toMatchObject({
+    expect(payload?.sections[6]?.content).toMatchObject({
       cards: expect.arrayContaining([expect.objectContaining({ title: "Garden formal" })]),
       paletteTitle: "A garden celebration palette",
     });
-    expect(payload?.sections[2]?.content).toMatchObject({
+    const customSections = payload?.sections.filter((section) => section.sectionType === "custom");
+
+    expect(customSections?.map((section) => section.sectionKey)).toEqual(["custom", "custom-2"]);
+    expect(
+      customSections?.map(
+        (section) => (section.content as Record<string, JsonValue>).title,
+      ),
+    ).toEqual(["Arrival notes", "Shuttle schedule"]);
+    expect(payload?.sections[4]?.content).toMatchObject({
       questions: [
         expect.objectContaining({ key: "dietary-notes" }),
         expect.objectContaining({ key: "song-request" }),
@@ -673,4 +724,41 @@ const premiumTheme: Theme = {
   name: "Premium",
   supportedModes: ["light", "dark", "toggleable"],
   version: "0.0.0",
+};
+
+const premiumThemeWithCustom: Theme = {
+  ...premiumTheme,
+  metadata: {
+    ...premiumTheme.metadata,
+    sectionRhythm: [...(premiumTheme.metadata.sectionRhythm as string[]), "custom"],
+    supportedSections: [...(premiumTheme.metadata.supportedSections as string[]), "custom"],
+  },
+};
+
+const savedCustomSection: EventSection = {
+  content: {
+    blocks: [{ body: "Parking is available beside the venue." }],
+    title: "Arrival notes",
+  },
+  createdAt: "2030-01-01T00:00:00.000Z",
+  enabled: true,
+  eventId: "evt_123",
+  id: "section_custom",
+  sectionKey: "custom",
+  sectionType: "custom",
+  settings: {},
+  sortOrder: 0,
+  updatedAt: "2030-01-01T00:00:00.000Z",
+  visibility: "public",
+};
+
+const savedSecondCustomSection: EventSection = {
+  ...savedCustomSection,
+  content: {
+    blocks: [{ body: "The final shuttle leaves at midnight." }],
+    title: "Shuttle schedule",
+  },
+  id: "section_custom_2",
+  sectionKey: "custom-2",
+  sortOrder: 1,
 };
