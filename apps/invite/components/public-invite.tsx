@@ -509,14 +509,7 @@ function SectionBody({
         />
       );
     case "story":
-      return (
-        <StorySection
-          composition={composition}
-          content={content}
-          settings={settings}
-          titleId={titleId}
-        />
-      );
+      return <StorySection composition={composition} content={content} titleId={titleId} />;
     case "custom":
       return <CustomSection content={content} titleId={titleId} />;
     default:
@@ -667,19 +660,16 @@ function LocationSection({
 function StorySection({
   composition,
   content,
-  settings,
   titleId,
 }: {
   composition: SectionComposition;
   content: JsonObject;
-  settings: JsonObject;
   titleId: string;
 }) {
   const title = readString(content.title) ?? "Story";
   const paragraphs: StoryParagraph[] = normalizeStoryParagraphs(content.paragraphs);
   const coverImage = readAsset(content.image);
   const isTimeline = composition === "timeline";
-  const showEntryPhotos = readBoolean(settings.showEntryPhotos, true);
 
   return (
     <div className="lumiere-story-layout mx-auto grid max-w-3xl gap-4">
@@ -727,7 +717,7 @@ function StorySection({
               <p className="lumiere-type-description text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
                 {paragraph.body}
               </p>
-              {showEntryPhotos && paragraph.image ? (
+              {paragraph.showImage !== false && paragraph.image ? (
                 <div
                   className="lumiere-story-entry-photo mt-4 max-w-xl"
                   data-story-entry-photo="true"

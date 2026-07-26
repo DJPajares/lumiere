@@ -320,9 +320,6 @@ describe("theme registry", () => {
     expect(
       weddingSections.every((section) => section.contentSchema && section.settingsSchema),
     ).toBe(true);
-    expect(
-      weddingSections.find((section) => section.sectionType === "story")?.createDefaultSettings(),
-    ).toMatchObject({ showEntryPhotos: true });
     const dressCode = weddingSections.find((section) => section.sectionType === "dress_code");
     const dressCodeDefaults = dressCode?.createDefaultContent({
       eventType: "wedding",
@@ -829,6 +826,7 @@ describe("theme registry", () => {
               caption: "The first chapter",
               url: "https://images.example.com/chapter-one.jpg",
             },
+            showImage: false,
           },
           { title: "", body: "An untitled paragraph." },
         ],
@@ -838,7 +836,7 @@ describe("theme registry", () => {
         },
         title: "Our story",
       },
-      settings: { showEntryPhotos: false },
+      settings: {},
     });
     const missingBody = validateThemeSection("premium", {
       sectionType: "story",
@@ -861,7 +859,6 @@ describe("theme registry", () => {
     }
     expect(structuredStory.ok).toBe(true);
     if (structuredStory.ok) {
-      expect(structuredStory.section.settings.showEntryPhotos).toBe(false);
       expect(structuredStory.section.content.paragraphs).toEqual([
         {
           title: "Chapter one",
@@ -871,6 +868,7 @@ describe("theme registry", () => {
             caption: "The first chapter",
             url: "https://images.example.com/chapter-one.jpg",
           },
+          showImage: false,
         },
         { body: "An untitled paragraph." },
       ]);

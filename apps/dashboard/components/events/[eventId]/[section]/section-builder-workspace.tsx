@@ -1258,7 +1258,7 @@ function PreviewSectionBody({
     case "rsvp":
       return <PreviewRsvp content={content} settings={settings} />;
     case "story":
-      return <PreviewStory content={content} settings={settings} />;
+      return <PreviewStory content={content} />;
     case "custom":
       return <PreviewCustom content={content} />;
     default:
@@ -2224,6 +2224,14 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
               label="Paragraph photo (optional)"
               path={["paragraphs", index, "image"]}
             />
+            <CheckboxField
+              controller={controller}
+              defaultValue
+              description="Hide this photo without deleting its URL, alt text, or caption."
+              label="Show this story photo"
+              path={["paragraphs", index, "showImage"]}
+              scope="content"
+            />
           </div>
         )}
       />
@@ -2315,16 +2323,6 @@ function SectionSettingsFields({ controller }: { controller: SectionFieldControl
               { label: "Stacked", value: "stacked" },
             ]}
             path={["layout"]}
-            scope="settings"
-          />
-        ) : null}
-        {controller.section.sectionType === "story" ? (
-          <CheckboxField
-            controller={controller}
-            defaultValue
-            description="Hide paragraph photos without deleting them. The story cover remains visible."
-            label="Show individual story photos"
-            path={["showEntryPhotos"]}
             scope="settings"
           />
         ) : null}
@@ -3355,10 +3353,9 @@ function PreviewRsvp({ content, settings }: { content: JsonObject; settings: Jso
   );
 }
 
-function PreviewStory({ content, settings }: { content: JsonObject; settings: JsonObject }) {
+function PreviewStory({ content }: { content: JsonObject }) {
   const paragraphs = normalizeStoryParagraphs(content.paragraphs);
   const coverImage = readAsset(content.image);
-  const showEntryPhotos = getJsonBoolean(settings, ["showEntryPhotos"], true);
 
   return (
     <div className="grid gap-3">
@@ -3380,7 +3377,7 @@ function PreviewStory({ content, settings }: { content: JsonObject; settings: Js
               <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
                 {paragraph.body}
               </p>
-              {showEntryPhotos && paragraph.image ? (
+              {paragraph.showImage !== false && paragraph.image ? (
                 <div className="mt-2 max-w-sm">
                   <PreviewImage asset={paragraph.image} compact />
                 </div>

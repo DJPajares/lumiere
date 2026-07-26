@@ -153,11 +153,13 @@ export const storyParagraphSchema = z.preprocess(
       title: z.string().trim().max(storyParagraphTitleMaxLength).optional(),
       body: nonEmptyString.max(storyParagraphBodyMaxLength),
       image: assetSchema.optional(),
+      showImage: z.boolean().optional(),
     })
-    .transform(({ title, body, image }): StoryParagraph => ({
+    .transform(({ title, body, image, showImage }): StoryParagraph => ({
       ...(title ? { title } : {}),
       body,
       ...(image ? { image } : {}),
+      ...(showImage === undefined ? {} : { showImage }),
     })),
 );
 
@@ -169,6 +171,7 @@ export type StoryParagraph = {
     caption?: string;
     url: string;
   };
+  showImage?: boolean;
 };
 
 export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
@@ -207,6 +210,10 @@ export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
       rawImage && "caption" in rawImage && typeof rawImage.caption === "string"
         ? rawImage.caption
         : undefined;
+    const showImage =
+      "showImage" in paragraph && typeof paragraph.showImage === "boolean"
+        ? paragraph.showImage
+        : undefined;
     const image =
       imageUrl && imageAlt
         ? {
@@ -220,6 +227,7 @@ export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
       ...(title === undefined ? {} : { title }),
       body,
       ...(image ? { image } : {}),
+      ...(showImage === undefined ? {} : { showImage }),
     };
   });
 }
@@ -542,7 +550,6 @@ export const sectionSettingsSchemas = {
   }),
   story: commonSettingsSchema.extend({
     layout: z.enum(["timeline", "editorial", "stacked"]).default("editorial"),
-    showEntryPhotos: z.boolean().default(true),
   }),
   details: commonSettingsSchema.extend({
     columns: z.number().int().min(1).max(3).default(2),

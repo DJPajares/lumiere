@@ -183,11 +183,6 @@ describe("SectionBuilderWorkspace", () => {
         "Shown once beneath the story title. It remains visible whether individual paragraph photos are shown or hidden.",
       ),
     ).toBeTruthy();
-    const showIndividualPhotos = storyEditor.getByRole("checkbox", {
-      name: /Show individual story photos/,
-    }) as HTMLInputElement;
-
-    expect(showIndividualPhotos.checked).toBe(true);
     expect(screen.getAllByAltText("Legacy section-wide story feature").length).toBeGreaterThan(0);
 
     await user.type(storyEditor.getByLabelText("Paragraph title (optional)"), "First chapter");
@@ -208,9 +203,16 @@ describe("SectionBuilderWorkspace", () => {
     await user.type(imageAltInputs[1]!, "A candlelit table shared with friends");
     expect(await screen.findByAltText("A candlelit table shared with friends")).toBeTruthy();
 
-    await user.click(showIndividualPhotos);
+    const storyPhotoToggles = storyEditor.getAllByRole("checkbox", {
+      name: /Show this story photo/,
+    }) as HTMLInputElement[];
 
-    expect(showIndividualPhotos.checked).toBe(false);
+    expect(storyPhotoToggles).toHaveLength(2);
+    expect(storyPhotoToggles.every((toggle) => toggle.checked)).toBe(true);
+
+    await user.click(storyPhotoToggles[1]!);
+
+    expect(storyPhotoToggles[1]!.checked).toBe(false);
     await waitFor(() => {
       expect(screen.queryByAltText("A candlelit table shared with friends")).toBeNull();
     });
@@ -229,6 +231,10 @@ describe("SectionBuilderWorkspace", () => {
     expect((storyEditor.getAllByLabelText("Alt text")[0] as HTMLInputElement).value).toBe(
       "A candlelit table shared with friends",
     );
+    expect(
+      (storyEditor.getAllByRole("checkbox", { name: /Show this story photo/ })[0] as HTMLInputElement)
+        .checked,
+    ).toBe(false);
 
     await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);
     await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
