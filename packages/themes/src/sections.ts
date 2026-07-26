@@ -542,6 +542,7 @@ export const sectionSettingsSchemas = {
   }),
   story: commonSettingsSchema.extend({
     layout: z.enum(["timeline", "editorial", "stacked"]).default("editorial"),
+    showEntryPhotos: z.boolean().default(true),
   }),
   details: commonSettingsSchema.extend({
     columns: z.number().int().min(1).max(3).default(2),

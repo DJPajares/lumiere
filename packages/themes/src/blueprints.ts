@@ -517,6 +517,7 @@ function defaultSettings(sectionType: SectionType) {
     return {
       density: "balanced",
       layout: "editorial",
+      showEntryPhotos: true,
     };
   }
 

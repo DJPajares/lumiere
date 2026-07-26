@@ -320,6 +320,9 @@ describe("theme registry", () => {
     expect(
       weddingSections.every((section) => section.contentSchema && section.settingsSchema),
     ).toBe(true);
+    expect(
+      weddingSections.find((section) => section.sectionType === "story")?.createDefaultSettings(),
+    ).toMatchObject({ showEntryPhotos: true });
     const dressCode = weddingSections.find((section) => section.sectionType === "dress_code");
     const dressCodeDefaults = dressCode?.createDefaultContent({
       eventType: "wedding",
@@ -829,9 +832,13 @@ describe("theme registry", () => {
           },
           { title: "", body: "An untitled paragraph." },
         ],
+        image: {
+          alt: "Legacy section-wide story image",
+          url: "https://images.example.com/legacy-story-feature.jpg",
+        },
         title: "Our story",
       },
-      settings: {},
+      settings: { showEntryPhotos: false },
     });
     const missingBody = validateThemeSection("premium", {
       sectionType: "story",
@@ -854,6 +861,7 @@ describe("theme registry", () => {
     }
     expect(structuredStory.ok).toBe(true);
     if (structuredStory.ok) {
+      expect(structuredStory.section.settings.showEntryPhotos).toBe(false);
       expect(structuredStory.section.content.paragraphs).toEqual([
         {
           title: "Chapter one",
@@ -866,6 +874,10 @@ describe("theme registry", () => {
         },
         { body: "An untitled paragraph." },
       ]);
+      expect(structuredStory.section.content.image).toEqual({
+        alt: "Legacy section-wide story image",
+        url: "https://images.example.com/legacy-story-feature.jpg",
+      });
     }
     expect(missingBody.ok).toBe(false);
   });

@@ -385,6 +385,10 @@ describe("public invite section renderers", () => {
           }),
           createSection({
             content: {
+              image: {
+                alt: "Legacy section-wide story feature",
+                url: "https://images.example.com/legacy-story-feature.jpg",
+              },
               paragraphs: [
                 {
                   body: "First the quiet hello.",
@@ -497,10 +501,70 @@ describe("public invite section renderers", () => {
     expect(html).toContain("A couple walking beneath garden trees");
     expect(html).toContain("Where the story began");
     expect(html).toContain('data-story-entry-photo="true"');
+    expect(html).toContain('data-story-cover-photo="true"');
+    expect(html).toContain("Legacy section-wide story feature");
     expect(html).toContain("Together in 42 days");
     expect(html).toContain('data-countdown-state="loading"');
     expect(html).toContain('data-countdown-unit="days"');
     expect(html).toContain('data-countdown-unit="seconds"');
+
+    const coverOnlyStoryInvite = createInvite([
+      createSection({
+        content: {
+          image: {
+            alt: "One establishing photo for the complete story",
+            caption: "Our story in one frame",
+            url: "https://images.example.com/story-cover.jpg",
+          },
+          paragraphs: ["One photo can introduce a completely text-led story."],
+          title: "Our story",
+        },
+        sectionKey: "cover-only-story",
+        sectionType: "story",
+        sortOrder: 0,
+      }),
+    ]);
+    const coverOnlyStoryHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: coverOnlyStoryInvite }),
+    );
+
+    expect(coverOnlyStoryHtml).toContain('data-story-cover-photo="true"');
+    expect(coverOnlyStoryHtml).toContain("One establishing photo for the complete story");
+    expect(coverOnlyStoryHtml).toContain("Our story in one frame");
+
+    const hiddenEntryPhotosInvite = createInvite([
+      createSection({
+        content: {
+          image: {
+            alt: "Visible story cover",
+            url: "https://images.example.com/visible-story-cover.jpg",
+          },
+          paragraphs: [
+            {
+              body: "The story text remains visible.",
+              image: {
+                alt: "Hidden individual story photo",
+                url: "https://images.example.com/hidden-entry.jpg",
+              },
+            },
+          ],
+          title: "Our story",
+        },
+        sectionKey: "story-with-hidden-entry-photos",
+        sectionType: "story",
+        settings: { showEntryPhotos: false },
+        sortOrder: 0,
+      }),
+    ]);
+    const hiddenEntryPhotosHtml = renderToStaticMarkup(
+      createElement(PublicInvitation, { invite: hiddenEntryPhotosInvite }),
+    );
+
+    expect(hiddenEntryPhotosHtml).toContain('data-story-cover-photo="true"');
+    expect(hiddenEntryPhotosHtml).toContain("Visible story cover");
+    expect(hiddenEntryPhotosHtml).toContain("The story text remains visible.");
+    expect(hiddenEntryPhotosHtml).not.toContain('data-story-entry-photo="true"');
+    expect(hiddenEntryPhotosHtml).not.toContain("Hidden individual story photo");
 
     const countdownDisabledInvite = createInvite([
       createSection({

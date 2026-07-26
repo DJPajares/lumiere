@@ -177,6 +177,18 @@ describe("SectionBuilderWorkspace", () => {
     const legacyBody = storyEditor.getByLabelText("Paragraph body") as HTMLTextAreaElement;
 
     expect(legacyBody.value).toBe("A legacy paragraph without a title.");
+    expect(storyEditor.getByText("Story cover photo (optional)")).toBeTruthy();
+    expect(
+      storyEditor.getByText(
+        "Shown once beneath the story title. It remains visible whether individual paragraph photos are shown or hidden.",
+      ),
+    ).toBeTruthy();
+    const showIndividualPhotos = storyEditor.getByRole("checkbox", {
+      name: /Show individual story photos/,
+    }) as HTMLInputElement;
+
+    expect(showIndividualPhotos.checked).toBe(true);
+    expect(screen.getAllByAltText("Legacy section-wide story feature").length).toBeGreaterThan(0);
 
     await user.type(storyEditor.getByLabelText("Paragraph title (optional)"), "First chapter");
     await user.click(storyEditor.getByRole("button", { name: "Add story paragraph" }));
@@ -194,6 +206,15 @@ describe("SectionBuilderWorkspace", () => {
     await user.type(bodyInputs[1]!, "A structured paragraph with a title.");
     await user.type(imageUrlInputs[1]!, "https://images.example.com/second-chapter.jpg");
     await user.type(imageAltInputs[1]!, "A candlelit table shared with friends");
+    expect(await screen.findByAltText("A candlelit table shared with friends")).toBeTruthy();
+
+    await user.click(showIndividualPhotos);
+
+    expect(showIndividualPhotos.checked).toBe(false);
+    await waitFor(() => {
+      expect(screen.queryByAltText("A candlelit table shared with friends")).toBeNull();
+    });
+    expect(screen.getAllByAltText("Legacy section-wide story feature").length).toBeGreaterThan(0);
     await user.click(storyEditor.getAllByRole("button", { name: "Move up" })[1]!);
 
     expect(
@@ -575,6 +596,10 @@ const savedIntroductionSection: EventSection = {
 
 const savedLegacyStorySection: EventSection = {
   content: {
+    image: {
+      alt: "Legacy section-wide story feature",
+      url: "https://images.example.com/legacy-story-feature.jpg",
+    },
     paragraphs: ["A legacy paragraph without a title."],
     title: "Our story",
   },

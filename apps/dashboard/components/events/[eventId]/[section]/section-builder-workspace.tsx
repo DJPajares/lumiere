@@ -1258,7 +1258,7 @@ function PreviewSectionBody({
     case "rsvp":
       return <PreviewRsvp content={content} settings={settings} />;
     case "story":
-      return <PreviewStory content={content} />;
+      return <PreviewStory content={content} settings={settings} />;
     case "custom":
       return <PreviewCustom content={content} />;
     default:
@@ -2228,8 +2228,10 @@ function StoryFields({ controller }: { controller: SectionFieldController }) {
         )}
       />
       <AssetField
+        collapsible
         controller={controller}
-        label="Section feature image (optional)"
+        description="Shown once beneath the story title. It remains visible whether individual paragraph photos are shown or hidden."
+        label="Story cover photo (optional)"
         path={["image"]}
       />
     </div>
@@ -2313,6 +2315,16 @@ function SectionSettingsFields({ controller }: { controller: SectionFieldControl
               { label: "Stacked", value: "stacked" },
             ]}
             path={["layout"]}
+            scope="settings"
+          />
+        ) : null}
+        {controller.section.sectionType === "story" ? (
+          <CheckboxField
+            controller={controller}
+            defaultValue
+            description="Hide paragraph photos without deleting them. The story cover remains visible."
+            label="Show individual story photos"
+            path={["showEntryPhotos"]}
             scope="settings"
           />
         ) : null}
@@ -2639,11 +2651,13 @@ function CommaListField({
 function AssetField({
   collapsible = false,
   controller,
+  description,
   label,
   path,
 }: {
   collapsible?: boolean;
   controller: SectionFieldController;
+  description?: string;
   label: string;
   path: JsonPath;
 }) {
@@ -2651,6 +2665,7 @@ function AssetField({
     <NestedAssetField
       collapsible={collapsible}
       controller={controller}
+      description={description}
       label={label}
       path={path}
     />
@@ -2660,11 +2675,13 @@ function AssetField({
 function NestedAssetField({
   collapsible = false,
   controller,
+  description,
   label,
   path,
 }: {
   collapsible?: boolean;
   controller: SectionFieldController;
+  description?: string;
   label: string;
   path: JsonPath;
 }) {
@@ -2734,7 +2751,8 @@ function NestedAssetField({
         <summary className="cursor-pointer text-sm font-semibold">
           {label}
           <span className="mt-1 block text-xs font-normal leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
-            Add a photo when it strengthens this moment; text-only entries keep the same rhythm.
+            {description ??
+              "Add a photo when it strengthens this moment; text-only entries keep the same rhythm."}
           </span>
         </summary>
         <div className="pt-3">{fields}</div>
@@ -2744,7 +2762,14 @@ function NestedAssetField({
 
   return (
     <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
-      <p className="text-sm font-semibold">{label}</p>
+      <div>
+        <p className="text-sm font-semibold">{label}</p>
+        {description ? (
+          <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]">
+            {description}
+          </p>
+        ) : null}
+      </div>
       {fields}
     </div>
   );
@@ -3330,39 +3355,42 @@ function PreviewRsvp({ content, settings }: { content: JsonObject; settings: Jso
   );
 }
 
-function PreviewStory({ content }: { content: JsonObject }) {
+function PreviewStory({ content, settings }: { content: JsonObject; settings: JsonObject }) {
   const paragraphs = normalizeStoryParagraphs(content.paragraphs);
-  const image = readAsset(content.image);
+  const coverImage = readAsset(content.image);
+  const showEntryPhotos = getJsonBoolean(settings, ["showEntryPhotos"], true);
 
   return (
-    <div className={image ? "grid gap-4 sm:grid-cols-[0.95fr_1.05fr]" : "grid gap-4"}>
-      <div className="grid gap-3">
-        <h3 className="text-2xl font-semibold [font-family:var(--font-display)]">
-          {readString(content.title) ?? "Story"}
-        </h3>
-        {paragraphs.length > 0 ? (
-          <div className="grid gap-3">
-            {paragraphs.map((paragraph, index) => (
-              <div className="grid gap-1" key={index}>
-                {paragraph.title ? (
-                  <h4 className="text-sm font-semibold">{paragraph.title}</h4>
-                ) : null}
-                <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
-                  {paragraph.body}
-                </p>
-                {paragraph.image ? (
-                  <div className="mt-2 max-w-sm">
-                    <PreviewImage asset={paragraph.image} compact />
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <PreviewEmpty message="Add story paragraphs to preview the editorial rhythm." />
-        )}
-      </div>
-      {image ? <PreviewImage asset={image} feature /> : null}
+    <div className="grid gap-3">
+      <h3 className="text-2xl font-semibold [font-family:var(--font-display)]">
+        {readString(content.title) ?? "Story"}
+      </h3>
+      {coverImage ? (
+        <div className="max-w-md">
+          <PreviewImage asset={coverImage} feature />
+        </div>
+      ) : null}
+      {paragraphs.length > 0 ? (
+        <div className="grid gap-3">
+          {paragraphs.map((paragraph, index) => (
+            <div className="grid gap-1" key={index}>
+              {paragraph.title ? (
+                <h4 className="text-sm font-semibold">{paragraph.title}</h4>
+              ) : null}
+              <p className="text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
+                {paragraph.body}
+              </p>
+              {showEntryPhotos && paragraph.image ? (
+                <div className="mt-2 max-w-sm">
+                  <PreviewImage asset={paragraph.image} compact />
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <PreviewEmpty message="Add story paragraphs to preview the editorial rhythm." />
+      )}
     </div>
   );
 }
