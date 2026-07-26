@@ -1,9 +1,12 @@
 export {
+  ArrowDownIcon,
+  ArrowUpIcon,
   CalendarSyncIcon,
   CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
   EllipsisIcon,
+  EyeIcon,
   Grid2X2Icon,
   LayoutGridIcon,
   ListIcon,

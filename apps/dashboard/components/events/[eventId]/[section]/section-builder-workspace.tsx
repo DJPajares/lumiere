@@ -2,8 +2,39 @@
 
 import { ApiClientError } from "@lumiere/api-client";
 import { Button } from "@lumiere/dashboard-ui/components/button";
-import { Grid2X2Icon, LayoutGridIcon, ListIcon } from "@lumiere/dashboard-ui/components/icons";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@lumiere/dashboard-ui/components/dropdown-menu";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  EllipsisIcon,
+  EyeIcon,
+  LayoutGridIcon,
+  ListIcon,
+} from "@lumiere/dashboard-ui/components/icons";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lumiere/dashboard-ui/components/select";
 import { toast } from "@lumiere/dashboard-ui/components/sonner";
+import { Switch } from "@lumiere/dashboard-ui/components/switch";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 import { cn } from "@lumiere/dashboard-ui/utils";
 import {
@@ -83,7 +114,7 @@ type SectionDraft = {
 type SectionErrors = Partial<Record<"content" | "settings" | "visibility", string>>;
 type SectionErrorMap = Record<string, SectionErrors>;
 type PreviewContext = "guest" | "public";
-type SectionOrderView = "detailed" | "minimal" | "list";
+type SectionOrderView = "detailed" | "list";
 
 type SectionPreviewModel = {
   canDisable: boolean;
@@ -282,10 +313,8 @@ function SectionBuilderContent({
     () => state.sections.filter((section) => section.enabled).length,
     [state.sections],
   );
-  const [selectedSectionKey, setSelectedSectionKey] = useState(
-    () => state.sections[0]?.sectionKey ?? "",
-  );
   const [editingSectionKey, setEditingSectionKey] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
   const [sectionOrderView, setSectionOrderView] = useState<SectionOrderView>("detailed");
   const [sectionOrderViewStorageReady, setSectionOrderViewStorageReady] = useState(false);
@@ -314,9 +343,6 @@ function SectionBuilderContent({
     () => createSectionPreviewModels(state.sections, state.theme, state.event),
     [state.event, state.sections, state.theme],
   );
-  const selectedPreview =
-    previewModels.find((model) => model.section.sectionKey === selectedSectionKey) ??
-    previewModels[0];
   const editingPreview = editingSectionKey
     ? previewModels.find((model) => model.section.sectionKey === editingSectionKey)
     : undefined;
@@ -348,12 +374,6 @@ function SectionBuilderContent({
   const formDetail = state.sectionErrors._form?.content;
 
   useEffect(() => {
-    if (!previewModels.some((model) => model.section.sectionKey === selectedSectionKey)) {
-      setSelectedSectionKey(previewModels[0]?.section.sectionKey ?? "");
-    }
-  }, [previewModels, selectedSectionKey]);
-
-  useEffect(() => {
     if (
       editingSectionKey &&
       !previewModels.some((model) => model.section.sectionKey === editingSectionKey)
@@ -363,7 +383,6 @@ function SectionBuilderContent({
   }, [editingSectionKey, previewModels]);
 
   const openSectionEditor = (sectionKey: string) => {
-    setSelectedSectionKey(sectionKey);
     setEditingSectionKey(sectionKey);
   };
 
@@ -598,7 +617,6 @@ function SectionBuilderContent({
     const sectionKey = Object.keys(sectionErrors).find((key) => key !== "_form");
 
     if (sectionKey) {
-      setSelectedSectionKey(sectionKey);
       setEditingSectionKey(sectionKey);
     }
   };
@@ -608,7 +626,6 @@ function SectionBuilderContent({
       return;
     }
 
-    setSelectedSectionKey(nextSuggestedSection.section.sectionKey);
     updateSection(nextSuggestedSection.section.sectionKey, {
       enabled: true,
     });
@@ -626,12 +643,15 @@ function SectionBuilderContent({
               Configure content for {state.event.title}
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-              {state.theme.name} supports {state.sections.length} section types. Work from the live
-              preview, then save once the visible sections validate against the invite renderer
-              contract.
+              {state.theme.name} supports {state.sections.length} section types. Arrange and edit
+              the invitation here, then preview the complete draft before saving.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setPreviewOpen(true)} size="lg" type="button" variant="outline">
+              <EyeIcon data-icon="inline-start" />
+              Preview
+            </Button>
             {canEdit ? (
               <>
                 <button
@@ -684,7 +704,7 @@ function SectionBuilderContent({
               onClick={enableSuggestedSection}
               type="button"
             >
-              Enable and preview
+              Enable section
             </button>
           </div>
         ) : null}
@@ -704,35 +724,41 @@ function SectionBuilderContent({
         ) : null}
       </section>
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] xl:items-start">
-        <SectionOrderPanel
-          canEdit={canEdit}
-          dirtySectionKeys={dirtySectionKeys}
-          isSaving={state.isSaving}
-          models={previewModels}
-          moveSection={moveSection}
-          onEdit={openSectionEditor}
-          onSelect={setSelectedSectionKey}
-          onViewChange={setSectionOrderView}
-          sectionErrors={state.sectionErrors}
-          selectedSectionKey={selectedPreview?.section.sectionKey}
-          updateSection={updateSection}
-          view={sectionOrderView}
-        />
+      <SectionOrderPanel
+        canEdit={canEdit}
+        dirtySectionKeys={dirtySectionKeys}
+        isSaving={state.isSaving}
+        models={previewModels}
+        moveSection={moveSection}
+        onEdit={openSectionEditor}
+        onViewChange={setSectionOrderView}
+        sectionErrors={state.sectionErrors}
+        updateSection={updateSection}
+        view={sectionOrderView}
+      />
 
-        <SectionPreviewPanel
-          event={state.event}
-          model={selectedPreview}
-          previewContext={previewContext}
-          setPreviewContext={setPreviewContext}
-          theme={state.theme}
-        />
-      </div>
+      {previewOpen ? (
+        <ResponsiveModal
+          contentClassName="sm:max-w-5xl"
+          description="Review the complete invitation using the current unsaved section draft."
+          onOpenChange={setPreviewOpen}
+          open
+          title="Preview invitation"
+        >
+          <InvitationPreview
+            event={state.event}
+            models={previewModels}
+            previewContext={previewContext}
+            setPreviewContext={setPreviewContext}
+            theme={state.theme}
+          />
+        </ResponsiveModal>
+      ) : null}
 
       {editingPreview ? (
         <ResponsiveModal
           contentClassName="sm:max-w-4xl"
-          description="Update this section’s invite content. Changes appear in the dedicated preview as you edit."
+          description="Update this section’s invite content, then use Preview to review it in the complete invitation."
           dirty={dirtySectionKeys.has(editingPreview.section.sectionKey)}
           footer={({ requestClose }) => (
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -807,10 +833,8 @@ function SectionOrderPanel({
   models,
   moveSection,
   onEdit,
-  onSelect,
   onViewChange,
   sectionErrors,
-  selectedSectionKey,
   updateSection,
   view,
 }: {
@@ -820,25 +844,23 @@ function SectionOrderPanel({
   models: SectionPreviewModel[];
   moveSection: (sectionKey: string, direction: -1 | 1) => void;
   onEdit: (sectionKey: string) => void;
-  onSelect: (sectionKey: string) => void;
   onViewChange: (view: SectionOrderView) => void;
   sectionErrors: SectionErrorMap;
-  selectedSectionKey?: string;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
   view: SectionOrderView;
 }) {
   return (
     <section
       aria-label="Section order and validation"
-      className="grid min-w-0 gap-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:col-start-1"
+      className="grid min-w-0 gap-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
     >
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[var(--accent-strong)]">Preview order</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">Invitation order</p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight">Sections in invite order</h2>
           <p className="mt-2 max-w-prose text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            Select a section to inspect its live preview. Detailed keeps every setting visible;
-            Minimalist and List expand controls only for the selected section.
+            Detailed keeps compact controls visible on every card. List keeps each section and its
+            actions on a single row.
           </p>
         </div>
 
@@ -852,7 +874,7 @@ function SectionOrderPanel({
             onValueChange={(value) => {
               const nextView = value[0];
 
-              if (nextView === "detailed" || nextView === "minimal" || nextView === "list") {
+              if (nextView === "detailed" || nextView === "list") {
                 onViewChange(nextView);
               }
             }}
@@ -864,10 +886,6 @@ function SectionOrderPanel({
             <ToggleGroupItem aria-label="Detailed section view" type="button" value="detailed">
               <LayoutGridIcon data-icon="inline-start" />
               Detailed
-            </ToggleGroupItem>
-            <ToggleGroupItem aria-label="Minimalist section view" type="button" value="minimal">
-              <Grid2X2Icon data-icon="inline-start" />
-              Minimalist
             </ToggleGroupItem>
             <ToggleGroupItem aria-label="List section view" type="button" value="list">
               <ListIcon data-icon="inline-start" />
@@ -881,7 +899,6 @@ function SectionOrderPanel({
         className={cn(
           "grid",
           view === "detailed" && "gap-2",
-          view === "minimal" && "gap-1.5",
           view === "list" &&
             "gap-0 divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)]",
         )}
@@ -889,170 +906,128 @@ function SectionOrderPanel({
       >
         {models.map((model, index) => {
           const definition = getSectionDefinition(model.section.sectionType);
-          const isSelected = selectedSectionKey === model.section.sectionKey;
           const isDirty = dirtySectionKeys.has(model.section.sectionKey);
           const errors = {
             ...model.errors,
             ...(sectionErrors[model.section.sectionKey] ?? {}),
           };
 
-          return (
-            <li className="min-w-0" key={model.section.sectionKey}>
-              <article
-                className={cn(
-                  "min-w-0 overflow-hidden transition",
-                  view === "list" ? "rounded-none border-0" : "rounded-[var(--radius-md)] border",
-                  isSelected
-                    ? cn(
-                        "bg-[color-mix(in_srgb,var(--accent)_8%,var(--surface))]",
-                        view === "detailed"
-                          ? "border-[var(--accent)] shadow-[0_12px_32px_color-mix(in_srgb,var(--accent)_10%,transparent)]"
-                          : view === "minimal"
-                            ? "border-[var(--accent)]"
-                            : "shadow-[inset_3px_0_0_var(--accent)]",
-                      )
-                    : cn("bg-[var(--surface)]", view !== "list" && "border-[var(--border)]"),
-                )}
-              >
-                <button
-                  aria-current={isSelected ? "true" : undefined}
-                  aria-label={`Preview ${definition.label}`}
-                  className={cn(
-                    "grid min-w-0 w-full text-left transition hover:bg-[var(--surface-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]",
-                    view === "detailed" ? "gap-3 p-3" : "gap-1.5 px-3 py-2.5",
-                  )}
-                  data-section-card-key={model.section.sectionKey}
-                  onClick={() => onSelect(model.section.sectionKey)}
+          const controls = (
+            <>
+              <SectionEnabledControl
+                canEdit={canEdit}
+                isSaving={isSaving}
+                model={model}
+                updateSection={updateSection}
+              />
+              <SectionVisibilitySelect
+                canEdit={canEdit}
+                error={errors.visibility}
+                isSaving={isSaving}
+                model={model}
+                updateSection={updateSection}
+              />
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  aria-label={`${definition.label} move up`}
+                  disabled={!canEdit || isSaving || index === 0}
+                  onClick={() => moveSection(model.section.sectionKey, -1)}
+                  size="icon-sm"
+                  title="Move up"
+                  type="button"
+                  variant="outline"
+                >
+                  <ArrowUpIcon />
+                </Button>
+                <Button
+                  aria-label={`${definition.label} move down`}
+                  disabled={!canEdit || isSaving || index === models.length - 1}
+                  onClick={() => moveSection(model.section.sectionKey, 1)}
+                  size="icon-sm"
+                  title="Move down"
+                  type="button"
+                  variant="outline"
+                >
+                  <ArrowDownIcon />
+                </Button>
+                <Button
+                  aria-label={`Edit ${definition.label}`}
+                  disabled={isSaving}
+                  onClick={() => onEdit(model.section.sectionKey)}
+                  size="sm"
                   type="button"
                 >
-                  <span
-                    className={cn(
-                      "flex min-w-0 justify-between gap-3",
-                      view === "detailed" ? "items-start" : "items-center",
-                    )}
-                  >
-                    <span
-                      className={cn("min-w-0", view !== "detailed" && "flex items-center gap-3")}
-                    >
-                      <span
-                        className={cn(
-                          "text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]",
-                          view !== "detailed" &&
-                            "inline-flex min-w-7 shrink-0 justify-center font-mono tracking-normal",
-                        )}
-                      >
-                        {String(index + 1).padStart(2, "0")}
-                        {view === "detailed" ? ` · ${formatRequirement(model.requirement)}` : null}
-                      </span>
-                      <span className={cn("min-w-0", view === "detailed" && "mt-1 block")}>
-                        <span className="block truncate font-semibold">{definition.label}</span>
-                        {view !== "detailed" ? (
-                          <span className="mt-0.5 block truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
-                            {formatRequirement(model.requirement)} · {formatVisibility(model)}
-                            {isDirty ? " · Unsaved" : ""}
-                          </span>
-                        ) : null}
-                      </span>
-                    </span>
-                    <span className={`${statusPillClassName(model.status)} shrink-0`}>
-                      {model.statusLabel}
-                    </span>
-                  </span>
-                  {view === "detailed" ? (
-                    <span className="flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-1">
-                        {formatVisibility(model)}
-                      </span>
-                      {isDirty ? (
-                        <span className="rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,var(--surface))] px-2.5 py-1 font-semibold">
-                          Unsaved
-                        </span>
-                      ) : null}
-                      <span className="max-w-full break-all rounded-full bg-[var(--surface-muted)] px-2.5 py-1 font-mono">
-                        {definition.rendererKey}
-                      </span>
-                    </span>
-                  ) : null}
-                </button>
+                  Edit
+                </Button>
+              </div>
+            </>
+          );
 
-                {view === "detailed" || isSelected ? (
-                  <div
-                    className={cn(
-                      "grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] sm:grid-cols-2",
-                      view === "detailed" ? "p-3 sm:p-4" : "p-3",
-                    )}
-                  >
-                    <DashboardCheckbox
-                      aria-label={`Enable ${definition.label}`}
-                      checked={model.section.enabled}
-                      description={
-                        model.disableLockReason ??
-                        "Disabled sections are omitted from the saved invite config."
-                      }
-                      disabled={
-                        !canEdit || isSaving || (model.section.enabled && !model.canDisable)
-                      }
-                      id={`${model.section.sectionKey}-enabled`}
-                      label="Enabled"
-                      onChange={(event) => {
-                        if (!event.target.checked && !model.canDisable) {
-                          return;
-                        }
-                        updateSection(model.section.sectionKey, {
-                          enabled: event.target.checked,
-                        });
-                      }}
-                    />
-
-                    <DashboardSelect
-                      aria-label={`${definition.label} visibility`}
-                      disabled={!canEdit || isSaving || !model.section.enabled}
-                      error={
-                        errors.visibility
-                          ? `Visibility for ${definition.label}: ${errors.visibility}`
-                          : undefined
-                      }
-                      id={`${model.section.sectionKey}-visibility`}
-                      label="Visibility"
-                      onValueChange={(value) =>
-                        updateSection(model.section.sectionKey, {
-                          visibility: value as SectionVisibility,
-                        })
-                      }
-                      options={visibilityOptions}
-                      value={model.section.visibility}
-                    />
-
-                    <div className="flex flex-wrap gap-2 sm:col-span-2">
-                      <button
-                        aria-label={`${definition.label} move up`}
-                        className={secondaryButtonClassName}
-                        disabled={!canEdit || isSaving || index === 0}
-                        onClick={() => moveSection(model.section.sectionKey, -1)}
-                        type="button"
-                      >
-                        Move up
-                      </button>
-                      <button
-                        aria-label={`${definition.label} move down`}
-                        className={secondaryButtonClassName}
-                        disabled={!canEdit || isSaving || index === models.length - 1}
-                        onClick={() => moveSection(model.section.sectionKey, 1)}
-                        type="button"
-                      >
-                        Move down
-                      </button>
-                      <button
-                        className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60 sm:ml-auto"
-                        disabled={isSaving}
-                        onClick={() => onEdit(model.section.sectionKey)}
-                        type="button"
-                      >
-                        Edit {definition.label}
-                      </button>
+          return view === "list" ? (
+            <li className="min-w-0" key={model.section.sectionKey}>
+              <article
+                className="grid min-h-12 grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2 bg-[var(--surface)] px-3 py-2 md:grid-cols-[2rem_minmax(11rem,1fr)_auto_auto] md:gap-3"
+                data-mobile-actions="menu"
+                data-section-card-key={model.section.sectionKey}
+                data-section-row-layout="single"
+              >
+                <span className="font-mono text-xs font-semibold text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{definition.label}</p>
+                  <p className="truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+                    {formatRequirement(model.requirement)} · {model.statusLabel}
+                    {isDirty ? " · Unsaved" : ""}
+                  </p>
+                </div>
+                <span className={cn(statusPillClassName(model.status), "hidden md:inline-flex")}>
+                  {model.statusLabel}
+                </span>
+                <div className="hidden shrink-0 items-center gap-3 md:flex">{controls}</div>
+                <div className="md:hidden">
+                  <SectionMobileActions
+                    canEdit={canEdit}
+                    index={index}
+                    isSaving={isSaving}
+                    model={model}
+                    modelCount={models.length}
+                    moveSection={moveSection}
+                    onEdit={onEdit}
+                    updateSection={updateSection}
+                  />
+                </div>
+              </article>
+            </li>
+          ) : (
+            <li className="min-w-0" key={model.section.sectionKey}>
+              <article
+                className="min-w-0 overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]"
+                data-section-card-key={model.section.sectionKey}
+              >
+                <div className="flex min-w-0 items-start justify-between gap-3 p-3 sm:p-4">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="inline-flex min-w-7 shrink-0 justify-center font-mono text-xs font-semibold text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="truncate font-semibold">{definition.label}</h3>
+                      <p className="mt-0.5 truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+                        {formatRequirement(model.requirement)} · {formatVisibility(model)}
+                        {isDirty ? " · Unsaved" : ""}
+                      </p>
                     </div>
                   </div>
-                ) : null}
+                  <span className={statusPillClassName(model.status)}>{model.statusLabel}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 sm:px-4">
+                  {controls}
+                  {errors.visibility ? (
+                    <p className="basis-full text-xs text-[var(--error)]" role="alert">
+                      {errors.visibility}
+                    </p>
+                  ) : null}
+                </div>
               </article>
             </li>
           );
@@ -1062,15 +1037,204 @@ function SectionOrderPanel({
   );
 }
 
-function SectionPreviewPanel({
-  event,
+function SectionMobileActions({
+  canEdit,
+  index,
+  isSaving,
   model,
+  modelCount,
+  moveSection,
+  onEdit,
+  updateSection,
+}: {
+  canEdit: boolean;
+  index: number;
+  isSaving: boolean;
+  model: SectionPreviewModel;
+  modelCount: number;
+  moveSection: (sectionKey: string, direction: -1 | 1) => void;
+  onEdit: (sectionKey: string) => void;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+}) {
+  const definition = getSectionDefinition(model.section.sectionType);
+  const enabledControlDisabled =
+    !canEdit || isSaving || (model.section.enabled && !model.canDisable);
+  const visibilityDisabled = !canEdit || isSaving || !model.section.enabled;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`${definition.label} actions`}
+        render={
+          <Button size="icon-sm" type="button" variant="ghost">
+            <EllipsisIcon />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="min-w-52">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{definition.label}</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem
+            checked={model.section.enabled}
+            disabled={enabledControlDisabled}
+            onCheckedChange={(checked) => {
+              if (!checked && !model.canDisable) {
+                return;
+              }
+              updateSection(model.section.sectionKey, { enabled: checked });
+            }}
+          >
+            Enabled
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger disabled={visibilityDisabled}>
+              Visibility
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                onValueChange={(value) =>
+                  updateSection(model.section.sectionKey, {
+                    visibility: value as SectionVisibility,
+                  })
+                }
+                value={model.section.visibility}
+              >
+                {visibilityOptions.map((option) => (
+                  <DropdownMenuRadioItem key={option.value} value={option.value}>
+                    {option.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            disabled={!canEdit || isSaving || index === 0}
+            onClick={() => moveSection(model.section.sectionKey, -1)}
+          >
+            <ArrowUpIcon />
+            Move up
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!canEdit || isSaving || index === modelCount - 1}
+            onClick={() => moveSection(model.section.sectionKey, 1)}
+          >
+            <ArrowDownIcon />
+            Move down
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem disabled={isSaving} onClick={() => onEdit(model.section.sectionKey)}>
+            Edit
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SectionEnabledControl({
+  canEdit,
+  isSaving,
+  model,
+  updateSection,
+}: {
+  canEdit: boolean;
+  isSaving: boolean;
+  model: SectionPreviewModel;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+}) {
+  const definition = getSectionDefinition(model.section.sectionType);
+  const disabled = !canEdit || isSaving || (model.section.enabled && !model.canDisable);
+
+  return (
+    <div
+      className="flex shrink-0 items-center gap-2 text-xs font-medium"
+      title={model.disableLockReason}
+    >
+      <Switch
+        aria-describedby={
+          model.disableLockReason ? `${model.section.sectionKey}-disable-lock-reason` : undefined
+        }
+        aria-label={`Enable ${definition.label}`}
+        checked={model.section.enabled}
+        disabled={disabled}
+        id={`${model.section.sectionKey}-enabled`}
+        onCheckedChange={(checked) => {
+          if (!checked && !model.canDisable) {
+            return;
+          }
+          updateSection(model.section.sectionKey, { enabled: checked });
+        }}
+      />
+      <span>{model.section.enabled ? "On" : "Off"}</span>
+      {model.disableLockReason ? (
+        <span className="sr-only" id={`${model.section.sectionKey}-disable-lock-reason`}>
+          {model.disableLockReason}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function SectionVisibilitySelect({
+  canEdit,
+  error,
+  isSaving,
+  model,
+  updateSection,
+}: {
+  canEdit: boolean;
+  error?: string;
+  isSaving: boolean;
+  model: SectionPreviewModel;
+  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+}) {
+  const definition = getSectionDefinition(model.section.sectionType);
+
+  return (
+    <Select
+      disabled={!canEdit || isSaving || !model.section.enabled}
+      onValueChange={(value) =>
+        updateSection(model.section.sectionKey, { visibility: value as SectionVisibility })
+      }
+      value={model.section.visibility}
+    >
+      <SelectTrigger
+        aria-invalid={error ? true : undefined}
+        aria-label={`${definition.label} visibility`}
+        className="w-32"
+        id={`${model.section.sectionKey}-visibility`}
+        size="sm"
+        title={error}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {visibilityOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function InvitationPreview({
+  event,
+  models,
   previewContext,
   setPreviewContext,
   theme,
 }: {
   event: Event;
-  model: SectionPreviewModel | undefined;
+  models: SectionPreviewModel[];
   previewContext: PreviewContext;
   setPreviewContext: (context: PreviewContext) => void;
   theme: Theme;
@@ -1078,70 +1242,68 @@ function SectionPreviewPanel({
   const themeDefinition = resolveTheme(theme.id);
   const resolvedMode = resolvePreviewThemeMode(event.themeMode, themeDefinition);
   const previewStyle = themeToPreviewStyle(themeDefinition, resolvedMode);
-  const appearsInContext =
-    previewContext === "public" ? model?.visibleInPublic : model?.visibleInGuest;
+  const visibleModels = models.filter((model) => {
+    if (!model.section.enabled || model.section.visibility === "hidden") {
+      return false;
+    }
+
+    return previewContext === "guest" ? true : model.visibleInPublic;
+  });
 
   return (
-    <aside className="grid min-w-0 gap-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 xl:sticky xl:top-4 xl:col-start-2 xl:row-start-1">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between xl:flex-col">
+    <div className="grid min-w-0 gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-[var(--accent-strong)]">Live preview</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">
-            {model ? getSectionDefinition(model.section.sectionType).label : "No section selected"}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-            Theme: {theme.name}. Event mode: {formatMode(event.themeMode)}. Preview resolves to{" "}
-            {resolvedMode}.
+          <p className="text-sm font-semibold">{theme.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {formatMode(event.themeMode)} mode · {visibleModels.length} visible sections
           </p>
         </div>
-        <div className="inline-flex rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted)] p-1 text-sm">
-          {(["guest", "public"] as const).map((context) => (
-            <button
-              aria-pressed={previewContext === context}
-              className="rounded-[calc(var(--radius-md)-0.125rem)] px-3 py-2 font-semibold capitalize transition hover:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] aria-pressed:bg-[var(--surface)] aria-pressed:text-[var(--accent-strong)]"
-              key={context}
-              onClick={() => setPreviewContext(context)}
-              type="button"
-            >
-              {context}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          aria-label="Preview audience"
+          onValueChange={(value) => {
+            const context = value[0];
+            if (context === "guest" || context === "public") {
+              setPreviewContext(context);
+            }
+          }}
+          size="sm"
+          spacing={0}
+          value={[previewContext]}
+          variant="outline"
+        >
+          <ToggleGroupItem type="button" value="guest">
+            Guest
+          </ToggleGroupItem>
+          <ToggleGroupItem type="button" value="public">
+            Public
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
-      {model ? (
-        <div className="grid gap-3">
-          {!appearsInContext ? (
-            <p className="rounded-[var(--radius-md)] border border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-3 py-2 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_78%,transparent)]">
-              This section will not appear in the {previewContext} invite context with its current
-              enabled and visibility settings. The draft is still shown below for editing.
-            </p>
-          ) : null}
-
-          {model.status === "invalid" ? (
-            <PreviewValidationState model={model} />
-          ) : (
-            <DashboardInviteSectionPreview
-              event={event}
-              model={model}
-              previewContext={previewContext}
-              style={previewStyle}
-              theme={themeDefinition}
-            />
+      {visibleModels.length > 0 ? (
+        <div className="grid gap-3 rounded-[var(--radius-lg)] bg-[var(--background)] p-3" style={previewStyle}>
+          {visibleModels.map((model) =>
+            model.status === "invalid" ? (
+              <PreviewValidationState key={model.section.sectionKey} model={model} />
+            ) : (
+              <DashboardInviteSectionPreview
+                event={event}
+                key={model.section.sectionKey}
+                model={model}
+                previewContext={previewContext}
+                style={previewStyle}
+                theme={themeDefinition}
+              />
+            ),
           )}
-
-          <p className="rounded-[var(--radius-md)] bg-[var(--surface-muted)] px-3 py-2 text-xs leading-5 text-[color-mix(in_srgb,var(--foreground)_66%,transparent)]">
-            Preview contract: content and settings are parsed with the same section schemas and
-            renderer keys used by the public invite. This dashboard pane is a compact approximation
-            of the full invite frame for safer editing on tablet and desktop.
-          </p>
         </div>
       ) : (
         <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-          Choose a supported section to inspect its content, settings, visibility, and preview.
+          No sections are visible to the {previewContext} audience yet.
         </p>
       )}
-    </aside>
+    </div>
   );
 }
 
@@ -4450,8 +4612,8 @@ function readStoredSectionOrderView(): SectionOrderView {
   try {
     const storedView = window.localStorage.getItem(sectionOrderViewStorageKey);
 
-    if (storedView === "minimal" || storedView === "list") {
-      return storedView;
+    if (storedView === "list") {
+      return "list";
     }
   } catch {
     // Storage may be unavailable; use the default detailed view.

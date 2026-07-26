@@ -24,9 +24,10 @@ describe("SectionBuilderWorkspace", () => {
     expect(screen.getByLabelText("Loading sections")).toBeTruthy();
     expect(await screen.findByText("Configure content for Spring Dinner")).toBeTruthy();
     expect(screen.getByText("Sections in invite order")).toBeTruthy();
-    expect(screen.getByText("Live preview")).toBeTruthy();
+    expect(screen.queryByText("Live preview")).toBeNull();
     expect(screen.getByText("Recommended next section")).toBeTruthy();
-    expect(screen.getByText(/Preview contract:/)).toBeTruthy();
+    expect(screen.queryByText(/Preview contract:/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Preview" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit Introduction" })).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
     ["Introduction", "Date and Time", "Story", "Dress Code", "Location", "RSVP"].forEach(
@@ -36,7 +37,7 @@ describe("SectionBuilderWorkspace", () => {
     );
   });
 
-  it("switches between detailed, minimal, and list section views", async () => {
+  it("switches between always-open detailed cards and single-row list items", async () => {
     const user = userEvent.setup();
 
     renderWithAuth(createApiClientStub());
@@ -46,20 +47,49 @@ describe("SectionBuilderWorkspace", () => {
     const sectionOrder = sectionPanel.querySelector("[data-section-order-view]");
 
     expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("detailed");
-
-    await user.click(within(sectionPanel).getByRole("button", { name: "Minimalist section view" }));
-
-    expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("minimal");
-    expect(within(sectionPanel).queryByRole("button", { name: "Edit Story" })).toBeNull();
-
-    await user.click(within(sectionPanel).getByRole("button", { name: "Preview Story" }));
-
     expect(within(sectionPanel).getByRole("button", { name: "Edit Story" })).toBeTruthy();
+    expect(
+      within(sectionPanel).queryByRole("button", { name: "Minimalist section view" }),
+    ).toBeNull();
 
     await user.click(within(sectionPanel).getByRole("button", { name: "List section view" }));
 
     expect(sectionOrder?.getAttribute("data-section-order-view")).toBe("list");
+    expect(sectionPanel.querySelectorAll('[data-section-row-layout="single"]')).toHaveLength(7);
+    expect(sectionPanel.querySelectorAll('[data-mobile-actions="menu"]')).toHaveLength(7);
+    expect(within(sectionPanel).getByRole("button", { name: "Edit Story" })).toBeTruthy();
+
+    await user.click(within(sectionPanel).getByRole("button", { name: "Introduction actions" }));
+
+    const mobileActions = await screen.findByRole("menu");
+
+    expect(within(mobileActions).getByRole("menuitemcheckbox", { name: "Enabled" })).toBeTruthy();
+    expect(within(mobileActions).getByRole("menuitem", { name: "Visibility" })).toBeTruthy();
+    expect(within(mobileActions).getByRole("menuitem", { name: "Move down" })).toBeTruthy();
+    expect(within(mobileActions).getByRole("menuitem", { name: "Edit" })).toBeTruthy();
     expect(window.localStorage.getItem("lumiere.dashboard.content-section-view")).toBe("list");
+  });
+
+  it("opens the complete draft from the Preview button", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth(createApiClientStub());
+
+    await screen.findByText("Configure content for Spring Dinner");
+    await user.click(screen.getByLabelText("Enable Introduction"));
+    await user.click(screen.getByRole("button", { name: "Preview" }));
+
+    const preview = await screen.findByRole("dialog", { name: "Preview invitation" });
+
+    expect(within(preview).getByRole("button", { name: "Guest" })).toBeTruthy();
+    expect(within(preview).getByRole("button", { name: "Public" })).toBeTruthy();
+    expect(within(preview).getByText(/visible sections/)).toBeTruthy();
+    expect(within(preview).getAllByText("Spring Dinner").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Close Preview invitation" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Preview invitation" })).toBeNull(),
+    );
   });
 
   it("opens a labeled section dialog from the keyboard and restores focus", async () => {
@@ -106,12 +136,9 @@ describe("SectionBuilderWorkspace", () => {
 
     expect((showMapPreview as HTMLInputElement).checked).toBe(true);
     expect((allowMapInteraction as HTMLInputElement).checked).toBe(false);
-    expect(document.querySelector('[data-map-interaction="preview-only"]')).toBeTruthy();
-
     await user.click(allowMapInteraction);
 
     expect((allowMapInteraction as HTMLInputElement).checked).toBe(true);
-    expect(document.querySelector('[data-map-interaction="interactive"]')).toBeTruthy();
     expect(locationEditor.getByText(/pan and zoom inside the embedded map/)).toBeTruthy();
   });
 
@@ -183,8 +210,6 @@ describe("SectionBuilderWorkspace", () => {
         "Shown once beneath the story title. It remains visible whether individual paragraph photos are shown or hidden.",
       ),
     ).toBeTruthy();
-    expect(screen.getAllByAltText("Legacy section-wide story feature").length).toBeGreaterThan(0);
-
     await user.type(storyEditor.getByLabelText("Paragraph title (optional)"), "First chapter");
     await user.click(storyEditor.getByRole("button", { name: "Add story paragraph" }));
 
@@ -201,7 +226,6 @@ describe("SectionBuilderWorkspace", () => {
     await user.type(bodyInputs[1]!, "A structured paragraph with a title.");
     await user.type(imageUrlInputs[1]!, "https://images.example.com/second-chapter.jpg");
     await user.type(imageAltInputs[1]!, "A candlelit table shared with friends");
-    expect(await screen.findByAltText("A candlelit table shared with friends")).toBeTruthy();
 
     const storyPhotoToggles = storyEditor.getAllByRole("checkbox", {
       name: /Show this story photo/,
@@ -213,10 +237,6 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(storyPhotoToggles[1]!);
 
     expect(storyPhotoToggles[1]!.checked).toBe(false);
-    await waitFor(() => {
-      expect(screen.queryByAltText("A candlelit table shared with friends")).toBeNull();
-    });
-    expect(screen.getAllByAltText("Legacy section-wide story feature").length).toBeGreaterThan(0);
     await user.click(storyEditor.getAllByRole("button", { name: "Move up" })[1]!);
 
     expect(
@@ -272,8 +292,8 @@ describe("SectionBuilderWorkspace", () => {
     expect(
       screen.getByText("Required sections stay enabled once the event is no longer a draft."),
     ).toBeTruthy();
-    expect((screen.getByLabelText("Enable Introduction") as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText("Enable Story") as HTMLInputElement).disabled).toBe(false);
+    expect(screen.getByLabelText("Enable Introduction").getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByLabelText("Enable Story").getAttribute("aria-disabled")).not.toBe("true");
   });
 
   it("shows required section details before saving a published event", async () => {
