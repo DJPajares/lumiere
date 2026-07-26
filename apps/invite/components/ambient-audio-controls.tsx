@@ -29,7 +29,6 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
   const detailsId = useId();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
-  const minimizeRef = useRef<HTMLButtonElement | null>(null);
   const openedWithKeyboardRef = useRef(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const pointerIsDownRef = useRef(false);
@@ -144,7 +143,7 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
     scheduleAutoHide();
     if (openedWithKeyboardRef.current) {
       openedWithKeyboardRef.current = false;
-      window.requestAnimationFrame(() => minimizeRef.current?.focus());
+      window.requestAnimationFrame(() => panelRef.current?.focus());
     }
   }, [isExpanded, scheduleAutoHide]);
 
@@ -186,8 +185,8 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
     status,
   });
   const positionStyle = {
-    bottom: "max(1rem, env(safe-area-inset-bottom))",
-    right: "max(1rem, env(safe-area-inset-right))",
+    bottom: "max(1.25rem, env(safe-area-inset-bottom))",
+    right: "max(1.25rem, env(safe-area-inset-right))",
   } as CSSProperties;
 
   const startPlayback = () => {
@@ -249,7 +248,7 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
 
   return (
     <div
-      className="pointer-events-none fixed z-50 w-[min(20rem,calc(100vw-2rem))]"
+      className="pointer-events-none fixed z-50 w-[min(20rem,calc(100vw-2.5rem))]"
       data-audio-expanded={isExpanded ? "true" : "false"}
       data-audio-placement="bottom-end"
       data-audio-status={status}
@@ -308,32 +307,22 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
       <div
         aria-labelledby={`${detailsId}-title`}
         aria-hidden={!isExpanded}
-        className={`absolute bottom-0 right-0 max-h-[calc(100dvh-2rem)] w-full origin-bottom-right overflow-y-auto overscroll-contain rounded-[calc(var(--radius-lg)+0.35rem)] border border-[color-mix(in_srgb,var(--border)_64%,transparent)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] p-4 text-[var(--foreground)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_16%,transparent)] backdrop-blur-2xl backdrop-saturate-150 transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none motion-reduce:transition-none ${
+        className={`absolute bottom-0 right-0 max-h-[calc(100dvh-2.5rem)] w-full origin-bottom-right overflow-y-auto overscroll-contain rounded-[calc(var(--radius-lg)+0.5rem)] border border-[color-mix(in_srgb,var(--border)_64%,transparent)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] p-5 text-[var(--foreground)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_16%,transparent)] backdrop-blur-2xl backdrop-saturate-150 transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transform-none motion-reduce:transition-none ${
           isExpanded
-            ? "pointer-events-auto translate-y-0 opacity-100 duration-500"
-            : "pointer-events-none translate-y-4 opacity-0 duration-200"
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-350"
+            : "pointer-events-none translate-y-3 scale-[0.94] opacity-0 duration-200"
         }`}
         data-state={isExpanded ? "open" : "closed"}
         id={detailsId}
         inert={!isExpanded}
         ref={panelRef}
         role="region"
+        tabIndex={-1}
       >
-        <div className="flex items-center justify-between gap-3">
-          <p className="lumiere-type-eyebrow flex min-w-0 items-center gap-2 text-[var(--accent-strong)]">
-            <span aria-hidden="true" className="size-1 shrink-0 rotate-45 bg-current" />
-            <span className="truncate">Now playing</span>
-          </p>
-          <button
-            aria-label={`Minimize music player for ${audio.title}`}
-            className="grid size-10 shrink-0 place-items-center rounded-full border border-transparent text-[color-mix(in_srgb,var(--foreground)_68%,transparent)] transition-[background-color,border-color,transform] duration-200 hover:border-[color-mix(in_srgb,var(--border)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--surface-muted)_68%,transparent)] hover:text-[var(--foreground)] active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] motion-reduce:transition-none"
-            onClick={() => closePlayer()}
-            ref={minimizeRef}
-            type="button"
-          >
-            <MinimizeIcon />
-          </button>
-        </div>
+        <p className="lumiere-type-eyebrow flex items-center gap-2 text-[var(--accent-strong)]">
+          <span aria-hidden="true" className="size-1 shrink-0 rotate-45 bg-current" />
+          <span>Now playing</span>
+        </p>
 
         <div className="mt-3 grid grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-3">
           <div className="grid aspect-square overflow-hidden rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[color-mix(in_srgb,var(--surface-muted)_72%,transparent)] p-0.5">
@@ -422,8 +411,8 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
       <div
         className={`flex justify-end transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none motion-reduce:transition-none ${
           isExpanded
-            ? "pointer-events-none translate-y-2 opacity-0 duration-150"
-            : "pointer-events-auto translate-y-0 opacity-100 duration-300"
+            ? "pointer-events-none translate-y-1 scale-[0.82] opacity-0 duration-150"
+            : "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-300"
         }`}
         inert={isExpanded}
       >
@@ -525,20 +514,6 @@ function Forward15Icon() {
       >
         15
       </text>
-    </svg>
-  );
-}
-
-function MinimizeIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
-      <path
-        d="m7 10 5 5 5-5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
     </svg>
   );
 }

@@ -19,7 +19,6 @@ export function InviteSectionNavigator({
 }: InviteSectionNavigatorProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const suppressNextFocusOpenRef = useRef(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [activeId, setActiveId] = useState(items[0]?.id ?? "");
   const [isOpen, setIsOpen] = useState(false);
@@ -73,12 +72,8 @@ export function InviteSectionNavigator({
         return;
       }
 
-      suppressNextFocusOpenRef.current = true;
       setIsOpen(false);
       triggerRef.current?.focus();
-      queueMicrotask(() => {
-        suppressNextFocusOpenRef.current = false;
-      });
     };
 
     document.addEventListener("pointerdown", dismissOutside);
@@ -97,9 +92,9 @@ export function InviteSectionNavigator({
   const positionStyle = {
     [placement === "start" ? "left" : "right"]:
       placement === "start"
-        ? "max(1rem, env(safe-area-inset-left))"
-        : "max(1rem, env(safe-area-inset-right))",
-    top: "max(1rem, env(safe-area-inset-top))",
+        ? "max(1.25rem, env(safe-area-inset-left))"
+        : "max(1.25rem, env(safe-area-inset-right))",
+    top: "max(1.25rem, env(safe-area-inset-top))",
   } as CSSProperties;
 
   const closeAfterFocusLeaves = (event: FocusEvent<HTMLDivElement>) => {
@@ -141,6 +136,7 @@ export function InviteSectionNavigator({
     0,
   );
   const panelPlacementClass = placement === "start" ? "left-0" : "right-0";
+  const panelOriginClass = placement === "start" ? "origin-top-left" : "origin-top-right";
 
   return (
     <div
@@ -149,11 +145,6 @@ export function InviteSectionNavigator({
       data-section-navigator-open={isOpen ? "true" : "false"}
       data-section-navigator-placement={placement}
       onBlurCapture={closeAfterFocusLeaves}
-      onFocusCapture={() => {
-        if (!suppressNextFocusOpenRef.current) {
-          setIsOpen(true);
-        }
-      }}
       onPointerEnter={(event) => {
         if (event.pointerType !== "touch") {
           setIsOpen(true);
@@ -167,11 +158,14 @@ export function InviteSectionNavigator({
         aria-controls={listId}
         aria-expanded={isOpen}
         aria-label={`${isOpen ? "Close" : "Open"} invitation sections`}
-        className="relative grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-[color-mix(in_srgb,var(--surface)_44%,transparent)] text-[var(--foreground)] opacity-75 shadow-[0_12px_38px_color-mix(in_srgb,var(--foreground)_10%,transparent)] backdrop-blur-xl backdrop-saturate-150 transition-[opacity,transform,background-color,border-color,box-shadow] duration-200 hover:border-[color-mix(in_srgb,var(--accent)_46%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_68%,transparent)] hover:opacity-100 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96] focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] data-[state=open]:border-[color-mix(in_srgb,var(--accent)_54%,var(--border))] data-[state=open]:bg-[color-mix(in_srgb,var(--surface)_72%,transparent)] data-[state=open]:opacity-100 motion-reduce:transition-none"
+        className={`relative grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-[color-mix(in_srgb,var(--surface)_44%,transparent)] text-[var(--foreground)] shadow-[0_12px_38px_color-mix(in_srgb,var(--foreground)_10%,transparent)] backdrop-blur-xl backdrop-saturate-150 transition-[opacity,transform,background-color,border-color,box-shadow] duration-200 hover:border-[color-mix(in_srgb,var(--accent)_46%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_68%,transparent)] hover:opacity-100 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96] focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-reduce:transition-none ${
+          isOpen ? "pointer-events-none invisible opacity-0" : "opacity-75"
+        }`}
         data-section-navigator-trigger="true"
         data-state={isOpen ? "open" : "closed"}
         onClick={() => setIsOpen((current) => !current)}
         ref={triggerRef}
+        tabIndex={isOpen ? -1 : 0}
         type="button"
       >
         <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24">
@@ -187,43 +181,34 @@ export function InviteSectionNavigator({
         </svg>
       </button>
 
-      <span
-        aria-hidden="true"
-        className={`absolute top-full h-3 w-[min(20rem,calc(100vw-2rem))] ${panelPlacementClass} ${
-          isOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        data-section-navigator-hover-bridge="true"
-      />
-
       <nav
         aria-hidden={!isOpen}
         aria-label="Invitation sections"
-        className={`absolute top-[calc(100%+0.75rem)] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[calc(var(--radius-lg)+0.25rem)] border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-[color-mix(in_srgb,var(--surface)_72%,transparent)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_14%,transparent)] backdrop-blur-2xl backdrop-saturate-150 transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none motion-reduce:transition-none ${panelPlacementClass} ${
+        className={`absolute top-0 z-10 w-[min(22rem,calc(100vw-2.5rem))] overflow-hidden rounded-[calc(var(--radius-lg)+0.5rem)] border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] shadow-[0_24px_72px_color-mix(in_srgb,var(--foreground)_14%,transparent)] backdrop-blur-2xl backdrop-saturate-150 transition-[opacity,transform] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transform-none motion-reduce:transition-none ${panelPlacementClass} ${panelOriginClass} ${
           isOpen
-            ? "translate-y-0 opacity-100 duration-300"
-            : "pointer-events-none translate-y-1.5 opacity-0 duration-200"
+            ? "translate-y-0 scale-100 opacity-100 duration-350"
+            : "pointer-events-none -translate-y-2 scale-[0.94] opacity-0 duration-200"
         }`}
         data-section-navigator-panel="true"
         id={listId}
+        inert={!isOpen}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_52%,transparent)] px-4 py-3.5">
+        <div className="flex items-center justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_52%,transparent)] px-5 py-4">
           <div className="min-w-0">
-            <p className="lumiere-type-eyebrow truncate text-[var(--accent-strong)]">
-              Invitation guide
-            </p>
+            <p className="lumiere-type-eyebrow text-[var(--accent-strong)]">Invitation guide</p>
             <p className="lumiere-type-caption mt-1 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
               Explore {items.length} sections
             </p>
           </div>
           <span
-            aria-hidden="true"
-            className="lumiere-type-numeric shrink-0 text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]"
+            aria-label={`Section ${activeIndex + 1} of ${items.length}`}
+            className="lumiere-type-control shrink-0 whitespace-nowrap tabular-nums text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]"
           >
             {String(activeIndex + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
           </span>
         </div>
 
-        <ol className="grid max-h-[min(68dvh,30rem)] gap-1 overflow-y-auto overscroll-contain p-2">
+        <ol className="grid max-h-[min(68dvh,30rem)] gap-1 overflow-y-auto overscroll-contain p-3">
           {items.map((item, index) => {
             const isCurrent = item.id === activeId;
 

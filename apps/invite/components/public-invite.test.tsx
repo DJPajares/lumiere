@@ -792,7 +792,7 @@ describe("public invite section renderers", () => {
     expect(html).toContain("Now playing");
     expect(html).toContain("Play Garden strings");
     expect(html).toContain("Open music player for Garden strings");
-    expect(html).toContain("Minimize music player for Garden strings");
+    expect(html).not.toContain("Minimize music player for Garden strings");
     expect(html).toContain("Seek through Garden strings");
     expect(html).toContain("Forward 15 seconds in Garden strings");
     expect(html).toContain("Tap to begin");
@@ -885,9 +885,6 @@ describe("public invite section renderers", () => {
     const navigatorPanel = template.content.querySelector<HTMLElement>(
       "[data-section-navigator-panel]",
     );
-    const navigatorHoverBridge = template.content.querySelector<HTMLElement>(
-      "[data-section-navigator-hover-bridge]",
-    );
     const items = Array.from(
       template.content.querySelectorAll<HTMLButtonElement>("[data-section-target]"),
     );
@@ -897,11 +894,13 @@ describe("public invite section renderers", () => {
     expect(navigatorTrigger?.textContent?.trim()).toBe("");
     expect(navigatorTrigger?.getAttribute("aria-label")).toBe("Open invitation sections");
     expect(navigatorTrigger?.querySelector("svg")).toBeTruthy();
-    expect(navigatorHoverBridge?.className).toContain("pointer-events-none");
     expect(navigatorPanel?.textContent).toContain("Invitation guide");
     expect(navigatorPanel?.textContent).toContain("Explore 2 sections");
-    expect(navigatorPanel?.className).toContain("translate-y-1.5");
-    expect(navigatorPanel?.className).not.toContain("scale-[");
+    expect(navigatorPanel?.textContent).toContain("01 / 02");
+    expect(navigatorPanel?.textContent).not.toContain("Minimize invitation sections");
+    expect(navigatorPanel?.className).toContain("-translate-y-2");
+    expect(navigatorPanel?.className).toContain("scale-[0.94]");
+    expect(navigatorPanel?.className).toContain("origin-top-right");
     expect(items.map((item) => item.dataset.sectionTarget)).toEqual(["opening-stop", "story-stop"]);
     expect(items.map((item) => item.querySelector("[data-section-label]")?.textContent)).toEqual([
       "Welcome home",
@@ -990,13 +989,11 @@ describe("public invite section renderers", () => {
     const trigger = container.querySelector<HTMLButtonElement>(
       'button[aria-controls][aria-label$="invitation sections"]',
     );
+    const navigator = container.querySelector<HTMLElement>("[data-section-navigator]");
     const storyItem = container.querySelector<HTMLButtonElement>(
       '[data-section-target="story-stop"]',
     );
     const storyTarget = container.querySelector<HTMLElement>("#story-stop");
-    const hoverBridge = container.querySelector<HTMLElement>(
-      "[data-section-navigator-hover-bridge]",
-    );
     const scrollIntoView = vi.fn();
     const focus = vi.spyOn(storyTarget!, "focus");
 
@@ -1019,9 +1016,28 @@ describe("public invite section renderers", () => {
     });
     expect(storyItem?.getAttribute("aria-current")).toBe("location");
 
-    await act(() => trigger?.focus());
+    await act(() =>
+      navigator?.dispatchEvent(
+        new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }),
+      ),
+    );
     expect(trigger?.getAttribute("aria-expanded")).toBe("true");
-    expect(hoverBridge?.className).toContain("pointer-events-auto");
+    await act(() =>
+      navigator?.dispatchEvent(
+        new PointerEvent("pointerout", {
+          bubbles: true,
+          pointerType: "mouse",
+          relatedTarget: document.body,
+        }),
+      ),
+    );
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+
+    await act(() => trigger?.focus());
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    await act(() => trigger?.click());
+    expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+    expect(trigger?.className).toContain("invisible");
     await act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
     expect(trigger?.getAttribute("aria-expanded")).toBe("false");
     expect(document.activeElement).toBe(trigger);
