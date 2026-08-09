@@ -396,7 +396,7 @@ describe("SectionBuilderWorkspace", () => {
           sectionKey,
           sectionType: input.sectionType,
           settings: (input.settings ?? {}) as Record<string, JsonValue>,
-          sortOrder: previous?.sortOrder ?? input.sortOrder,
+          sortOrder: previous?.sortOrder ?? sectionStore.size,
           updatedAt: "2030-01-01T00:00:00.000Z",
           visibility: input.visibility,
         };
@@ -530,10 +530,10 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
     await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
-    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(6));
+    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(12));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
     await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);
-    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(8));
+    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(12));
     await waitFor(() => expect(reorderEventSections).toHaveBeenCalledTimes(1));
 
     expect(updateEventSection).toHaveBeenCalledWith(
@@ -643,11 +643,35 @@ function createApiClientStub(
   const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({
     sections: [],
   }));
+  const sectionStore = new Map<string, EventSection>();
+  const updateEventSection = vi.fn<DashboardApiClient["updateEventSection"]>(
+    async (eventId, sectionKey, input) => {
+      const previous = sectionStore.get(sectionKey);
+      const section: EventSection = {
+        content: input.content as Record<string, JsonValue>,
+        createdAt: previous?.createdAt ?? "2030-01-01T00:00:00.000Z",
+        enabled: input.enabled ?? true,
+        eventId,
+        id: input.id ?? previous?.id ?? `section_${sectionStore.size}`,
+        sectionKey,
+        sectionType: input.sectionType,
+        settings: (input.settings ?? {}) as Record<string, JsonValue>,
+        sortOrder: previous?.sortOrder ?? sectionStore.size,
+        updatedAt: "2030-01-01T00:00:00.000Z",
+        visibility: input.visibility,
+      };
+
+      sectionStore.set(sectionKey, section);
+
+      return { section };
+    },
+  );
 
   return {
     getEvent,
     getEventTheme,
     listEventSections,
+    updateEventSection,
     ...overrides,
   };
 }

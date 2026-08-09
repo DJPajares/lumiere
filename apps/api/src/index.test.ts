@@ -4560,7 +4560,7 @@ function createIntegrationSmokeStores() {
           sectionKey,
           sectionType: input.sectionType,
           settings: input.settings,
-          sortOrder: existing?.sortOrder ?? input.sortOrder,
+          sortOrder: existing?.sortOrder ?? sections.length,
           updatedAt: smokeNow,
           visibility: input.visibility,
         };

@@ -1017,20 +1017,30 @@ export const createRoutes = ({
       if (
         currentSection &&
         (currentSection.sectionType !== input.sectionType ||
-          (input.id !== undefined && input.id !== currentSection.id))
+          input.id !== currentSection.id)
       ) {
         throw new ApiHttpError("CONFLICT", "This section identity changed. Refresh before saving.");
       }
 
+      const sectionMutation: EventSectionMutationInput = {
+        ...(input.id ? { id: input.id } : {}),
+        content: input.content,
+        enabled: input.enabled,
+        sectionKey: input.sectionKey,
+        sectionType: input.sectionType,
+        settings: input.settings,
+        sortOrder: currentSection?.sortOrder ?? currentSections.length,
+        visibility: input.visibility,
+      };
       const sectionValidation =
         input.enabled === false
-          ? { ok: true as const, section: input }
-          : validateThemeSections(theme.id, [input])[0]!;
+          ? { ok: true as const, section: sectionMutation }
+          : validateThemeSections(theme.id, [sectionMutation])[0]!;
       const nextSections = [
         ...currentSections
           .filter((section) => section.sectionKey !== sectionKey)
           .map(toSectionMutation),
-        input,
+        sectionMutation,
       ];
       const invalidBlueprintFields = validateEventTypeSections({
         eventStatus: "draft",

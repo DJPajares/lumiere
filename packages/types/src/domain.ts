@@ -367,9 +367,11 @@ export const eventSectionMutationSchema = z.object({
 export type EventSectionMutationInput = z.input<typeof eventSectionMutationSchema>;
 export type EventSectionMutation = z.output<typeof eventSectionMutationSchema>;
 
-export const eventSectionUpdateSchema = eventSectionMutationSchema.extend({
-  expectedUpdatedAt: isoDateTimeSchema.optional(),
-});
+export const eventSectionUpdateSchema = eventSectionMutationSchema
+  .omit({ sortOrder: true })
+  .extend({
+    expectedUpdatedAt: isoDateTimeSchema.optional(),
+  });
 export type EventSectionUpdateInput = z.input<typeof eventSectionUpdateSchema>;
 export type EventSectionUpdate = z.output<typeof eventSectionUpdateSchema>;
 

@@ -2,6 +2,7 @@ import type { Database } from "@lumiere/db";
 import {
   asc,
   and,
+  desc,
   eq,
   eventSectionContents,
   eventSections,
@@ -171,7 +172,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
 
       if (current) {
         if (
-          (input.id !== undefined && input.id !== current.id) ||
+          input.id !== current.id ||
           input.sectionType !== current.sectionType
         ) {
           throw new ApiHttpError(
@@ -236,6 +237,13 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
         );
       }
 
+      const [lastSection] = await tx
+        .select({ sortOrder: eventSections.sortOrder })
+        .from(eventSections)
+        .where(eq(eventSections.eventId, eventId))
+        .orderBy(desc(eventSections.sortOrder), desc(eventSections.createdAt))
+        .limit(1);
+
       const [created] = await tx
         .insert(eventSections)
         .values({
@@ -244,7 +252,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
           sectionKey,
           sectionType: input.sectionType,
           settingsJson: input.settings,
-          sortOrder: input.sortOrder,
+          sortOrder: (lastSection?.sortOrder ?? -1) + 1,
           visibility: input.visibility,
         })
         .returning();
