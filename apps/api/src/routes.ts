@@ -18,6 +18,8 @@ import {
   collaboratorRoleUpdateRequestSchema,
   eventCreateRequestSchema,
   eventDeletionRequestSchema,
+  eventSectionUpdateRequestSchema,
+  eventSectionsReorderRequestSchema,
   eventSectionsUpdateRequestSchema,
   eventSlugSuggestionRequestSchema,
   eventThemeUpdateRequestSchema,
@@ -29,6 +31,8 @@ import {
   managerRoleSchema,
   publicEventParamsSchema,
   rsvpSubmissionRequestSchema,
+  slugSchema,
+  type EventSectionMutationInput,
   type EventType,
   type ThemeMode,
 } from "@lumiere/types";
@@ -964,6 +968,135 @@ export const createRoutes = ({
     },
   );
 
+  routes.patch(
+    "/events/:eventId/sections/:sectionKey",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const sectionKey = parseSectionKeyParam(context.req.param("sectionKey"));
+      const input = await parseJsonBody(context, eventSectionUpdateRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+
+      if (input.sectionKey !== sectionKey) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Section key does not match the request path", {
+          fields: [{ message: "Section key does not match the request path", path: ["sectionKey"] }],
+        });
+      }
+
+      const state = await stores.themeSectionStore.getEventTheme(eventId);
+
+      if (!state) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      if (!state.selectedThemeId || !isThemeId(state.selectedThemeId)) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Select a valid theme before updating sections");
+      }
+
+      const theme = getTheme(state.selectedThemeId);
+
+      if (!theme) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Select a valid theme before updating sections");
+      }
+
+      assertThemeCanBeApplied({
+        eventType: state.eventType,
+        theme,
+        themeMode: state.themeMode,
+      });
+
+      const currentSections = await stores.themeSectionStore.listSections(eventId);
+      const currentSection = currentSections.find((section) => section.sectionKey === sectionKey);
+
+      if (
+        currentSection &&
+        (currentSection.sectionType !== input.sectionType ||
+          (input.id !== undefined && input.id !== currentSection.id))
+      ) {
+        throw new ApiHttpError("CONFLICT", "This section identity changed. Refresh before saving.");
+      }
+
+      const sectionValidation =
+        input.enabled === false
+          ? { ok: true as const, section: input }
+          : validateThemeSections(theme.id, [input])[0]!;
+      const nextSections = [
+        ...currentSections
+          .filter((section) => section.sectionKey !== sectionKey)
+          .map(toSectionMutation),
+        input,
+      ];
+      const invalidBlueprintFields = validateEventTypeSections({
+        eventStatus: "draft",
+        eventType: state.eventType,
+        sections: nextSections,
+      }).map((issue) => ({
+        message: issue.message,
+        path: issue.path,
+      }));
+
+      if (!sectionValidation.ok || invalidBlueprintFields.length > 0) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Invalid event section", {
+          fields: [
+            ...(!sectionValidation.ok
+              ? sectionValidation.issues.map((message) => ({
+                  message,
+                  path: ["content"],
+                }))
+              : []),
+            ...invalidBlueprintFields,
+          ],
+        });
+      }
+
+      const section = await stores.themeSectionStore.updateSection(eventId, sectionKey, input);
+
+      if (!section) {
+        throw new ApiHttpError("NOT_FOUND", "Event section not found");
+      }
+
+      return context.json({ section });
+    },
+  );
+
+  routes.post(
+    "/events/:eventId/sections/reorder",
+    requireManagerAuth({ authStore, config }),
+    async (context) => {
+      const stores = requireManagerConfigurationStores({ authStore, themeSectionStore });
+      const eventId = parseEventIdParam(context.req.param("eventId"));
+      const input = await parseJsonBody(context, eventSectionsReorderRequestSchema);
+      await assertEventAccess({
+        authStore: stores.authStore,
+        eventId,
+        manager: context.get("manager"),
+        minimumRole: "editor",
+      });
+
+      if (!sameStringSet(input.expectedSectionKeys, input.sectionKeys)) {
+        throw new ApiHttpError("VALIDATION_ERROR", "Reorder must include every configured section");
+      }
+
+      const sections = await stores.themeSectionStore.reorderSections(
+        eventId,
+        input.expectedSectionKeys,
+        input.sectionKeys,
+      );
+
+      if (!sections) {
+        throw new ApiHttpError("NOT_FOUND", "Event not found");
+      }
+
+      return context.json({ sections });
+    },
+  );
+
   routes.put(
     "/events/:eventId/sections",
     requireManagerAuth({ authStore, config }),
@@ -1621,6 +1754,42 @@ const parseEventIdParam = (eventId: string | undefined) => {
 
   return result.data.eventId;
 };
+
+const parseSectionKeyParam = (sectionKey: string | undefined) => {
+  const result = slugSchema.safeParse(sectionKey);
+
+  if (!result.success) {
+    throw new ApiHttpError("VALIDATION_ERROR", "Invalid section key", {
+      fields: zodIssuesToFieldErrors(result.error.issues),
+    });
+  }
+
+  return result.data;
+};
+
+const toSectionMutation = (section: {
+  content: EventSectionMutationInput["content"];
+  enabled: EventSectionMutationInput["enabled"];
+  id?: EventSectionMutationInput["id"];
+  sectionKey: EventSectionMutationInput["sectionKey"];
+  sectionType: EventSectionMutationInput["sectionType"];
+  settings: EventSectionMutationInput["settings"];
+  sortOrder: EventSectionMutationInput["sortOrder"];
+  visibility: EventSectionMutationInput["visibility"];
+}): EventSectionMutationInput => ({
+  ...(section.id ? { id: section.id } : {}),
+  content: section.content,
+  enabled: section.enabled,
+  sectionKey: section.sectionKey,
+  sectionType: section.sectionType,
+  settings: section.settings,
+  sortOrder: section.sortOrder,
+  visibility: section.visibility,
+});
+
+const sameStringSet = (first: string[], second: string[]) =>
+  first.length === second.length && new Set(first).size === new Set(second).size &&
+  first.every((value) => second.includes(value));
 
 const parseCollaboratorInvitationIdParam = (invitationId: string | undefined) => {
   const result = byCollaboratorInvitationIdParamsSchema.safeParse({

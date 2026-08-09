@@ -4186,19 +4186,25 @@ function createTestThemeSectionStore({
 } = {}) {
   const getEventTheme = vi.fn(async () => themeState);
   const listSections = vi.fn(async () => sections);
+  const reorderSections = vi.fn<ThemeSectionStore["reorderSections"]>(async () => sections);
   const replaceSections = vi.fn(async () => sections);
+  const updateSection = vi.fn<ThemeSectionStore["updateSection"]>(async () => sections[0] ?? null);
   const updateEventTheme = vi.fn(async () => updatedThemeState);
   const themeSectionStore: ThemeSectionStore = {
     getEventTheme,
     listSections,
+    reorderSections,
     replaceSections,
+    updateSection,
     updateEventTheme,
   };
 
   return {
     getEventTheme,
     listSections,
+    reorderSections,
     replaceSections,
+    updateSection,
     themeSectionStore,
     updateEventTheme,
   };
@@ -4483,6 +4489,32 @@ function createIntegrationSmokeStores() {
     listSections: vi.fn(async (requestedEventId) =>
       event && requestedEventId === event.id ? [...sections] : [],
     ),
+    reorderSections: vi.fn<ThemeSectionStore["reorderSections"]>(
+      async (requestedEventId, expectedSectionKeys, sectionKeys) => {
+        if (!event || requestedEventId !== event.id) {
+          return null;
+        }
+
+        const currentSectionKeys = [...sections]
+          .sort((first, second) => first.sortOrder - second.sortOrder)
+          .map((section) => section.sectionKey);
+
+        if (
+          currentSectionKeys.length !== expectedSectionKeys.length ||
+          currentSectionKeys.some((key, index) => key !== expectedSectionKeys[index])
+        ) {
+          throw new ApiHttpError("CONFLICT", "Sections were reordered by another manager");
+        }
+
+        sections = sections.map((section) => ({
+          ...section,
+          sortOrder: sectionKeys.indexOf(section.sectionKey),
+        }));
+        event = { ...event, updatedAt: smokeNow };
+
+        return [...sections].sort((first, second) => first.sortOrder - second.sortOrder);
+      },
+    ),
     replaceSections: vi.fn(
       async (
         requestedEventId: string,
@@ -4501,6 +4533,46 @@ function createIntegrationSmokeStores() {
         }));
 
         return [...sections];
+      },
+    ),
+    updateSection: vi.fn<ThemeSectionStore["updateSection"]>(
+      async (requestedEventId, sectionKey, input) => {
+        if (!event || requestedEventId !== event.id) {
+          return null;
+        }
+
+        const existing = sections.find((section) => section.sectionKey === sectionKey);
+
+        if (
+          existing &&
+          input.expectedUpdatedAt &&
+          input.expectedUpdatedAt !== existing.updatedAt
+        ) {
+          throw new ApiHttpError("CONFLICT", "This section changed by another manager");
+        }
+
+        const updatedSection: EventSection = {
+          content: input.content,
+          createdAt: existing?.createdAt ?? smokeNow,
+          enabled: input.enabled,
+          eventId: event.id,
+          id: existing?.id ?? smokeSectionId(sections.length),
+          sectionKey,
+          sectionType: input.sectionType,
+          settings: input.settings,
+          sortOrder: existing?.sortOrder ?? input.sortOrder,
+          updatedAt: smokeNow,
+          visibility: input.visibility,
+        };
+
+        sections = existing
+          ? sections.map((section) =>
+              section.sectionKey === sectionKey ? updatedSection : section,
+            )
+          : [...sections, updatedSection];
+        event = { ...event, updatedAt: smokeNow };
+
+        return updatedSection;
       },
     ),
     updateEventTheme: vi.fn(async (requestedEventId, input) => {

@@ -367,6 +367,40 @@ export const eventSectionMutationSchema = z.object({
 export type EventSectionMutationInput = z.input<typeof eventSectionMutationSchema>;
 export type EventSectionMutation = z.output<typeof eventSectionMutationSchema>;
 
+export const eventSectionUpdateSchema = eventSectionMutationSchema.extend({
+  expectedUpdatedAt: isoDateTimeSchema.optional(),
+});
+export type EventSectionUpdateInput = z.input<typeof eventSectionUpdateSchema>;
+export type EventSectionUpdate = z.output<typeof eventSectionUpdateSchema>;
+
+export const eventSectionsReorderSchema = z
+  .object({
+    expectedSectionKeys: z.array(slugSchema).max(40),
+    sectionKeys: z.array(slugSchema).max(40),
+  })
+  .superRefine((value, context) => {
+    const checkUnique = (keys: string[], path: "expectedSectionKeys" | "sectionKeys") => {
+      const seen = new Set<string>();
+
+      keys.forEach((key, index) => {
+        if (seen.has(key)) {
+          context.addIssue({
+            code: "custom",
+            path: [path, index],
+            message: "Section keys must be unique within an order",
+          });
+        }
+
+        seen.add(key);
+      });
+    };
+
+    checkUnique(value.expectedSectionKeys, "expectedSectionKeys");
+    checkUnique(value.sectionKeys, "sectionKeys");
+  });
+export type EventSectionsReorderInput = z.input<typeof eventSectionsReorderSchema>;
+export type EventSectionsReorder = z.output<typeof eventSectionsReorderSchema>;
+
 export const eventSectionsUpdateSchema = z
   .object({
     sections: z.array(eventSectionMutationSchema).max(40),

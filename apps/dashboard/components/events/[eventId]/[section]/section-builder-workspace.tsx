@@ -51,10 +51,12 @@ import {
   type ThemeDefinition,
 } from "@lumiere/themes";
 import {
+  eventSectionUpdateRequestSchema,
   eventSectionsUpdateRequestSchema,
   jsonObjectSchema,
   type Event,
   type EventSection,
+  type EventSectionUpdateRequest,
   type EventSectionsUpdateRequest,
   type JsonValue,
   type ManagerRole,
@@ -68,6 +70,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type Dispatch,
@@ -108,6 +111,7 @@ type SectionDraft = {
   sectionType: SectionType;
   settingsText: string;
   sortOrder: number;
+  updatedAt?: string;
   visibility: SectionVisibility;
 };
 
@@ -136,7 +140,9 @@ type BuilderReadyState = {
   error: null;
   formMessage: string | null;
   isSaving: boolean;
+  orderConflict: boolean;
   savedSections: SectionDraft[];
+  sectionConflicts: Record<string, boolean>;
   sectionErrors: SectionErrorMap;
   sections: SectionDraft[];
   status: "ready";
@@ -221,7 +227,9 @@ export function SectionBuilderWorkspace({ eventId }: { eventId: string }) {
         event: eventResponse.event,
         formMessage: null,
         isSaving: false,
+        orderConflict: false,
         savedSections: sectionDrafts,
+        sectionConflicts: {},
         sectionErrors: {},
         sections: sectionDrafts,
         status: "ready",
@@ -318,6 +326,8 @@ function SectionBuilderContent({
   const [previewContext, setPreviewContext] = useState<PreviewContext>("guest");
   const [sectionOrderView, setSectionOrderView] = useState<SectionOrderView>("detailed");
   const [sectionOrderViewStorageReady, setSectionOrderViewStorageReady] = useState(false);
+  const localMutationRevisionRef = useRef(0);
+  const syncRequestIdRef = useRef(0);
   const [rsvpSettings, setRsvpSettings] = useState<RsvpFieldSettings>(() => ({
     collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
     collectGuestNames: state.event.rsvpSettings.collectGuestNames,
@@ -368,12 +378,22 @@ function SectionBuilderContent({
 
     return keys;
   }, [changedSectionKeys, rsvpSectionKey, rsvpSettingsDirty]);
+  const sectionDataDirtyKeys = useMemo(
+    () => getDirtySectionDataKeys(state.sections, state.savedSections),
+    [state.savedSections, state.sections],
+  );
+  const orderDirty = useMemo(
+    () => hasSectionOrderChanges(state.sections, state.savedSections),
+    [state.savedSections, state.sections],
+  );
   const hasUnsavedChanges = changedSectionKeys.size > 0 || rsvpSettingsDirty;
   const validEnabledCount = previewModels.filter(
     (model) => model.section.enabled && model.status !== "invalid",
   ).length;
   const invalidEnabledCount = previewModels.filter((model) => model.status === "invalid").length;
   const formDetail = state.sectionErrors._form?.content;
+  const hasRemoteConflict =
+    state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
 
   useEffect(() => {
     if (
@@ -384,11 +404,65 @@ function SectionBuilderContent({
     }
   }, [editingSectionKey, previewModels]);
 
+  const syncSections = useCallback(async () => {
+    if (!apiClient) {
+      return;
+    }
+
+    const requestId = syncRequestIdRef.current + 1;
+    const localMutationRevision = localMutationRevisionRef.current;
+
+    syncRequestIdRef.current = requestId;
+
+    try {
+      const response = await apiClient.listEventSections(eventId);
+
+      updateState((current) => {
+        if (
+          requestId !== syncRequestIdRef.current ||
+          localMutationRevision !== localMutationRevisionRef.current
+        ) {
+          return current;
+        }
+
+        return current.status === "ready"
+          ? mergeRemoteSections(current, response.sections)
+          : current;
+      });
+    } catch {
+      // Background synchronization is best effort; the next focus or interval retries it.
+    }
+  }, [apiClient, eventId, updateState]);
+
+  useEffect(() => {
+    if (!apiClient || typeof window === "undefined") {
+      return;
+    }
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void syncSections();
+      }
+    };
+    const interval = window.setInterval(refreshWhenVisible, 5000);
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [apiClient, syncSections]);
+
   const openSectionEditor = (sectionKey: string) => {
     setEditingSectionKey(sectionKey);
   };
 
   const updateSection = (sectionKey: string, updates: Partial<SectionDraft>) => {
+    localMutationRevisionRef.current += 1;
+
     updateState((current) =>
       current.status === "ready"
         ? {
@@ -409,12 +483,19 @@ function SectionBuilderContent({
   };
 
   const discardChanges = () => {
+    const hadRemoteConflict =
+      state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
+
+    localMutationRevisionRef.current += 1;
+
     updateState((current) =>
       current.status === "ready"
         ? {
             ...current,
             formMessage: null,
+            orderConflict: false,
             sectionErrors: {},
+            sectionConflicts: {},
             sections: cloneSectionDrafts(current.savedSections),
           }
         : current,
@@ -423,9 +504,15 @@ function SectionBuilderContent({
       collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
       collectGuestNames: state.event.rsvpSettings.collectGuestNames,
     });
+
+    if (hadRemoteConflict) {
+      void syncSections();
+    }
   };
 
   const discardSectionChanges = (sectionKey: string) => {
+    localMutationRevisionRef.current += 1;
+
     updateState((current) => {
       if (current.status !== "ready") {
         return current;
@@ -439,7 +526,9 @@ function SectionBuilderContent({
         return {
           ...current,
           formMessage: null,
+          orderConflict: false,
           sectionErrors: withoutSectionErrors(current.sectionErrors, sectionKey),
+          sectionConflicts: withoutSectionConflict(current.sectionConflicts, sectionKey),
           sections: current.sections
             .filter((section) => section.sectionKey !== sectionKey)
             .map((section, index) => ({ ...section, sortOrder: index })),
@@ -449,7 +538,9 @@ function SectionBuilderContent({
       return {
         ...current,
         formMessage: null,
+        orderConflict: false,
         sectionErrors: withoutSectionErrors(current.sectionErrors, sectionKey),
+        sectionConflicts: withoutSectionConflict(current.sectionConflicts, sectionKey),
         sections: current.sections.map((section) =>
           section.sectionKey === sectionKey ? { ...savedSection } : section,
         ),
@@ -461,6 +552,10 @@ function SectionBuilderContent({
         collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
         collectGuestNames: state.event.rsvpSettings.collectGuestNames,
       });
+    }
+
+    if (state.sectionConflicts[sectionKey]) {
+      void syncSections();
     }
   };
 
@@ -474,6 +569,8 @@ function SectionBuilderContent({
   };
 
   const moveSection = (sectionKey: string, direction: -1 | 1) => {
+    localMutationRevisionRef.current += 1;
+
     updateState((current) => {
       if (current.status !== "ready") {
         return current;
@@ -498,6 +595,7 @@ function SectionBuilderContent({
       return {
         ...current,
         formMessage: null,
+        orderConflict: false,
         sections: sections.map((item, nextIndex) => ({
           ...item,
           sortOrder: nextIndex,
@@ -506,7 +604,7 @@ function SectionBuilderContent({
     });
   };
 
-  const saveSections = async (): Promise<boolean> => {
+  const saveSections = async (requestedSectionKey?: string): Promise<boolean> => {
     if (!apiClient) {
       updateState((current) =>
         current.status === "ready"
@@ -520,27 +618,110 @@ function SectionBuilderContent({
       return false;
     }
 
-    try {
-      const parsed = parseSectionDrafts(state.sections, {
-        event: state.event,
-      });
+    const scopedSave = requestedSectionKey !== undefined;
+    const scopedSection = requestedSectionKey
+      ? state.sections.find((section) => section.sectionKey === requestedSectionKey)
+      : undefined;
+    const scopedHasChanges = requestedSectionKey
+      ? sectionDataDirtyKeys.has(requestedSectionKey) ||
+        (rsvpSettingsDirty && requestedSectionKey === rsvpSectionKey)
+      : hasUnsavedChanges;
+    const hasRelevantConflict = scopedSave
+      ? Boolean(requestedSectionKey && state.sectionConflicts[requestedSectionKey])
+      : state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
+    let mutationsByKey = new Map<string, EventSectionUpdateRequest>();
+    let workingSections = cloneSectionDrafts(state.sections);
+    let workingSavedSections = cloneSectionDrafts(state.savedSections);
+    let failedSectionKey: string | undefined;
 
-      if (!parsed.ok) {
-        revealFirstSectionError(parsed.sectionErrors);
+    const commitWorkingDrafts = (
+      overrides: Partial<BuilderReadyState> = {},
+      conflictUpdate?: { conflicted: boolean; sectionKey: string },
+    ) => {
+      updateState((current) =>
+        current.status === "ready"
+          ? {
+              ...current,
+              ...overrides,
+              sectionConflicts: conflictUpdate
+                ? conflictUpdate.conflicted
+                  ? { ...current.sectionConflicts, [conflictUpdate.sectionKey]: true }
+                  : withoutSectionConflict(current.sectionConflicts, conflictUpdate.sectionKey)
+                : overrides.sectionConflicts ?? current.sectionConflicts,
+              savedSections: cloneSectionDrafts(workingSavedSections),
+              sections: cloneSectionDrafts(workingSections),
+            }
+          : current,
+      );
+    };
+
+    try {
+      if (hasRelevantConflict) {
+        const message = state.orderConflict
+          ? "Another manager changed the section order. Review the latest order before saving."
+          : "Another manager changed this section. Discard your draft to load the latest version before saving.";
+
         updateState((current) =>
           current.status === "ready"
             ? {
                 ...current,
-                formMessage: parsed.formMessage,
-                sectionErrors: parsed.sectionErrors,
+                formMessage: message,
               }
             : current,
         );
-        toast.error(parsed.formMessage);
+        toast.error(message);
         return false;
       }
 
-      if (!hasUnsavedChanges) {
+      if (scopedSave) {
+        if (!scopedSection) {
+          return false;
+        }
+
+        const parsedSection = parseSectionDraft(scopedSection);
+
+        if (!parsedSection.ok) {
+          revealFirstSectionError(parsedSection.sectionErrors);
+          updateState((current) =>
+            current.status === "ready"
+              ? {
+                  ...current,
+                  formMessage: parsedSection.formMessage,
+                  sectionErrors: parsedSection.sectionErrors,
+                }
+              : current,
+          );
+          toast.error(parsedSection.formMessage);
+          return false;
+        }
+
+        mutationsByKey.set(scopedSection.sectionKey, parsedSection.input);
+      } else {
+        const parsed = parseSectionDrafts(state.sections, {
+          event: state.event,
+        });
+
+        if (!parsed.ok) {
+          revealFirstSectionError(parsed.sectionErrors);
+          updateState((current) =>
+            current.status === "ready"
+              ? {
+                  ...current,
+                  formMessage: parsed.formMessage,
+                  sectionErrors: parsed.sectionErrors,
+                }
+              : current,
+          );
+          toast.error(parsed.formMessage);
+          return false;
+        }
+
+        mutationsByKey = new Map(
+          parsed.input.sections.map((section) => [section.sectionKey, { ...section }]),
+        );
+      }
+
+      if (!scopedHasChanges) {
         updateState((current) =>
           current.status === "ready"
             ? {
@@ -554,6 +735,8 @@ function SectionBuilderContent({
         return true;
       }
 
+      localMutationRevisionRef.current += 1;
+
       updateState((current) =>
         current.status === "ready"
           ? {
@@ -566,57 +749,125 @@ function SectionBuilderContent({
       );
 
       let savedEvent = state.event;
-      let sectionDrafts = state.savedSections;
 
-      if (changedSectionKeys.size > 0) {
-        const response = await apiClient.updateEventSections(eventId, parsed.input);
-        sectionDrafts = createSectionDrafts({
-          event: state.event,
-          existingSections: response.sections,
-          theme: state.theme,
+      for (const sectionKey of sectionDataDirtyKeys) {
+        if (scopedSave && sectionKey !== requestedSectionKey) {
+          continue;
+        }
+
+        const mutation = mutationsByKey.get(sectionKey);
+        const section = workingSections.find((item) => item.sectionKey === sectionKey);
+
+        if (!mutation || !section) {
+          continue;
+        }
+
+        const savedSection = workingSavedSections.find((item) => item.sectionKey === sectionKey);
+
+        failedSectionKey = sectionKey;
+        const request = eventSectionUpdateRequestSchema.parse({
+          ...mutation,
+          ...(savedSection?.updatedAt ? { expectedUpdatedAt: savedSection.updatedAt } : {}),
         });
+        const response = await apiClient.updateEventSection(eventId, sectionKey, request);
+        const serverDraft = createSectionDraftFromEventSection({
+          event: state.event,
+          existing: response.section,
+        });
+        const hasLocalOrderChange = Boolean(
+          savedSection && section.sortOrder !== savedSection.sortOrder,
+        );
+        const savedDraft = {
+          ...serverDraft,
+          sortOrder: hasLocalOrderChange ? savedSection!.sortOrder : serverDraft.sortOrder,
+        };
+
+        workingSavedSections = upsertSectionDraft(workingSavedSections, savedDraft);
+        workingSections = upsertSectionDraft(workingSections, {
+          ...serverDraft,
+          sortOrder: section.sortOrder,
+        });
+        failedSectionKey = undefined;
+        commitWorkingDrafts(
+          {
+            formMessage: null,
+          },
+          { sectionKey, conflicted: false },
+        );
       }
 
-      if (rsvpSettingsDirty) {
+      if (!scopedSave && orderDirty) {
+        const expectedSectionKeys = getPersistedSectionOrder(workingSavedSections);
+        const sectionKeys = getPersistedSectionOrder(workingSections);
+
+        if (!sameStringArray(expectedSectionKeys, sectionKeys)) {
+          const response = await apiClient.reorderEventSections(eventId, {
+            expectedSectionKeys,
+            sectionKeys,
+          });
+          const sectionDrafts = createSectionDrafts({
+            event: state.event,
+            existingSections: response.sections,
+            theme: state.theme,
+          });
+
+          workingSavedSections = sectionDrafts;
+          workingSections = sectionDrafts;
+          commitWorkingDrafts({
+            formMessage: null,
+            orderConflict: false,
+          });
+        }
+      }
+
+      const shouldSaveRsvpSettings =
+        rsvpSettingsDirty && (!scopedSave || requestedSectionKey === rsvpSectionKey);
+
+      if (shouldSaveRsvpSettings) {
         const response = await apiClient.updateEvent(eventId, { rsvpSettings });
         savedEvent = response.event;
       }
 
-      setRsvpSettings({
-        collectGuestMessage: savedEvent.rsvpSettings.collectGuestMessage,
-        collectGuestNames: savedEvent.rsvpSettings.collectGuestNames,
-      });
+      if (shouldSaveRsvpSettings) {
+        setRsvpSettings({
+          collectGuestMessage: savedEvent.rsvpSettings.collectGuestMessage,
+          collectGuestNames: savedEvent.rsvpSettings.collectGuestNames,
+        });
+      }
 
-      updateState((current) =>
-        current.status === "ready"
-          ? {
-              ...current,
-              event: savedEvent,
-              formMessage: "Sections saved.",
-              isSaving: false,
-              savedSections: sectionDrafts,
-              sectionErrors: {},
-              sections: sectionDrafts,
-            }
-          : current,
-      );
+      localMutationRevisionRef.current += 1;
+
+      commitWorkingDrafts({
+        event: savedEvent,
+        formMessage: "Sections saved.",
+        isSaving: false,
+        sectionErrors: {},
+        ...(scopedSave ? {} : { orderConflict: false, sectionConflicts: {} }),
+      });
       toast.success("Sections saved.");
       return true;
     } catch (error) {
-      const formError = toSectionFormError(error, state.sections);
+      const formError = toSectionFormError(error, state.sections, failedSectionKey);
+      const isConflict = error instanceof ApiClientError && error.apiError.error.code === "CONFLICT";
 
       revealFirstSectionError(formError.sectionErrors);
 
-      updateState((current) =>
-        current.status === "ready"
-          ? {
-              ...current,
-              formMessage: formError.formMessage,
-              isSaving: false,
-              sectionErrors: formError.sectionErrors,
-            }
-          : current,
+      localMutationRevisionRef.current += 1;
+
+      commitWorkingDrafts(
+        {
+          formMessage: formError.formMessage,
+          isSaving: false,
+          orderConflict: isConflict && failedSectionKey === undefined,
+          sectionErrors: formError.sectionErrors,
+        },
+        failedSectionKey && isConflict
+          ? { sectionKey: failedSectionKey, conflicted: true }
+          : undefined,
       );
+      if (isConflict) {
+        void syncSections();
+      }
       toast.error(formError.formMessage);
       return false;
     }
@@ -663,6 +914,8 @@ function SectionBuilderContent({
     const content =
       blueprint?.createDefaultContent(state.event) ??
       defaultContentForSection("custom", state.event);
+
+    localMutationRevisionRef.current += 1;
 
     updateState((current) =>
       current.status === "ready"
@@ -770,7 +1023,7 @@ function SectionBuilderContent({
         {state.formMessage ? (
           <div
             className={`rounded-[var(--radius-md)] border px-3 py-2 text-sm ${
-              Object.keys(state.sectionErrors).length > 0
+              Object.keys(state.sectionErrors).length > 0 || hasRemoteConflict
                 ? "border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
                 : "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] text-[var(--success)]"
             }`}
@@ -792,6 +1045,8 @@ function SectionBuilderContent({
         onAddCustomText={addCustomTextSection}
         onEdit={openSectionEditor}
         onViewChange={setSectionOrderView}
+        orderConflict={state.orderConflict}
+        sectionConflicts={state.sectionConflicts}
         sectionErrors={state.sectionErrors}
         updateSection={updateSection}
         view={sectionOrderView}
@@ -835,7 +1090,7 @@ function SectionBuilderContent({
               <Button
                 disabled={!canEdit || state.isSaving}
                 onClick={() => {
-                  void saveSections().then((saved) => {
+                  void saveSections(editingPreview.section.sectionKey).then((saved) => {
                     if (saved) {
                       setEditingSectionKey(null);
                     }
@@ -896,6 +1151,8 @@ function SectionOrderPanel({
   onAddCustomText,
   onEdit,
   onViewChange,
+  orderConflict,
+  sectionConflicts,
   sectionErrors,
   updateSection,
   view,
@@ -909,6 +1166,8 @@ function SectionOrderPanel({
   onAddCustomText: () => void;
   onEdit: (sectionKey: string) => void;
   onViewChange: (view: SectionOrderView) => void;
+  orderConflict: boolean;
+  sectionConflicts: Record<string, boolean>;
   sectionErrors: SectionErrorMap;
   updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
   view: SectionOrderView;
@@ -926,6 +1185,12 @@ function SectionOrderPanel({
             Detailed keeps compact controls visible on every card. List keeps each section and its
             actions on a single row.
           </p>
+          {orderConflict ? (
+            <p className="mt-3 rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]" role="alert">
+              Another manager changed the section order. Your local order is still here; refresh it
+              before saving again.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid shrink-0 gap-3">
@@ -984,6 +1249,7 @@ function SectionOrderPanel({
         {models.map((model, index) => {
           const displayLabel = getSectionDisplayLabel(model, index, models);
           const isDirty = dirtySectionKeys.has(model.section.sectionKey);
+          const hasRemoteConflict = Boolean(sectionConflicts[model.section.sectionKey]);
           const errors = {
             ...model.errors,
             ...(sectionErrors[model.section.sectionKey] ?? {}),
@@ -1056,6 +1322,7 @@ function SectionOrderPanel({
                   <p className="truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
                     {formatRequirement(model.requirement)} · {model.statusLabel}
                     {isDirty ? " · Unsaved" : ""}
+                    {hasRemoteConflict ? " · Changed elsewhere" : ""}
                   </p>
                 </div>
                 <span className={cn(statusPillClassName(model.status), "hidden md:inline-flex")}>
@@ -1093,6 +1360,7 @@ function SectionOrderPanel({
                       <p className="mt-0.5 truncate text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
                         {formatRequirement(model.requirement)} · {formatVisibility(model)}
                         {isDirty ? " · Unsaved" : ""}
+                        {hasRemoteConflict ? " · Changed elsewhere" : ""}
                       </p>
                     </div>
                   </div>
@@ -4076,6 +4344,21 @@ function getDirtySectionKeys(sections: SectionDraft[], savedSections: SectionDra
   return dirtyKeys;
 }
 
+function getDirtySectionDataKeys(sections: SectionDraft[], savedSections: SectionDraft[]) {
+  const savedByKey = new Map(
+    savedSections.map((section) => [section.sectionKey, sectionDataSignature(section)]),
+  );
+  const dirtyKeys = new Set<string>();
+
+  sections.forEach((section) => {
+    if (sectionDataSignature(section) !== savedByKey.get(section.sectionKey)) {
+      dirtyKeys.add(section.sectionKey);
+    }
+  });
+
+  return dirtyKeys;
+}
+
 function sectionDraftSignature(section: SectionDraft) {
   return JSON.stringify({
     contentText: section.contentText,
@@ -4087,6 +4370,165 @@ function sectionDraftSignature(section: SectionDraft) {
     sortOrder: section.sortOrder,
     visibility: section.visibility,
   });
+}
+
+function sectionDataSignature(section: SectionDraft) {
+  return JSON.stringify({
+    contentText: section.contentText,
+    enabled: section.enabled,
+    id: section.id,
+    sectionKey: section.sectionKey,
+    sectionType: section.sectionType,
+    settingsText: section.settingsText,
+    visibility: section.visibility,
+  });
+}
+
+function hasSectionOrderChanges(sections: SectionDraft[], savedSections: SectionDraft[]) {
+  return !sameStringArray(
+    getPersistedSectionOrder(savedSections),
+    getPersistedSectionOrder(sections),
+  );
+}
+
+function getPersistedSectionOrder(sections: SectionDraft[]) {
+  return sections
+    .filter((section) => Boolean(section.id))
+    .sort((first, second) => first.sortOrder - second.sortOrder)
+    .map((section) => section.sectionKey);
+}
+
+function mergeRemoteSections(
+  current: BuilderReadyState,
+  existingSections: EventSection[],
+): BuilderReadyState {
+  if (current.isSaving) {
+    return current;
+  }
+
+  const remoteDrafts = createSectionDrafts({
+    event: current.event,
+    existingSections,
+    theme: current.theme,
+  });
+  const remoteByKey = new Map(remoteDrafts.map((section) => [section.sectionKey, section]));
+  const localByKey = new Map(current.sections.map((section) => [section.sectionKey, section]));
+  const savedByKey = new Map(current.savedSections.map((section) => [section.sectionKey, section]));
+  const savedOrder = getPersistedSectionOrder(current.savedSections);
+  const localOrderDirty = !sameStringArray(
+    savedOrder,
+    getPersistedSectionOrder(current.sections),
+  );
+  const remoteOrderChangedSinceDraft =
+    localOrderDirty && !sameStringArray(savedOrder, getPersistedSectionOrder(remoteDrafts));
+  const nextConflicts = { ...current.sectionConflicts };
+  const mergedSections: SectionDraft[] = [];
+  const nextSavedSections: SectionDraft[] = [];
+  let remoteOnlySortOrder = current.sections.length;
+
+  remoteDrafts.forEach((remoteSection) => {
+    const localSection = localByKey.get(remoteSection.sectionKey);
+    const savedSection = savedByKey.get(remoteSection.sectionKey);
+    const isDataDirty = Boolean(
+      localSection &&
+        sectionDataSignature(localSection) !== sectionDataSignature(savedSection ?? remoteSection),
+    );
+    const remoteChangedSinceDraft = Boolean(
+      savedSection?.updatedAt &&
+        remoteSection.updatedAt &&
+        savedSection.updatedAt !== remoteSection.updatedAt,
+    );
+    const remoteCreatedWhileDrafting = Boolean(
+      localSection &&
+        !savedSection &&
+        remoteSection.id &&
+        isDataDirty,
+    );
+    const hasRemoteConflict =
+      isDataDirty && (remoteChangedSinceDraft || remoteCreatedWhileDrafting);
+    const nextSortOrder = localOrderDirty
+      ? (localSection?.sortOrder ?? remoteOnlySortOrder++)
+      : remoteSection.sortOrder;
+
+    if (hasRemoteConflict) {
+      if (localSection) {
+        nextConflicts[remoteSection.sectionKey] = true;
+      }
+    }
+
+    mergedSections.push(
+      localSection && isDataDirty
+        ? { ...localSection, sortOrder: nextSortOrder }
+        : { ...remoteSection, sortOrder: nextSortOrder },
+    );
+
+    const savedBaseline = isDataDirty && savedSection ? savedSection : remoteSection;
+
+    nextSavedSections.push({
+      ...savedBaseline,
+      sortOrder: localOrderDirty && savedSection ? savedSection.sortOrder : nextSortOrder,
+    });
+  });
+
+  const dirtySectionDataKeys = getDirtySectionDataKeys(current.sections, current.savedSections);
+  const unsyncedLocalSections = current.sections.filter((section) => {
+    if (remoteByKey.has(section.sectionKey)) {
+      return false;
+    }
+
+    const savedSection = savedByKey.get(section.sectionKey);
+    const isDirty = !section.id || dirtySectionDataKeys.has(section.sectionKey);
+
+    if (savedSection && isDirty) {
+      nextConflicts[section.sectionKey] = true;
+    }
+
+    return isDirty;
+  });
+  const nextSections = [...mergedSections, ...unsyncedLocalSections].sort(
+    (first, second) => first.sortOrder - second.sortOrder,
+  );
+  const missingDirtySavedSections = current.savedSections.filter((section) => {
+    const localSection = localByKey.get(section.sectionKey);
+
+    return (
+      !remoteByKey.has(section.sectionKey) &&
+      localSection !== undefined &&
+      dirtySectionDataKeys.has(section.sectionKey)
+    );
+  });
+  const nextSavedSectionDrafts = [...nextSavedSections, ...missingDirtySavedSections].sort(
+    (first, second) => first.sortOrder - second.sortOrder,
+  );
+  const hasNewSectionConflict = Object.keys(nextConflicts).some(
+    (sectionKey) => !current.sectionConflicts[sectionKey],
+  );
+  const hasNewOrderConflict = remoteOrderChangedSinceDraft && !current.orderConflict;
+
+  return {
+    ...current,
+    formMessage: hasNewSectionConflict || hasNewOrderConflict
+      ? hasNewOrderConflict
+        ? "Another manager changed the section order. Your local order is still here; review before saving."
+        : "Another manager changed a section. Your unsaved edits are still here; review before saving."
+      : current.formMessage,
+    orderConflict: current.orderConflict || remoteOrderChangedSinceDraft,
+    sectionConflicts: nextConflicts,
+    savedSections: nextSavedSectionDrafts,
+    sections: nextSections,
+  };
+}
+
+function upsertSectionDraft(sections: SectionDraft[], nextSection: SectionDraft) {
+  const existingIndex = sections.findIndex(
+    (section) => section.sectionKey === nextSection.sectionKey,
+  );
+
+  if (existingIndex < 0) {
+    return [...sections, nextSection].sort((first, second) => first.sortOrder - second.sortOrder);
+  }
+
+  return sections.map((section, index) => (index === existingIndex ? nextSection : section));
 }
 
 function cloneSectionDrafts(sections: SectionDraft[]) {
@@ -4119,28 +4561,61 @@ function createSectionDrafts({
     ...missingBlueprintTypes.map((sectionType) => ({ existing: undefined, sectionType })),
   ];
 
-  return orderedSections.map(({ existing, sectionType }, index) => {
-    const definition = getSectionDefinition(sectionType);
-    const blueprint = getSectionBlueprint(event.eventType, sectionType);
-    const content =
-      existing?.content ??
-      blueprint?.createDefaultContent(event) ??
-      defaultContentForSection(sectionType, event);
-
-    return {
-      contentText: formatJsonText(
-        normalizeSectionContentForEditor(sectionType, content as JsonObject),
-      ),
-      enabled: existing?.enabled ?? blueprint?.defaultEnabled ?? false,
-      id: existing?.id,
-      sectionKey: existing?.sectionKey ?? blueprint?.sectionKey ?? toSectionKey(sectionType),
+  return orderedSections.map(({ existing, sectionType }, index) =>
+    createSectionDraft({
+      event,
+      existing,
       sectionType,
-      settingsText: formatJsonText(existing?.settings ?? blueprint?.createDefaultSettings() ?? {}),
       sortOrder: index,
-      visibility:
-        existing?.visibility ?? blueprint?.defaultVisibility ?? definition.defaultVisibility,
-    };
+    }),
+  );
+}
+
+function createSectionDraftFromEventSection({
+  event,
+  existing,
+}: {
+  event: Event;
+  existing: EventSection;
+}) {
+  return createSectionDraft({
+    event,
+    existing,
+    sectionType: existing.sectionType,
+    sortOrder: existing.sortOrder,
   });
+}
+
+function createSectionDraft({
+  event,
+  existing,
+  sectionType,
+  sortOrder,
+}: {
+  event: Event;
+  existing?: EventSection;
+  sectionType: SectionType;
+  sortOrder: number;
+}): SectionDraft {
+  const definition = getSectionDefinition(sectionType);
+  const blueprint = getSectionBlueprint(event.eventType, sectionType);
+  const content =
+    existing?.content ?? blueprint?.createDefaultContent(event) ?? defaultContentForSection(sectionType, event);
+
+  return {
+    contentText: formatJsonText(
+      normalizeSectionContentForEditor(sectionType, content as JsonObject),
+    ),
+    enabled: existing?.enabled ?? blueprint?.defaultEnabled ?? false,
+    id: existing?.id,
+    sectionKey: existing?.sectionKey ?? blueprint?.sectionKey ?? toSectionKey(sectionType),
+    sectionType,
+    settingsText: formatJsonText(existing?.settings ?? blueprint?.createDefaultSettings() ?? {}),
+    sortOrder,
+    updatedAt: existing?.updatedAt,
+    visibility:
+      existing?.visibility ?? blueprint?.defaultVisibility ?? definition.defaultVisibility,
+  };
 }
 
 function normalizeSectionContentForEditor(sectionType: SectionType, content: JsonObject) {
@@ -4198,61 +4673,15 @@ export function parseSectionDrafts(
       sectionErrors: SectionErrorMap;
     } {
   const sectionErrors: SectionErrorMap = {};
-  const enabledSections = sections.filter((section) => section.enabled);
-  const mutations = enabledSections.flatMap((section, index) => {
-    const definition = getSectionDefinition(section.sectionType);
-    const content = parseJsonObject(section.contentText);
-    const settings = parseJsonObject(section.settingsText);
-    const errors: SectionErrors = {};
+  const mutations = sections.flatMap((section, index) => {
+    const parsed = parseSectionDraft(section);
 
-    if (!content.ok) {
-      errors.content = content.message;
-    } else {
-      const result = definition.contentSchema.safeParse(content.value);
-
-      if (!result.success) {
-        errors.content = formatIssues(result.error.issues);
-      }
-    }
-
-    if (!settings.ok) {
-      errors.settings = settings.message;
-    } else {
-      const result = definition.settingsSchema.safeParse(settings.value);
-
-      if (!result.success) {
-        errors.settings = formatIssues(result.error.issues);
-      }
-    }
-
-    if (definition.requiresGuestContext && section.visibility === "public") {
-      errors.visibility = `${definition.label} sections cannot be public.`;
-    }
-
-    if (Object.keys(errors).length > 0) {
-      sectionErrors[section.sectionKey] = errors;
+    if (!parsed.ok) {
+      sectionErrors[section.sectionKey] = parsed.sectionErrors[section.sectionKey] ?? {};
       return [];
     }
 
-    const contentResult = definition.contentSchema.safeParse(content.ok ? content.value : {});
-    const settingsResult = definition.settingsSchema.safeParse(settings.ok ? settings.value : {});
-
-    if (!contentResult.success || !settingsResult.success) {
-      return [];
-    }
-
-    return [
-      {
-        ...(section.id ? { id: section.id } : {}),
-        content: stripUndefinedJsonObject(contentResult.data),
-        enabled: true,
-        sectionKey: section.sectionKey,
-        sectionType: section.sectionType,
-        settings: stripUndefinedJsonObject(settingsResult.data),
-        sortOrder: index,
-        visibility: section.visibility,
-      },
-    ];
+    return [{ ...parsed.input, sortOrder: index }];
   });
 
   if (Object.keys(sectionErrors).length > 0) {
@@ -4300,6 +4729,108 @@ export function parseSectionDrafts(
         content: formatIssues(parsed.error.issues),
       },
     },
+  };
+}
+
+function parseSectionDraft(
+  section: SectionDraft,
+):
+  | {
+      input: EventSectionUpdateRequest;
+      ok: true;
+    }
+  | {
+      formMessage: string;
+      ok: false;
+      sectionErrors: SectionErrorMap;
+    } {
+  const definition = getSectionDefinition(section.sectionType);
+  const content = parseJsonObject(section.contentText);
+  const settings = parseJsonObject(section.settingsText);
+  const errors: SectionErrors = {};
+
+  if (!content.ok) {
+    errors.content = content.message;
+  } else if (section.enabled) {
+    const result = definition.contentSchema.safeParse(content.value);
+
+    if (!result.success) {
+      errors.content = formatIssues(result.error.issues);
+    }
+  }
+
+  if (!settings.ok) {
+    errors.settings = settings.message;
+  } else if (section.enabled) {
+    const result = definition.settingsSchema.safeParse(settings.value);
+
+    if (!result.success) {
+      errors.settings = formatIssues(result.error.issues);
+    }
+  }
+
+  if (section.enabled && definition.requiresGuestContext && section.visibility === "public") {
+    errors.visibility = `${definition.label} sections cannot be public.`;
+  }
+
+  if (Object.keys(errors).length > 0 || !content.ok || !settings.ok) {
+    return {
+      formMessage: "Check the highlighted section fields before saving.",
+      ok: false,
+      sectionErrors: {
+        [section.sectionKey]: errors,
+      },
+    };
+  }
+
+  const contentResult = section.enabled
+    ? definition.contentSchema.safeParse(content.value)
+    : { success: true as const, data: content.value };
+  const settingsResult = section.enabled
+    ? definition.settingsSchema.safeParse(settings.value)
+    : { success: true as const, data: settings.value };
+
+  if (!contentResult.success || !settingsResult.success) {
+    return {
+      formMessage: "Check the highlighted section fields before saving.",
+      ok: false,
+      sectionErrors: {
+        [section.sectionKey]: {
+          ...(contentResult.success ? {} : { content: formatIssues(contentResult.error.issues) }),
+          ...(settingsResult.success
+            ? {}
+            : { settings: formatIssues(settingsResult.error.issues) }),
+        },
+      },
+    };
+  }
+
+  const parsed = eventSectionUpdateRequestSchema.safeParse({
+    ...(section.id ? { id: section.id } : {}),
+    content: stripUndefinedJsonObject(contentResult.data),
+    enabled: section.enabled,
+    sectionKey: section.sectionKey,
+    sectionType: section.sectionType,
+    settings: stripUndefinedJsonObject(settingsResult.data),
+    sortOrder: section.sortOrder,
+    visibility: section.visibility,
+  });
+
+  if (!parsed.success) {
+    return {
+      formMessage: "Check the highlighted section fields before saving.",
+      ok: false,
+      sectionErrors: {
+        [section.sectionKey]: {
+          content: formatIssues(parsed.error.issues),
+        },
+      },
+    };
+  }
+
+  return {
+    input: parsed.data,
+    ok: true,
   };
 }
 
@@ -4693,9 +5224,22 @@ function withoutSectionErrors(errors: SectionErrorMap, sectionKey: string) {
   return nextErrors;
 }
 
+function withoutSectionConflict(conflicts: Record<string, boolean>, sectionKey: string) {
+  const nextConflicts = { ...conflicts };
+
+  delete nextConflicts[sectionKey];
+
+  return nextConflicts;
+}
+
+function sameStringArray(first: string[], second: string[]) {
+  return first.length === second.length && first.every((value, index) => value === second[index]);
+}
+
 function toSectionFormError(
   error: unknown,
   sections: SectionDraft[] = [],
+  fallbackSectionKey?: string,
 ): {
   formMessage: string;
   sectionErrors: SectionErrorMap;
@@ -4708,7 +5252,8 @@ function toSectionFormError(
           ? field.path[1]
           : undefined;
       const sectionKey =
-        sectionIndex === undefined ? "_form" : (sections[sectionIndex]?.sectionKey ?? "_form");
+        fallbackSectionKey ??
+        (sectionIndex === undefined ? "_form" : (sections[sectionIndex]?.sectionKey ?? "_form"));
       const currentMessage = errors[sectionKey]?.content;
 
       errors[sectionKey] = {

@@ -9,6 +9,8 @@ import {
   eventDeletionSchema,
   eventSchema,
   eventSectionSchema,
+  eventSectionUpdateSchema,
+  eventSectionsReorderSchema,
   eventSectionsUpdateSchema,
   eventThemeUpdateSchema,
   eventUpdateSchema,
@@ -183,6 +185,17 @@ export type EventPublishingReadinessResponse = z.infer<
 
 export const eventSectionsUpdateRequestSchema = eventSectionsUpdateSchema;
 export type EventSectionsUpdateRequest = z.input<typeof eventSectionsUpdateRequestSchema>;
+
+export const eventSectionUpdateRequestSchema = eventSectionUpdateSchema;
+export type EventSectionUpdateRequest = z.input<typeof eventSectionUpdateRequestSchema>;
+
+export const eventSectionResponseSchema = z.object({
+  section: eventSectionSchema,
+});
+export type EventSectionResponse = z.infer<typeof eventSectionResponseSchema>;
+
+export const eventSectionsReorderRequestSchema = eventSectionsReorderSchema;
+export type EventSectionsReorderRequest = z.input<typeof eventSectionsReorderRequestSchema>;
 
 export const eventSectionsResponseSchema = z.object({
   sections: z.array(eventSectionSchema),

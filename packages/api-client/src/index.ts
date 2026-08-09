@@ -8,6 +8,7 @@ import {
   collaboratorRoleUpdateResponseSchema,
   eventCollaborationResponseSchema,
   eventResponseSchema,
+  eventSectionResponseSchema,
   managedEventResponseSchema,
   eventPublishingReadinessResponseSchema,
   eventSectionsResponseSchema,
@@ -41,9 +42,12 @@ import {
   type EventCreateRequest,
   type EventDeletionRequest,
   type EventResponse,
+  type EventSectionResponse,
+  type EventSectionUpdateRequest,
   type ManagedEventResponse,
   type EventPublishingReadinessResponse,
   type EventSectionsResponse,
+  type EventSectionsReorderRequest,
   type EventSectionsUpdateRequest,
   type EventSlugSuggestionRequest,
   type EventSlugSuggestionResponse,
@@ -452,6 +456,19 @@ export const createApiClient = ({
         body: input,
         method: "PATCH",
       }),
+    updateEventSection: (
+      eventId: string,
+      sectionKey: string,
+      input: EventSectionUpdateRequest,
+    ): Promise<EventSectionResponse> =>
+      request(
+        `/events/${encodePathSegment(eventId)}/sections/${encodePathSegment(sectionKey)}`,
+        eventSectionResponseSchema,
+        {
+          body: input,
+          method: "PATCH",
+        },
+      ),
     updateEventCollaboratorRole: (
       eventId: string,
       collaboratorUserId: string,
@@ -474,6 +491,14 @@ export const createApiClient = ({
       request(`/events/${encodePathSegment(eventId)}/sections`, eventSectionsResponseSchema, {
         body: input,
         method: "PUT",
+      }),
+    reorderEventSections: (
+      eventId: string,
+      input: EventSectionsReorderRequest,
+    ): Promise<EventSectionsResponse> =>
+      request(`/events/${encodePathSegment(eventId)}/sections/reorder`, eventSectionsResponseSchema, {
+        body: input,
+        method: "POST",
       }),
     updateEventTheme: (
       eventId: string,

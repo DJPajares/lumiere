@@ -383,20 +383,54 @@ describe("SectionBuilderWorkspace", () => {
       themeConfig: {},
       themeMode: "toggleable",
     }));
-    const updateEventSections = vi.fn<DashboardApiClient["updateEventSections"]>(
-      async (eventId, input) => ({
-        sections: input.sections.map((section, index): EventSection => ({
-          ...section,
-          content: section.content as Record<string, JsonValue>,
-          createdAt: "2030-01-01T00:00:00.000Z",
-          enabled: section.enabled ?? true,
+    const sectionStore = new Map<string, EventSection>();
+    const updateEventSection = vi.fn<DashboardApiClient["updateEventSection"]>(
+      async (eventId, sectionKey, input) => {
+        const previous = sectionStore.get(sectionKey);
+        const section: EventSection = {
+          content: input.content as Record<string, JsonValue>,
+          createdAt: previous?.createdAt ?? "2030-01-01T00:00:00.000Z",
+          enabled: input.enabled ?? true,
           eventId,
-          id: `section_${index}`,
-          settings: (section.settings ?? {}) as Record<string, JsonValue>,
+          id: input.id ?? previous?.id ?? `section_${sectionStore.size}`,
+          sectionKey,
+          sectionType: input.sectionType,
+          settings: (input.settings ?? {}) as Record<string, JsonValue>,
+          sortOrder: previous?.sortOrder ?? input.sortOrder,
           updatedAt: "2030-01-01T00:00:00.000Z",
-        })),
-      }),
+          visibility: input.visibility,
+        };
+
+        sectionStore.set(sectionKey, section);
+
+        return { section };
+      },
     );
+    const reorderEventSections = vi.fn<DashboardApiClient["reorderEventSections"]>(
+      async (eventId, input) => {
+        const sections = input.sectionKeys.map((sectionKey, sortOrder) => {
+          const section = sectionStore.get(sectionKey);
+
+          if (!section) {
+            throw new Error(`Missing section ${sectionKey}`);
+          }
+
+          return {
+            ...section,
+            eventId,
+            sortOrder,
+          };
+        });
+
+        sectionStore.clear();
+        sections.forEach((section) => sectionStore.set(section.sectionKey, section));
+
+        return { sections };
+      },
+    );
+    const listEventSections = vi.fn<DashboardApiClient["listEventSections"]>(async () => ({
+      sections: [...sectionStore.values()],
+    }));
     const updateEvent = vi.fn<DashboardApiClient["updateEvent"]>(async (_eventId, input) => ({
       event: {
         ...dashboardEvent,
@@ -414,8 +448,10 @@ describe("SectionBuilderWorkspace", () => {
     renderWithAuth(
       createApiClientStub({
         getEventTheme,
+        listEventSections,
+        reorderEventSections,
         updateEvent,
-        updateEventSections,
+        updateEventSection,
       }),
     );
 
@@ -494,60 +530,53 @@ describe("SectionBuilderWorkspace", () => {
     await user.click(rsvpEditor.getByRole("switch", { name: /Song request/ }));
     await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
-    await waitFor(() => expect(updateEventSections).toHaveBeenCalledTimes(6));
+    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(6));
     await waitFor(() => expect(updateEvent).toHaveBeenCalledTimes(1));
+    await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);
+    await waitFor(() => expect(updateEventSection).toHaveBeenCalledTimes(8));
+    await waitFor(() => expect(reorderEventSections).toHaveBeenCalledTimes(1));
 
-    const payload = updateEventSections.mock.calls.at(-1)?.[1];
-
-    expect(payload?.sections.map((section) => section.sectionType)).toEqual([
-      "custom",
-      "custom",
-      "date",
+    expect(updateEventSection).toHaveBeenCalledWith(
+      "evt_123",
       "introduction",
-      "rsvp",
+      expect.objectContaining({
+        content: expect.objectContaining({ title: "Garden Supper" }),
+        visibility: "guest_only",
+      }),
+    );
+    expect(updateEventSection).toHaveBeenCalledWith(
+      "evt_123",
       "details",
-      "dress_code",
-    ]);
-    expect(payload?.sections[3]?.visibility).toBe("guest_only");
-    expect(payload?.sections[3]?.content).toMatchObject({
-      title: "Garden Supper",
+      expect.objectContaining({
+        content: expect.objectContaining({
+          items: [
+            {
+              label: "Schedule",
+              value: "Add the key timing or guest notes here.",
+            },
+            {
+              label: "Dessert",
+              value: "Cake and coffee at 9 PM.",
+            },
+          ],
+          title: "Details",
+        }),
+      }),
+    );
+    expect(updateEventSection).toHaveBeenCalledWith(
+      "evt_123",
+      "dress-code",
+      expect.objectContaining({
+        content: expect.objectContaining({
+          cards: expect.arrayContaining([expect.objectContaining({ title: "Garden formal" })]),
+          paletteTitle: "A garden celebration palette",
+        }),
+      }),
+    );
+    expect(reorderEventSections).toHaveBeenCalledWith("evt_123", {
+      expectedSectionKeys: expect.any(Array),
+      sectionKeys: ["rsvp", "date", "introduction", "details", "dress-code", "custom", "custom-2"],
     });
-    expect(payload?.sections[5]?.content).toMatchObject({
-      items: [
-        {
-          label: "Schedule",
-          value: "Add the key timing or guest notes here.",
-        },
-        {
-          label: "Dessert",
-          value: "Cake and coffee at 9 PM.",
-        },
-      ],
-      title: "Details",
-    });
-    expect(payload?.sections[6]?.content).toMatchObject({
-      cards: expect.arrayContaining([expect.objectContaining({ title: "Garden formal" })]),
-      paletteTitle: "A garden celebration palette",
-    });
-    const customSections = payload?.sections.filter((section) => section.sectionType === "custom");
-
-    expect(customSections?.map((section) => section.sectionKey)).toEqual(["custom", "custom-2"]);
-    expect(
-      customSections?.map(
-        (section) => (section.content as Record<string, JsonValue>).title,
-      ),
-    ).toEqual(["Arrival notes", "Shuttle schedule"]);
-    expect(payload?.sections[4]?.content).toMatchObject({
-      questions: [
-        expect.objectContaining({ key: "dietary-notes" }),
-        expect.objectContaining({ key: "song-request" }),
-      ],
-    });
-    expect(payload?.sections[0]?.sortOrder).toBe(0);
-    expect(payload?.sections[1]?.sortOrder).toBe(1);
-    expect(payload?.sections[2]?.sortOrder).toBe(2);
-    expect(payload?.sections[3]?.sortOrder).toBe(3);
-    expect(payload?.sections[4]?.sortOrder).toBe(4);
     expect(updateEvent).toHaveBeenCalledWith("evt_123", {
       rsvpSettings: {
         collectGuestMessage: false,
