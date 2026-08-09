@@ -1,6 +1,16 @@
 "use client";
 
 import { ApiClientError } from "@lumiere/api-client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@lumiere/dashboard-ui/components/alert-dialog";
 import { Button } from "@lumiere/dashboard-ui/components/button";
 import {
   DropdownMenu,
@@ -119,6 +129,11 @@ type SectionErrors = Partial<Record<"content" | "settings" | "visibility", strin
 type SectionErrorMap = Record<string, SectionErrors>;
 type SectionControlUpdate = Partial<Pick<SectionDraft, "enabled" | "visibility">>;
 type SectionControlUpdater = (sectionKey: string, updates: SectionControlUpdate) => void;
+type PendingSectionControlUpdate = {
+  description: string;
+  sectionKey: string;
+  updates: SectionControlUpdate;
+};
 type PreviewContext = "guest" | "public";
 type SectionOrderView = "detailed" | "list";
 
@@ -329,6 +344,8 @@ function SectionBuilderContent({
   const [sectionOrderView, setSectionOrderView] = useState<SectionOrderView>("detailed");
   const [sectionOrderViewStorageReady, setSectionOrderViewStorageReady] = useState(false);
   const [isRefreshingSections, setIsRefreshingSections] = useState(false);
+  const [pendingSectionControlUpdate, setPendingSectionControlUpdate] =
+    useState<PendingSectionControlUpdate | null>(null);
   const localMutationRevisionRef = useRef(0);
   const sectionSyncInFlightRef = useRef(false);
   const syncRequestIdRef = useRef(0);
@@ -391,9 +408,6 @@ function SectionBuilderContent({
     (model) => model.section.enabled && model.status !== "invalid",
   ).length;
   const invalidEnabledCount = previewModels.filter((model) => model.status === "invalid").length;
-  const formDetail = state.sectionErrors._form?.content;
-  const hasRemoteConflict =
-    state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
 
   useEffect(() => {
     if (
@@ -470,7 +484,7 @@ function SectionBuilderContent({
     );
   };
 
-  const updateSectionControl = async (
+  const updateSectionControl = (
     sectionKey: string,
     updates: SectionControlUpdate,
   ) => {
@@ -486,6 +500,42 @@ function SectionBuilderContent({
         current.status === "ready" ? { ...current, formMessage: message } : current,
       );
       toast.error(message);
+      return;
+    }
+
+    const previousSection = state.sections.find(
+      (section) => section.sectionKey === sectionKey,
+    );
+
+    if (!previousSection) {
+      return;
+    }
+
+    const changedEnabled =
+      updates.enabled !== undefined && updates.enabled !== previousSection.enabled;
+    const changedVisibility =
+      updates.visibility !== undefined && updates.visibility !== previousSection.visibility;
+
+    if (!changedEnabled && !changedVisibility) {
+      return;
+    }
+
+    const sectionLabel = getSectionDefinition(previousSection.sectionType).label;
+    const visibilityLabel = visibilityOptions.find(
+      (option) => option.value === updates.visibility,
+    )?.label;
+    const description = changedEnabled
+      ? `${updates.enabled ? "Enable" : "Disable"} ${sectionLabel}? This change will be saved immediately and shared with other managers.`
+      : `Change ${sectionLabel} visibility to ${visibilityLabel}? This change will be saved immediately and shared with other managers.`;
+
+    setPendingSectionControlUpdate({ description, sectionKey, updates });
+  };
+
+  const applySectionControlUpdate = async (
+    sectionKey: string,
+    updates: SectionControlUpdate,
+  ) => {
+    if (!apiClient || !canEdit || state.isSaving) {
       return;
     }
 
@@ -1154,19 +1204,6 @@ function SectionBuilderContent({
           </div>
         ) : null}
 
-        {state.formMessage ? (
-          <div
-            className={`rounded-[var(--radius-md)] border px-3 py-2 text-sm ${
-              Object.keys(state.sectionErrors).length > 0 || hasRemoteConflict
-                ? "border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] text-[var(--error)]"
-                : "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,var(--surface))] text-[var(--success)]"
-            }`}
-            role="status"
-          >
-            <p>{state.formMessage}</p>
-            {formDetail ? <p className="mt-1 leading-6">{formDetail}</p> : null}
-          </div>
-        ) : null}
       </section>
 
       <SectionOrderPanel
@@ -1185,6 +1222,40 @@ function SectionBuilderContent({
         updateSection={updateSectionControl}
         view={sectionOrderView}
       />
+
+      <AlertDialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingSectionControlUpdate(null);
+          }
+        }}
+        open={pendingSectionControlUpdate !== null}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm section update</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingSectionControlUpdate?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!pendingSectionControlUpdate) {
+                  return;
+                }
+
+                const update = pendingSectionControlUpdate;
+                setPendingSectionControlUpdate(null);
+                void applySectionControlUpdate(update.sectionKey, update.updates);
+              }}
+            >
+              Confirm update
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {previewOpen ? (
         <ResponsiveModal

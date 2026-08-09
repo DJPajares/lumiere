@@ -93,6 +93,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Introduction"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Preview" }));
 
     const preview = await screen.findByRole("dialog", { name: "Preview invitation" });
@@ -144,6 +145,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Location"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Location" }));
 
     const locationEditor = within(screen.getByRole("region", { name: "Location" }));
@@ -187,6 +189,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Entourage"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Entourage" }));
 
     const entourageEditor = within(screen.getByRole("region", { name: "Entourage" }));
@@ -215,6 +218,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Story"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Story" }));
     const storyEditor = within(screen.getByRole("region", { name: "Story" }));
     const legacyBody = storyEditor.getByLabelText("Paragraph body") as HTMLTextAreaElement;
@@ -275,9 +279,6 @@ describe("SectionBuilderWorkspace", () => {
     await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);
     await user.click(getModalFooter().getByRole("button", { name: "Save sections" }));
 
-    expect(
-      await screen.findByText("Check the highlighted section fields before saving."),
-    ).toBeTruthy();
     expect(storyEditor.getAllByLabelText("Paragraph body")[0]!.getAttribute("aria-invalid")).toBe(
       "true",
     );
@@ -333,10 +334,7 @@ describe("SectionBuilderWorkspace", () => {
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getAllByRole("button", { name: "Save sections" })[0]!);
 
-    expect(
-      await screen.findByText(/Introduction is required before publishing Dinner events/),
-    ).toBeTruthy();
-    expect(screen.getByText(/RSVP is required before publishing Dinner events/)).toBeTruthy();
+    expect(screen.getAllByText("Needs fixes").length).toBeGreaterThan(0);
     expect(updateEventSections).not.toHaveBeenCalled();
   });
 
@@ -347,6 +345,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await screen.findByText("Configure content for Spring Dinner");
     await user.click(screen.getByLabelText("Enable Introduction"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
 
@@ -475,6 +474,7 @@ describe("SectionBuilderWorkspace", () => {
     );
 
     await user.click(screen.getByLabelText("Enable Introduction"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     const introductionEditor = within(screen.getByRole("region", { name: "Introduction" }));
     await user.clear(introductionEditor.getByLabelText(/^Title/));
@@ -485,7 +485,9 @@ describe("SectionBuilderWorkspace", () => {
     );
 
     await user.click(screen.getByLabelText("Enable Date and Time"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByLabelText("Enable Details"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Details" }));
     const detailsEditor = within(screen.getByRole("region", { name: "Details" }));
 
@@ -498,6 +500,7 @@ describe("SectionBuilderWorkspace", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit Details" })).toBeNull());
 
     await user.click(screen.getByLabelText("Enable Dress Code"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Edit Dress Code" }));
     const dressCodeEditor = within(screen.getByRole("region", { name: "Dress Code" }));
 
@@ -516,8 +519,10 @@ describe("SectionBuilderWorkspace", () => {
     screen.getByLabelText("Introduction visibility").focus();
     await user.keyboard("{ArrowDown}");
     await user.click(screen.getByRole("option", { name: "Guest-only" }));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "Date and Time move up" }));
     await user.click(screen.getByLabelText("Enable RSVP"));
+    await confirmSectionControlUpdate(user);
     await user.click(screen.getByRole("button", { name: "RSVP move up" }));
     await user.click(screen.getByRole("button", { name: "RSVP move up" }));
     await user.click(screen.getByRole("button", { name: "RSVP move up" }));
@@ -583,7 +588,6 @@ describe("SectionBuilderWorkspace", () => {
         collectGuestNames: false,
       },
     });
-    expect(await screen.findByText("Sections saved.")).toBeTruthy();
   });
 });
 
@@ -595,6 +599,11 @@ function getModalFooter() {
   }
 
   return within(footer);
+}
+
+async function confirmSectionControlUpdate(user: ReturnType<typeof userEvent.setup>) {
+  const dialog = await screen.findByRole("alertdialog", { name: "Confirm section update" });
+  await user.click(within(dialog).getByRole("button", { name: "Confirm update" }));
 }
 
 function renderWithAuth(apiClient: Partial<DashboardApiClient>) {
