@@ -141,12 +141,14 @@ export function useTopBarVisibility(interactionLocked = false) {
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      const key = typeof event.key === "string" ? event.key : "";
+
       if (
-        event.key === "Tab" ||
-        event.key.startsWith("Arrow") ||
-        event.key === "Home" ||
-        event.key === "End" ||
-        event.key === "Escape"
+        key === "Tab" ||
+        key.startsWith("Arrow") ||
+        key === "Home" ||
+        key === "End" ||
+        key === "Escape"
       ) {
         keyboardNavigationRef.current = true;
         setIsVisible(true);

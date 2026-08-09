@@ -158,6 +158,7 @@ type BuilderState =
 
 const emptyJsonText = "{}";
 const sectionOrderViewStorageKey = "lumiere.dashboard.content-section-view";
+const sectionSyncIntervalMs = 30_000;
 const visibilityOptions: Array<{ label: string; value: SectionVisibility }> = [
   { label: "Public", value: "public" },
   { label: "Guest-only", value: "guest_only" },
@@ -327,6 +328,8 @@ function SectionBuilderContent({
   const [sectionOrderView, setSectionOrderView] = useState<SectionOrderView>("detailed");
   const [sectionOrderViewStorageReady, setSectionOrderViewStorageReady] = useState(false);
   const localMutationRevisionRef = useRef(0);
+  const sectionSyncInFlightRef = useRef(false);
+  const lastSectionSyncAtRef = useRef(0);
   const syncRequestIdRef = useRef(0);
   const [rsvpSettings, setRsvpSettings] = useState<RsvpFieldSettings>(() => ({
     collectGuestMessage: state.event.rsvpSettings.collectGuestMessage,
@@ -404,14 +407,22 @@ function SectionBuilderContent({
     }
   }, [editingSectionKey, previewModels]);
 
-  const syncSections = useCallback(async () => {
-    if (!apiClient) {
+  const syncSections = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
+    if (sectionSyncInFlightRef.current || !apiClient) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (!force && now - lastSectionSyncAtRef.current < sectionSyncIntervalMs) {
       return;
     }
 
     const requestId = syncRequestIdRef.current + 1;
     const localMutationRevision = localMutationRevisionRef.current;
 
+    sectionSyncInFlightRef.current = true;
+    lastSectionSyncAtRef.current = now;
     syncRequestIdRef.current = requestId;
 
     try {
@@ -431,6 +442,8 @@ function SectionBuilderContent({
       });
     } catch {
       // Background synchronization is best effort; the next focus or interval retries it.
+    } finally {
+      sectionSyncInFlightRef.current = false;
     }
   }, [apiClient, eventId, updateState]);
 
@@ -444,7 +457,7 @@ function SectionBuilderContent({
         void syncSections();
       }
     };
-    const interval = window.setInterval(refreshWhenVisible, 5000);
+    const interval = window.setInterval(refreshWhenVisible, sectionSyncIntervalMs);
 
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
@@ -506,7 +519,7 @@ function SectionBuilderContent({
     });
 
     if (hadRemoteConflict) {
-      void syncSections();
+      void syncSections({ force: true });
     }
   };
 
@@ -555,7 +568,7 @@ function SectionBuilderContent({
     }
 
     if (state.sectionConflicts[sectionKey]) {
-      void syncSections();
+      void syncSections({ force: true });
     }
   };
 
@@ -866,7 +879,7 @@ function SectionBuilderContent({
           : undefined,
       );
       if (isConflict) {
-        void syncSections();
+        void syncSections({ force: true });
       }
       toast.error(formError.formMessage);
       return false;
