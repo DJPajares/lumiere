@@ -256,7 +256,7 @@ const eventSummary: EventSummary = {
   },
   notAttending: {
     groups: 1,
-    pax: 0,
+    pax: 2,
   },
   maybe: {
     groups: 1,
@@ -3752,7 +3752,7 @@ describe("API app", () => {
       },
       notAttending: {
         groups: 0,
-        pax: 0,
+        pax: 2,
       },
       pending: {
         groups: 0,
@@ -4937,9 +4937,14 @@ function buildSmokeSummary(
       currentResponse?.responseStatus === "not_attending"
         ? {
             groups: 1,
-            pax: currentResponse.attendeeCount,
+            pax: guestGroup.maxPax,
           }
-        : empty,
+        : currentResponse?.responseStatus === "attending"
+          ? {
+              groups: 0,
+              pax: Math.max(guestGroup.maxPax - currentResponse.attendeeCount, 0),
+            }
+          : empty,
     pending: currentResponse
       ? empty
       : {

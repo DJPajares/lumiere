@@ -27,7 +27,7 @@ describe("ResponsesActivityWorkspace", () => {
     expect(await screen.findByText("Track RSVPs for Spring Dinner")).toBeTruthy();
     expect(screen.getByText("Tan Family")).toBeTruthy();
     expect(screen.getByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeTruthy();
-    expect(screen.getByText("2 pax")).toBeTruthy();
+    expect(screen.getByText("2 / 4 pax")).toBeTruthy();
     expect(screen.getByText("Mina Tan, Alex Tan")).toBeTruthy();
     expect(screen.getByText("2 named members")).toBeTruthy();
     expect(screen.getByText("Auntie Joy")).toBeTruthy();
@@ -50,6 +50,37 @@ describe("ResponsesActivityWorkspace", () => {
 
     expect(screen.getByText("Old Vendor List")).toBeTruthy();
     expect(screen.getByText("Invite access disabled.")).toBeTruthy();
+  });
+
+  it("uses the current manager status when an older RSVP record remains", async () => {
+    const user = userEvent.setup();
+
+    renderWithAuth(
+      createApiClientStub({
+        getEventSummary: vi.fn(async () => ({
+          summary: {
+            ...eventSummary,
+            attending: { groups: 0, pax: 0 },
+            pending: { groups: 2, pax: 9 },
+          },
+        })),
+        listGuestGroups: vi.fn(async () => ({
+          guestGroups: [{ ...tanGroup, status: "pending" as const }, pendingGroup],
+        })),
+        listEventResponses: vi.fn(async () => ({ responses: [tanResponse] })),
+      }),
+      "responses",
+    );
+
+    expect(await screen.findByText("Attendance overview")).toBeTruthy();
+    expect(screen.getByText("Tan Family")).toBeTruthy();
+    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeNull();
+    expect(screen.getByText("— / 4 pax")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Attending" }));
+
+    expect(screen.queryByText("Tan Family")).toBeNull();
   });
 
   it("switches between URL-persisted detailed and grouped views without refetching", async () => {
@@ -377,7 +408,7 @@ const maybeResponse: RsvpResponse = {
 const eventSummary: EventSummary = {
   attending: { groups: 1, pax: 2 },
   maybe: { groups: 1, pax: 1 },
-  notAttending: { groups: 1, pax: 0 },
+  notAttending: { groups: 1, pax: 4 },
   pending: { groups: 1, pax: 5 },
   totalGroups: 4,
   totalInvitedPax: 13,

@@ -193,6 +193,26 @@ export function ResponsesActivityWorkspace({
     void loadWorkspace();
   }, [loadWorkspace]);
 
+  useEffect(() => {
+    if (mode !== "responses") {
+      return;
+    }
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadWorkspace({ refreshing: true });
+      }
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadWorkspace, mode]);
+
   if (state.status === "loading") {
     return (
       <div className="grid gap-5">
@@ -310,92 +330,162 @@ function ResponsesView({
     filter === "all" ? rows : rows.filter((row) => row.responseStatus === filter);
 
   return (
-    <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Responses</h2>
-          <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-            Submitted rows use the saved RSVP record, so attendee names remain available beyond the
-            recent activity window.
-          </p>
+    <div className="grid gap-5">
+      {summary ? <ResponseSummary summary={summary} /> : null}
+
+      <section className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Responses</h2>
+            <p className="mt-1 text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+              Each row reflects the current invite status. Saved RSVP details appear when the group
+              is currently responded.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <ToggleGroup
-          aria-label="Response filters"
-          className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:w-fit"
-          onValueChange={(value) => {
-            const nextFilter = value[0];
-            if (isResponseFilter(nextFilter)) {
-              onFilterChange(nextFilter);
-            }
-          }}
-          size="lg"
-          value={[filter]}
-          variant="outline"
-        >
-          {responseFilters.map((item) => (
-            <ToggleGroupItem
-              className="w-full sm:w-auto sm:flex-none"
-              key={item.value}
-              type="button"
-              value={item.value}
-            >
-              {item.label}
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <ToggleGroup
+            aria-label="Response filters"
+            className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:w-fit"
+            onValueChange={(value) => {
+              const nextFilter = value[0];
+              if (isResponseFilter(nextFilter)) {
+                onFilterChange(nextFilter);
+              }
+            }}
+            size="lg"
+            value={[filter]}
+            variant="outline"
+          >
+            {responseFilters.map((item) => (
+              <ToggleGroupItem
+                className="w-full sm:w-auto sm:flex-none"
+                key={item.value}
+                type="button"
+                value={item.value}
+              >
+                {item.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+
+          <ToggleGroup
+            aria-label="Response view"
+            className="w-full sm:w-fit"
+            onValueChange={(value) => {
+              const nextViewMode = value[0];
+              if (nextViewMode === "detailed" || nextViewMode === "grouped") {
+                onViewModeChange(nextViewMode);
+              }
+            }}
+            size="lg"
+            spacing={0}
+            value={[viewMode]}
+            variant="outline"
+          >
+            <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="detailed">
+              <ListIcon data-icon="inline-start" />
+              Detailed
             </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+            <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="grouped">
+              <LayoutGridIcon data-icon="inline-start" />
+              Grouped
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
-        <ToggleGroup
-          aria-label="Response view"
-          className="w-full sm:w-fit"
-          onValueChange={(value) => {
-            const nextViewMode = value[0];
-            if (nextViewMode === "detailed" || nextViewMode === "grouped") {
-              onViewModeChange(nextViewMode);
-            }
-          }}
-          size="lg"
-          spacing={0}
-          value={[viewMode]}
-          variant="outline"
-        >
-          <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="detailed">
-            <ListIcon data-icon="inline-start" />
-            Detailed
-          </ToggleGroupItem>
-          <ToggleGroupItem className="flex-1 sm:flex-none" type="button" value="grouped">
-            <LayoutGridIcon data-icon="inline-start" />
-            Grouped
-          </ToggleGroupItem>
-        </ToggleGroup>
+        {rows.length === 0 ? (
+          <EmptyState
+            title="No responses yet"
+            body="Create guest groups and share invite links. Submitted RSVPs and pending guest groups will appear here."
+          />
+        ) : filteredRows.length === 0 ? (
+          <EmptyState
+            title="No responses match this filter"
+            body="Try another response state to review the rest of the guest list."
+          />
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground" role="status">
+              Showing {filteredRows.length} of {rows.length} guest groups.
+            </p>
+            {viewMode === "detailed" ? (
+              <ResponseTable rows={filteredRows} />
+            ) : (
+              <GroupedResponses filter={filter} rows={filteredRows} summary={summary} />
+            )}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function ResponseSummary({ summary }: { summary: EventSummary }) {
+  const cards = [
+    {
+      badge: "Yes",
+      detail: formatGroupCount(summary.attending.groups, "confirmed"),
+      label: "Attending",
+      value: `${summary.attending.pax} pax`,
+      variant: "default" as const,
+    },
+    {
+      badge: "No",
+      detail: formatGroupCount(summary.notAttending.groups, "declined"),
+      label: "Not attending",
+      value: `${summary.notAttending.pax} pax`,
+      variant: "destructive" as const,
+    },
+    {
+      badge: "Pending",
+      detail: formatGroupCount(summary.pending.groups, "awaiting response"),
+      label: "Pending",
+      value: `${summary.pending.pax} pax`,
+      variant: "outline" as const,
+    },
+  ];
+
+  return (
+    <section
+      aria-labelledby="response-summary-title"
+      className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+    >
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+          At a glance
+        </p>
+        <h3 className="mt-2 text-xl font-semibold tracking-tight" id="response-summary-title">
+          Attendance overview
+        </h3>
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="No responses yet"
-          body="Create guest groups and share invite links. Submitted RSVPs and pending guest groups will appear here."
-        />
-      ) : filteredRows.length === 0 ? (
-        <EmptyState
-          title="No responses match this filter"
-          body="Try another response state to review the rest of the guest list."
-        />
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground" role="status">
-            Showing {filteredRows.length} of {rows.length} guest groups.
-          </p>
-          {viewMode === "detailed" ? (
-            <ResponseTable rows={filteredRows} />
-          ) : (
-            <GroupedResponses filter={filter} rows={filteredRows} summary={summary} />
-          )}
-        </>
-      )}
+      <dl className="grid gap-3 sm:grid-cols-3">
+        {cards.map((card) => (
+          <div
+            className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] p-4"
+            key={card.label}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <dt className="text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                {card.label}
+              </dt>
+              <Badge variant={card.variant}>{card.badge}</Badge>
+            </div>
+            <dd className="text-3xl font-semibold">{card.value}</dd>
+            <p className="rounded-[var(--radius-sm)] bg-[var(--surface-muted)] px-3 py-2 text-sm">
+              {card.detail}
+            </p>
+          </div>
+        ))}
+      </dl>
     </section>
   );
+}
+
+function formatGroupCount(count: number, detail: string) {
+  return `${count} ${count === 1 ? "group" : "groups"} ${detail}`;
 }
 
 function ResponseTable({ rows }: { rows: ResponseRow[] }) {
@@ -429,6 +519,7 @@ function ResponseTable({ rows }: { rows: ResponseRow[] }) {
               <AttendeeDetails
                 attendeeCount={row.attendeeCount}
                 attendees={row.selectedAttendees}
+                maxPax={row.guestGroup.maxPax}
               />
             </div>
             <div>
@@ -509,7 +600,11 @@ function ResponseCard({ row }: { row: ResponseRow }) {
         <StatusBadge status={row.responseStatus} />
       </div>
 
-      <AttendeeDetails attendeeCount={row.attendeeCount} attendees={row.selectedAttendees} />
+      <AttendeeDetails
+        attendeeCount={row.attendeeCount}
+        attendees={row.selectedAttendees}
+        maxPax={row.guestGroup.maxPax}
+      />
 
       <div>
         <p className="font-medium">Message</p>
@@ -526,9 +621,11 @@ function ResponseCard({ row }: { row: ResponseRow }) {
 function AttendeeDetails({
   attendeeCount,
   attendees,
+  maxPax,
 }: {
   attendeeCount: number | null;
   attendees: ResponseAttendee[];
+  maxPax: number;
 }) {
   const legacyCount = attendees.filter((attendee) => attendee.kind === "legacy").length;
   const namedMemberCount = attendees.length - legacyCount;
@@ -541,7 +638,9 @@ function AttendeeDetails({
 
   return (
     <div>
-      <p>{attendeeCount === null ? "No attendee count" : `${attendeeCount} pax`}</p>
+      <p className="font-medium">
+        {attendeeCount === null ? `— / ${maxPax} pax` : `${attendeeCount} / ${maxPax} pax`}
+      </p>
       {attendees.length > 0 ? (
         <>
           <p className="mt-1 leading-5 text-muted-foreground">
@@ -625,6 +724,17 @@ function buildResponseRows({
       };
     }
 
+    if (group.status === "pending" || group.status === "opened") {
+      return {
+        attendeeCount: null,
+        guestGroup: group,
+        message: group.status === "opened" ? "Invite opened; waiting for RSVP." : "Waiting for RSVP.",
+        responseStatus: "pending",
+        selectedAttendees: [],
+        submittedAt: null,
+      };
+    }
+
     if (response) {
       return {
         attendeeCount: response.attendeeCount,
@@ -650,7 +760,7 @@ function buildResponseRows({
     return {
       attendeeCount: null,
       guestGroup: group,
-      message: group.status === "opened" ? "Invite opened; waiting for RSVP." : "Waiting for RSVP.",
+      message: "Waiting for RSVP.",
       responseStatus: "pending",
       selectedAttendees: [],
       submittedAt: null,

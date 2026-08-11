@@ -13,7 +13,7 @@ describe("dashboard data", () => {
         },
         {
           id: "00000000-0000-4000-8000-000000000302",
-          maxPax: 2,
+          maxPax: 4,
           status: "responded",
         },
         {
@@ -39,7 +39,7 @@ describe("dashboard data", () => {
           responseStatus: "attending",
         },
         {
-          attendeeCount: 2,
+          attendeeCount: 3,
           guestGroupId: "00000000-0000-4000-8000-000000000302",
           responseStatus: "attending",
         },
@@ -59,11 +59,11 @@ describe("dashboard data", () => {
     expect(summary).toEqual({
       attending: {
         groups: 1,
-        pax: 2,
+        pax: 3,
       },
       notAttending: {
         groups: 1,
-        pax: 0,
+        pax: 4,
       },
       maybe: {
         groups: 1,
@@ -74,8 +74,8 @@ describe("dashboard data", () => {
         pax: 4,
       },
       totalGroups: 4,
-      totalInvitedPax: 11,
-      totalRespondedPax: 3,
+      totalInvitedPax: 13,
+      totalRespondedPax: 4,
     });
   });
 });

@@ -203,9 +203,10 @@ export const buildEventSummary = (
     if (response.responseStatus === "attending") {
       summary.attending.groups += 1;
       summary.attending.pax += response.attendeeCount;
+      summary.notAttending.pax += Math.max(group.maxPax - response.attendeeCount, 0);
     } else if (response.responseStatus === "not_attending") {
       summary.notAttending.groups += 1;
-      summary.notAttending.pax += response.attendeeCount;
+      summary.notAttending.pax += group.maxPax;
     } else {
       summary.maybe.groups += 1;
       summary.maybe.pax += response.attendeeCount;
