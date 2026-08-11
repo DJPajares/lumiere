@@ -423,6 +423,7 @@ function ResponsesView({
 }
 
 function ResponseSummary({ summary }: { summary: EventSummary }) {
+  const attendanceRate = getAttendanceRate(summary.attending.pax, summary.totalInvitedPax);
   const cards = [
     {
       badge: "Yes",
@@ -480,12 +481,46 @@ function ResponseSummary({ summary }: { summary: EventSummary }) {
           </div>
         ))}
       </dl>
+
+      <dl className="grid gap-4 border-t border-[var(--border)] pt-4 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <dt className="text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+            Total invited
+          </dt>
+          <dd className="text-lg font-semibold">{summary.totalInvitedPax} pax</dd>
+          <p className="text-sm text-muted-foreground">
+            Across {summary.totalGroups} active{" "}
+            {summary.totalGroups === 1 ? "guest group" : "guest groups"}
+          </p>
+        </div>
+        <div className="grid gap-1">
+          <dt className="text-sm font-medium text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+            Attendance rate
+          </dt>
+          <dd className="text-lg font-semibold">
+            {attendanceRate === null ? "—" : `${attendanceRate}%`}
+          </dd>
+          <p className="text-sm text-muted-foreground">
+            {attendanceRate === null
+              ? "Add guest groups to calculate"
+              : `${summary.attending.pax} of ${summary.totalInvitedPax} invited pax`}
+          </p>
+        </div>
+      </dl>
     </section>
   );
 }
 
 function formatGroupCount(count: number, detail: string) {
   return `${count} ${count === 1 ? "group" : "groups"} ${detail}`;
+}
+
+function getAttendanceRate(attendingPax: number, totalInvitedPax: number) {
+  if (totalInvitedPax === 0) {
+    return null;
+  }
+
+  return Math.min(Math.round((attendingPax / totalInvitedPax) * 100), 100);
 }
 
 function ResponseTable({ rows }: { rows: ResponseRow[] }) {
@@ -519,6 +554,7 @@ function ResponseTable({ rows }: { rows: ResponseRow[] }) {
               <AttendeeDetails
                 attendeeCount={row.attendeeCount}
                 attendees={row.selectedAttendees}
+                isPending={row.responseStatus === "pending"}
                 maxPax={row.guestGroup.maxPax}
               />
             </div>
@@ -603,6 +639,7 @@ function ResponseCard({ row }: { row: ResponseRow }) {
       <AttendeeDetails
         attendeeCount={row.attendeeCount}
         attendees={row.selectedAttendees}
+        isPending={row.responseStatus === "pending"}
         maxPax={row.guestGroup.maxPax}
       />
 
@@ -621,10 +658,12 @@ function ResponseCard({ row }: { row: ResponseRow }) {
 function AttendeeDetails({
   attendeeCount,
   attendees,
+  isPending,
   maxPax,
 }: {
   attendeeCount: number | null;
   attendees: ResponseAttendee[];
+  isPending: boolean;
   maxPax: number;
 }) {
   const legacyCount = attendees.filter((attendee) => attendee.kind === "legacy").length;
@@ -639,7 +678,11 @@ function AttendeeDetails({
   return (
     <div>
       <p className="font-medium">
-        {attendeeCount === null ? `— / ${maxPax} pax` : `${attendeeCount} / ${maxPax} pax`}
+        {isPending
+          ? "-"
+          : attendeeCount === null
+            ? `— / ${maxPax} pax`
+            : `${attendeeCount} / ${maxPax} pax`}
       </p>
       {attendees.length > 0 ? (
         <>

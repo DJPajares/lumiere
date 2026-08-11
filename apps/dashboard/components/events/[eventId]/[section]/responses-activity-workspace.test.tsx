@@ -28,6 +28,11 @@ describe("ResponsesActivityWorkspace", () => {
     expect(screen.getByText("Tan Family")).toBeTruthy();
     expect(screen.getByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeTruthy();
     expect(screen.getByText("2 / 4 pax")).toBeTruthy();
+    expect(screen.getByText("Total invited")).toBeTruthy();
+    expect(screen.getByText("13 pax")).toBeTruthy();
+    expect(screen.getByText("Attendance rate")).toBeTruthy();
+    expect(screen.getByText("15%")).toBeTruthy();
+    expect(screen.getByText("2 of 13 invited pax")).toBeTruthy();
     expect(screen.getByText("Mina Tan, Alex Tan")).toBeTruthy();
     expect(screen.getByText("2 named members")).toBeTruthy();
     expect(screen.getByText("Auntie Joy")).toBeTruthy();
@@ -76,7 +81,7 @@ describe("ResponsesActivityWorkspace", () => {
     expect(screen.getByText("Tan Family")).toBeTruthy();
     expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
     expect(screen.queryByText("Tan Family submitted an RSVP for Spring Dinner.")).toBeNull();
-    expect(screen.getByText("— / 4 pax")).toBeTruthy();
+    expect(screen.getAllByText("-")).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: "Attending" }));
 
