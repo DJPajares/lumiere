@@ -510,7 +510,10 @@ function NotificationContent({
   }
 
   return (
-    <ScrollArea className="max-h-80" data-slot="notification-scroll-area">
+    <ScrollArea
+      className="h-[min(20rem,calc(100dvh-10rem))]"
+      data-slot="notification-scroll-area"
+    >
       <ul aria-label="Notification list">
         {state.notifications.map((notification) => {
           const isPending = pendingNotificationId === notification.id;

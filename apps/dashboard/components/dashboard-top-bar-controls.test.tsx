@@ -129,6 +129,12 @@ describe("DashboardTopBarControls", () => {
     expect(screen.getByText("New RSVP received")).toBeTruthy();
     expect(screen.getByText("Invite opened")).toBeTruthy();
     expect(screen.getAllByLabelText("Unread")).toHaveLength(1);
+    expect(
+      screen
+        .getByRole("list", { name: "Notification list" })
+        .closest('[data-slot="notification-scroll-area"]')
+        ?.className,
+    ).toContain("h-[min(20rem,calc(100dvh-10rem))]");
     expect(listEventNotifications).toHaveBeenCalledWith("event-42");
 
     await userEventController.click(
