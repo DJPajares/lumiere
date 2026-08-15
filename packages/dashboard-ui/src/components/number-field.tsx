@@ -11,6 +11,7 @@ import {
 import { MinusIcon, PlusIcon } from "@lumiere/dashboard-ui/components/icons";
 import {
   InputGroup,
+  InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from "@lumiere/dashboard-ui/components/input-group";
@@ -102,15 +103,17 @@ function NumberField({
 
   const control = (
     <InputGroup className={cn("h-10", className)}>
-      <InputGroupButton
-        aria-label="Decrease value"
-        disabled={disabled || value <= min}
-        onClick={() => nudge(-1)}
-        size="icon-sm"
-        variant="outline"
-      >
-        <MinusIcon />
-      </InputGroupButton>
+      <InputGroupAddon>
+        <InputGroupButton
+          aria-label="Decrease value"
+          disabled={disabled || value <= min}
+          onClick={() => nudge(-1)}
+          size="icon-sm"
+          variant="ghost"
+        >
+          <MinusIcon />
+        </InputGroupButton>
+      </InputGroupAddon>
       <InputGroupInput
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
@@ -136,15 +139,17 @@ function NumberField({
         required={required}
         value={draft}
       />
-      <InputGroupButton
-        aria-label="Increase value"
-        disabled={disabled || value >= max}
-        onClick={() => nudge(1)}
-        size="icon-sm"
-        variant="outline"
-      >
-        <PlusIcon />
-      </InputGroupButton>
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          aria-label="Increase value"
+          disabled={disabled || value >= max}
+          onClick={() => nudge(1)}
+          size="icon-sm"
+          variant="ghost"
+        >
+          <PlusIcon />
+        </InputGroupButton>
+      </InputGroupAddon>
     </InputGroup>
   );
 
