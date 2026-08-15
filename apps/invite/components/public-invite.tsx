@@ -532,7 +532,7 @@ function DateSection({
 
   return (
     <div className="lumiere-date-layout grid gap-4 sm:grid-cols-[0.85fr_1.15fr] sm:items-end">
-      <div className="grid gap-3">
+      <div className="grid gap-3 text-center">
         <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
@@ -566,7 +566,7 @@ function DetailsSection({
   const columns = readInteger(settings.columns, 2, 1, 3);
 
   return (
-    <div className="lumiere-details-layout grid gap-4">
+    <div className="lumiere-details-layout grid gap-4 text-center">
       <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
@@ -618,8 +618,8 @@ function LocationSection({
 
   return (
     <div className="lumiere-location-layout grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
-      <div className="lumiere-location-copy grid gap-3">
-        <h2 className="lumiere-type-title" id={titleId}>
+      <div className="lumiere-location-copy grid gap-3 text-center lg:text-left">
+        <h2 className="lumiere-type-title text-center lg:text-left" id={titleId}>
           {venueName}
         </h2>
         {address ? <p className="lumiere-type-body">{address}</p> : null}
@@ -629,15 +629,17 @@ function LocationSection({
           </p>
         ) : null}
         {directionsUrl ? (
-          <a
-            {...invitePressFeedbackProps}
-            className="lumiere-type-control inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
-            href={directionsUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Open directions
-          </a>
+          <div className="flex justify-center lg:justify-start">
+            <a
+              {...invitePressFeedbackProps}
+              className="lumiere-type-control inline-flex min-h-11 w-fit items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 text-[var(--accent-contrast)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+              href={directionsUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Open directions
+            </a>
+          </div>
         ) : null}
       </div>
       {showMapPreview ? (
@@ -669,7 +671,7 @@ function StorySection({
   const isTimeline = composition === "timeline";
 
   return (
-    <div className="lumiere-story-layout mx-auto grid max-w-3xl gap-4">
+    <div className="lumiere-story-layout mx-auto grid max-w-3xl gap-4 text-center">
       <div className="lumiere-story-copy grid gap-4">
         <h2 className="lumiere-type-title" id={titleId}>
           {title}
@@ -748,6 +750,7 @@ function ProfileSection({
       className={joinClassNames(
         "lumiere-profile-layout",
         resolvedLayout === "split" ? "grid gap-6 lg:grid-cols-[0.42fr_1fr]" : "grid gap-4",
+        "text-center",
       )}
     >
       <h2 className="lumiere-type-title" id={titleId}>
@@ -805,7 +808,7 @@ function EntourageSection({
   const columns = readInteger(settings.columns, 2, 1, 3);
 
   return (
-    <div className="lumiere-gallery-layout grid gap-4">
+    <div className="lumiere-gallery-layout grid gap-4 text-center">
       <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
@@ -846,7 +849,7 @@ function DressCodeSection({
 
   return (
     <div className="lumiere-dress-code-layout grid gap-8">
-      <header className="lumiere-dress-code-header grid gap-4">
+      <header className="lumiere-dress-code-header grid gap-4 text-center">
         <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
@@ -951,7 +954,7 @@ function GallerySection({
   const [featuredImage, ...supportingImages] = images;
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 text-center">
       <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
@@ -1026,7 +1029,7 @@ function RsvpSection({
   return (
     <div className="lumiere-rsvp-layout flex flex-col gap-5">
       <div className="lumiere-rsvp-copy grid gap-4">
-        <div className="lumiere-rsvp-heading grid justify-items-start gap-3 text-left">
+        <div className="lumiere-rsvp-heading grid justify-items-center gap-3 text-center">
           <h2 className="lumiere-type-title" id={titleId}>
             {copy.sectionTitle}
           </h2>
@@ -1111,7 +1114,7 @@ function OutroSection({
           : "mx-auto grid max-w-3xl gap-4 text-center",
       )}
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 text-center">
         <h2 className="lumiere-type-title" id={titleId}>
           {title}
         </h2>
@@ -1127,7 +1130,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
   const blocks = readRecordArray(content.blocks);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 text-center">
       <h2 className="lumiere-type-title" id={titleId}>
         {title}
       </h2>
@@ -1149,7 +1152,7 @@ function CustomSection({ content, titleId }: { content: JsonObject; titleId: str
 
 function GenericSection({ content, titleId }: { content: JsonObject; titleId: string }) {
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 text-center">
       <h2 className="lumiere-type-title" id={titleId}>
         {readString(content.title) ?? "Event detail"}
       </h2>
