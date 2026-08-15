@@ -8,6 +8,7 @@ import {
   guestGroups,
   ilike,
   inArray,
+  isNull,
   or,
   rsvpResponses,
   sql,
@@ -27,10 +28,14 @@ import { ApiHttpError } from "./errors";
 export const guestDataExportRowLimit = 10_000;
 
 export type GuestDataExportFilters = {
+  invitedBy?: string;
   query?: string;
   status?: GuestGroupStatus;
   tracking?: GuestInviteTrackingStage;
 };
+
+/** Sentinel matching the dashboard's "Not set" invited-by filter. */
+export const guestDataExportUnassignedInvitedBy = "none";
 
 export type GuestDataExportOptions = {
   filters: GuestDataExportFilters;
@@ -42,6 +47,7 @@ export type GuestDataExportRow = {
   groupLabel: string;
   contactName: string;
   contactEmail: string;
+  invitedBy: string;
   inviteStatus: string;
   trackingStage: string;
   firstSentAt: string;
@@ -82,6 +88,7 @@ const exportColumns = [
   { header: "Group label", key: "groupLabel", width: 24 },
   { header: "Contact name", key: "contactName", width: 22 },
   { header: "Contact email", key: "contactEmail", width: 30 },
+  { header: "Invited by", key: "invitedBy", width: 22 },
   { header: "Invite status", key: "inviteStatus", width: 16 },
   { header: "Tracking stage", key: "trackingStage", width: 18 },
   { header: "First marked sent at", key: "firstSentAt", width: 24 },
@@ -121,12 +128,21 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
       conditions.push(trackingStageCondition(filters.tracking));
     }
 
+    const normalizedInvitedBy = filters.invitedBy?.trim();
+
+    if (normalizedInvitedBy === guestDataExportUnassignedInvitedBy) {
+      conditions.push(isNull(guestGroups.invitedBy));
+    } else if (normalizedInvitedBy) {
+      conditions.push(eq(guestGroups.invitedBy, normalizedInvitedBy));
+    }
+
     if (normalizedQuery) {
       const pattern = `%${escapeLikePattern(normalizedQuery)}%`;
       const searchCondition = or(
         ilike(guestGroups.label, pattern),
         ilike(guestGroups.contactName, pattern),
         ilike(guestGroups.contactEmail, pattern),
+        ilike(guestGroups.invitedBy, pattern),
         ilike(guestGroups.inviteCode, pattern),
         sql`exists (
           select 1
@@ -147,6 +163,7 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         contactName: guestGroups.contactName,
         createdAt: guestGroups.createdAt,
         id: guestGroups.id,
+        invitedBy: guestGroups.invitedBy,
         label: guestGroups.label,
         firstOpenedAt: guestGroups.firstOpenedAt,
         firstSentAt: guestGroups.firstSentAt,
@@ -227,6 +244,7 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         guestMessage: response?.message ?? "",
         firstOpenedAt: group.firstOpenedAt ?? "",
         firstSentAt: group.firstSentAt ?? "",
+        invitedBy: group.invitedBy ?? "",
         inviteStatus: group.status,
         lastOpenedAt: group.lastOpenedAt ?? "",
         lastSentAt: group.lastSentAt ?? "",

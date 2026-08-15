@@ -208,14 +208,16 @@ export const nightGardenTheme = {
   previewData: {
     eventTitle: "After the Garden Closes",
     eyebrow: "Under glass and moonlight",
-    subtitle: "An evening celebration among the conservatory paths, candlelit tables, and night blooms.",
+    subtitle:
+      "An evening celebration among the conservatory paths, candlelit tables, and night blooms.",
     venueName: "Orchid House",
     heroImageAlt: "Guests walking through a softly lit greenhouse at night",
     sections: [
       {
         type: "story",
         title: "Where the garden grew",
-        summary: "A vertical story rail unfolds through shadow, glass, and one restrained bloom cue.",
+        summary:
+          "A vertical story rail unfolds through shadow, glass, and one restrained bloom cue.",
       },
       {
         type: "gallery",

@@ -464,6 +464,7 @@ export const guestGroupSchema = z.object({
   members: z.array(guestGroupMemberSchema).max(50).optional(),
   contactName: z.string().trim().max(160).optional(),
   contactEmail: z.string().trim().email().optional(),
+  invitedBy: z.string().trim().max(160).optional(),
   maxPax: z.number().int().min(1).max(50),
   inviteCode: z.string().trim().min(8).max(120),
   inviteLink: z.string().url().optional(),
@@ -514,6 +515,12 @@ export const guestGroupMutationSchema = z
     label: nonEmptyStringSchema.max(160),
     contactName: z.string().trim().max(160).optional(),
     contactEmail: z.string().trim().email().optional(),
+    invitedBy: z
+      .string()
+      .trim()
+      .max(160)
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
     maxPax: z.number().int().min(1).max(50),
     members: z.array(guestGroupMemberMutationSchema).max(50).optional(),
     status: guestGroupStatusSchema.optional(),

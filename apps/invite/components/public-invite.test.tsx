@@ -199,12 +199,7 @@ describe("public invite section renderers", () => {
       ],
       ["ember-table", "ember-table", "lumiere-hero--ember-table", "banquet-axis"],
       ["night-garden", "night-garden", "lumiere-hero--night-garden", "botanical-canopy"],
-      [
-        "monochrome-flash",
-        "monochrome-flash",
-        "lumiere-hero--monochrome-flash",
-        "flash-frame",
-      ],
+      ["monochrome-flash", "monochrome-flash", "lumiere-hero--monochrome-flash", "flash-frame"],
     ] as const;
 
     for (const [themeId, compositionMap, heroClassName, heroComposition] of spatialDirections) {

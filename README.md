@@ -487,7 +487,7 @@ The public Invite treatment is warm ivory and champagne on warm black. The Dashb
 
 | Capability | Owner | Editor | Viewer |
 | --- | --- | --- | --- |
-| View event details, theme, content, guests, responses, activity, and personal notifications | Yes | Yes | Yes |
+| View event details, theme, content, guests and their RSVP responses, activity, and personal notifications | Yes | Yes | Yes |
 | Export event-scoped guest and RSVP data | Yes | Yes | Yes |
 | Mark or dismiss personal event notifications | Yes | Yes | Yes |
 | Update event details and publishing status | Yes | Yes | No |

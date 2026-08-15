@@ -251,6 +251,7 @@ export const guestDataExportQuerySchema = z.object({
   q: z.string().trim().max(160).optional(),
   status: guestGroupStatusSchema.optional(),
   tracking: guestInviteTrackingStageSchema.optional(),
+  invitedBy: z.string().trim().max(160).optional(),
 });
 export type GuestDataExportQuery = z.infer<typeof guestDataExportQuerySchema>;
 

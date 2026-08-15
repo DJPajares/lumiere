@@ -1,0 +1,2 @@
+ALTER TABLE "lumiere"."guest_groups" ADD COLUMN "invited_by" varchar(160);--> statement-breakpoint
+CREATE INDEX "guest_groups_event_invited_by_idx" ON "lumiere"."guest_groups" USING btree ("event_id","invited_by");

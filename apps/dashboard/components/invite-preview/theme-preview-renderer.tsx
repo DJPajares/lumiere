@@ -29,7 +29,10 @@ export function InviteThemePreviewRenderer({
   const sections = theme.previewData.sections.slice(0, thumbnail ? 1 : 3);
   const effects = theme.composition.effects;
   const compactThumbnail = thumbnail && thumbnailSize === "compact";
-  const typographyRoles = resolveThemeTypographyRoles(theme.typography.scale, theme.typography.roles);
+  const typographyRoles = resolveThemeTypographyRoles(
+    theme.typography.scale,
+    theme.typography.roles,
+  );
 
   return (
     <div
@@ -251,7 +254,10 @@ function RepresentativeSection({
   tokens: ThemeTokenSet;
 }) {
   const renderer = resolveThemeRendererSlot(theme, section.type);
-  const typographyRoles = resolveThemeTypographyRoles(theme.typography.scale, theme.typography.roles);
+  const typographyRoles = resolveThemeTypographyRoles(
+    theme.typography.scale,
+    theme.typography.roles,
+  );
   const treatment = sectionTreatment(renderer.composition, tokens, thumbnail);
   const sectionForeground =
     renderer.composition === "full-bleed" ? tokens.background : tokens.foreground;

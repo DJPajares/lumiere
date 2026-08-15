@@ -217,7 +217,8 @@ export const monochromeFlashTheme = {
   previewData: {
     eventTitle: "One Night Only",
     eyebrow: "21:30 · Frame 01",
-    subtitle: "A studio gathering for new work, loud conversation, and the people behind the pictures.",
+    subtitle:
+      "A studio gathering for new work, loud conversation, and the people behind the pictures.",
     venueName: "Framehouse 24",
     heroImageAlt: "Guests photographed in high-contrast monochrome at a studio opening",
     sections: [

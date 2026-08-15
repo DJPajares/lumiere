@@ -985,7 +985,9 @@ export const createRoutes = ({
 
       if (input.sectionKey !== sectionKey) {
         throw new ApiHttpError("VALIDATION_ERROR", "Section key does not match the request path", {
-          fields: [{ message: "Section key does not match the request path", path: ["sectionKey"] }],
+          fields: [
+            { message: "Section key does not match the request path", path: ["sectionKey"] },
+          ],
         });
       }
 
@@ -1016,8 +1018,7 @@ export const createRoutes = ({
 
       if (
         currentSection &&
-        (currentSection.sectionType !== input.sectionType ||
-          input.id !== currentSection.id)
+        (currentSection.sectionType !== input.sectionType || input.id !== currentSection.id)
       ) {
         throw new ApiHttpError("CONFLICT", "This section identity changed. Refresh before saving.");
       }
@@ -1205,6 +1206,7 @@ export const createRoutes = ({
         scope: context.req.query("scope"),
         status: context.req.query("status"),
         tracking: context.req.query("tracking"),
+        invitedBy: context.req.query("invitedBy"),
       });
 
       if (!queryResult.success) {
@@ -1222,6 +1224,7 @@ export const createRoutes = ({
               query: queryResult.data.q,
               status: queryResult.data.status,
               ...(queryResult.data.tracking ? { tracking: queryResult.data.tracking } : {}),
+              ...(queryResult.data.invitedBy ? { invitedBy: queryResult.data.invitedBy } : {}),
             }
           : {};
       const rows = await stores.guestDataExportStore.listRows(eventId, filters);
@@ -1798,7 +1801,8 @@ const toSectionMutation = (section: {
 });
 
 const sameStringSet = (first: string[], second: string[]) =>
-  first.length === second.length && new Set(first).size === new Set(second).size &&
+  first.length === second.length &&
+  new Set(first).size === new Set(second).size &&
   first.every((value) => second.includes(value));
 
 const parseCollaboratorInvitationIdParam = (invitationId: string | undefined) => {

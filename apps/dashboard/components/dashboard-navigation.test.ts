@@ -18,7 +18,6 @@ describe("dashboard navigation model", () => {
       "event-content",
       "event-theme",
       "event-guests",
-      "event-responses",
       "event-activity",
       "event-settings",
     ]);

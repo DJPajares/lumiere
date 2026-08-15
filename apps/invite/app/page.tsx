@@ -77,9 +77,9 @@ export default function InviteHome() {
               Create the invitation. Share the right link. Know who is coming.
             </h1>
             <p className="lumiere-type-description mt-6 max-w-2xl text-[color-mix(in_srgb,var(--foreground)_76%,transparent)]">
-              Lumiere is a multi-event platform for hosts who want every invitation to feel
-              personal without losing control of guest groups, responses, and activity. Guests get
-              a beautiful, mobile-first experience with no account required.
+              Lumiere is a multi-event platform for hosts who want every invitation to feel personal
+              without losing control of guest groups, responses, and activity. Guests get a
+              beautiful, mobile-first experience with no account required.
             </p>
             <Link
               className="lumiere-type-control mt-8 inline-flex min-h-12 items-center justify-center gap-3 rounded-[var(--radius-md)] bg-[var(--accent)] px-6 text-[var(--accent-contrast)] shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[var(--focus)] focus:ring-offset-2 focus:ring-offset-[var(--background)] active:scale-[0.99] motion-reduce:transition-none"

@@ -100,10 +100,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
         const section = sectionByKey.get(sectionKey);
 
         if (section && section.sortOrder !== sortOrder) {
-          await tx
-            .update(eventSections)
-            .set({ sortOrder })
-            .where(eq(eventSections.id, section.id));
+          await tx.update(eventSections).set({ sortOrder }).where(eq(eventSections.id, section.id));
         }
       }
 
@@ -171,10 +168,7 @@ export const createDrizzleThemeSectionStore = (db: Database): ThemeSectionStore 
         .limit(1);
 
       if (current) {
-        if (
-          input.id !== current.id ||
-          input.sectionType !== current.sectionType
-        ) {
+        if (input.id !== current.id || input.sectionType !== current.sectionType) {
           throw new ApiHttpError(
             "CONFLICT",
             "This section identity changed. Refresh before saving.",
@@ -329,7 +323,8 @@ const sameStringArray = (first: string[], second: string[]) =>
   first.length === second.length && first.every((value, index) => value === second[index]);
 
 const sameStringSet = (first: string[], second: string[]) =>
-  first.length === second.length && new Set(first).size === new Set(second).size &&
+  first.length === second.length &&
+  new Set(first).size === new Set(second).size &&
   first.every((value) => second.includes(value));
 
 const getEventThemeState = async (

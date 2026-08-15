@@ -132,8 +132,7 @@ describe("DashboardTopBarControls", () => {
     expect(
       screen
         .getByRole("list", { name: "Notification list" })
-        .closest('[data-slot="notification-scroll-area"]')
-        ?.className,
+        .closest('[data-slot="notification-scroll-area"]')?.className,
     ).toContain("h-[min(20rem,calc(100dvh-10rem))]");
     expect(listEventNotifications).toHaveBeenCalledWith("event-42");
 
@@ -167,9 +166,7 @@ describe("DashboardTopBarControls", () => {
     );
 
     expect(markEventNotificationRead).toHaveBeenCalledWith("event-42", "notification-1");
-    expect(routerPush).toHaveBeenCalledWith(
-      "/events/event-42/responses?guestGroupId=guest-group-1&responseId=response-1",
-    );
+    expect(routerPush).toHaveBeenCalledWith("/events/event-42/guests?guestGroupId=guest-group-1");
     expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
   });
 

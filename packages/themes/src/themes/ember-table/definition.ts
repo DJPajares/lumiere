@@ -22,14 +22,7 @@ export const emberTableTheme = {
     "An intimate, documentary invitation paced along one table from first welcome to final reply.",
   designRead:
     "Coal-brown atmosphere, live-ember accents, wide room photography, confident grotesk titles, and one continuous table axis built for dinners and close celebrations.",
-  supportedEventTypes: [
-    "dinner",
-    "wedding",
-    "holiday",
-    "birthday",
-    "private_event",
-    "other",
-  ],
+  supportedEventTypes: ["dinner", "wedding", "holiday", "birthday", "private_event", "other"],
   supportedModes: ["light", "dark", "system", "toggleable"],
   defaultMode: "dark",
   presentation: emberTablePresentation,
@@ -222,7 +215,8 @@ export const emberTableTheme = {
   previewData: {
     eventTitle: "A Table for Twelve",
     eyebrow: "Dinner begins at eight",
-    subtitle: "An intimate evening of shared plates, old stories, and a table set for the people we love.",
+    subtitle:
+      "An intimate evening of shared plates, old stories, and a table set for the people we love.",
     venueName: "The Long Room",
     heroImageAlt: "Friends gathered around a long candlelit dinner table",
     sections: [

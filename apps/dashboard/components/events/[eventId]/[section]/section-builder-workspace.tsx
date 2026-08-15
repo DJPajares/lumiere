@@ -418,45 +418,48 @@ function SectionBuilderContent({
     }
   }, [editingSectionKey, previewModels]);
 
-  const syncSections = useCallback(async ({ notify = false }: { notify?: boolean } = {}) => {
-    if (sectionSyncInFlightRef.current || !apiClient) {
-      return;
-    }
+  const syncSections = useCallback(
+    async ({ notify = false }: { notify?: boolean } = {}) => {
+      if (sectionSyncInFlightRef.current || !apiClient) {
+        return;
+      }
 
-    const requestId = syncRequestIdRef.current + 1;
-    const localMutationRevision = localMutationRevisionRef.current;
+      const requestId = syncRequestIdRef.current + 1;
+      const localMutationRevision = localMutationRevisionRef.current;
 
-    sectionSyncInFlightRef.current = true;
-    syncRequestIdRef.current = requestId;
-    setIsRefreshingSections(true);
+      sectionSyncInFlightRef.current = true;
+      syncRequestIdRef.current = requestId;
+      setIsRefreshingSections(true);
 
-    try {
-      const response = await apiClient.listEventSections(eventId);
+      try {
+        const response = await apiClient.listEventSections(eventId);
 
-      updateState((current) => {
-        if (
-          requestId !== syncRequestIdRef.current ||
-          localMutationRevision !== localMutationRevisionRef.current
-        ) {
-          return current;
+        updateState((current) => {
+          if (
+            requestId !== syncRequestIdRef.current ||
+            localMutationRevision !== localMutationRevisionRef.current
+          ) {
+            return current;
+          }
+
+          return current.status === "ready"
+            ? mergeRemoteSections(current, response.sections)
+            : current;
+        });
+        if (notify) {
+          toast.success("Sections refreshed.");
         }
-
-        return current.status === "ready"
-          ? mergeRemoteSections(current, response.sections)
-          : current;
-      });
-      if (notify) {
-        toast.success("Sections refreshed.");
+      } catch (error) {
+        if (notify) {
+          toast.error(toFriendlyApiMessage(error));
+        }
+      } finally {
+        sectionSyncInFlightRef.current = false;
+        setIsRefreshingSections(false);
       }
-    } catch (error) {
-      if (notify) {
-        toast.error(toFriendlyApiMessage(error));
-      }
-    } finally {
-      sectionSyncInFlightRef.current = false;
-      setIsRefreshingSections(false);
-    }
-  }, [apiClient, eventId, updateState]);
+    },
+    [apiClient, eventId, updateState],
+  );
 
   const openSectionEditor = (sectionKey: string) => {
     setEditingSectionKey(sectionKey);
@@ -484,10 +487,7 @@ function SectionBuilderContent({
     );
   };
 
-  const updateSectionControl = (
-    sectionKey: string,
-    updates: SectionControlUpdate,
-  ) => {
+  const updateSectionControl = (sectionKey: string, updates: SectionControlUpdate) => {
     if (!apiClient || !canEdit || state.isSaving) {
       return;
     }
@@ -503,9 +503,7 @@ function SectionBuilderContent({
       return;
     }
 
-    const previousSection = state.sections.find(
-      (section) => section.sectionKey === sectionKey,
-    );
+    const previousSection = state.sections.find((section) => section.sectionKey === sectionKey);
 
     if (!previousSection) {
       return;
@@ -531,17 +529,12 @@ function SectionBuilderContent({
     setPendingSectionControlUpdate({ description, sectionKey, updates });
   };
 
-  const applySectionControlUpdate = async (
-    sectionKey: string,
-    updates: SectionControlUpdate,
-  ) => {
+  const applySectionControlUpdate = async (sectionKey: string, updates: SectionControlUpdate) => {
     if (!apiClient || !canEdit || state.isSaving) {
       return;
     }
 
-    const previousSection = state.sections.find(
-      (section) => section.sectionKey === sectionKey,
-    );
+    const previousSection = state.sections.find((section) => section.sectionKey === sectionKey);
 
     if (!previousSection) {
       return;
@@ -565,9 +558,7 @@ function SectionBuilderContent({
       return;
     }
 
-    const savedSection = state.savedSections.find(
-      (section) => section.sectionKey === sectionKey,
-    );
+    const savedSection = state.savedSections.find((section) => section.sectionKey === sectionKey);
 
     updateSection(sectionKey, updates);
     updateState((current) =>
@@ -658,8 +649,7 @@ function SectionBuilderContent({
   };
 
   const discardChanges = () => {
-    const hadRemoteConflict =
-      state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
+    const hadRemoteConflict = state.orderConflict || Object.keys(state.sectionConflicts).length > 0;
 
     localMutationRevisionRef.current += 1;
 
@@ -822,7 +812,7 @@ function SectionBuilderContent({
                 ? conflictUpdate.conflicted
                   ? { ...current.sectionConflicts, [conflictUpdate.sectionKey]: true }
                   : withoutSectionConflict(current.sectionConflicts, conflictUpdate.sectionKey)
-                : overrides.sectionConflicts ?? current.sectionConflicts,
+                : (overrides.sectionConflicts ?? current.sectionConflicts),
               savedSections: cloneSectionDrafts(workingSavedSections),
               sections: cloneSectionDrafts(workingSections),
             }
@@ -1023,7 +1013,8 @@ function SectionBuilderContent({
       return true;
     } catch (error) {
       const formError = toSectionFormError(error, state.sections, failedSectionKey);
-      const isConflict = error instanceof ApiClientError && error.apiError.error.code === "CONFLICT";
+      const isConflict =
+        error instanceof ApiClientError && error.apiError.error.code === "CONFLICT";
 
       revealFirstSectionError(formError.sectionErrors);
 
@@ -1203,7 +1194,6 @@ function SectionBuilderContent({
             </button>
           </div>
         ) : null}
-
       </section>
 
       <SectionOrderPanel
@@ -1391,7 +1381,10 @@ function SectionOrderPanel({
             actions on a single row.
           </p>
           {orderConflict ? (
-            <p className="mt-3 rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]" role="alert">
+            <p
+              className="mt-3 rounded-[var(--radius-md)] border border-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,var(--surface))] px-3 py-2 text-sm text-[var(--error)]"
+              role="alert"
+            >
               Another manager changed the section order. Your local order is still here; refresh it
               before saving again.
             </p>
@@ -1834,7 +1827,10 @@ function InvitationPreview({
       </div>
 
       {visibleModels.length > 0 ? (
-        <div className="grid gap-3 rounded-[var(--radius-lg)] bg-[var(--background)] p-3" style={previewStyle}>
+        <div
+          className="grid gap-3 rounded-[var(--radius-lg)] bg-[var(--background)] p-3"
+          style={previewStyle}
+        >
           {visibleModels.map((model) =>
             model.status === "invalid" ? (
               <PreviewValidationState key={model.section.sectionKey} model={model} />
@@ -4620,10 +4616,7 @@ function mergeRemoteSections(
   const localByKey = new Map(current.sections.map((section) => [section.sectionKey, section]));
   const savedByKey = new Map(current.savedSections.map((section) => [section.sectionKey, section]));
   const savedOrder = getPersistedSectionOrder(current.savedSections);
-  const localOrderDirty = !sameStringArray(
-    savedOrder,
-    getPersistedSectionOrder(current.sections),
-  );
+  const localOrderDirty = !sameStringArray(savedOrder, getPersistedSectionOrder(current.sections));
   const remoteOrderChangedSinceDraft =
     localOrderDirty && !sameStringArray(savedOrder, getPersistedSectionOrder(remoteDrafts));
   const nextConflicts = { ...current.sectionConflicts };
@@ -4636,18 +4629,15 @@ function mergeRemoteSections(
     const savedSection = savedByKey.get(remoteSection.sectionKey);
     const isDataDirty = Boolean(
       localSection &&
-        sectionDataSignature(localSection) !== sectionDataSignature(savedSection ?? remoteSection),
+      sectionDataSignature(localSection) !== sectionDataSignature(savedSection ?? remoteSection),
     );
     const remoteChangedSinceDraft = Boolean(
       savedSection?.updatedAt &&
-        remoteSection.updatedAt &&
-        savedSection.updatedAt !== remoteSection.updatedAt,
+      remoteSection.updatedAt &&
+      savedSection.updatedAt !== remoteSection.updatedAt,
     );
     const remoteCreatedWhileDrafting = Boolean(
-      localSection &&
-        !savedSection &&
-        remoteSection.id &&
-        isDataDirty,
+      localSection && !savedSection && remoteSection.id && isDataDirty,
     );
     const hasRemoteConflict =
       isDataDirty && (remoteChangedSinceDraft || remoteCreatedWhileDrafting);
@@ -4712,11 +4702,12 @@ function mergeRemoteSections(
 
   return {
     ...current,
-    formMessage: hasNewSectionConflict || hasNewOrderConflict
-      ? hasNewOrderConflict
-        ? "Another manager changed the section order. Your local order is still here; review before saving."
-        : "Another manager changed a section. Your unsaved edits are still here; review before saving."
-      : current.formMessage,
+    formMessage:
+      hasNewSectionConflict || hasNewOrderConflict
+        ? hasNewOrderConflict
+          ? "Another manager changed the section order. Your local order is still here; review before saving."
+          : "Another manager changed a section. Your unsaved edits are still here; review before saving."
+        : current.formMessage,
     orderConflict: current.orderConflict || remoteOrderChangedSinceDraft,
     sectionConflicts: nextConflicts,
     savedSections: nextSavedSectionDrafts,
@@ -4805,7 +4796,9 @@ function createSectionDraft({
   const definition = getSectionDefinition(sectionType);
   const blueprint = getSectionBlueprint(event.eventType, sectionType);
   const content =
-    existing?.content ?? blueprint?.createDefaultContent(event) ?? defaultContentForSection(sectionType, event);
+    existing?.content ??
+    blueprint?.createDefaultContent(event) ??
+    defaultContentForSection(sectionType, event);
 
   return {
     contentText: formatJsonText(
@@ -4937,9 +4930,7 @@ export function parseSectionDrafts(
   };
 }
 
-function parseSectionDraft(
-  section: SectionDraft,
-):
+function parseSectionDraft(section: SectionDraft):
   | {
       input: EventSectionUpdateRequest;
       ok: true;

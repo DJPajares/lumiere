@@ -199,13 +199,9 @@ export function normalizeStoryParagraphs(value: unknown): StoryParagraph[] {
         ? paragraph.image
         : undefined;
     const imageUrl =
-      rawImage && "url" in rawImage && typeof rawImage.url === "string"
-        ? rawImage.url
-        : undefined;
+      rawImage && "url" in rawImage && typeof rawImage.url === "string" ? rawImage.url : undefined;
     const imageAlt =
-      rawImage && "alt" in rawImage && typeof rawImage.alt === "string"
-        ? rawImage.alt
-        : undefined;
+      rawImage && "alt" in rawImage && typeof rawImage.alt === "string" ? rawImage.alt : undefined;
     const imageCaption =
       rawImage && "caption" in rawImage && typeof rawImage.caption === "string"
         ? rawImage.caption

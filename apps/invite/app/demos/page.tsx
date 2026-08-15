@@ -228,8 +228,8 @@ function DemoEventRow({ demo }: { demo: DemoEventState }) {
           <div className="grid gap-2 border-t border-current/20 pt-5 sm:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
             <p className="lumiere-type-label">Temporarily unavailable</p>
             <p className="lumiere-type-caption max-w-xs opacity-75">
-              This invitation cannot be opened right now. The other available demos remain ready
-              to explore.
+              This invitation cannot be opened right now. The other available demos remain ready to
+              explore.
             </p>
           </div>
         )}

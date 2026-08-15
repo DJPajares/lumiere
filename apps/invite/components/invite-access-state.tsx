@@ -50,7 +50,8 @@ const statePresentations: Record<InviteAccessState, AccessStatePresentation> = {
     description:
       "The host has turned off access for this private invitation link, so it cannot be used to view or update an RSVP.",
     eyebrow: "Private invitation paused",
-    guidance: "Ask the host to confirm your invitation and send another link if access should continue.",
+    guidance:
+      "Ask the host to confirm your invitation and send another link if access should continue.",
     marker: "PAUSED",
     title: "This private link has been disabled.",
   },
@@ -68,7 +69,8 @@ const statePresentations: Record<InviteAccessState, AccessStatePresentation> = {
     description:
       "This private invitation link is incomplete, incorrect, or no longer recognized. No guest details were opened.",
     eyebrow: "Private link not recognized",
-    guidance: "Check that the full link was copied, then ask the host to verify it if the problem continues.",
+    guidance:
+      "Check that the full link was copied, then ask the host to verify it if the problem continues.",
     marker: "LINK",
     title: "This private link does not work.",
   },
@@ -95,7 +97,8 @@ const statePresentations: Record<InviteAccessState, AccessStatePresentation> = {
     description:
       "The host's access window for this invitation has ended, so its event details are no longer available.",
     eyebrow: "Invitation access expired",
-    guidance: "Contact the host directly if you still need the event details or a renewed invitation.",
+    guidance:
+      "Contact the host directly if you still need the event details or a renewed invitation.",
     marker: "TIME",
     title: "This invitation has expired.",
   },

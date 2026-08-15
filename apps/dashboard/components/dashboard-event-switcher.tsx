@@ -215,14 +215,11 @@ function EventSwitcherError({ error, onRetry }: { error: string | null; onRetry:
   );
 }
 
-function eventWorkspaceHref(
-  eventId: string,
-  context: DashboardWorkspaceContext,
-) {
+function eventWorkspaceHref(eventId: string, context: DashboardWorkspaceContext) {
   const basePath = `/events/${encodeURIComponent(eventId)}`;
   const knownSection =
     context.sectionKey &&
-    ["content", "theme", "guests", "responses", "activity", "settings"].includes(context.sectionKey)
+    ["content", "theme", "guests", "activity", "settings"].includes(context.sectionKey)
       ? context.sectionKey
       : null;
 

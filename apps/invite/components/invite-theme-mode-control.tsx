@@ -125,9 +125,7 @@ export function InviteThemeModeControl({
   }
 
   if (!canToggle || !presentation) {
-    return (
-      <span aria-hidden="true" data-theme-mode-anchor="true" hidden ref={rootAnchorRef} />
-    );
+    return <span aria-hidden="true" data-theme-mode-anchor="true" hidden ref={rootAnchorRef} />;
   }
 
   const nextMode = resolvedMode === "dark" ? "light" : "dark";

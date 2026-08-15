@@ -15,7 +15,7 @@ const baseNotification: Notification = {
 };
 
 describe("notification destinations", () => {
-  it("maps RSVP notifications to the responses workspace with safe entity context", () => {
+  it("maps RSVP notifications to the guests workspace with safe entity context", () => {
     expect(
       getNotificationDestination({
         ...baseNotification,
@@ -27,8 +27,8 @@ describe("notification destinations", () => {
         notificationType: "rsvp_updated",
       }),
     ).toEqual({
-      href: "/events/event-42/responses?guestGroupId=guest-group-1&responseId=response-1",
-      label: "Open responses",
+      href: "/events/event-42/guests?guestGroupId=guest-group-1",
+      label: "Open guests",
     });
   });
 

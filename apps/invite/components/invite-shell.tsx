@@ -75,10 +75,7 @@ export function InviteShell({
         presentation={theme.supportedModes.includes("toggleable") ? theme.modeToggle : undefined}
         variables={modeVariables}
       />
-      <InviteSectionNavigator
-        items={sectionNavigation}
-        placement={sectionNavigationPlacement}
-      />
+      <InviteSectionNavigator items={sectionNavigation} placement={sectionNavigationPlacement} />
       {children}
       <AmbientAudioControls audio={ambientAudio} eventKey={eventKey} />
     </main>

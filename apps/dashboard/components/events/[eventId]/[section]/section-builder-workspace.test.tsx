@@ -41,9 +41,7 @@ describe("SectionBuilderWorkspace", () => {
     expect(screen.getByRole("button", { name: "Add custom text" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit Introduction" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit Custom Text: Arrival notes" })).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Edit Custom Text: Shuttle schedule" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit Custom Text: Shuttle schedule" })).toBeTruthy();
     expect(document.querySelectorAll('[data-section-card-key^="custom"]')).toHaveLength(2);
     expect(screen.queryByRole("region", { name: "Introduction" })).toBeNull();
     ["Introduction", "Date and Time", "Story", "Dress Code", "Location", "RSVP"].forEach(
@@ -272,8 +270,11 @@ describe("SectionBuilderWorkspace", () => {
       "A candlelit table shared with friends",
     );
     expect(
-      (storyEditor.getAllByRole("checkbox", { name: /Show this story photo/ })[0] as HTMLInputElement)
-        .checked,
+      (
+        storyEditor.getAllByRole("checkbox", {
+          name: /Show this story photo/,
+        })[0] as HTMLInputElement
+      ).checked,
     ).toBe(false);
 
     await user.clear(storyEditor.getAllByLabelText("Paragraph body")[0]!);

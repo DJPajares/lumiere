@@ -23,7 +23,6 @@ export const dashboardNavigationModel = [
   { id: "event-content", label: "Content", scope: "workspace", segment: "content" },
   { id: "event-theme", label: "Theme", scope: "workspace", segment: "theme" },
   { id: "event-guests", label: "Guests", scope: "workspace", segment: "guests" },
-  { id: "event-responses", label: "Responses", scope: "workspace", segment: "responses" },
   { id: "event-activity", label: "Activity", scope: "workspace", segment: "activity" },
   { id: "event-settings", label: "Settings", scope: "workspace", segment: "settings" },
 ] as const satisfies readonly DashboardNavigationDefinition[];
@@ -80,9 +79,7 @@ export function getDashboardNavigation(activePath: string) {
     context,
     eventSettings: items.find((item) => item.id === "event-settings"),
     manager: items.filter((item) => item.scope === "manager"),
-    workspace: items.filter(
-      (item) => item.scope === "workspace" && item.id !== "event-settings",
-    ),
+    workspace: items.filter((item) => item.scope === "workspace" && item.id !== "event-settings"),
   };
 }
 

@@ -173,9 +173,7 @@ describe("RSVP form flow helpers", () => {
     await act(() =>
       container.querySelector<HTMLInputElement>('input[value="not_attending"]')?.click(),
     );
-    await act(() =>
-      container.querySelector<HTMLInputElement>('input[value="attending"]')?.click(),
-    );
+    await act(() => container.querySelector<HTMLInputElement>('input[value="attending"]')?.click());
 
     const memberCheckbox = container.querySelector<HTMLInputElement>("#guestMember-0");
     expect(memberCheckbox?.disabled).toBe(false);

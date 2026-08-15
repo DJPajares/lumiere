@@ -122,6 +122,7 @@ export const schemaIndexNames = {
   guestGroupsInviteCode: "guest_groups_invite_code_unique",
   guestGroupsEventId: "guest_groups_event_id_idx",
   guestGroupsEventStatus: "guest_groups_event_status_idx",
+  guestGroupsEventInvitedBy: "guest_groups_event_invited_by_idx",
   guestGroupMembersGroupSort: "guest_group_members_group_sort_unique",
   guestGroupMembersGroupId: "guest_group_members_group_id_idx",
   rsvpResponsesGuestGroup: "rsvp_responses_guest_group_unique",
@@ -363,6 +364,7 @@ export const guestGroups = lumiereSchema.table(
     label: varchar("label", { length: 160 }).notNull(),
     contactName: varchar("contact_name", { length: 160 }),
     contactEmail: varchar("contact_email", { length: 320 }),
+    invitedBy: varchar("invited_by", { length: 160 }),
     maxPax: integer("max_pax").notNull().default(1),
     inviteTokenHash: text("invite_token_hash").notNull(),
     inviteTokenEncrypted: text("invite_token_encrypted"),
@@ -384,6 +386,7 @@ export const guestGroups = lumiereSchema.table(
     uniqueIndex(schemaIndexNames.guestGroupsInviteCode).on(table.inviteCode),
     index(schemaIndexNames.guestGroupsEventId).on(table.eventId),
     index(schemaIndexNames.guestGroupsEventStatus).on(table.eventId, table.status),
+    index(schemaIndexNames.guestGroupsEventInvitedBy).on(table.eventId, table.invitedBy),
   ],
 );
 

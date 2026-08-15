@@ -3,10 +3,7 @@ import type { Event } from "@lumiere/types";
 import Link from "next/link";
 
 import type { DashboardEventSwitcherState } from "./dashboard-event-switcher";
-import type {
-  DashboardNavigationItem,
-  DashboardWorkspaceContext,
-} from "./dashboard-navigation";
+import type { DashboardNavigationItem, DashboardWorkspaceContext } from "./dashboard-navigation";
 
 export function DashboardEventContextBar({
   context,

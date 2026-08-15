@@ -2,10 +2,7 @@ import { ApiClientError } from "@lumiere/api-client";
 import type { PublicEventSummary } from "@lumiere/types";
 import type { Metadata } from "next";
 
-import {
-  InviteAccessView,
-  type InviteAccessState,
-} from "../../../components/invite-access-state";
+import { InviteAccessView, type InviteAccessState } from "../../../components/invite-access-state";
 import { PublicInvitation } from "../../../components/public-invite";
 import { createInviteApiClient } from "../../../lib/invite-api";
 

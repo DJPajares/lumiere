@@ -152,7 +152,6 @@ Resolves to the event and guest group without exposing event slug structure.
 /events/[eventId]/content
 /events/[eventId]/theme
 /events/[eventId]/guests
-/events/[eventId]/responses
 /events/[eventId]/activity
 /settings
 ```
@@ -399,7 +398,8 @@ The API owns persistence, authorization, invite token validation, notification r
 
 - Authenticated Supabase session.
 - Layout with event switcher, navigation, response summary, and activity preview.
-- Event editor split into content, theme, guests, responses, and activity.
+- Event editor split into content, theme, guests, and activity. Guests is the single
+  workspace for guest groups, invitations, and RSVP responses.
 - Uses preview mode where practical for invitation changes.
 - Uses typed API client and shared schemas.
 

@@ -54,11 +54,7 @@ export function useDashboardNavigationShell(activePath: string) {
   );
 
   useEffect(() => {
-    if (
-      eventListState.status !== "ready" ||
-      !navigation.context.eventId ||
-      currentEvent
-    ) {
+    if (eventListState.status !== "ready" || !navigation.context.eventId || currentEvent) {
       return;
     }
 

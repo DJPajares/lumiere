@@ -194,7 +194,7 @@ describe("DashboardTopNavigation", () => {
 
     render(
       <DashboardAuthProvider value={createNavigationAuthValue({ listEvents })}>
-        <DashboardTopNavigation activePath={`/events/${springDinner.id}/responses`} />
+        <DashboardTopNavigation activePath={`/events/${springDinner.id}/activity`} />
       </DashboardAuthProvider>,
     );
 
@@ -217,13 +217,13 @@ describe("DashboardTopNavigation", () => {
     expect(compactTrigger.getAttribute("data-event-switcher-mode")).toBe("compact");
     expect(compactTrigger.className).toContain("size-9");
     expect(currentEvent.getAttribute("aria-current")).toBe("page");
-    expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/responses`);
-    expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/responses`);
+    expect(currentEvent.getAttribute("href")).toBe(`/events/${springDinner.id}/activity`);
+    expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/activity`);
     expect(eventContextBar).toBeTruthy();
     expect(screen.getByRole("banner").contains(eventContextBar)).toBe(false);
     expect(selectedEventContext).toBeTruthy();
     expect(within(selectedEventContext as HTMLElement).getByText("Spring Dinner")).toBeTruthy();
-    expect(within(selectedEventContext as HTMLElement).getByText("Responses")).toBeTruthy();
+    expect(within(selectedEventContext as HTMLElement).getByText("Activity")).toBeTruthy();
     expect(listEvents).toHaveBeenCalledOnce();
   });
 

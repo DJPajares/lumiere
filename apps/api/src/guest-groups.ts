@@ -147,6 +147,7 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
             inviteCode: invite.inviteCode,
             inviteTokenEncrypted: invite.inviteTokenEncrypted,
             inviteTokenHash: invite.inviteTokenHash,
+            invitedBy: input.invitedBy,
             label: input.label,
             maxPax: input.maxPax,
             notes: input.notes,
@@ -396,6 +397,7 @@ export const createDrizzleGuestGroupStore = (db: Database): GuestGroupStore => (
         .set({
           contactEmail: input.contactEmail,
           contactName: input.contactName,
+          invitedBy: input.invitedBy ?? null,
           label: input.label,
           maxPax: input.maxPax,
           notes: input.notes,
@@ -526,6 +528,7 @@ export const toApiGuestGroup = (
   eventId: guestGroup.eventId,
   id: guestGroup.id,
   inviteCode: guestGroup.inviteCode,
+  invitedBy: guestGroup.invitedBy ?? undefined,
   label: guestGroup.label,
   firstOpenedAt: guestGroup.firstOpenedAt ? toIsoDateTime(guestGroup.firstOpenedAt) : undefined,
   firstSentAt: guestGroup.firstSentAt ? toIsoDateTime(guestGroup.firstSentAt) : undefined,

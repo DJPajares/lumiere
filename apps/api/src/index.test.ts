@@ -4043,6 +4043,7 @@ const baseGuestDataExportRow: GuestDataExportRow = {
   guestMessage: "Excited to attend.",
   firstOpenedAt: "2026-07-08T03:00:00.000Z",
   firstSentAt: "2026-07-08T02:00:00.000Z",
+  invitedBy: "Mother of the bride",
   inviteStatus: "responded",
   lastOpenedAt: "2026-07-08T03:00:00.000Z",
   lastSentAt: "2026-07-08T02:00:00.000Z",
@@ -4543,11 +4544,7 @@ function createIntegrationSmokeStores() {
 
         const existing = sections.find((section) => section.sectionKey === sectionKey);
 
-        if (
-          existing &&
-          input.expectedUpdatedAt &&
-          input.expectedUpdatedAt !== existing.updatedAt
-        ) {
+        if (existing && input.expectedUpdatedAt && input.expectedUpdatedAt !== existing.updatedAt) {
           throw new ApiHttpError("CONFLICT", "This section changed by another manager");
         }
 

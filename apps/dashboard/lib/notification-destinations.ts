@@ -8,17 +8,16 @@ export type NotificationDestination = {
 export function getNotificationDestination(notification: Notification): NotificationDestination {
   const eventPath = `/events/${encodeURIComponent(notification.eventId)}`;
   const guestGroupId = readMetadataId(notification.metadata.guestGroupId);
-  const responseId = readMetadataId(notification.metadata.responseId);
 
   switch (notification.notificationType) {
     case "rsvp_submitted":
     case "rsvp_updated":
+      // RSVP responses live in the Guests workspace, which expands the linked row.
       return {
-        href: appendQuery(eventPath + "/responses", {
+        href: appendQuery(eventPath + "/guests", {
           guestGroupId,
-          responseId,
         }),
-        label: "Open responses",
+        label: "Open guests",
       };
     case "guest_opened_invite":
       return {

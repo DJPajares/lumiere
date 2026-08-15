@@ -13,10 +13,7 @@ type InviteSectionNavigatorProps = {
   placement: "end" | "start";
 };
 
-export function InviteSectionNavigator({
-  items,
-  placement,
-}: InviteSectionNavigatorProps) {
+export function InviteSectionNavigator({ items, placement }: InviteSectionNavigatorProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);

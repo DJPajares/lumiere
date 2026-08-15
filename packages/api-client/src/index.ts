@@ -496,10 +496,14 @@ export const createApiClient = ({
       eventId: string,
       input: EventSectionsReorderRequest,
     ): Promise<EventSectionsResponse> =>
-      request(`/events/${encodePathSegment(eventId)}/sections/reorder`, eventSectionsResponseSchema, {
-        body: input,
-        method: "POST",
-      }),
+      request(
+        `/events/${encodePathSegment(eventId)}/sections/reorder`,
+        eventSectionsResponseSchema,
+        {
+          body: input,
+          method: "POST",
+        },
+      ),
     updateEventTheme: (
       eventId: string,
       input: EventThemeUpdateRequest,

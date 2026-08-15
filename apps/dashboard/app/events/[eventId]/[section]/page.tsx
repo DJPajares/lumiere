@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 
 import { getEventSectionDefinition } from "../../../../components/dashboard-navigation";
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { GuestManagementWorkspace } from "../../../../components/events/[eventId]/[section]/guest-management-workspace";
+import { GuestManagementWorkspace } from "../../../../components/events/[eventId]/[section]/guests/guest-management-workspace";
 import { EventSettingsWorkspace } from "../../../../components/events/[eventId]/[section]/event-settings-workspace";
-import { ResponsesActivityWorkspace } from "../../../../components/events/[eventId]/[section]/responses-activity-workspace";
+import { ActivityWorkspace } from "../../../../components/events/[eventId]/[section]/activity-workspace";
 import { SectionBuilderWorkspace } from "../../../../components/events/[eventId]/[section]/section-builder-workspace";
 import { ThemeSelectorWorkspace } from "../../../../components/events/[eventId]/[section]/theme-selector-workspace";
 import { ManagementPlaceholder } from "../../../../components/placeholder-panels";
@@ -34,8 +34,8 @@ export default async function EventSectionPage({ params }: EventSectionPageProps
       >
         {section === "content" ? (
           <SectionBuilderWorkspace eventId={eventId} />
-        ) : section === "activity" || section === "responses" ? (
-          <ResponsesActivityWorkspace eventId={eventId} mode={section} />
+        ) : section === "activity" ? (
+          <ActivityWorkspace eventId={eventId} />
         ) : section === "guests" ? (
           <GuestManagementWorkspace eventId={eventId} />
         ) : section === "theme" ? (

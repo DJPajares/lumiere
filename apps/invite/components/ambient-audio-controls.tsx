@@ -349,7 +349,10 @@ export function AmbientAudioControls({ audio, eventKey }: AmbientAudioControlsPr
           </div>
 
           <div className="min-w-0">
-            <p className="lumiere-type-label truncate text-[var(--foreground)]" id={`${detailsId}-title`}>
+            <p
+              className="lumiere-type-label truncate text-[var(--foreground)]"
+              id={`${detailsId}-title`}
+            >
               {audio.title}
             </p>
             <p className="lumiere-type-body mt-1 truncate text-[var(--accent-strong)]">
