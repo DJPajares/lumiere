@@ -31,7 +31,8 @@ export function createGuestInviteShareContent(event: Event, group: GuestGroup, i
 
 export function createGuestInviteNativeShareContent(event: Event, group: GuestGroup, inviteLink: string) {
   return {
-    text: `Hi ${guestGroupGreetingName(group)}, you’re invited to ${event.title}! RSVP using your private invitation link: ${inviteLink}`,
+    text: `Hi ${guestGroupGreetingName(group)}, you’re invited to ${event.title}! RSVP using your private invitation link.`,
+    url: inviteLink,
   } satisfies ShareData;
 }
 
