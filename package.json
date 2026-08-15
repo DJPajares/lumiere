@@ -2,7 +2,11 @@
   "name": "lumiere",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
   "scripts": {
     "dev": "turbo dev",
     "dev:invite": "pnpm --filter @lumiere/invite dev",
@@ -32,10 +36,10 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.1.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "lint-staged": "^17.2.0",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "lint-staged": "^17.3.0",
     "prettier": "^3.9.6",
     "sharp": "0.35.3",
     "tailwindcss": "^4.3.3",

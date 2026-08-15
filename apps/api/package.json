@@ -11,16 +11,16 @@
     "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@hono/node-server": "^2.0.11",
+    "@hono/node-server": "^2.1.1",
     "@lumiere/config": "workspace:*",
     "@lumiere/db": "workspace:*",
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",
     "exceljs": "^4.4.0",
-    "hono": "^4.12.32"
+    "hono": "^4.13.2"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
-    "tsx": "^4.23.1"
+    "tsx": "^4.23.12"
   }
 }

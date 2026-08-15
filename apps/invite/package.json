@@ -17,12 +17,12 @@
     "@lumiere/api-client": "workspace:*",
     "@lumiere/themes": "workspace:*",
     "@lumiere/types": "workspace:*",
-    "next": "^16.2.11",
+    "next": "^16.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "typescript": "^6.0.3"
   }
 }
