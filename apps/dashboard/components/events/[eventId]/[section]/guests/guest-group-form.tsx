@@ -360,6 +360,24 @@ export function parseGuestGroupForm(
     };
   }
 
+  const memberErrors: Record<number, string> = {};
+  for (let i = 0; i < maxPax; i++) {
+    const member = values.members[i];
+    if (!member || member.name.trim().length === 0) {
+      memberErrors[i] = "Member name is required";
+    }
+  }
+
+  if (Object.keys(memberErrors).length > 0) {
+    return {
+      errors: {
+        _form: "Fill in all member names.",
+        memberNames: memberErrors,
+      },
+      ok: false,
+    };
+  }
+
   const result = guestGroupMutationRequestSchema.safeParse({
     accessExpiresAt: guestAccessExpiresAt,
     contactEmail: emptyToUndefined(values.contactEmail),
