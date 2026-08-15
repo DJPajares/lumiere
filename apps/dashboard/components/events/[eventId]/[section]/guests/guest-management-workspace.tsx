@@ -85,6 +85,7 @@ import {
 import {
   createGuestInviteEmailUrl,
   createGuestInviteMessengerUrl,
+  createGuestInviteNativeShareContent,
   createGuestInviteShareContent,
   createGuestInviteWhatsAppUrl,
   describeShareMethod,
@@ -704,8 +705,6 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       return;
     }
 
-    const shareContent = createGuestInviteShareContent(state.data.event, group, inviteLink);
-
     if (method === "native") {
       if (typeof navigator.share !== "function") {
         const message =
@@ -715,8 +714,14 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         return;
       }
 
+      const nativeShareContent = createGuestInviteNativeShareContent(
+        state.data.event,
+        group,
+        inviteLink,
+      );
+
       try {
-        await navigator.share(shareContent);
+        await navigator.share(nativeShareContent);
         await recordInviteShare(group, "other");
       } catch (error) {
         const message = isShareCancellation(error)
@@ -728,6 +733,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       return;
     }
 
+    const shareContent = createGuestInviteShareContent(state.data.event, group, inviteLink);
     const destination =
       method === "email"
         ? createGuestInviteEmailUrl(shareContent)
