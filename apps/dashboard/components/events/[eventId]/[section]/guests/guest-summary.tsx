@@ -53,9 +53,14 @@ export function GuestSummary({
       value: summary?.pending.pax ?? 0,
     },
     {
-      detail: describeAttending(summary),
+      detail: formatCount(summary?.attending.groups ?? 0, "group"),
       label: "Attending",
       value: summary?.attending.pax ?? 0,
+    },
+    {
+      detail: formatCount(summary?.maybe.groups ?? 0, "group"),
+      label: "Maybe",
+      value: summary?.maybe.pax ?? 0,
     },
     {
       detail:
@@ -72,7 +77,7 @@ export function GuestSummary({
       aria-label="Guest summary"
       className="rounded-[var(--radius-lg)] border border-border bg-card"
     >
-      <dl className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
+      <dl className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-6">
         {metrics.map((metric) => (
           <div className="grid content-start gap-1 p-4 sm:p-5" key={metric.label}>
             <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -90,18 +95,6 @@ export function GuestSummary({
       </dl>
     </section>
   );
-}
-
-/**
- * Maybe responses get no tile of their own, but they must not disappear into "Awaiting" —
- * they ride along here so the numbers stay honest.
- */
-function describeAttending(summary: EventSummary | null) {
-  const attendingGroups = formatCount(summary?.attending.groups ?? 0, "group");
-
-  return summary && summary.maybe.groups > 0
-    ? `${attendingGroups} · ${summary.maybe.pax} maybe`
-    : attendingGroups;
 }
 
 function formatCount(value: number, noun: string) {

@@ -20,6 +20,7 @@ import {
   type GuestGroupStatus,
   type GuestInviteTrackingStage,
   type RsvpAnswer,
+  type RsvpStatus,
 } from "@lumiere/types";
 import ExcelJS from "exceljs";
 
@@ -44,12 +45,15 @@ export type GuestDataExportOptions = {
 };
 
 export type GuestDataExportRow = {
+  name: string;
   groupLabel: string;
-  contactName: string;
-  contactEmail: string;
   invitedBy: string;
+  rsvpStatus: string;
+  onGuestList: string;
   inviteStatus: string;
   trackingStage: string;
+  contactName: string;
+  contactEmail: string;
   firstSentAt: string;
   lastSentAt: string;
   sendCount: number;
@@ -57,10 +61,7 @@ export type GuestDataExportRow = {
   firstOpenedAt: string;
   lastOpenedAt: string;
   maxPax: number;
-  namedMembers: string;
-  rsvpStatus: string;
   attendingPax: number | "";
-  selectedAttendees: string;
   rsvpAnswers: string;
   guestMessage: string;
   privateNotes: string;
@@ -85,12 +86,15 @@ export type GuestDataExportStore = {
 };
 
 const exportColumns = [
-  { header: "Group label", key: "groupLabel", width: 24 },
-  { header: "Contact name", key: "contactName", width: 22 },
-  { header: "Contact email", key: "contactEmail", width: 30 },
+  { header: "Name", key: "name", width: 24 },
+  { header: "Group", key: "groupLabel", width: 24 },
   { header: "Invited by", key: "invitedBy", width: 22 },
+  { header: "RSVP status", key: "rsvpStatus", width: 16 },
+  { header: "On guest list", key: "onGuestList", width: 14 },
   { header: "Invite status", key: "inviteStatus", width: 16 },
   { header: "Tracking stage", key: "trackingStage", width: 18 },
+  { header: "Contact name", key: "contactName", width: 22 },
+  { header: "Contact email", key: "contactEmail", width: 30 },
   { header: "First marked sent at", key: "firstSentAt", width: 24 },
   { header: "Last marked sent at", key: "lastSentAt", width: 24 },
   { header: "Send count", key: "sendCount", width: 12 },
@@ -98,10 +102,7 @@ const exportColumns = [
   { header: "First opened at", key: "firstOpenedAt", width: 24 },
   { header: "Last opened at", key: "lastOpenedAt", width: 24 },
   { header: "Max pax", key: "maxPax", width: 11 },
-  { header: "Named members", key: "namedMembers", width: 32 },
-  { header: "RSVP status", key: "rsvpStatus", width: 16 },
   { header: "Attending pax", key: "attendingPax", width: 14 },
-  { header: "Selected attendees", key: "selectedAttendees", width: 32 },
   { header: "RSVP answers", key: "rsvpAnswers", width: 36 },
   { header: "Guest message", key: "guestMessage", width: 36 },
   { header: "Private notes", key: "privateNotes", width: 36 },
@@ -231,10 +232,10 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
       responseRows.map((response) => [response.guestGroupId, response] as const),
     );
 
-    return groupRows.map((group) => {
+    return groupRows.flatMap((group) => {
       const response = responsesByGroupId.get(group.id);
-
-      return sanitizeGuestDataExportRow({
+      const members = membersByGroupId.get(group.id) ?? [];
+      const groupFields: Omit<GuestDataExportRow, "name" | "onGuestList" | "rsvpStatus"> = {
         attendingPax: response?.attendeeCount ?? "",
         contactEmail: group.contactEmail ?? "",
         contactName: group.contactName ?? "",
@@ -250,14 +251,11 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
         lastSentAt: group.lastSentAt ?? "",
         lastShareChannel: group.lastShareChannel ?? "",
         maxPax: group.maxPax,
-        namedMembers: joinNames(membersByGroupId.get(group.id) ?? []),
         privateNotes: group.notes ?? "",
         sendCount: group.sendCount,
         rsvpAnswers: formatRsvpAnswers(response?.answers ?? []),
-        rsvpStatus: response?.responseStatus ?? "No response",
         rsvpSubmittedAt: response?.submittedAt ?? "",
         rsvpUpdatedAt: response?.updatedAt ?? "",
-        selectedAttendees: joinNames(response?.guestNames ?? []),
         trackingStage: resolveGuestInviteTrackingStage({
           firstOpenedAt: group.firstOpenedAt ?? undefined,
           firstSentAt: group.firstSentAt ?? undefined,
@@ -266,7 +264,16 @@ export const createDrizzleGuestDataExportStore = (db: Database): GuestDataExport
           sendCount: group.sendCount,
           status: group.status,
         }),
-      });
+      };
+
+      return resolvePersonRows({ group, members, response }).map((person) =>
+        sanitizeGuestDataExportRow({
+          ...groupFields,
+          name: person.name,
+          onGuestList: person.onGuestList ? "Yes" : "No",
+          rsvpStatus: formatPersonRsvpStatus(person.rsvpStatus),
+        }),
+      );
     });
   },
 
@@ -379,7 +386,82 @@ const escapeCsvCell = (value: number | string) => {
 
 const escapeLikePattern = (value: string) => value.replace(/[\\%_]/g, "\\$&");
 
-const joinNames = (names: string[]) => names.join("\n");
+type ExportPersonRow = {
+  name: string;
+  onGuestList: boolean;
+  rsvpStatus: "attending" | "awaiting" | "maybe" | "not_attending";
+};
+
+/**
+ * A group's RSVP does not always match its RSVP response row: resetting an invite link
+ * puts the group back to pending/opened while leaving the old response in place, and
+ * that stale response must never read as the group's current answer.
+ */
+const resolveGroupRsvpStatus = (
+  group: { status: GuestGroupStatus },
+  response: { responseStatus: RsvpStatus } | undefined,
+): "attending" | "awaiting" | "maybe" | "not_attending" => {
+  if (group.status === "pending" || group.status === "opened") {
+    return "awaiting";
+  }
+
+  if (response) {
+    return response.responseStatus;
+  }
+
+  return group.status === "declined" ? "not_attending" : "awaiting";
+};
+
+/**
+ * Flattens one guest group into one row per named guest, mirroring the dashboard's
+ * per-person view: named members whose seat was not claimed in an attending response
+ * read as not attending, and RSVP names that are not on the guest list still get a row
+ * of their own. A group with nobody named contributes a single row standing in for the
+ * whole household.
+ */
+const resolvePersonRows = ({
+  group,
+  members,
+  response,
+}: {
+  group: { contactName: string | null; label: string; status: GuestGroupStatus };
+  members: string[];
+  response: { guestNames: string[]; responseStatus: RsvpStatus } | undefined;
+}): ExportPersonRow[] => {
+  const groupRsvp = resolveGroupRsvpStatus(group, response);
+  const attendingNames = new Set(
+    groupRsvp === "attending" ? (response?.guestNames ?? []).map(normalizeGuestName) : [],
+  );
+  const attributesAttendance = groupRsvp === "attending" && attendingNames.size > 0;
+
+  const memberRows: ExportPersonRow[] = members.map((name) => ({
+    name,
+    onGuestList: true,
+    rsvpStatus: attributesAttendance
+      ? attendingNames.has(normalizeGuestName(name))
+        ? "attending"
+        : "not_attending"
+      : groupRsvp,
+  }));
+
+  const memberNames = new Set(members.map(normalizeGuestName));
+  const legacyRows: ExportPersonRow[] = (response?.guestNames ?? [])
+    .filter((name) => !memberNames.has(normalizeGuestName(name)))
+    .map((name) => ({ name, onGuestList: false, rsvpStatus: groupRsvp }));
+
+  if (memberRows.length === 0 && legacyRows.length === 0) {
+    return [{ name: group.contactName || group.label, onGuestList: false, rsvpStatus: groupRsvp }];
+  }
+
+  return [...memberRows, ...legacyRows];
+};
+
+const normalizeGuestName = (name: string) => name.trim().toLocaleLowerCase();
+
+const formatPersonRsvpStatus = (status: ExportPersonRow["rsvpStatus"]) => {
+  if (status === "not_attending") return "Not attending";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
 
 const formatRsvpAnswers = (answers: RsvpAnswer[]) =>
   answers

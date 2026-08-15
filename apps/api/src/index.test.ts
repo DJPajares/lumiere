@@ -1640,8 +1640,8 @@ describe("API app", () => {
       /^attachment; filename="launch-night-guest-data-\d{4}-\d{2}-\d{2}\.csv"$/,
     );
     expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-    expect(csv.startsWith('"Group label","Contact name"')).toBe(true);
-    expect(csv).toContain('"Mina Tan\nAlex Tan"');
+    expect(csv.startsWith('"Name","Group"')).toBe(true);
+    expect(csv).toContain('"Mina Tan"');
     expect(csv).not.toContain(guestGroupId);
     expect(csv).not.toContain(baseGuestGroup.inviteCode);
     expect(listRows).toHaveBeenCalledWith(eventId, {
@@ -1692,7 +1692,7 @@ describe("API app", () => {
     const rows = [
       {
         ...baseGuestDataExportRow,
-        groupLabel: dangerousLabel,
+        name: dangerousLabel,
       },
     ];
     const csv = buildGuestDataCsv(rows);
@@ -1706,7 +1706,7 @@ describe("API app", () => {
     const worksheet = workbook.getWorksheet("Guest data");
 
     expect(worksheet?.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
-    expect(worksheet?.getRow(1).getCell(1).value).toBe("Group label");
+    expect(worksheet?.getRow(1).getCell(1).value).toBe("Name");
     expect(worksheet?.getColumn(1).width).toBe(24);
     expect(worksheet?.getRow(2).getCell(1).value).toBe('\'=HYPERLINK("https://example.com")');
     expect(worksheet?.getRow(2).getCell(1).formula).toBeUndefined();
@@ -4049,14 +4049,14 @@ const baseGuestDataExportRow: GuestDataExportRow = {
   lastSentAt: "2026-07-08T02:00:00.000Z",
   lastShareChannel: "email",
   maxPax: 4,
-  namedMembers: "Mina Tan\nAlex Tan",
+  name: "Mina Tan",
+  onGuestList: "Yes",
   privateNotes: "Window table",
   sendCount: 1,
   rsvpAnswers: "",
-  rsvpStatus: "attending",
+  rsvpStatus: "Attending",
   rsvpSubmittedAt: "2026-07-08T04:00:00.000Z",
   rsvpUpdatedAt: "2026-07-08T04:00:00.000Z",
-  selectedAttendees: "Mina Tan\nAlex Tan",
   trackingStage: "responded",
 };
 
