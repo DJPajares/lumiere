@@ -1,7 +1,7 @@
 import type { GuestDataExportDownload } from "@lumiere/api-client";
 import type { Event, GuestGroup, GuestInviteShareChannel } from "@lumiere/types";
 
-export type InviteShareMethod = "email" | "messenger" | "native" | "whatsapp";
+export type InviteShareMethod = "email" | "native" | "whatsapp";
 
 export const shareChannelOptions: Array<{
   label: string;
@@ -11,7 +11,6 @@ export const shareChannelOptions: Array<{
   { label: "Email", value: "email" },
   { label: "SMS", value: "sms" },
   { label: "WhatsApp", value: "whatsapp" },
-  { label: "Messenger", value: "messenger" },
   { label: "Other", value: "other" },
 ];
 
@@ -59,8 +58,7 @@ export function createGuestInviteMessengerUrl(shareContent: ShareData) {
 }
 
 export function describeShareMethod(method: Exclude<InviteShareMethod, "native">) {
-  if (method === "email") return "email";
-  return method === "messenger" ? "Messenger" : "WhatsApp";
+  return method === "email" ? "email" : "WhatsApp";
 }
 
 export function isShareCancellation(error: unknown) {

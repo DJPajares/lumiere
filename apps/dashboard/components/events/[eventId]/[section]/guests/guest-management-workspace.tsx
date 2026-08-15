@@ -84,7 +84,6 @@ import {
 } from "./guest-row-models";
 import {
   createGuestInviteEmailUrl,
-  createGuestInviteMessengerUrl,
   createGuestInviteNativeShareContent,
   createGuestInviteShareContent,
   createGuestInviteWhatsAppUrl,
@@ -737,9 +736,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     const destination =
       method === "email"
         ? createGuestInviteEmailUrl(shareContent)
-        : method === "messenger"
-          ? createGuestInviteMessengerUrl(shareContent)
-          : createGuestInviteWhatsAppUrl(shareContent);
+        : createGuestInviteWhatsAppUrl(shareContent);
     const openedWindow = window.open(destination, "_blank", "noopener,noreferrer");
 
     if (!openedWindow) {
