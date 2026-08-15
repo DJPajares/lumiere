@@ -387,7 +387,6 @@
   max-width: 18ch;
   margin-inline: auto;
   color: var(--noel-v2-title);
-  text-align: center;
   text-wrap: balance;
 }
 
