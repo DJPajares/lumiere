@@ -608,6 +608,19 @@ Keep secrets in environment-managed configuration and never commit `.env` files.
 - Set `PUBLIC_APP_BASE_URL` and `DASHBOARD_APP_BASE_URL` to the deployed app origins so generated invite links and CORS match production.
 - After deployment, smoke check `GET /health`, a public invite URL, a guest invite URL, dashboard sign-in, RSVP submission, and dashboard summary/activity refresh.
 
+### Production Database Migrations
+
+Run migrations against the target Supabase PostgreSQL before deploying releases that require schema changes. Use the pooler connection string (port 6543) for reliability in production environments.
+
+```bash
+export DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-REGION.pooler.supabase.com:6543/postgres
+pnpm db:migrate
+```
+
+Obtain the connection string from Supabase: **Project Settings** → **Database** → **Connection pooling** → **Connection string** (ensure **Session mode** is selected). Replace `PROJECT_REF`, `PASSWORD`, and `REGION` with your project values.
+
+Migrations are idempotent and safe to run repeatedly. After migrations complete, verify the schema in Supabase's SQL Editor or continue with app deployment.
+
 ### MVP Readiness Checklist
 
 Mapped to the PRD Definition of Done:
