@@ -7,7 +7,7 @@ import type {
   GuestRsvpState,
 } from "./guest-row-models";
 
-export type GuestSortKey = "invitedBy" | "name" | "recent";
+export type GuestSortKey = "group" | "invitedBy" | "name" | "recent";
 export type GuestSortDirection = "asc" | "desc";
 export type GuestListMode = "groups" | "guests";
 
@@ -59,11 +59,28 @@ export const guestRsvpFilterOptions: Array<{ label: string; value: GuestRsvpStat
   { label: "Maybe", value: "maybe" },
 ];
 
+/** Sort options for the Groups view — there's only one "name" here, the group's own. */
 export const guestSortOptions: Array<{ label: string; value: GuestSortKey }> = [
   { label: "Recently updated", value: "recent" },
   { label: "Name", value: "name" },
   { label: "Invited by", value: "invitedBy" },
 ];
+
+/**
+ * Sort options for the All guests view. "Name" here is the individual guest, so
+ * "Group name" is offered as a distinct option — sorting a flat guest list by their
+ * household is the more common ask in that view.
+ */
+export const allGuestsSortOptions: Array<{ label: string; value: GuestSortKey }> = [
+  { label: "Recently updated", value: "recent" },
+  { label: "Guest name", value: "name" },
+  { label: "Group name", value: "group" },
+  { label: "Invited by", value: "invitedBy" },
+];
+
+export function getGuestSortOptions(mode: GuestListMode) {
+  return mode === "guests" ? allGuestsSortOptions : guestSortOptions;
+}
 
 export const guestSortDirectionOptions = [
   { label: "Descending", value: "desc" },
@@ -237,12 +254,7 @@ export function filterAndSortGuestRows(rows: GuestRow[], filters: GuestListFilte
   });
 
   return [...filtered].sort((left, right) => {
-    const primary =
-      filters.sort === "invitedBy"
-        ? compareNullableText(left.invitedBy, right.invitedBy)
-        : filters.sort === "recent"
-          ? compareText(left.groupLabel, right.groupLabel)
-          : compareText(left.name, right.name);
+    const primary = compareGuestRows(left, right, filters.sort);
     const ordered = filters.direction === "asc" ? primary : -primary;
 
     return ordered || compareText(left.name, right.name) || compareText(left.id, right.id);
@@ -252,12 +264,27 @@ export function filterAndSortGuestRows(rows: GuestRow[], filters: GuestListFilte
 function compareGroupRows(left: GuestGroupRow, right: GuestGroupRow, sort: GuestSortKey) {
   switch (sort) {
     case "name":
+    case "group":
       return compareText(left.group.label, right.group.label);
     case "invitedBy":
       return compareNullableText(left.invitedBy, right.invitedBy);
     case "recent":
     default:
       return Date.parse(left.group.updatedAt) - Date.parse(right.group.updatedAt);
+  }
+}
+
+function compareGuestRows(left: GuestRow, right: GuestRow, sort: GuestSortKey) {
+  switch (sort) {
+    case "group":
+      return compareText(left.groupLabel, right.groupLabel);
+    case "invitedBy":
+      return compareNullableText(left.invitedBy, right.invitedBy);
+    case "recent":
+      return Date.parse(left.updatedAt) - Date.parse(right.updatedAt);
+    case "name":
+    default:
+      return compareText(left.name, right.name);
   }
 }
 
@@ -300,7 +327,7 @@ function isGuestRsvpState(value: string | null): value is GuestRsvpState {
 }
 
 function isGuestSortKey(value: string | null): value is GuestSortKey {
-  return value === "invitedBy" || value === "name" || value === "recent";
+  return value === "group" || value === "invitedBy" || value === "name" || value === "recent";
 }
 
 function replaceUrlQuery(params: URLSearchParams) {

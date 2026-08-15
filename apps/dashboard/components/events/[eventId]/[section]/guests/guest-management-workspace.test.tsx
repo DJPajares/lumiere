@@ -416,18 +416,18 @@ describe("GuestManagementWorkspace", () => {
     await screen.findByText("No guest groups yet");
     await user.click(screen.getByRole("button", { name: "New guest group" }));
     expect(await screen.findByRole("dialog", { name: "Create guest group" })).toBeTruthy();
-    await user.clear(screen.getByLabelText("Max pax"));
-    await user.type(screen.getByLabelText("Max pax"), "0");
+    await user.clear(screen.getByLabelText("Party size"));
+    await user.type(screen.getByLabelText("Party size"), "0");
     await user.click(screen.getByRole("button", { name: "Create guest group" }));
 
     expect(createGuestGroup).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Group label").getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByLabelText("Max pax").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Party size").getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByLabelText("Group label").getAttribute("aria-describedby")).toBe(
       "guest-group-label-error",
     );
-    expect(screen.getByLabelText("Max pax").getAttribute("aria-describedby")).toBe(
-      "guest-max-pax-error",
+    expect(screen.getByLabelText("Party size").getAttribute("aria-describedby")).toBe(
+      "guest-party-size-error",
     );
   });
 
@@ -537,7 +537,7 @@ describe("GuestManagementWorkspace", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Share from device" }));
 
     expect(share).toHaveBeenCalledWith({
-      text: `You’re invited to Spring Dinner. RSVP using your private invitation link: ${inviteLink}`,
+      text: `Hi Tan Family, you’re invited to Spring Dinner! RSVP using your private invitation link: ${inviteLink}`,
       title: "You’re invited to Spring Dinner",
       url: inviteLink,
     });
@@ -551,7 +551,7 @@ describe("GuestManagementWorkspace", () => {
     ).toBeTruthy();
   });
 
-  it("uses encoded email and WhatsApp fallbacks without hard-coding Messenger", async () => {
+  it("uses encoded email, WhatsApp, and Messenger destinations with a personalized message", async () => {
     const user = userEvent.setup();
     const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/private-token?source=guest";
     const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
@@ -559,7 +559,7 @@ describe("GuestManagementWorkspace", () => {
       guestGroup,
     }));
     const subject = "You’re invited to Spring Dinner";
-    const text = `${subject}. RSVP using your private invitation link: ${inviteLink}`;
+    const text = `Hi Tan Family, you’re invited to Spring Dinner! RSVP using your private invitation link: ${inviteLink}`;
 
     renderWithAuth(
       createApiClientStub({
@@ -596,7 +596,21 @@ describe("GuestManagementWorkspace", () => {
         shareChannel: "whatsapp",
       }),
     );
-    expect(screen.queryByText(/Messenger/)).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Messenger" }));
+
+    // Messenger's web share endpoint only takes a link, not a prefilled text body.
+    expect(openWindow).toHaveBeenLastCalledWith(
+      `https://www.messenger.com/t/?link=${encodeURIComponent(inviteLink)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    await waitFor(() =>
+      expect(markGuestGroupSent).toHaveBeenLastCalledWith("evt_123", "guest_1", {
+        shareChannel: "messenger",
+      }),
+    );
   });
 
   it("does not record cancelled or popup-blocked share attempts", async () => {
@@ -706,8 +720,8 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.queryByLabelText("Guest names / contact (legacy)")).toBeNull();
     expect((screen.getByLabelText("Member 1") as HTMLInputElement).value).toBe("Mina Tan");
 
-    await user.clear(screen.getByLabelText("Max pax"));
-    await user.type(screen.getByLabelText("Max pax"), "5");
+    await user.clear(screen.getByLabelText("Party size"));
+    await user.type(screen.getByLabelText("Party size"), "5");
     await user.type(screen.getByLabelText("Member 2"), "Alex Tan");
     await user.type(screen.getByLabelText("Member 3"), "Jamie Tan");
     await user.type(screen.getByLabelText("Member 4"), "Nora Tan");
@@ -787,13 +801,18 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.queryByRole("button", { name: /Move .* (up|down)/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Remove/ })).toBeNull();
 
-    await user.clear(screen.getByLabelText("Max pax"));
-    await user.type(screen.getByLabelText("Max pax"), "4");
+    await user.clear(screen.getByLabelText("Party size"));
+    await user.type(screen.getByLabelText("Party size"), "4");
+    // Commit before looking up Member 3: it doesn't exist until the resize lands.
+    await user.tab();
     await user.type(screen.getByLabelText("Member 3"), "Jamie Tan");
     await user.type(screen.getByLabelText("Member 4"), "Nora Tan");
 
-    await user.clear(screen.getByLabelText("Max pax"));
-    await user.type(screen.getByLabelText("Max pax"), "3");
+    await user.clear(screen.getByLabelText("Party size"));
+    await user.type(screen.getByLabelText("Party size"), "3");
+    // The number field commits on blur/Enter rather than every keystroke, so move
+    // focus away to trigger the commit before checking the resized member fields.
+    await user.tab();
     expect(screen.queryByLabelText("Member 4")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Save guest group" }));
 

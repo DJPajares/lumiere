@@ -363,10 +363,7 @@ function GuestContextPanel({ guest }: { guest: GuestContext }) {
         </div>
         <dl className="grid gap-3 sm:grid-cols-2">
           <GuestFact label="Group size" value={`Max ${guest.guestGroup.maxPax} pax`} />
-          <GuestFact
-            label="RSVP"
-            value={formatResponseStatus(guest.responseStatus, guest.responseRequiredAgain)}
-          />
+          <GuestFact label="RSVP" value={formatResponseStatus(guest.responseStatus)} />
         </dl>
       </div>
     </section>
@@ -1075,20 +1072,6 @@ function RsvpSection({
         <div
           className={joinClassNames("mx-auto w-full", usesSpatialRsvp ? "max-w-5xl" : "max-w-2xl")}
         >
-          {submitContext.guest.responseRequiredAgain ? (
-            <div
-              className="mb-5 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface))] p-4"
-              role="status"
-            >
-              <p className="lumiere-type-label text-[var(--accent-strong)]">
-                Fresh response requested
-              </p>
-              <p className="lumiere-type-body mt-2">
-                The host has asked your group to RSVP again. Please send a new response even if your
-                plans have not changed.
-              </p>
-            </div>
-          ) : null}
           <RsvpForm
             copy={copy}
             eventSlug={eventSlug}
@@ -1736,14 +1719,7 @@ function formatGuestGroupStatus(status: GuestContext["guestGroup"]["status"] | u
   }
 }
 
-function formatResponseStatus(
-  status: GuestContext["responseStatus"] | undefined,
-  responseRequiredAgain = false,
-) {
-  if (responseRequiredAgain) {
-    return "Response requested again";
-  }
-
+function formatResponseStatus(status: GuestContext["responseStatus"] | undefined) {
   switch (status) {
     case "attending":
       return "Attending";

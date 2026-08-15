@@ -1196,7 +1196,6 @@ describe("public invite section renderers", () => {
           maxPax: 4,
           status: "pending",
         },
-        responseRequiredAgain: true,
         responseStatus: null,
       },
       rsvpFields: {
@@ -1224,8 +1223,10 @@ describe("public invite section renderers", () => {
     expect(html).toContain('data-section-composition="full-bleed"');
     expect(html).toContain("Tan Family");
     expect(html).toContain("Max 4 pax");
-    expect(html).toContain("Response requested again");
-    expect(html).toContain("The host has asked your group to RSVP again.");
+    // A guest asked to RSVP again (invite link reset) sees the normal RSVP status —
+    // no special banner or badge calling attention to the reset.
+    expect(html).toContain("No response yet");
+    expect(html).not.toContain("Response requested again");
     expect(html).toContain("Meal choice");
     expect(html).toContain("Private RSVP");
     expect(html).toContain("Please reply before Friday.");

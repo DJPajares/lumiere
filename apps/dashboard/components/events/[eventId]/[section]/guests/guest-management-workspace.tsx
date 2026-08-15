@@ -84,8 +84,10 @@ import {
 } from "./guest-row-models";
 import {
   createGuestInviteEmailUrl,
+  createGuestInviteMessengerUrl,
   createGuestInviteShareContent,
   createGuestInviteWhatsAppUrl,
+  describeShareMethod,
   isShareCancellation,
   shareChannelOptions,
   triggerBrowserDownload,
@@ -702,7 +704,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
       return;
     }
 
-    const shareContent = createGuestInviteShareContent(state.data.event, inviteLink);
+    const shareContent = createGuestInviteShareContent(state.data.event, group, inviteLink);
 
     if (method === "native") {
       if (typeof navigator.share !== "function") {
@@ -729,17 +731,19 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     const destination =
       method === "email"
         ? createGuestInviteEmailUrl(shareContent)
-        : createGuestInviteWhatsAppUrl(shareContent);
+        : method === "messenger"
+          ? createGuestInviteMessengerUrl(shareContent)
+          : createGuestInviteWhatsAppUrl(shareContent);
     const openedWindow = window.open(destination, "_blank", "noopener,noreferrer");
 
     if (!openedWindow) {
-      const message = `The ${method === "email" ? "email" : "WhatsApp"} composer could not open. Allow pop-ups and try again, or copy the invite link.`;
+      const message = `The ${describeShareMethod(method)} composer could not open. Allow pop-ups and try again, or copy the invite link.`;
       setActionMessage(message);
       toast.error(message);
       return;
     }
 
-    await recordInviteShare(group, method === "email" ? "email" : "whatsapp");
+    await recordInviteShare(group, method);
   };
 
   const startMarkSent = (group: GuestGroup) => {

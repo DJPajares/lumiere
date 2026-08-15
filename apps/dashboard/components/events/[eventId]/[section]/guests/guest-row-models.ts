@@ -61,6 +61,8 @@ export type GuestRow = {
   source: GuestRowSource;
   /** Additional seats this row stands in for, when a group has no named members. */
   unnamedSeats: number;
+  /** The owning group's updatedAt, for "Recently updated" sorting. */
+  updatedAt: string;
 };
 
 export function resolveInviteDeliveryStage(group: GuestGroup): GuestInviteDeliveryStage {
@@ -210,6 +212,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
         : row.rsvp,
       source: "member" as const,
       unnamedSeats: 0,
+      updatedAt: group.updatedAt,
     }));
 
     const legacyRows: GuestRow[] = row.attendees
@@ -224,6 +227,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
         rsvp: row.rsvp,
         source: "legacy_rsvp_name" as const,
         unnamedSeats: 0,
+        updatedAt: group.updatedAt,
       }));
 
     if (memberRows.length > 0 || legacyRows.length > 0) {
@@ -243,6 +247,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
         rsvp: row.rsvp,
         source: "unnamed" as const,
         unnamedSeats: Math.max(group.maxPax - 1, 0),
+        updatedAt: group.updatedAt,
       },
     ];
   });

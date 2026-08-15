@@ -62,6 +62,9 @@ export function GuestShareMenu({
           <DropdownMenuItem onClick={() => handlers.onShare(group, "whatsapp")}>
             WhatsApp
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handlers.onShare(group, "messenger")}>
+            Messenger
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

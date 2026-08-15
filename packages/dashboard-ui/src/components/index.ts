@@ -12,6 +12,7 @@ export * from "./field";
 export * from "./input";
 export * from "./input-group";
 export * from "./icons";
+export * from "./number-field";
 export * from "./label";
 export * from "./popover";
 export * from "./select";

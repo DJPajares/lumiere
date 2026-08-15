@@ -30,10 +30,10 @@ import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/t
 import { DashboardSelect } from "../../../../ui/dashboard-fields";
 import {
   countActiveAdvancedFilters,
+  getGuestSortOptions,
   guestInviteFilterOptions,
   guestRsvpFilterOptions,
   guestSortDirectionOptions,
-  guestSortOptions,
   unassignedInvitedBy,
   type GuestListFilters,
   type GuestListMode,
@@ -65,8 +65,8 @@ export function GuestToolbar({
   onUpdate: (updates: Partial<GuestListFilters>) => void;
 }) {
   const activeAdvancedFilters = countActiveAdvancedFilters(filters);
-  const sortLabel =
-    guestSortOptions.find((option) => option.value === filters.sort)?.label ?? "Sort";
+  const sortOptions = getGuestSortOptions(mode);
+  const sortLabel = sortOptions.find((option) => option.value === filters.sort)?.label ?? "Sort";
 
   return (
     <section
@@ -184,7 +184,7 @@ export function GuestToolbar({
               onValueChange={(value) => onUpdate({ sort: value as GuestSortKey })}
               value={filters.sort}
             >
-              {guestSortOptions.map((option) => (
+              {sortOptions.map((option) => (
                 <DropdownMenuRadioItem key={option.value} value={option.value}>
                   {option.label}
                 </DropdownMenuRadioItem>

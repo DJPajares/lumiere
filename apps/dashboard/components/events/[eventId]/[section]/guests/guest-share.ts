@@ -1,7 +1,7 @@
 import type { GuestDataExportDownload } from "@lumiere/api-client";
-import type { Event, GuestInviteShareChannel } from "@lumiere/types";
+import type { Event, GuestGroup, GuestInviteShareChannel } from "@lumiere/types";
 
-export type InviteShareMethod = "email" | "native" | "whatsapp";
+export type InviteShareMethod = "email" | "messenger" | "native" | "whatsapp";
 
 export const shareChannelOptions: Array<{
   label: string;
@@ -15,11 +15,16 @@ export const shareChannelOptions: Array<{
   { label: "Other", value: "other" },
 ];
 
-export function createGuestInviteShareContent(event: Event, inviteLink: string) {
+/** The name a share message greets the group by — its label is always present. */
+function guestGroupGreetingName(group: GuestGroup) {
+  return group.label;
+}
+
+export function createGuestInviteShareContent(event: Event, group: GuestGroup, inviteLink: string) {
   const subject = `You’re invited to ${event.title}`;
 
   return {
-    text: `${subject}. RSVP using your private invitation link: ${inviteLink}`,
+    text: `Hi ${guestGroupGreetingName(group)}, you’re invited to ${event.title}! RSVP using your private invitation link: ${inviteLink}`,
     title: subject,
     url: inviteLink,
   } satisfies ShareData;
@@ -31,6 +36,20 @@ export function createGuestInviteEmailUrl(shareContent: ShareData) {
 
 export function createGuestInviteWhatsAppUrl(shareContent: ShareData) {
   return `https://wa.me/?text=${encodeURIComponent(shareContent.text ?? shareContent.url ?? "")}`;
+}
+
+/**
+ * Messenger's web share endpoint only accepts a link — it renders its own preview
+ * from the URL's Open Graph tags rather than taking custom prefilled text, so the
+ * personalized greeting only shows up in channels that support a text body.
+ */
+export function createGuestInviteMessengerUrl(shareContent: ShareData) {
+  return `https://www.messenger.com/t/?link=${encodeURIComponent(shareContent.url ?? "")}`;
+}
+
+export function describeShareMethod(method: Exclude<InviteShareMethod, "native">) {
+  if (method === "email") return "email";
+  return method === "messenger" ? "Messenger" : "WhatsApp";
 }
 
 export function isShareCancellation(error: unknown) {

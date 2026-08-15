@@ -9,6 +9,7 @@ import {
   FieldSet,
 } from "@lumiere/dashboard-ui/components/field";
 import { Input } from "@lumiere/dashboard-ui/components/input";
+import { NumberField } from "@lumiere/dashboard-ui/components/number-field";
 import { Textarea } from "@lumiere/dashboard-ui/components/textarea";
 import {
   guestInviteAccessExpiryConstraintSchema,
@@ -100,16 +101,18 @@ export function GuestGroupForm({
           required
           value={values.label}
         />
-        <TextField
+        <NumberField
           error={errors.maxPax}
-          inputMode="numeric"
-          label="Max pax"
-          max="50"
-          min="1"
-          onChange={(value) => onUpdate("maxPax", value)}
+          id="guest-party-size"
+          label="Party size"
+          max={50}
+          min={1}
+          onValueChange={(value) => onUpdate("maxPax", String(value))}
           required
-          type="number"
-          value={values.maxPax}
+          // `|| 1` would be wrong here: it'd mask a genuinely-typed "0" (falsy but
+          // parseable) and silently show "1" instead, hiding the value the
+          // validation error is actually about.
+          value={Number.isFinite(Number(values.maxPax)) ? Number(values.maxPax) : 1}
         />
         <TextField
           error={errors.contactEmail}
@@ -129,7 +132,8 @@ export function GuestGroupForm({
       <FieldSet className="rounded-[var(--radius-md)] border border-border bg-muted/20 p-4">
         <FieldLegend variant="label">Named members</FieldLegend>
         <FieldDescription>
-          One field is created for every seat in Max pax. Enter each guest&apos;s full name.
+          One field is created for every seat in the party size above. Enter each guest&apos;s full
+          name.
         </FieldDescription>
         <FieldGroup className="grid gap-3 sm:grid-cols-2">
           {values.members.map((member, index) => {

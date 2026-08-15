@@ -12,6 +12,8 @@ export {
   ListIcon,
   ListFilterIcon,
   MenuIcon,
+  MinusIcon,
+  PlusIcon,
   RefreshCwIcon,
   SearchIcon,
   UsersIcon,
