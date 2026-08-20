@@ -87,6 +87,7 @@ describe("GuestManagementWorkspace", () => {
     expect(screen.getByText("Tan Family")).toBeTruthy();
     expect(screen.getByText("Mina and Alex")).toBeTruthy();
     expect(screen.queryByText("Lee Family")).toBeNull();
+    expect(screen.getByText("Filtered results")).toBeTruthy();
     expect(window.location.search).toBe("?q=mina");
 
     await user.click(screen.getByRole("button", { name: /^Filters/ }));
@@ -95,13 +96,20 @@ describe("GuestManagementWorkspace", () => {
 
     expect(screen.queryByText("Tan Family")).toBeNull();
     expect(screen.getByText("Mina and Alex")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+    const filteredSummary = screen.getByRole("region", { name: "Filtered guest summary" });
+    expect(within(filteredSummary).getByText("Total guests")).toBeTruthy();
+    expect(within(filteredSummary).getByText("3")).toBeTruthy();
     expect(window.location.search).toBe("?q=mina&rsvp=attending");
 
+    await user.click(screen.getByRole("button", { name: /^Filters/ }));
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: /^Sort by/ }));
     await user.click(await screen.findByRole("menuitemradio", { name: "Name" }));
+    expect(screen.queryByRole("menuitemradio", { name: "Ascending" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Sort by/ }));
     await user.click(await screen.findByRole("menuitemradio", { name: "Ascending" }));
     await user.keyboard("{Escape}");
 
@@ -133,6 +141,47 @@ describe("GuestManagementWorkspace", () => {
 
     expect(await screen.findByText("Tan Family")).toBeTruthy();
     expect(window.location.search).toBe("");
+  });
+
+  it("weights unnamed legacy seats by the owning RSVP response in All guests", async () => {
+    const user = userEvent.setup();
+    const legacyGroup = {
+      ...guestGroup,
+      contactName: "Legacy Host",
+      id: "guest_legacy",
+      label: "Legacy Party",
+      maxPax: 4,
+      status: "responded" as const,
+    };
+
+    renderWithAuth(
+      createApiClientStub({
+        listEventResponses: vi.fn(async () => ({
+          responses: [
+            createRsvpResponse({
+              attendeeCount: 1,
+              guestGroupId: "guest_legacy",
+              guestNames: [],
+            }),
+          ],
+        })),
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [legacyGroup] })),
+      }),
+    );
+
+    await screen.findByText("Legacy Party");
+    await user.click(screen.getByRole("button", { name: "All guests" }));
+    await user.type(screen.getByLabelText("Search guests and groups"), "Legacy");
+
+    const filteredSummary = screen.getByRole("region", { name: "Filtered guest summary" });
+    const totalGuests = within(filteredSummary).getByText("Total guests").closest("div");
+    const attending = within(filteredSummary).getByText("Attending").closest("div");
+    const notAttending = within(filteredSummary).getByText("Not attending").closest("div");
+
+    expect(within(totalGuests as HTMLElement).getByText("4")).toBeTruthy();
+    expect(within(attending as HTMLElement).getByText("1")).toBeTruthy();
+    expect(within(notAttending as HTMLElement).getByText("3")).toBeTruthy();
+    expect(within(notAttending as HTMLElement).getByText("3 seats unfilled")).toBeTruthy();
   });
 
   it("downloads CSV and XLSX data with current filters for view-only managers", async () => {
@@ -236,7 +285,16 @@ describe("GuestManagementWorkspace", () => {
                 { id: "member_tan", name: "Mina Tan", sortOrder: 0 },
                 { id: "member_alex", name: "Alex Tan", sortOrder: 1 },
               ],
+              status: "responded" as const,
             },
+          ],
+        })),
+        listEventResponses: vi.fn(async () => ({
+          responses: [
+            createRsvpResponse({
+              attendeeCount: 1,
+              guestNames: ["Mina Tan"],
+            }),
           ],
         })),
       }),
@@ -265,6 +323,7 @@ describe("GuestManagementWorkspace", () => {
     expect(within(guestTable).getByRole("columnheader", { name: "Name" })).toBeTruthy();
     expect(within(guestTable).getByRole("cell", { name: "Mina Tan" })).toBeTruthy();
     expect(within(guestTable).getByRole("cell", { name: "Alex Tan" })).toBeTruthy();
+    expect(within(guestTable).getByText("Not attending")).toBeTruthy();
 
     cleanup();
     renderWithAuth(createApiClientStub());
@@ -537,8 +596,7 @@ describe("GuestManagementWorkspace", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Share from device" }));
 
     expect(share).toHaveBeenCalledWith({
-      text: `Hi Tan Family, you’re invited to Spring Dinner! RSVP using your private invitation link: ${inviteLink}`,
-      title: "You’re invited to Spring Dinner",
+      text: "Hi Tan Family, you’re invited to Spring Dinner! RSVP using your private invitation link.",
       url: inviteLink,
     });
     await waitFor(() =>
@@ -551,7 +609,7 @@ describe("GuestManagementWorkspace", () => {
     ).toBeTruthy();
   });
 
-  it("uses encoded email, WhatsApp, and Messenger destinations with a personalized message", async () => {
+  it("uses encoded email and WhatsApp destinations with a personalized message", async () => {
     const user = userEvent.setup();
     const inviteLink = "https://invite.lumiere.test/e/spring-dinner/g/private-token?source=guest";
     const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
@@ -594,21 +652,6 @@ describe("GuestManagementWorkspace", () => {
     await waitFor(() =>
       expect(markGuestGroupSent).toHaveBeenLastCalledWith("evt_123", "guest_1", {
         shareChannel: "whatsapp",
-      }),
-    );
-
-    await user.click(screen.getByRole("button", { name: "Share invite for Tan Family" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Messenger" }));
-
-    // Messenger's web share endpoint only takes a link, not a prefilled text body.
-    expect(openWindow).toHaveBeenLastCalledWith(
-      `https://www.messenger.com/t/?link=${encodeURIComponent(inviteLink)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    await waitFor(() =>
-      expect(markGuestGroupSent).toHaveBeenLastCalledWith("evt_123", "guest_1", {
-        shareChannel: "messenger",
       }),
     );
   });
@@ -688,7 +731,7 @@ describe("GuestManagementWorkspace", () => {
       ...guestGroup,
       inviteLink,
       lastOpenedAt: "2030-01-02T00:00:00.000Z",
-      status: "responded",
+      status: "responded" as const,
     };
     const updatedGroup: GuestGroup = {
       ...respondedGroup,
@@ -966,10 +1009,7 @@ describe("GuestManagementWorkspace", () => {
     expect(await screen.findByText(/Existing invite access is blocked/)).toBeTruthy();
     expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
 
-    await openRowMenuItem(user, "Tan Family", "Edit group");
-    await user.click(screen.getByLabelText("Invite status"));
-    await user.click(await screen.findByRole("option", { name: "Pending" }));
-    await user.click(screen.getByRole("button", { name: "Save guest group" }));
+    await openRowMenuItem(user, "Tan Family", "Re-enable invite");
 
     await waitFor(() => expect(updateGuestGroup).toHaveBeenCalledTimes(2));
     expect(updateGuestGroup.mock.calls[1]?.[2]).toMatchObject({ status: "pending" });

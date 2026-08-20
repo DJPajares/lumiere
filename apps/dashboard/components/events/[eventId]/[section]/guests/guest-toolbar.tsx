@@ -25,6 +25,7 @@ import {
   InputGroupInput,
 } from "@lumiere/dashboard-ui/components/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@lumiere/dashboard-ui/components/popover";
+import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@lumiere/dashboard-ui/components/toggle-group";
 
 import { DashboardSelect } from "../../../../ui/dashboard-fields";
@@ -67,6 +68,18 @@ export function GuestToolbar({
   const activeAdvancedFilters = countActiveAdvancedFilters(filters);
   const sortOptions = getGuestSortOptions(mode);
   const sortLabel = sortOptions.find((option) => option.value === filters.sort)?.label ?? "Sort";
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const updateFilter = (updates: Partial<GuestListFilters>) => {
+    onUpdate(updates);
+    setFilterOpen(false);
+  };
+
+  const updateSort = (updates: Partial<GuestListFilters>) => {
+    onUpdate(updates);
+    setSortOpen(false);
+  };
 
   return (
     <section
@@ -113,7 +126,7 @@ export function GuestToolbar({
       </ToggleGroup>
 
       <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-        <Popover>
+        <Popover onOpenChange={setFilterOpen} open={filterOpen}>
           <PopoverTrigger render={<Button size="sm" type="button" variant="outline" />}>
             <ListFilterIcon data-icon="inline-start" />
             Filters
@@ -128,7 +141,7 @@ export function GuestToolbar({
               <DashboardSelect
                 id="guest-invited-by-filter"
                 label="Invited by"
-                onValueChange={(value) => onUpdate({ invitedBy: value })}
+                onValueChange={(value) => updateFilter({ invitedBy: value })}
                 options={[
                   { label: "Anyone", value: "all" },
                   { label: "Not set", value: unassignedInvitedBy },
@@ -140,7 +153,7 @@ export function GuestToolbar({
                 id="guest-invite-filter"
                 label="Invite status"
                 onValueChange={(value) =>
-                  onUpdate({ invite: value as GuestInviteDeliveryStage | "all" })
+                  updateFilter({ invite: value as GuestInviteDeliveryStage | "all" })
                 }
                 options={guestInviteFilterOptions}
                 value={filters.invite}
@@ -148,13 +161,16 @@ export function GuestToolbar({
               <DashboardSelect
                 id="guest-rsvp-filter"
                 label="RSVP status"
-                onValueChange={(value) => onUpdate({ rsvp: value as GuestRsvpState | "all" })}
+                onValueChange={(value) => updateFilter({ rsvp: value as GuestRsvpState | "all" })}
                 options={guestRsvpFilterOptions}
                 value={filters.rsvp}
               />
               <Button
                 disabled={!hasActiveFilters}
-                onClick={onClear}
+                onClick={() => {
+                  onClear();
+                  setFilterOpen(false);
+                }}
                 size="sm"
                 type="button"
                 variant="outline"
@@ -165,7 +181,7 @@ export function GuestToolbar({
           </PopoverContent>
         </Popover>
 
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={setSortOpen} open={sortOpen}>
           <DropdownMenuTrigger
             render={
               <Button
@@ -181,7 +197,7 @@ export function GuestToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup
-              onValueChange={(value) => onUpdate({ sort: value as GuestSortKey })}
+              onValueChange={(value) => updateSort({ sort: value as GuestSortKey })}
               value={filters.sort}
             >
               {sortOptions.map((option) => (
@@ -192,7 +208,7 @@ export function GuestToolbar({
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
-              onValueChange={(value) => onUpdate({ direction: value === "asc" ? "asc" : "desc" })}
+              onValueChange={(value) => updateSort({ direction: value === "asc" ? "asc" : "desc" })}
               value={filters.direction}
             >
               {guestSortDirectionOptions.map((option) => (

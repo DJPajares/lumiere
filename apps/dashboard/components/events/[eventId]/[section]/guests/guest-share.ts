@@ -29,7 +29,11 @@ export function createGuestInviteShareContent(event: Event, group: GuestGroup, i
   } satisfies ShareData;
 }
 
-export function createGuestInviteNativeShareContent(event: Event, group: GuestGroup, inviteLink: string) {
+export function createGuestInviteNativeShareContent(
+  event: Event,
+  group: GuestGroup,
+  inviteLink: string,
+) {
   return {
     text: `Hi ${guestGroupGreetingName(group)}, you’re invited to ${event.title}! RSVP using your private invitation link.`,
     url: inviteLink,
@@ -42,20 +46,6 @@ export function createGuestInviteEmailUrl(shareContent: ShareData) {
 
 export function createGuestInviteWhatsAppUrl(shareContent: ShareData) {
   return `https://wa.me/?text=${encodeURIComponent(shareContent.text ?? shareContent.url ?? "")}`;
-}
-
-/**
- * Messenger's web share endpoint accepts a link and an optional quote parameter.
- * We include the message text as a quote so the personalized greeting appears
- * alongside the link preview.
- */
-export function createGuestInviteMessengerUrl(shareContent: ShareData) {
-  const params = new URLSearchParams();
-  params.set("link", shareContent.url ?? "");
-  if (shareContent.text) {
-    params.set("quote", shareContent.text);
-  }
-  return `https://www.messenger.com/t/?${params.toString()}`;
 }
 
 export function describeShareMethod(method: Exclude<InviteShareMethod, "native">) {

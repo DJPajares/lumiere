@@ -29,6 +29,15 @@ export function GuestGroupDetail({
   const { group } = row;
   const namedAttendees = row.attendees.filter((attendee) => attendee.kind === "named_member");
   const legacyAttendees = row.attendees.filter((attendee) => attendee.kind === "legacy");
+  const namedAttendeeNames = new Set(
+    namedAttendees.map((attendee) => attendee.name.trim().toLocaleLowerCase()),
+  );
+  const namedGuestsNotAttending =
+    row.rsvp === "attending" && namedAttendeeNames.size > 0
+      ? (group.members ?? []).filter(
+          (member) => !namedAttendeeNames.has(member.name.trim().toLocaleLowerCase()),
+        )
+      : [];
 
   return (
     <div className="grid gap-4 rounded-[var(--radius-md)] bg-muted/40 p-4 text-sm md:grid-cols-2">
@@ -71,6 +80,14 @@ export function GuestGroupDetail({
               </p>
             ) : null}
           </div>
+        ) : null}
+
+        {namedGuestsNotAttending.length > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {namedGuestsNotAttending.length} named{" "}
+            {namedGuestsNotAttending.length === 1 ? "guest is" : "guests are"} not attending. The
+            group response remains Attending.
+          </p>
         ) : null}
 
         {row.rsvpMessage ? (

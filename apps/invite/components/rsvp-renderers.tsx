@@ -513,43 +513,47 @@ function AttendanceControls({ contract }: { contract: RsvpRendererContract }) {
 
       {contract.flags.isResponding ? (
         <>
-          <div className="grid gap-2">
-            <p className={contract.presentation.fieldLabelClassName}>{contract.copy.countPrompt}</p>
-            <div
-              aria-describedby={contract.errors.attendeeCount ? "attendeeCount-error" : undefined}
-              aria-invalid={Boolean(contract.errors.attendeeCount)}
-              className="grid grid-cols-[3rem_1fr_3rem] items-center rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
-            >
-              <CounterButton
-                disabled={isDisabled || contract.formState.attendeeCount <= 1}
-                label="Remove one guest"
-                onClick={contract.actions.removeAttendee}
+          {!hasStructuredMembers ? (
+            <div className="grid gap-2">
+              <p className={contract.presentation.fieldLabelClassName}>
+                {contract.copy.countPrompt}
+              </p>
+              <div
+                aria-describedby={contract.errors.attendeeCount ? "attendeeCount-error" : undefined}
+                aria-invalid={Boolean(contract.errors.attendeeCount)}
+                className="grid grid-cols-[3rem_1fr_3rem] items-center rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
               >
-                -
-              </CounterButton>
-              <div className="grid place-items-center px-3 py-2 text-center">
-                <span className={contract.presentation.counterValueClassName}>
-                  {contract.formState.attendeeCount}
-                </span>
-                <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
-                  {contract.formState.attendeeCount === 1
-                    ? contract.copy.guestLabelSingular
-                    : contract.copy.guestLabelPlural}
-                </span>
+                <CounterButton
+                  disabled={isDisabled || contract.formState.attendeeCount <= 1}
+                  label="Remove one guest"
+                  onClick={contract.actions.removeAttendee}
+                >
+                  -
+                </CounterButton>
+                <div className="grid place-items-center px-3 py-2 text-center">
+                  <span className={contract.presentation.counterValueClassName}>
+                    {contract.formState.attendeeCount}
+                  </span>
+                  <span className="lumiere-type-label text-[color-mix(in_srgb,var(--foreground)_54%,transparent)]">
+                    {contract.formState.attendeeCount === 1
+                      ? contract.copy.guestLabelSingular
+                      : contract.copy.guestLabelPlural}
+                  </span>
+                </div>
+                <CounterButton
+                  disabled={
+                    isDisabled ||
+                    contract.formState.attendeeCount >= contract.context.guestGroup.maxPax
+                  }
+                  label="Add one guest"
+                  onClick={contract.actions.addAttendee}
+                >
+                  +
+                </CounterButton>
               </div>
-              <CounterButton
-                disabled={
-                  isDisabled ||
-                  contract.formState.attendeeCount >= contract.context.guestGroup.maxPax
-                }
-                label="Add one guest"
-                onClick={contract.actions.addAttendee}
-              >
-                +
-              </CounterButton>
+              <FieldError id="attendeeCount-error" message={contract.errors.attendeeCount} />
             </div>
-            <FieldError id="attendeeCount-error" message={contract.errors.attendeeCount} />
-          </div>
+          ) : null}
           {hasStructuredMembers ? (
             <NamedMemberControls contract={contract} isDisabled={isDisabled} members={members} />
           ) : null}
@@ -583,20 +587,23 @@ function NamedMemberControls({
           {contract.copy.guestNamesLabel}
         </legend>
         <p
+          aria-live="polite"
           className="lumiere-type-caption text-[color-mix(in_srgb,var(--foreground)_64%,transparent)]"
           id="named-members-help"
         >
-          Select {contract.formState.attendeeCount}{" "}
-          {contract.formState.attendeeCount === 1 ? "person" : "people"} attending. {selectedCount}{" "}
-          selected.
+          {selectedCount} of {members.length} {members.length === 1 ? "guest" : "guests"} joining.
         </p>
       </div>
-      <div className="lumiere-rsvp-member-grid grid gap-2 sm:grid-cols-2">
+      <div
+        className={
+          members.length === 1
+            ? "lumiere-rsvp-member-grid grid gap-2"
+            : "lumiere-rsvp-member-grid grid gap-2 sm:grid-cols-2"
+        }
+      >
         {members.map((member, index) => {
           const inputId = `guestMember-${index}`;
           const checked = contract.formState.guestNames.includes(member.name);
-          const selectionLimitReached =
-            selectedCount >= contract.formState.attendeeCount && !checked;
 
           return (
             <label
@@ -607,7 +614,6 @@ function NamedMemberControls({
               <input
                 checked={checked}
                 className="size-4 shrink-0 accent-[var(--accent)]"
-                disabled={selectionLimitReached}
                 id={inputId}
                 onChange={() => contract.actions.toggleGuestMember(member.name)}
                 type="checkbox"

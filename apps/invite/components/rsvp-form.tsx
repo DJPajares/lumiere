@@ -125,6 +125,10 @@ export function useRsvpFormController({
   const [isEditingExistingReply, setIsEditingExistingReply] = useState(false);
   const [recoveryState, setRecoveryState] = useState<RsvpRecoveryState | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const attendeeCount =
+    hasStructuredMembers && state.responseStatus !== "not_attending"
+      ? state.guestNames.length
+      : state.attendeeCount;
   const responseStatus = submittedResponse?.responseStatus ?? state.responseStatus;
   const hasExistingReply = Boolean(savedResponseStatus || submittedResponse);
   const isConfirmationVisible = hasExistingReply && !isEditingExistingReply;
@@ -142,13 +146,14 @@ export function useRsvpFormController({
   });
   const isLocked = isRsvpLocked(recoveryState);
   const statusTone = getReplyTone({
+    hasExistingReply,
     hasSubmittedReply,
     isUpdatingExistingReply,
     recoveryState,
     responseStatus,
   });
   const statusCopy = getReplyStatusCopy({
-    attendeeCount: submittedResponse?.attendeeCount ?? state.attendeeCount,
+    attendeeCount: submittedResponse?.attendeeCount ?? attendeeCount,
     collectGuestMessage: rsvpFields.collectGuestMessage,
     guestGroupLabel: guestGroup.label,
     hasSubmittedReply,
@@ -234,13 +239,18 @@ export function useRsvpFormController({
           ),
         })),
       toggleGuestMember: (name) =>
-        setState((current) => ({
-          ...current,
-          guestNames: current.guestNames.includes(name)
+        setState((current) => {
+          const guestNames = current.guestNames.includes(name)
             ? current.guestNames.filter((guestName) => guestName !== name)
-            : [...current.guestNames, name],
-          staleGuestNames: [],
-        })),
+            : [...current.guestNames, name];
+
+          return {
+            ...current,
+            attendeeCount: current.responseStatus === "not_attending" ? 0 : guestNames.length,
+            guestNames,
+            staleGuestNames: [],
+          };
+        }),
       setMessage: (message) => setState((current) => ({ ...current, message })),
       setResponseStatus: (responseStatus) =>
         setState((current) =>
@@ -274,7 +284,10 @@ export function useRsvpFormController({
       isConfirmationVisible,
       isUpdatingExistingReply,
     },
-    formState: state,
+    formState: {
+      ...state,
+      attendeeCount,
+    },
     presentation,
     questions,
     recoveryState,
@@ -322,9 +335,11 @@ export function createInitialRsvpFormState(
     };
   }
 
-  const attendeeCount = options.initialResponse
-    ? Math.max(1, Math.min(maxPax, options.initialResponse.attendeeCount))
-    : 1;
+  const attendeeCount = hasStructuredMembers
+    ? matchedNames.length
+    : options.initialResponse
+      ? Math.max(1, Math.min(maxPax, options.initialResponse.attendeeCount))
+      : 1;
 
   return {
     answers: {},
@@ -336,7 +351,7 @@ export function createInitialRsvpFormState(
         : [],
     message: "",
     responseStatus:
-      responseStatus === "attending" || responseStatus === "maybe" ? responseStatus : "",
+      responseStatus === "attending" || responseStatus === "maybe" ? responseStatus : "attending",
     ...(staleNames.length > 0 ? { staleGuestNames: staleNames } : {}),
   };
 }
@@ -368,21 +383,16 @@ export function validateRsvpFormState({
     errors.responseStatus = "Choose whether your group can attend.";
   }
 
-  const isAttending = state.responseStatus === "attending" || state.responseStatus === "maybe";
-  const attendeeCount = isAttending ? state.attendeeCount : 0;
-
-  if (isAttending && attendeeCount < 1) {
-    errors.attendeeCount = "Choose at least one attendee.";
-  }
-
-  if (attendeeCount > maxPax) {
-    errors.attendeeCount = `This invite allows up to ${maxPax} pax.`;
-  }
-
   const hasStructuredMembers = rsvpFields.collectGuestNames && members.length > 0;
   const selectedMemberNames = hasStructuredMembers
     ? matchGuestNamesToMembers(state.guestNames, members).matchedNames
     : [];
+  const isAttending = state.responseStatus === "attending" || state.responseStatus === "maybe";
+  const attendeeCount = isAttending
+    ? hasStructuredMembers
+      ? selectedMemberNames.length
+      : state.attendeeCount
+    : 0;
   const guestNames =
     isAttending && rsvpFields.collectGuestNames
       ? hasStructuredMembers
@@ -397,14 +407,17 @@ export function validateRsvpFormState({
     const hasStaleSelection = Boolean(state.staleGuestNames?.length);
 
     if (hasStaleSelection) {
-      errors.guestNames = `Some saved attendees are no longer in this guest group. Select exactly ${attendeeCount} current ${
-        attendeeCount === 1 ? "member" : "members"
-      }.`;
-    } else if (guestNames.length !== attendeeCount) {
-      errors.guestNames = `Select exactly ${attendeeCount} named ${
-        attendeeCount === 1 ? "member" : "members"
-      }. ${guestNames.length} selected.`;
+      errors.guestNames =
+        "Some saved attendees are no longer in this guest group. Select the current members who are joining.";
+    } else if (attendeeCount < 1) {
+      errors.guestNames = "Select at least one named member who is joining.";
+    } else if (attendeeCount > maxPax) {
+      errors.guestNames = `This invite allows up to ${maxPax} pax.`;
     }
+  } else if (isAttending && attendeeCount < 1) {
+    errors.attendeeCount = "Choose at least one attendee.";
+  } else if (attendeeCount > maxPax) {
+    errors.attendeeCount = `This invite allows up to ${maxPax} pax.`;
   }
 
   const answers = questions.flatMap((question) => {
@@ -562,11 +575,13 @@ function getReplyStatusCopy({
 }
 
 function getReplyTone({
+  hasExistingReply,
   hasSubmittedReply,
   isUpdatingExistingReply,
   recoveryState,
   responseStatus,
 }: {
+  hasExistingReply: boolean;
   hasSubmittedReply: boolean;
   isUpdatingExistingReply: boolean;
   recoveryState: RsvpRecoveryState | null;
@@ -582,6 +597,10 @@ function getReplyTone({
 
   if (isUpdatingExistingReply) {
     return "updating";
+  }
+
+  if (!hasExistingReply) {
+    return "draft";
   }
 
   if (responseStatus === "not_attending") {
@@ -626,7 +645,11 @@ function withResponseStatus(
     };
   }
 
-  const attendeeCount = state.attendeeCount > 0 ? Math.min(state.attendeeCount, maxPax) : 1;
+  const attendeeCount = hasStructuredMembers
+    ? state.guestNames.length
+    : state.attendeeCount > 0
+      ? Math.min(state.attendeeCount, maxPax)
+      : 1;
 
   return {
     ...state,

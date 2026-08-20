@@ -55,6 +55,7 @@ export type GuestRow = {
   groupId: string;
   groupLabel: string;
   id: string;
+  isDisabled: boolean;
   invitedBy: string | null;
   name: string;
   rsvp: GuestRsvpState;
@@ -203,6 +204,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
       groupId: group.id,
       groupLabel: group.label,
       id: `${group.id}:member:${member.id}`,
+      isDisabled: group.status === "disabled",
       invitedBy: row.invitedBy,
       name: member.name,
       rsvp: attributesAttendance
@@ -222,6 +224,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
         groupId: group.id,
         groupLabel: group.label,
         id: `${group.id}:legacy:${index}`,
+        isDisabled: group.status === "disabled",
         invitedBy: row.invitedBy,
         name: attendee.name,
         rsvp: row.rsvp,
@@ -242,6 +245,7 @@ export function buildGuestRows(groupRows: GuestGroupRow[]): GuestRow[] {
         groupId: group.id,
         groupLabel: group.label,
         id: `${group.id}:unnamed`,
+        isDisabled: group.status === "disabled",
         invitedBy: row.invitedBy,
         name: group.contactName || group.label,
         rsvp: row.rsvp,

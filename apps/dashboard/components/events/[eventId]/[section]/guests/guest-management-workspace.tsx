@@ -53,6 +53,7 @@ import {
   defaultGuestListFilters,
   filterAndSortGuestGroupRows,
   filterAndSortGuestRows,
+  hasGuestListDataFilters,
   hasExportableFilters,
   readGuestListFilters,
   readGuestListMode,
@@ -76,12 +77,7 @@ import {
   type TextFormField,
 } from "./guest-group-form";
 import type { GuestRowActionHandlers } from "./guest-invite-actions";
-import {
-  buildGuestGroupRows,
-  buildGuestRows,
-  collectInvitedByValues,
-  countUnnamedSeats,
-} from "./guest-row-models";
+import { buildGuestGroupRows, buildGuestRows, collectInvitedByValues } from "./guest-row-models";
 import {
   createGuestInviteEmailUrl,
   createGuestInviteNativeShareContent,
@@ -294,14 +290,18 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
     [groupRows, guestListFilters],
   );
   const guestRows = useMemo(() => buildGuestRows(groupRows), [groupRows]);
-  const unnamedSeats = useMemo(() => countUnnamedSeats(groupRows), [groupRows]);
   const filteredGuestRows = useMemo(
     () => filterAndSortGuestRows(guestRows, guestListFilters),
     [guestRows, guestListFilters],
   );
+  const visibleUnnamedSeats = useMemo(
+    () => filteredGuestRows.reduce((total, row) => total + row.unnamedSeats, 0),
+    [filteredGuestRows],
+  );
   const invitedByValues = useMemo(() => collectInvitedByValues(guestGroups), [guestGroups]);
 
   const hasGuestListFilters = !areGuestListFiltersDefault(guestListFilters);
+  const hasGuestListDataFiltersApplied = hasGuestListDataFilters(guestListFilters);
   const hasSupportedExportFilters = hasExportableFilters(guestListFilters);
   const canShareFromDevice =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -885,7 +885,14 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
         )}
       </div>
 
-      <GuestSummary groupRows={groupRows} summary={readyState.data.summary} />
+      <GuestSummary
+        allGroupRows={groupRows}
+        filteredGroupRows={filteredGroupRows}
+        filteredGuestRows={filteredGuestRows}
+        isFiltered={hasGuestListDataFiltersApplied}
+        mode={listMode}
+        summary={readyState.data.summary}
+      />
 
       <GuestToolbar
         filters={guestListFilters}
@@ -1173,7 +1180,7 @@ export function GuestManagementWorkspace({ eventId }: { eventId: string }) {
           <AllGuestsTable
             isDesktop={isDesktop}
             rows={filteredGuestRows}
-            unnamedSeats={unnamedSeats}
+            unnamedSeats={visibleUnnamedSeats}
           />
         )}
       </section>
