@@ -96,11 +96,13 @@ describe("GuestManagementWorkspace", () => {
 
     expect(screen.queryByText("Tan Family")).toBeNull();
     expect(screen.getByText("Mina and Alex")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
     const filteredSummary = screen.getByRole("region", { name: "Filtered guest summary" });
     expect(within(filteredSummary).getByText("Total guests")).toBeTruthy();
     expect(within(filteredSummary).getByText("3")).toBeTruthy();
     expect(window.location.search).toBe("?q=mina&rsvp=attending");
 
+    await user.click(screen.getByRole("button", { name: /^Filters/ }));
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     await user.keyboard("{Escape}");
 
