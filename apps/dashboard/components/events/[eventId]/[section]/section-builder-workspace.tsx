@@ -124,6 +124,8 @@ type SectionDraft = {
   updatedAt?: string;
   visibility: SectionVisibility;
 };
+type SectionDraftUpdate =
+  Partial<SectionDraft> | ((current: SectionDraft) => Partial<SectionDraft>);
 
 type SectionErrors = Partial<Record<"content" | "settings" | "visibility", string>>;
 type SectionErrorMap = Record<string, SectionErrors>;
@@ -465,7 +467,7 @@ function SectionBuilderContent({
     setEditingSectionKey(sectionKey);
   };
 
-  const updateSection = (sectionKey: string, updates: Partial<SectionDraft>) => {
+  const updateSection = (sectionKey: string, updates: SectionDraftUpdate) => {
     localMutationRevisionRef.current += 1;
 
     updateState((current) =>
@@ -478,7 +480,7 @@ function SectionBuilderContent({
               section.sectionKey === sectionKey
                 ? {
                     ...section,
-                    ...updates,
+                    ...(typeof updates === "function" ? updates(section) : updates),
                   }
                 : section,
             ),
@@ -1992,7 +1994,7 @@ function SectionEditor({
   rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
   statusLabel: string;
-  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateSection: (sectionKey: string, updates: SectionDraftUpdate) => void;
   updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   const definition = getSectionDefinition(section.sectionType);
@@ -2063,7 +2065,7 @@ type SectionFieldController = {
   settings: JsonObject;
   updateContentObject: (updater: (draft: JsonObject) => void) => void;
   updateContentValue: (path: JsonPath, value: JsonValue | undefined) => void;
-  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateSection: (sectionKey: string, updates: SectionDraftUpdate) => void;
   updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
   updateSettingsObject: (updater: (draft: JsonObject) => void) => void;
   updateSettingsValue: (path: JsonPath, value: JsonValue | undefined) => void;
@@ -2081,7 +2083,7 @@ function SectionFieldForm({
   errors: SectionErrors;
   rsvpSettings: RsvpFieldSettings;
   section: SectionDraft;
-  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateSection: (sectionKey: string, updates: SectionDraftUpdate) => void;
   updateRsvpSetting: (key: keyof RsvpFieldSettings, value: boolean) => void;
 }) {
   const content = readDraftObject(section.contentText);
@@ -2095,27 +2097,27 @@ function SectionFieldForm({
     section,
     settings,
     updateContentObject: (updater) =>
-      updateSection(section.sectionKey, {
-        contentText: updateJsonObjectText(section.contentText, updater),
-      }),
+      updateSection(section.sectionKey, (current) => ({
+        contentText: updateJsonObjectText(current.contentText, updater),
+      })),
     updateContentValue: (path, value) =>
-      updateSection(section.sectionKey, {
-        contentText: updateJsonObjectText(section.contentText, (draft) =>
+      updateSection(section.sectionKey, (current) => ({
+        contentText: updateJsonObjectText(current.contentText, (draft) =>
           setJsonPathValue(draft, path, value),
         ),
-      }),
+      })),
     updateSection,
     updateRsvpSetting,
     updateSettingsObject: (updater) =>
-      updateSection(section.sectionKey, {
-        settingsText: updateJsonObjectText(section.settingsText, updater),
-      }),
+      updateSection(section.sectionKey, (current) => ({
+        settingsText: updateJsonObjectText(current.settingsText, updater),
+      })),
     updateSettingsValue: (path, value) =>
-      updateSection(section.sectionKey, {
-        settingsText: updateJsonObjectText(section.settingsText, (draft) =>
+      updateSection(section.sectionKey, (current) => ({
+        settingsText: updateJsonObjectText(current.settingsText, (draft) =>
           setJsonPathValue(draft, path, value),
         ),
-      }),
+      })),
   };
 
   return (
@@ -3618,7 +3620,7 @@ function DeveloperJsonEditor({
   disabled: boolean;
   errors: SectionErrors;
   section: SectionDraft;
-  updateSection: (sectionKey: string, updates: Partial<SectionDraft>) => void;
+  updateSection: (sectionKey: string, updates: SectionDraftUpdate) => void;
 }) {
   return (
     <details className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-3">

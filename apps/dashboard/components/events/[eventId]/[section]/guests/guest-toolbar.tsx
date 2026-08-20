@@ -69,10 +69,16 @@ export function GuestToolbar({
   const sortOptions = getGuestSortOptions(mode);
   const sortLabel = sortOptions.find((option) => option.value === filters.sort)?.label ?? "Sort";
   const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
   const updateFilter = (updates: Partial<GuestListFilters>) => {
     onUpdate(updates);
     setFilterOpen(false);
+  };
+
+  const updateSort = (updates: Partial<GuestListFilters>) => {
+    onUpdate(updates);
+    setSortOpen(false);
   };
 
   return (
@@ -175,7 +181,7 @@ export function GuestToolbar({
           </PopoverContent>
         </Popover>
 
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={setSortOpen} open={sortOpen}>
           <DropdownMenuTrigger
             render={
               <Button
@@ -191,7 +197,7 @@ export function GuestToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup
-              onValueChange={(value) => onUpdate({ sort: value as GuestSortKey })}
+              onValueChange={(value) => updateSort({ sort: value as GuestSortKey })}
               value={filters.sort}
             >
               {sortOptions.map((option) => (
@@ -202,7 +208,7 @@ export function GuestToolbar({
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
-              onValueChange={(value) => onUpdate({ direction: value === "asc" ? "asc" : "desc" })}
+              onValueChange={(value) => updateSort({ direction: value === "asc" ? "asc" : "desc" })}
               value={filters.direction}
             >
               {guestSortDirectionOptions.map((option) => (

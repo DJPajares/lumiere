@@ -27,7 +27,7 @@ export function GuestSummary({
   const visibleSummary = isFiltered
     ? mode === "groups"
       ? buildGroupSummary(filteredGroupRows)
-      : buildGuestSummary(filteredGuestRows)
+      : buildGuestSummary(filteredGuestRows, allGroupRows)
     : (summary ?? buildGroupSummary(allGroupRows));
   const inviteStats =
     mode === "groups"
@@ -147,8 +147,9 @@ function buildGroupSummary(rows: GuestGroupRow[]): EventSummary {
   return summary;
 }
 
-function buildGuestSummary(rows: GuestRow[]): EventSummary {
+function buildGuestSummary(rows: GuestRow[], allGroupRows: GuestGroupRow[]): EventSummary {
   const summary = createEmptySummary();
+  const groupRowsById = new Map(allGroupRows.map((row) => [row.group.id, row] as const));
   const groupIds = new Set<string>();
   const groupsByRsvp = {
     attending: new Set<string>(),
@@ -163,6 +164,31 @@ function buildGuestSummary(rows: GuestRow[]): EventSummary {
     const seats = row.unnamedSeats + 1;
     groupIds.add(row.groupId);
     summary.totalInvitedPax += seats;
+
+    if (row.source === "unnamed") {
+      const groupRow = groupRowsById.get(row.groupId);
+      const maxPax = groupRow?.group.maxPax ?? seats;
+      const attendeeCount = groupRow?.response?.attendeeCount ?? 0;
+
+      if (row.rsvp === "awaiting") {
+        groupsByRsvp.awaiting.add(row.groupId);
+        summary.pending.pax += seats;
+      } else if (row.rsvp === "attending") {
+        groupsByRsvp.attending.add(row.groupId);
+        summary.attending.pax += attendeeCount;
+        summary.notAttending.pax += Math.max(maxPax - attendeeCount, 0);
+        summary.totalRespondedPax += attendeeCount;
+      } else if (row.rsvp === "maybe") {
+        groupsByRsvp.maybe.add(row.groupId);
+        summary.maybe.pax += attendeeCount;
+        summary.totalRespondedPax += attendeeCount;
+      } else {
+        groupsByRsvp.not_attending.add(row.groupId);
+        summary.notAttending.pax += maxPax;
+      }
+
+      continue;
+    }
 
     if (row.rsvp === "awaiting") {
       groupsByRsvp.awaiting.add(row.groupId);
@@ -274,9 +300,16 @@ function buildGuestNotAttendingBreakdown(
   let unfilledSeats = 0;
 
   for (const row of rows) {
-    if (row.isDisabled || row.rsvp !== "not_attending") continue;
+    if (row.isDisabled) continue;
 
     const groupRow = groupRowsById.get(row.groupId);
+    if (row.source === "unnamed" && groupRow?.rsvp === "attending" && groupRow.response) {
+      unfilledSeats += Math.max(groupRow.group.maxPax - groupRow.response.attendeeCount, 0);
+      continue;
+    }
+
+    if (row.rsvp !== "not_attending") continue;
+
     if (groupRow?.rsvp === "not_attending") {
       declinedGroupIds.add(row.groupId);
     } else if (row.source === "member") {

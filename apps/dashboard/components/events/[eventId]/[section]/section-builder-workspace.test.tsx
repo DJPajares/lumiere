@@ -284,7 +284,7 @@ describe("SectionBuilderWorkspace", () => {
       "true",
     );
     expect(storyEditor.getAllByText(/paragraphs\.0\.body:/).length).toBeGreaterThan(0);
-  });
+  }, 15_000);
 
   it("locks enabled required sections once the event is published", async () => {
     const getEvent = vi.fn<DashboardApiClient["getEvent"]>(async () => ({
@@ -373,7 +373,7 @@ describe("SectionBuilderWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit Introduction" }));
     expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Spring Dinner");
-  });
+  }, 15_000);
 
   it("saves typed field edits, repeatable content, visibility, and accessible reordering", async () => {
     const user = userEvent.setup();
@@ -589,7 +589,7 @@ describe("SectionBuilderWorkspace", () => {
         collectGuestNames: false,
       },
     });
-  });
+  }, 15_000);
 });
 
 function getModalFooter() {

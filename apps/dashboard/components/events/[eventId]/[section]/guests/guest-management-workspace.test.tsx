@@ -108,6 +108,8 @@ describe("GuestManagementWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: /^Sort by/ }));
     await user.click(await screen.findByRole("menuitemradio", { name: "Name" }));
+    expect(screen.queryByRole("menuitemradio", { name: "Ascending" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Sort by/ }));
     await user.click(await screen.findByRole("menuitemradio", { name: "Ascending" }));
     await user.keyboard("{Escape}");
 
@@ -139,6 +141,47 @@ describe("GuestManagementWorkspace", () => {
 
     expect(await screen.findByText("Tan Family")).toBeTruthy();
     expect(window.location.search).toBe("");
+  });
+
+  it("weights unnamed legacy seats by the owning RSVP response in All guests", async () => {
+    const user = userEvent.setup();
+    const legacyGroup = {
+      ...guestGroup,
+      contactName: "Legacy Host",
+      id: "guest_legacy",
+      label: "Legacy Party",
+      maxPax: 4,
+      status: "responded" as const,
+    };
+
+    renderWithAuth(
+      createApiClientStub({
+        listEventResponses: vi.fn(async () => ({
+          responses: [
+            createRsvpResponse({
+              attendeeCount: 1,
+              guestGroupId: "guest_legacy",
+              guestNames: [],
+            }),
+          ],
+        })),
+        listGuestGroups: vi.fn(async () => ({ guestGroups: [legacyGroup] })),
+      }),
+    );
+
+    await screen.findByText("Legacy Party");
+    await user.click(screen.getByRole("button", { name: "All guests" }));
+    await user.type(screen.getByLabelText("Search guests and groups"), "Legacy");
+
+    const filteredSummary = screen.getByRole("region", { name: "Filtered guest summary" });
+    const totalGuests = within(filteredSummary).getByText("Total guests").closest("div");
+    const attending = within(filteredSummary).getByText("Attending").closest("div");
+    const notAttending = within(filteredSummary).getByText("Not attending").closest("div");
+
+    expect(within(totalGuests as HTMLElement).getByText("4")).toBeTruthy();
+    expect(within(attending as HTMLElement).getByText("1")).toBeTruthy();
+    expect(within(notAttending as HTMLElement).getByText("3")).toBeTruthy();
+    expect(within(notAttending as HTMLElement).getByText("3 seats unfilled")).toBeTruthy();
   });
 
   it("downloads CSV and XLSX data with current filters for view-only managers", async () => {
