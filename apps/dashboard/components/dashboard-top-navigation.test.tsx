@@ -221,6 +221,7 @@ describe("DashboardTopNavigation", () => {
     expect(nextEvent.getAttribute("href")).toBe(`/events/${autumnLaunch.id}/activity`);
     expect(eventContextBar).toBeTruthy();
     expect(screen.getByRole("banner").contains(eventContextBar)).toBe(false);
+    expect(eventContextBar?.querySelector('[data-slot="separator"]')).toBeNull();
     expect(selectedEventContext).toBeTruthy();
     expect(within(selectedEventContext as HTMLElement).getByText("Spring Dinner")).toBeTruthy();
     expect(within(selectedEventContext as HTMLElement).getByText("Activity")).toBeTruthy();

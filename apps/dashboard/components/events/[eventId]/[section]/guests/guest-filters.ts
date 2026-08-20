@@ -178,6 +178,16 @@ export function areGuestListFiltersDefault(filters: GuestListFilters) {
   );
 }
 
+/** Sort and direction do not change which rows are represented by the summary cards. */
+export function hasGuestListDataFilters(filters: GuestListFilters) {
+  return (
+    Boolean(filters.query.trim()) ||
+    filters.invite !== defaultGuestListFilters.invite ||
+    filters.invitedBy !== defaultGuestListFilters.invitedBy ||
+    filters.rsvp !== defaultGuestListFilters.rsvp
+  );
+}
+
 /** Counts only the advanced filters, so the toolbar badge matches what the popover holds. */
 export function countActiveAdvancedFilters(filters: GuestListFilters) {
   return [

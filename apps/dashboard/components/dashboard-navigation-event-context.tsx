@@ -1,4 +1,4 @@
-import { Badge, buttonVariants, Separator } from "@lumiere/dashboard-ui";
+import { Badge, buttonVariants } from "@lumiere/dashboard-ui";
 import type { Event } from "@lumiere/types";
 import Link from "next/link";
 
@@ -43,7 +43,6 @@ export function DashboardEventContextBar({
           </Link>
         ) : null}
       </div>
-      <Separator />
     </section>
   );
 }
